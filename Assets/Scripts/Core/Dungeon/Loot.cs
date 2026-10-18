@@ -21,7 +21,7 @@ namespace Adventure.Core
             if (Gold != 0) parts.Add("골드 " + Gold.ToString("#,0"));
             if (Exp != 0) parts.Add("경험치 " + Exp.ToString("#,0"));
             if (Items.Count > 0) parts.Add(LootSystem.Names(Items));
-            if (Dropped.Count > 0) parts.Add("가방이 가득 차 " + Text.Josa(LootSystem.Names(Dropped), "을/를") + " 두고 왔다");
+            if (Dropped.Count > 0) parts.Add("가방이 가득 차 " + Names.Josa(LootSystem.Names(Dropped), "을/를") + " 두고 왔다");
             return parts.Count == 0 ? "아무것도 얻지 못했다" : string.Join(" · ", parts);
         }
     }

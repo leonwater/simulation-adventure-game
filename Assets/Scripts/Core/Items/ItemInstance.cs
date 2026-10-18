@@ -60,15 +60,15 @@ namespace Adventure.Core
                 case ItemKind.Equipment:
                     string main;
                     if (IsWeapon) main = "공격력 " + Value;
-                    else if (IsAccessory) main = Text.Of(BonusStat) + " +" + Value;
+                    else if (IsAccessory) main = Names.Of(BonusStat) + " +" + Value;
                     else main = "방어력 " + Value;
-                    string job = JobRestriction < 0 ? "공용" : Text.Of((Job)JobRestriction) + " 전용";
+                    string job = JobRestriction < 0 ? "공용" : Names.Of((Job)JobRestriction) + " 전용";
                     return main + " · Lv." + LevelReq + " · " + job;
                 case ItemKind.Consumable:
                     return ItemDb.Consumable(TemplateId)?.Description ?? "";
                 case ItemKind.SkillBook:
                     var skill = SkillDb.Get(SkillId);
-                    return skill == null ? "" : Text.Of(skill.Tier) + " 스킬 · " + skill.Description;
+                    return skill == null ? "" : Names.Of(skill.Tier) + " 스킬 · " + skill.Description;
                 case ItemKind.EnhanceStone:
                     return "대장간 +6 이상 강화 재료";
                 default:

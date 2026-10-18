@@ -1,7 +1,7 @@
 namespace Adventure.Core
 {
     /// <summary>열거형의 한국어 표시 이름.</summary>
-    public static class Text
+    public static class Names
     {
         public static string Of(Stat s)
         {

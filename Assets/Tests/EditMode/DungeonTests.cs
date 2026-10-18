@@ -229,10 +229,10 @@ namespace Adventure.Tests
                         ForceAdjacent(run, room);
                         DungeonSystem.MoveTo(run, room.Id);
                         var ch = e.Choices[choice];
-                        Assert.IsNull(EventSystem.UnavailableReason(ch, c, run.Floor), e.Id + "/" + choice);
-                        double p = EventSystem.SuccessChance(ch, c, run.Floor);
+                        Assert.IsNull(EventRules.UnavailableReason(ch, c, run.Floor), e.Id + "/" + choice);
+                        double p = EventRules.SuccessChance(ch, c, run.Floor);
                         Assert.That(p, Is.InRange(0.05, 1.0));
-                        var result = EventSystem.Resolve(run, c, choice, rng);
+                        var result = EventRules.Resolve(run, c, choice, rng);
                         Assert.IsNotEmpty(result.Text);
                         Assert.GreaterOrEqual(c.CurrentHp, 1);
                         Assert.GreaterOrEqual(c.Gold, 0);
@@ -249,10 +249,10 @@ namespace Adventure.Tests
             c.Inventory.Clear();
             c.Gold = 0;
             var wounded = EventDb.Get("wounded");
-            Assert.IsNotNull(EventSystem.UnavailableReason(wounded.Choices[0], c, 1));
+            Assert.IsNotNull(EventRules.UnavailableReason(wounded.Choices[0], c, 1));
             var gamble = EventDb.Get("gamble");
-            Assert.IsNotNull(EventSystem.UnavailableReason(gamble.Choices[0], c, 1));
-            Assert.AreEqual("힘 판정", EventSystem.ChoiceHint(EventDb.Get("swordsman").Choices[0], c, 1));
+            Assert.IsNotNull(EventRules.UnavailableReason(gamble.Choices[0], c, 1));
+            Assert.AreEqual("힘 판정", EventRules.ChoiceHint(EventDb.Get("swordsman").Choices[0], c, 1));
         }
 
         [Test]

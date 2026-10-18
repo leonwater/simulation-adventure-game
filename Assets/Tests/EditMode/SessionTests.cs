@@ -237,8 +237,8 @@ namespace Adventure.Tests
                 for (int i = 0; i < ev.Choices.Length; i++)
                 {
                     var ch = ev.Choices[i];
-                    if (EventSystem.UnavailableReason(ch, c, s.Run.Floor) != null) continue;
-                    double p = EventSystem.SuccessChance(ch, c, s.Run.Floor);
+                    if (EventRules.UnavailableReason(ch, c, s.Run.Floor) != null) continue;
+                    double p = EventRules.SuccessChance(ch, c, s.Run.Floor);
                     if (ch.Success.ReturnToTown) p = c.CurrentHp < CharacterStats.MaxHp(c) / 3 ? 2 : -1;
                     if (p > bestP)
                     {

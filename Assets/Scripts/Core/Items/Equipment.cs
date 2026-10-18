@@ -68,7 +68,7 @@ namespace Adventure.Core
         public static string CannotEquipReason(Character c, ItemInstance item)
         {
             if (item == null || item.Kind != ItemKind.Equipment) return "장비가 아닙니다";
-            if (!item.CanBeUsedBy(c.Job)) return Text.Of((Job)item.JobRestriction) + " 전용입니다";
+            if (!item.CanBeUsedBy(c.Job)) return Names.Of((Job)item.JobRestriction) + " 전용입니다";
             if (c.Level < item.LevelReq) return "Lv." + item.LevelReq + " 이상 착용 가능";
             return null;
         }

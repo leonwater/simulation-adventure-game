@@ -13,7 +13,7 @@ namespace Adventure.Core
     }
 
     /// <summary>특수 이벤트 선택지 처리. 성공률은 능력치 판정 공식(50% + (능력치 − 요구치) × 5%).</summary>
-    public static class EventSystem
+    public static class EventRules
     {
         public static Stat? CheckStat(EventChoice choice, Character c) =>
             choice.CheckAttackStat ? c.JobData.AttackStat : choice.Check;
@@ -40,7 +40,7 @@ namespace Adventure.Core
         public static string ChoiceHint(EventChoice choice, Character c, int floor)
         {
             var stat = CheckStat(choice, c);
-            if (choice.CheckAttackStat && stat != null) return Text.Of(stat.Value) + " 판정";
+            if (choice.CheckAttackStat && stat != null) return Names.Of(stat.Value) + " 판정";
             if (choice.RequiresGoldMult > 0) return GoldAmount(choice.RequiresGoldMult, floor).ToString("#,0") + "G 필요 · 확률 50%";
             return choice.Hint ?? "";
         }

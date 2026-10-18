@@ -41,7 +41,7 @@ namespace Adventure.Core
                 foreach (var s in Statuses)
                 {
                     string chance = s.Chance < 1 ? " (" + Math.Round(s.Chance * 100) + "%)" : "";
-                    parts.Add(Text.Of(s.Type) + " " + s.Turns + "턴" + chance);
+                    parts.Add(Names.Of(s.Type) + " " + s.Turns + "턴" + chance);
                 }
                 if (SuccessBonus > 0) parts.Add("성공률 +" + Math.Round(SuccessBonus * 100) + "%");
                 if (CritBonus > 0) parts.Add("치명타 +" + Math.Round(CritBonus * 100) + "%");

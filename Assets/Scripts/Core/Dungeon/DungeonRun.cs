@@ -92,7 +92,7 @@ namespace Adventure.Core
                 {
                     Room = r,
                     Direction = DirectionText(cur, r) + (r.Visited ? "로 돌아간다" : "로 간다"),
-                    Hint = r.Visited ? Text.Of(r.Type) + " · 탐험함" : (known ? Text.Of(r.Type) : Atmospheres[(r.Seed & 0x7fffffff) % Atmospheres.Length]),
+                    Hint = r.Visited ? Names.Of(r.Type) + " · 탐험함" : (known ? Names.Of(r.Type) : Atmospheres[(r.Seed & 0x7fffffff) % Atmospheres.Length]),
                     Known = known,
                 });
             }

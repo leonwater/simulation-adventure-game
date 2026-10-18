@@ -316,13 +316,13 @@ namespace Adventure.Tests
         [Test]
         public void Josa_PicksCorrectParticle()
         {
-            Assert.AreEqual("고블린을", Text.Josa("고블린", "을/를"));
-            Assert.AreEqual("슬라임을", Text.Josa("슬라임", "을/를"));
-            Assert.AreEqual("고블린 A를", Text.Josa("고블린 A", "을/를"));
-            Assert.AreEqual("리치는", Text.Josa("리치", "은/는"));
-            Assert.AreEqual("독으로", Text.Josa("독", "으로/로"));
-            Assert.AreEqual("출혈로", Text.Josa("출혈", "으로/로"));
-            Assert.AreEqual("화상으로", Text.Josa("화상", "으로/로"));
+            Assert.AreEqual("고블린을", Names.Josa("고블린", "을/를"));
+            Assert.AreEqual("슬라임을", Names.Josa("슬라임", "을/를"));
+            Assert.AreEqual("고블린 A를", Names.Josa("고블린 A", "을/를"));
+            Assert.AreEqual("리치는", Names.Josa("리치", "은/는"));
+            Assert.AreEqual("독으로", Names.Josa("독", "으로/로"));
+            Assert.AreEqual("출혈로", Names.Josa("출혈", "으로/로"));
+            Assert.AreEqual("화상으로", Names.Josa("화상", "으로/로"));
         }
 
         [Test]

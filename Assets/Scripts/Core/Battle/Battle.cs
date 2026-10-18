@@ -99,7 +99,7 @@ namespace Adventure.Core
             };
             var names = new List<string>();
             foreach (var e in enemies) names.Add(e.Name);
-            Add(Text.Josa((isBoss ? "보스 " : "") + string.Join(", ", names), "이/가") + " 나타났다!", LogTone.Bad);
+            Add(Names.Josa((isBoss ? "보스 " : "") + string.Join(", ", names), "이/가") + " 나타났다!", LogTone.Bad);
             Add("▶ 당신의 차례입니다.", LogTone.System);
         }
 
@@ -236,7 +236,7 @@ namespace Adventure.Core
             StartOfTurn(Player);
             if (!CheckEnd())
             {
-                if (Player.Statuses.Has(StatusType.Stun)) Add(Text.Josa(Player.Name, "은/는") + " 기절해 움직일 수 없다.", LogTone.Bad);
+                if (Player.Statuses.Has(StatusType.Stun)) Add(Names.Josa(Player.Name, "은/는") + " 기절해 움직일 수 없다.", LogTone.Bad);
                 else PlayerAct(choice);
             }
             EndOfTurn(Player);
@@ -249,7 +249,7 @@ namespace Adventure.Core
                 StartOfTurn(e);
                 if (e.Alive)
                 {
-                    if (e.Statuses.Has(StatusType.Stun)) Add(Text.Josa(e.Name, "은/는") + " 기절해 있다.");
+                    if (e.Statuses.Has(StatusType.Stun)) Add(Names.Josa(e.Name, "은/는") + " 기절해 있다.");
                     else EnemyAct(e);
                 }
                 EndOfTurn(e);
@@ -349,9 +349,9 @@ namespace Adventure.Core
             var def = item == null ? null : ItemDb.Consumable(item.TemplateId);
             if (def == null) return;
             Character.Inventory.Take(uid, 1);
-            Add(Text.Josa(def.Name, "을/를") + " 사용했다.");
+            Add(Names.Josa(def.Name, "을/를") + " 사용했다.");
             if (def.HealRatio > 0) Heal(Player, (int)Math.Round(Player.MaxHp * def.HealRatio));
-            if (def.Cures != null && Player.Statuses.Remove(def.Cures.Value)) Add(Text.Of(def.Cures.Value) + " 상태가 풀렸다.", LogTone.Good);
+            if (def.Cures != null && Player.Statuses.Remove(def.Cures.Value)) Add(Names.Of(def.Cures.Value) + " 상태가 풀렸다.", LogTone.Good);
         }
 
         private void EnemyAct(Combatant e)
@@ -411,7 +411,7 @@ namespace Adventure.Core
             bool debuff = StatusContainer.IsDebuff(s.Type);
             if (debuff && target != source && _rng.Chance(target.Resist))
             {
-                Add(Text.Josa(target.Name, "은/는") + " " + Text.Of(s.Type) + "에 저항했다.");
+                Add(Names.Josa(target.Name, "은/는") + " " + Names.Of(s.Type) + "에 저항했다.");
                 return;
             }
             int value = s.Value;
@@ -419,7 +419,7 @@ namespace Adventure.Core
                 value = Math.Max(1, (int)Math.Round(source.Attack * s.Value / 100.0));
             target.Statuses.Apply(s.Type, value, s.Turns);
             string who = target.IsPlayer ? "" : target.Name + ": ";
-            Add(who + Text.Of(s.Type) + " " + s.Turns + "턴", debuff == target.IsPlayer ? LogTone.Bad : LogTone.Good);
+            Add(who + Names.Of(s.Type) + " " + s.Turns + "턴", debuff == target.IsPlayer ? LogTone.Bad : LogTone.Good);
         }
 
         private void StartOfTurn(Combatant c)
@@ -443,7 +443,7 @@ namespace Adventure.Core
         private void Hurt(Combatant c, int amount, string cause)
         {
             c.Hp = Math.Max(0, c.Hp - amount);
-            Add((c.IsPlayer ? "" : c.Name + ": ") + Text.Josa(cause, "으로/로") + " " + amount + " 피해", c.IsPlayer ? LogTone.Bad : LogTone.Normal);
+            Add((c.IsPlayer ? "" : c.Name + ": ") + Names.Josa(cause, "으로/로") + " " + amount + " 피해", c.IsPlayer ? LogTone.Bad : LogTone.Normal);
             if (c.IsPlayer && !c.Alive) KilledBy = cause;
         }
 
@@ -461,7 +461,7 @@ namespace Adventure.Core
         {
             if (Defeated.Contains(e)) return;
             Defeated.Add(e);
-            Add(Text.Josa(e.Name, "을/를") + " 쓰러뜨렸다!", LogTone.Good);
+            Add(Names.Josa(e.Name, "을/를") + " 쓰러뜨렸다!", LogTone.Good);
         }
 
         private bool CheckEnd()

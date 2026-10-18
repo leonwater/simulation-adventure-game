@@ -236,7 +236,7 @@ namespace Adventure.Core
 
         public EventResult ChooseEvent(int index)
         {
-            LastEvent = EventSystem.Resolve(Data.Run, C, index, Rng);
+            LastEvent = EventRules.Resolve(Data.Run, C, index, Rng);
             if (LastEvent.StartBattle)
             {
                 StartBattle(EnemyFactory.CreateMimic(Data.Run.Floor, Difficulty), false);

@@ -58,7 +58,7 @@ namespace Adventure.Core
             }
             if (def.JobRestriction >= 0 && def.JobRestriction != (int)c.Job)
             {
-                error = Text.Of((Job)def.JobRestriction) + " 전용 스킬입니다";
+                error = Names.Of((Job)def.JobRestriction) + " 전용 스킬입니다";
                 return false;
             }
             if (c.Skills.Knows(def.Id))

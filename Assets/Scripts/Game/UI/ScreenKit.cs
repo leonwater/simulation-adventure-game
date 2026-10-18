@@ -1,0 +1,210 @@
+using System;
+using Adventure.Core;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Adventure.Game
+{
+    /// <summary>여러 화면이 같이 쓰는 머리줄·하단 메뉴·선택지 버튼 (UI 시안 기준).</summary>
+    public static class ScreenKit
+    {
+        public const float ContentWidth = Theme.ScreenWidth - 32; // 좌우 여백 16
+
+        public static RectTransform Page(RectTransform root, float spacing = 0, RectOffset padding = null)
+        {
+            var col = UI.Column(root, spacing, padding, TextAnchor.UpperLeft, "page");
+            UI.Stretch(col);
+            return col;
+        }
+
+        /// <summary>시설 화면 머리줄: "‹ 마을" · 제목 · 골드.</summary>
+        public static void TopBar(Transform parent, string title, string backLabel, Action onBack, string right)
+        {
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(12, 12, 6, 6), false, 0, TextAnchor.MiddleCenter, "topbar");
+            UI.Size(bar, height: 57);
+            var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
+            UI.Size(left, width: 110);
+            if (onBack != null)
+            {
+                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
+                UI.Label(back, "‹ " + backLabel, 14, Theme.Gold, false, TextAnchor.MiddleLeft, false, false);
+            }
+            var t = UI.Label(bar, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
+            UI.Size(t, flexW: 1);
+            var r = UI.Label(bar, right ?? "", 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            UI.Size(r, width: 110);
+            BottomLine(bar);
+        }
+
+        public static void BottomLine(RectTransform rt, Color? color = null)
+        {
+            var line = UI.Image(rt, color ?? Theme.Line, 0, "line");
+            line.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var lrt = line.rectTransform;
+            lrt.anchorMin = new Vector2(0, 0);
+            lrt.anchorMax = new Vector2(1, 0);
+            lrt.pivot = new Vector2(0.5f, 0);
+            lrt.sizeDelta = new Vector2(0, 1);
+            lrt.anchoredPosition = Vector2.zero;
+        }
+
+        public static void TopLine(RectTransform rt)
+        {
+            var line = UI.Image(rt, Theme.Line, 0, "line");
+            line.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var lrt = line.rectTransform;
+            lrt.anchorMin = new Vector2(0, 1);
+            lrt.anchorMax = new Vector2(1, 1);
+            lrt.pivot = new Vector2(0.5f, 1);
+            lrt.sizeDelta = new Vector2(0, 1);
+            lrt.anchoredPosition = Vector2.zero;
+        }
+
+        /// <summary>마을 머리줄: 이름 · 직업 레벨 · 경험치 막대 · 등급 · 골드.</summary>
+        public static void TownHeader(Transform parent, Character c)
+        {
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 12, 12), false, 8, TextAnchor.MiddleLeft, "header");
+            UI.Size(bar, height: 64);
+            var left = UI.Column(bar, 4);
+            UI.Size(left, flexW: 1);
+            UI.Label(left, c.Name + " " + UI.Color(c.JobData.Name + " Lv." + c.Level, Theme.SubHex), 15, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            var barRow = UI.Row(left);
+            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 140);
+            UI.Pill(bar, c.Rank + " 등급", Theme.Accent, Theme.Gold);
+            UI.Label(bar, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            BottomLine(bar);
+        }
+
+        private static readonly string[] NavLabels = { "마을", "캐릭터", "가방", "스킬", "설정" };
+
+        /// <summary>마을 계열 하단 메뉴. 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 · 4 설정</summary>
+        public static void BottomNav(Transform parent, int active)
+        {
+            var nav = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, TextAnchor.MiddleCenter, "nav");
+            UI.Size(nav, height: 60);
+            nav.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+            for (int i = 0; i < NavLabels.Length; i++)
+            {
+                int idx = i;
+                var item = UI.ButtonCard(nav, () => Navigate(idx), Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, 60, TextAnchor.MiddleCenter);
+                UI.Size(item, flexW: 1);
+                UI.Label(item, NavLabels[i], 13, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
+            }
+            TopLine(nav);
+        }
+
+        public static void Navigate(int idx)
+        {
+            var app = GameApp.Instance;
+            switch (idx)
+            {
+                case 0: app.Router.Show(new TownScreen()); break;
+                case 1: app.Router.Show(new CharacterScreen()); break;
+                case 2: app.Router.Show(new InventoryScreen()); break;
+                case 3: app.Router.Show(new SkillsScreen()); break;
+                default: app.Router.Show(new SettingsScreen()); break;
+            }
+        }
+
+        /// <summary>던전 계열 머리줄: 제목·부제 + HP + 일시정지.</summary>
+        public static void DungeonHeader(Transform parent, string title, string sub, Character c, Action onPause, bool showHpBar = true)
+        {
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 12, 6, 6), false, 10, TextAnchor.MiddleLeft, "header");
+            UI.Size(bar, height: 60);
+            var left = UI.Column(bar, 2);
+            UI.Size(left, flexW: 1);
+            UI.Label(left, title, 15, Theme.Text, true);
+            if (!string.IsNullOrEmpty(sub)) UI.Sub(left, sub);
+            int max = CharacterStats.MaxHp(c);
+            var hp = UI.Column(bar, 3, null, TextAnchor.MiddleRight);
+            UI.Size(hp, width: 110);
+            UI.Label(hp, "HP " + c.CurrentHp + "/" + max, 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            if (showHpBar) UI.ProgressBar(hp, (float)c.CurrentHp / max, Theme.Red, 8, 110);
+            if (onPause != null) PauseButton(bar, onPause);
+            BottomLine(bar);
+        }
+
+        public static void PauseButton(Transform parent, Action onPause)
+        {
+            var b = UI.ButtonCard(parent, onPause, Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
+            UI.Size(b, height: 44, width: 44);
+            UI.Label(b, "Ⅱ", 15, Theme.Text, true, TextAnchor.MiddleCenter);
+        }
+
+        /// <summary>던전의 길 선택 버튼 (금색 테두리, 제목 + 작은 설명).</summary>
+        public static RectTransform GoButton(Transform parent, string title, string sub, Action onClick, bool enabled = true)
+        {
+            var b = UI.ButtonCard(parent, onClick, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 8), true, 2, 60, TextAnchor.MiddleLeft);
+            UI.Label(b, title, 15, Theme.Text, true);
+            if (!string.IsNullOrEmpty(sub)) UI.Sub(b, sub);
+            if (!enabled) UI.SetEnabled(b, false);
+            return b;
+        }
+
+        /// <summary>전투·이벤트 선택지: 왼쪽 글자, 오른쪽 성공 확률 또는 안내.</summary>
+        public static RectTransform ChoiceButton(Transform parent, string label, string sub, string right, bool rightIsPercent, Action onClick, bool enabled, float minHeight = 50)
+        {
+            var b = UI.ButtonCard(parent, onClick, Theme.Button, Theme.ButtonBorder, 10, UI.Pad(14, 6), false, 10, minHeight);
+            var left = UI.Column(b, 2, null, TextAnchor.MiddleLeft);
+            UI.Size(left, flexW: 1);
+            UI.Label(left, label, 15, Theme.Text, !string.IsNullOrEmpty(sub));
+            if (!string.IsNullOrEmpty(sub)) UI.Sub(left, sub);
+            if (!string.IsNullOrEmpty(right))
+                UI.Label(b, right, rightIsPercent ? 14 : 12, rightIsPercent ? Theme.Gold : Theme.TextSub, rightIsPercent, TextAnchor.MiddleRight, false, false);
+            if (!enabled) UI.SetEnabled(b, false);
+            return b;
+        }
+
+        public static string Percent(double p) => Mathf.RoundToInt((float)(p * 100)) + "%";
+
+        /// <summary>상태 이상 태그 줄 (버프 파랑, 디버프 빨강).</summary>
+        public static void StatusTags(Transform parent, Combatant who)
+        {
+            foreach (var s in who.Statuses.Visible())
+            {
+                bool debuff = StatusContainer.IsDebuff(s.Type);
+                UI.Pill(parent, Names.Of(s.Type) + " " + s.Turns, debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 11, 6);
+            }
+        }
+
+        /// <summary>시설 화면 공통: 위 일러스트 + 겹쳐 놓은 대사 상자.</summary>
+        public static void NpcIllustration(Transform parent, string illustration, string speaker, string line, float height)
+        {
+            var holder = UI.Rect(parent, "npc");
+            UI.Size(holder, height: height + 34);
+            var ill = UI.Illustration(holder, illustration, height);
+            ill.anchorMin = new Vector2(0, 1);
+            ill.anchorMax = new Vector2(1, 1);
+            ill.pivot = new Vector2(0.5f, 1);
+            ill.sizeDelta = new Vector2(0, height);
+            ill.anchoredPosition = Vector2.zero;
+            if (string.IsNullOrEmpty(line)) return;
+            var box = UI.Card(holder, Theme.Dialog, Theme.ButtonBorder, 12, UI.Pad(14, 10), true, 4, TextAnchor.UpperLeft, "dialogue");
+            box.anchorMin = new Vector2(0, 0);
+            box.anchorMax = new Vector2(1, 0);
+            box.pivot = new Vector2(0.5f, 0);
+            box.offsetMin = new Vector2(12, 0);
+            box.offsetMax = new Vector2(-12, 0);
+            box.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            UI.Label(box, speaker, 12, Theme.Gold, true);
+            UI.Label(box, line, 14, Theme.Text);
+        }
+
+        /// <summary>탭 줄. 선택된 탭은 금색 + 밑줄.</summary>
+        public static void Tabs(Transform parent, string[] labels, int active, Action<int> onSelect)
+        {
+            var row = UI.Row(parent, 0, UI.Pad(12, 0), TextAnchor.MiddleCenter, "tabs");
+            row.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
+            UI.Size(row, height: 44);
+            for (int i = 0; i < labels.Length; i++)
+            {
+                int idx = i;
+                var tab = UI.ButtonCard(row, () => onSelect(idx), Theme.Bg, Theme.Bg, 0.01f, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
+                UI.Size(tab, flexW: 1);
+                UI.Label(tab, labels[i], 14, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
+                if (i == active) BottomLine(tab, Theme.Accent);
+            }
+            BottomLine(row);
+        }
+    }
+}
