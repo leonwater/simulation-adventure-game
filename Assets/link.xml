@@ -1,0 +1,4 @@
+<!-- IL2CPP 빌드에서 저장용 리플렉션 직렬화가 쓰는 Core 타입이 제거되지 않도록 보존 -->
+<linker>
+  <assembly fullname="Adventure.Core" preserve="all"/>
+</linker>

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Unity 참조 어셈블리로 전체 스크립트를 컴파일해 API 오류를 잡는다.
+    Mode=Player : Core + Game (기기 빌드와 같은 조건)
+    Mode=Editor : Core + Game + Editor (UNITY_EDITOR 정의)
+  -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <UnityRefDir Condition="'$(UnityRefDir)' == ''">$(MSBuildThisFileDirectory)../.cache/unity-ref</UnityRefDir>
+    <DefineConstants>$(DefineConstants);UNITY_2021_3_OR_NEWER;UNITY_ANDROID</DefineConstants>
+    <DefineConstants Condition="'$(Mode)' == 'Editor'">$(DefineConstants);UNITY_EDITOR</DefineConstants>
+    <OutputPath>bin/$(Mode)/</OutputPath>
+    <NoWarn>$(NoWarn);CS0618;MSB3277;CS1701;CS1702</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../Assets/Scripts/Core/**/*.cs" />
+    <Compile Include="../../../Assets/Scripts/Game/**/*.cs" />
+    <Compile Include="../../../Assets/Scripts/Editor/**/*.cs" Condition="'$(Mode)' == 'Editor'" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="$(UnityRefDir)/*.dll" Exclude="$(UnityRefDir)/UnityEditor.dll" Private="false" />
+    <Reference Include="$(UnityRefDir)/UnityEditor.dll" Private="false" Condition="'$(Mode)' == 'Editor'" />
+  </ItemGroup>
+</Project>

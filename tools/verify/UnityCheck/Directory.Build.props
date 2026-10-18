@@ -1,0 +1,7 @@
+<Project>
+  <!-- Player/Editor 두 조건의 중간 산출물을 분리 (Microsoft.Common.props보다 먼저 적용돼야 함) -->
+  <PropertyGroup>
+    <Mode Condition="'$(Mode)' == ''">Player</Mode>
+    <BaseIntermediateOutputPath>obj/$(Mode)/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

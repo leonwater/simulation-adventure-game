@@ -1,0 +1,17 @@
+{
+    "name": "Adventure.Game",
+    "rootNamespace": "Adventure.Game",
+    "references": [
+        "Adventure.Core",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

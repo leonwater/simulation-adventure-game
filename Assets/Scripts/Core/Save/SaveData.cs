@@ -1,0 +1,101 @@
+using System;
+
+namespace Adventure.Core
+{
+    /// <summary>저장 파일 전체.</summary>
+    [Serializable]
+    public class SaveData
+    {
+        public const int CurrentVersion = 1;
+
+        public int Version = CurrentVersion;
+        public Difficulty Difficulty = Difficulty.Normal;
+        public Character Character;
+        public ShopState Shop = new ShopState();
+        public GuildState Guild = new GuildState();
+        /// <summary>던전 안이면 진행 상태, 마을이면 null.</summary>
+        public DungeonRun Run;
+        /// <summary>30층 보스를 처치했는지 (엔딩을 본 뒤에도 계속 플레이 가능).</summary>
+        public bool GameCleared;
+        /// <summary>마을에서 고른 도전 층.</summary>
+        public int SelectedFloor = 1;
+        public long SavedAtTicks;
+        public long PlaySeconds;
+    }
+
+    /// <summary>저장소. Unity에서는 파일, 테스트에서는 메모리를 쓴다.</summary>
+    public interface ISaveStore
+    {
+        bool Exists { get; }
+        void Write(string json);
+        string Read();
+        void Delete();
+    }
+
+    public class MemorySaveStore : ISaveStore
+    {
+        public string Content;
+
+        public bool Exists => Content != null;
+
+        public void Write(string json) => Content = json;
+
+        public string Read() => Content;
+
+        public void Delete() => Content = null;
+    }
+
+    public static class SaveSystem
+    {
+        public static void Save(ISaveStore store, SaveData data, DateTime nowUtc)
+        {
+            data.SavedAtTicks = nowUtc.Ticks;
+            store.Write(Json.Serialize(data));
+        }
+
+        /// <summary>저장 파일을 읽는다. 없거나 깨졌으면 null.</summary>
+        public static SaveData Load(ISaveStore store)
+        {
+            if (!store.Exists) return null;
+            try
+            {
+                var data = Json.Deserialize<SaveData>(store.Read());
+                if (data?.Character == null) return null;
+                Repair(data);
+                return data;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>예전 버전 저장이나 일부가 빠진 저장을 쓸 수 있게 고친다.</summary>
+        public static void Repair(SaveData d)
+        {
+            var c = d.Character;
+            if (c.BaseStats == null) c.BaseStats = Character.StartingStats(c.Job);
+            if (c.Equipment == null) c.Equipment = new Equipment();
+            if (c.Equipment.Slots == null || c.Equipment.Slots.Length != Equipment.SlotCount)
+            {
+                var slots = new ItemInstance[Equipment.SlotCount];
+                if (c.Equipment.Slots != null) Array.Copy(c.Equipment.Slots, slots, Math.Min(slots.Length, c.Equipment.Slots.Length));
+                c.Equipment.Slots = slots;
+            }
+            if (c.Inventory == null) c.Inventory = new ItemContainer();
+            if (c.Storage == null) c.Storage = new ItemContainer();
+            if (c.Skills == null) c.Skills = new SkillSet();
+            c.Skills.Learned.RemoveAll(s => s == null || SkillDb.Get(s.SkillId) == null);
+            c.Skills.Equipped.RemoveAll(id => !c.Skills.Knows(id));
+            c.Inventory.Items.RemoveAll(i => i == null);
+            c.Storage.Items.RemoveAll(i => i == null);
+            c.RecalculateCapacities();
+            c.CurrentHp = GameBalance.Clamp(c.CurrentHp, 0, CharacterStats.MaxHp(c));
+            if (d.Shop == null) d.Shop = new ShopState();
+            if (d.Guild == null) d.Guild = new GuildState();
+            if (d.Run != null && (d.Run.Map == null || d.Run.Map.Rooms.Count == 0 || d.Run.Current == null)) d.Run = null;
+            d.SelectedFloor = GameBalance.Clamp(d.SelectedFloor, 1, c.MaxChallengeFloor);
+            d.Version = SaveData.CurrentVersion;
+        }
+    }
+}
