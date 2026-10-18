@@ -33,3 +33,7 @@ crashlytics-build.properties
 /tools/verify/**/bin/
 /tools/verify/**/obj/
 !/tools/verify/**/*.csproj
+
+# 서명 키 (CI가 만드는 임시 파일 포함)
+*.keystore
+*.jks

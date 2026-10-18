@@ -1,0 +1,118 @@
+# Android APK 자동 빌드 (GameCI)
+# - main에 게임 파일이 바뀌어 올라오면, 또는 Actions 탭에서 "Run workflow"를 누르면 실행된다.
+# - 결과 APK는 Releases의 "android-latest"(휴대폰에서 바로 받기)와 Actions 실행 결과(Artifacts)에 올라간다.
+# - 필요한 비밀값(Settings → Secrets and variables → Actions):
+#     UNITY_LICENSE  : Unity_lic.ulf 파일 내용 전체
+#     UNITY_EMAIL    : Unity 계정 이메일
+#     UNITY_PASSWORD : Unity 계정 비밀번호
+#   선택: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASS, ANDROID_KEYALIAS_NAME, ANDROID_KEYALIAS_PASS
+#     (넣으면 고정 키로 서명되어 기존 앱을 지우지 않고 업데이트 설치할 수 있다)
+name: Android APK 빌드
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Assets/**"
+      - "Packages/**"
+      - "ProjectSettings/**"
+      - ".github/workflows/android-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: APK 빌드
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: 비밀값 확인
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          missing=""
+          [ -z "$UNITY_LICENSE" ] && missing="$missing UNITY_LICENSE"
+          [ -z "$UNITY_EMAIL" ] && missing="$missing UNITY_EMAIL"
+          [ -z "$UNITY_PASSWORD" ] && missing="$missing UNITY_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::저장소 Settings → Secrets and variables → Actions 에 다음 비밀값을 등록하세요:$missing"
+            exit 1
+          fi
+
+      - name: 디스크 공간 확보
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - name: 저장소 받기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Library 캐시
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Android-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-Android-
+
+      - name: Unity 빌드
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: Android
+          buildName: adventurer
+          androidExportType: androidPackage
+          buildMethod: Adventure.EditorTools.CIBuild.BuildAndroid
+          customParameters: -stackTraceLogType Full
+          # 선택: 고정 서명 키 (비어 있으면 디버그 키)
+          androidKeystoreName: adventurer.keystore
+          androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          androidKeystorePass: ${{ secrets.ANDROID_KEYSTORE_PASS }}
+          androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME }}
+          androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS }}
+
+      - name: APK 확인
+        id: apk
+        run: |
+          APK=$(find build -name "*.apk" | head -1)
+          if [ -z "$APK" ]; then echo "::error::APK가 만들어지지 않았습니다. 위 Unity 빌드 로그를 확인하세요."; exit 1; fi
+          ls -la "$APK"
+          echo "path=$APK" >> "$GITHUB_OUTPUT"
+
+      - name: 실행 결과에 APK 첨부
+        uses: actions/upload-artifact@v4
+        with:
+          name: adventurer-apk-${{ github.run_number }}
+          path: ${{ steps.apk.outputs.path }}
+          retention-days: 14
+
+      - name: 최신 APK 릴리스 갱신
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "${{ steps.apk.outputs.path }}" adventurer.apk
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest adventurer.apk \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "최신 APK (빌드 #${{ github.run_number }})" \
+            --notes "커밋 ${{ github.sha }} 에서 자동 빌드한 테스트용 APK입니다. 휴대폰에서 adventurer.apk 를 받아 설치하세요."

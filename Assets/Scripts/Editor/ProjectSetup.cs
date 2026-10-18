@@ -23,7 +23,8 @@ namespace Adventure.EditorTools
         {
             EditorApplication.delayCall += () =>
             {
-                if (EditorApplication.isPlayingOrWillChangePlaymode) return;
+                // CI(배치 모드)에서는 CIBuild가 직접 설정한다.
+                if (Application.isBatchMode || EditorApplication.isPlayingOrWillChangePlaymode) return;
                 if (!File.Exists(ScenePath)) Apply();
             };
         }

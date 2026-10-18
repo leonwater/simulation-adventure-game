@@ -19,6 +19,20 @@ Unity로 만든 앱 게임(Android·iOS, 세로 화면)이며, 기획서와 UI �
 - **iOS**: iOS로 전환 → Build → 생성된 Xcode 프로젝트에서 서명 후 실행.
 - 패키지 이름 `com.leonwater.adventurer` (에디터 설정 스크립트 `Assets/Scripts/Editor/ProjectSetup.cs`에서 변경).
 
+### APK 자동 빌드 (GitHub Actions)
+
+`main`에 게임 파일(`Assets`·`Packages`·`ProjectSettings`)이 바뀌어 올라오면 APK가 자동으로 만들어집니다.
+Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 수도 있습니다.
+
+- 결과: 저장소 **Releases → 최신 APK (android-latest)** 의 `adventurer.apk` (휴대폰에서 바로 받기)
+- 처음 한 번 저장소 **Settings → Secrets and variables → Actions**에 비밀값 3개를 등록해야 합니다.
+  - `UNITY_LICENSE`: Unity Hub로 로그인한 PC의 `Unity_lic.ulf` 파일 내용 전체
+    (Windows `C:\ProgramData\Unity\Unity_lic.ulf`, Mac `/Library/Application Support/Unity/Unity_lic.ulf`)
+  - `UNITY_EMAIL`, `UNITY_PASSWORD`: Unity 계정
+- 선택: `ANDROID_KEYSTORE_BASE64`·`ANDROID_KEYSTORE_PASS`·`ANDROID_KEYALIAS_NAME`·`ANDROID_KEYALIAS_PASS`를 넣으면 고정 키로 서명되어,
+  새 버전을 기존 앱 위에 바로 덮어 설치할 수 있습니다. 없으면 업데이트 때 기존 앱을 지우고 설치해야 합니다 (저장 데이터도 지워짐).
+- 빌드 스크립트: `Assets/Scripts/Editor/CIBuild.cs`, 워크플로: `.github/workflows/android-build.yml`
+
 ## 프로젝트 구조
 
 | 경로 | 내용 |
