@@ -124,7 +124,7 @@ namespace Adventure.Game
             mark.pivot = new Vector2(1, 0.5f);
             mark.sizeDelta = new Vector2(28, 28);
             mark.anchoredPosition = Vector2.zero;
-            UI.Label(mark, "✕", 12, Theme.TextSub, false, TextAnchor.MiddleCenter);
+            UI.Label(mark, "×", 15, Theme.TextSub, false, TextAnchor.MiddleCenter);
         }
 
         /// <summary>가장 위 팝업의 뒤로 가기 동작을 바꾼다.</summary>

@@ -1,112 +1,377 @@
+using System;
+using System.Collections.Generic;
 using Adventure.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Adventure.Game
 {
-    /// <summary>전투: 적 목록(HP 막대·상태), 내 HP·버프, 전투 기록, 선택지 스크롤(성공 확률).</summary>
+    /// <summary>
+    /// 전투 (수정 사항 #9·#21·#24·#25):
+    /// 위 40% 전투 무대(왼쪽 내 원형, 오른쪽 적 최대 4 — 일반 사각형 · 엘리트 굵은 테두리 · 보스 육각형),
+    /// 적을 눌러 대상 선택, 2~3줄 기록, 아래 선택지(성공 확률, 길게 누르면 계산 내역).
+    /// 행동 결과는 Battle.LastEvents를 차례로 재생한다 (돌진·흔들림·번쩍임·떠오르는 피해 숫자).
+    /// </summary>
     public class BattleScreen : ScreenBase
     {
+        private const float StageW = Theme.ScreenWidth, StageH = 300, StepTime = 0.32f;
+
+        private Battle _b;
+        private int _target = -1;
+        private bool _playing, _finished, _leaving, _started;
+        private List<BattleEvent> _pending;
+        private Dictionary<int, int> _hpBefore;
+
+        private RectTransform _stage;
+        private CanvasGroup _choicesGroup;
+        private readonly Dictionary<int, UnitView> _units = new Dictionary<int, UnitView>();
+
+        private class UnitView
+        {
+            public RectTransform Shape;
+            public Image Fill;
+            public RectTransform Bar;
+            public Text HpText;
+            public Vector2 Center;
+            public float Size;
+            public int MaxHp;
+            public CanvasGroup Group;
+        }
+
+        private enum Shape
+        {
+            Circle,
+            Square,
+            Hexagon
+        }
+
         public override bool OnBack()
         {
-            Pause();
+            if (!_playing && !_finished) Pause();
             return true;
         }
 
         public override void Build(RectTransform root)
         {
-            var b = S.Battle;
-            if (b == null)
+            if (_b == null) _b = S.Battle;
+            if (_b == null)
             {
                 App.GoToCurrent();
                 return;
             }
+            if (!_started)
+            {
+                _started = true;
+                // 기습 등 전투 시작과 동시에 일어난 일
+                if (_b.LastEvents.Count > 0)
+                {
+                    _pending = new List<BattleEvent>(_b.LastEvents);
+                    _hpBefore = InferBefore(_pending);
+                }
+            }
+            FixTarget();
+            _units.Clear();
+
             var page = ScreenKit.Page(root);
-            var head = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 12, 6, 6), false, 8, TextAnchor.MiddleLeft, "header");
+            TopBar(page);
+            _stage = UI.Rect(page, "stage");
+            UI.Size(_stage, height: StageH);
+            BuildStage();
+            Log(page);
+
+            var lower = UI.Column(page, 8, UI.Pad(16, 16, 8, 14), TextAnchor.UpperLeft, "lower");
+            UI.Size(lower, flexH: 1);
+            _choicesGroup = lower.gameObject.AddComponent<CanvasGroup>();
+            if (_finished) Finished(lower);
+            else if (!_b.IsOver || _pending != null) Choices(lower);
+
+            if (_pending != null)
+            {
+                var events = _pending;
+                _pending = null;
+                StartPlayback(events);
+            }
+            else Tutorial.OnBattle();
+        }
+
+        private void FixTarget()
+        {
+            if (_target >= 0 && _target < _b.Enemies.Count && _b.Enemies[_target].Alive) return;
+            _target = _b.Enemies.FindIndex(e => e.Alive);
+        }
+
+        // ── 머리줄: 속도 1×/2× · 순간이동(전투 중 사용 불가) · 일시정지 ──
+
+        private void TopBar(Transform parent)
+        {
+            var head = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 10, 6, 6), false, 6, TextAnchor.MiddleLeft, "header");
             UI.Size(head, height: 58);
-            var title = UI.Label(head, b.Floor + "층 · " + (b.IsBoss ? "보스전" : "전투") + " " + UI.Color(b.Turn + "턴째", Theme.SubHex), 15, Theme.Text, true);
+            var title = UI.Label(head, _b.Floor + "층 · " + (_b.IsBoss ? "보스전" : "전투") + " " + UI.Color(_b.Turn + "턴째", Theme.SubHex), 15, Theme.Text, true);
             UI.Size(title, flexW: 1);
-            ScreenKit.PauseButton(head, Pause);
+            Text speedLabel = null;
+            var speed = IconButton(head, GameSettings.BattleSpeed + "×", () =>
+            {
+                GameSettings.BattleSpeed = GameSettings.BattleSpeed == 1 ? 2 : 1;
+                speedLabel.text = GameSettings.BattleSpeed + "×";
+            });
+            speedLabel = speed.GetComponentInChildren<Text>();
+            var tp = IconButton(head, "◎", null);
+            UI.SetEnabled(tp, false, 0.35f); // 전투 중에는 순간이동할 수 없다
+            IconButton(head, "Ⅱ", () =>
+            {
+                if (!_playing && !_finished) Pause();
+            });
             ScreenKit.BottomLine(head);
-
-            var body = UI.Column(page, 10, UI.Pad(16, 16, 10, 14));
-            UI.Size(body, flexH: 1);
-
-            Enemies(body, b);
-            Player(body, b);
-            Log(body, b);
-
-            if (b.IsOver)
-            {
-                Finished(body, b);
-                return;
-            }
-            var hint = UI.Row(body);
-            var hl = UI.Sub(hint, "모든 선택은 1턴을 사용합니다");
-            UI.Size(hl, flexW: 1);
-            UI.Sub(hint, "성공 확률", TextAnchor.MiddleRight);
-            var list = UI.Scroll(body, out _, 6, UI.Pad(0, 2, 0, 0), null, 1);
-            foreach (var ch in b.GetChoices()) Choice(list, ch);
         }
 
-        private static void Enemies(Transform parent, Battle b)
+        private static RectTransform IconButton(Transform parent, string label, Action onClick)
         {
-            var card = UI.Card(parent, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 4), true, 0);
-            for (int i = 0; i < b.Enemies.Count; i++)
-            {
-                var e = b.Enemies[i];
-                var row = UI.Column(card, 4, UI.Pad(0, 0, 8, 8));
-                var top = UI.Row(row, 6);
-                var name = UI.Label(top, e.Name, 14, e.Alive ? Theme.Text : Theme.TextSub, true);
-                UI.Size(name, flexW: 1);
-                if (e.Alive) ScreenKit.StatusTags(top, e);
-                UI.Label(top, e.Alive ? e.Hp + "/" + e.MaxHp : "쓰러짐", 12, Theme.TextSub, false, TextAnchor.MiddleRight, false, false);
-                UI.ProgressBar(row, (float)e.HpRatio, Theme.Red, 8);
-                if (!e.Alive) row.gameObject.AddComponent<CanvasGroup>().alpha = 0.5f;
-                if (i < b.Enemies.Count - 1) ScreenKit.BottomLine(row, Theme.LineSoft);
-            }
+            var b = UI.ButtonCard(parent, onClick, Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
+            UI.Size(b, height: 44, width: 44);
+            UI.Label(b, label, 14, Theme.Text, true, TextAnchor.MiddleCenter);
+            return b;
         }
 
-        private void Player(Transform parent, Battle b)
+        // ── 무대 ──
+
+        private void BuildStage()
         {
-            var p = b.Player;
-            var card = UI.Card(parent, Theme.BlueBg, Theme.BlueBorder, 12, UI.Pad(14, 10), true, 6);
-            var top = UI.Row(card);
-            var name = UI.Label(top, C.Name + " " + UI.Color(C.JobData.Name + " Lv." + C.Level, Theme.SubHex), 14, Theme.Text, true);
-            UI.Size(name, flexW: 1);
-            UI.Label(top, "HP " + p.Hp + "/" + p.MaxHp, 13, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            UI.ProgressBar(card, (float)p.HpRatio, p.HpRatio < 0.3 ? Theme.Red : Theme.Green, 8);
-            if (p.Statuses.All.Count > 0)
+            var bg = UI.Image(_stage, Theme.DungeonStage(_b.Floor), 0, "stage-bg");
+            UI.Stretch(bg.rectTransform);
+            var ground = UI.Image(_stage, Theme.DungeonLine(_b.Floor) * new Color(1, 1, 1, 0.35f), 0, "ground");
+            ground.sprite = Sprites.GradientUp;
+            var grt = ground.rectTransform;
+            grt.anchorMin = new Vector2(0, 0);
+            grt.anchorMax = new Vector2(1, 0);
+            grt.pivot = new Vector2(0.5f, 0);
+            grt.sizeDelta = new Vector2(0, 70);
+            ScreenKit.BottomLine(_stage);
+
+            // 나
+            var p = _b.Player;
+            Unit(-1, p, new Vector2(84, 158), 76, Shape.Circle, Theme.Hex("23324A"), Theme.BlueLight, 3,
+                _b.Character.JobData.Name.Substring(0, 1), 130, "HP " + p.Hp + "/" + p.MaxHp, false);
+
+            // 적
+            var centers = EnemyCenters(_b.Enemies.Count);
+            for (int i = 0; i < _b.Enemies.Count; i++)
             {
-                var tags = UI.Row(card, 6);
-                ScreenKit.StatusTags(tags, p);
+                var e = _b.Enemies[i];
+                bool many = _b.Enemies.Count > 2;
+                Shape shape = e.Role == 2 ? Shape.Hexagon : Shape.Square;
+                float size = e.Role == 2 ? (_b.Enemies.Count > 1 ? 72 : 96) : e.Role == 1 ? 62 : 56;
+                Color border = e.Role == 2 ? Theme.Hex("E0873A") : e.Role == 1 ? Theme.Gold : Theme.Hex("8A5A56");
+                float borderW = e.Role == 0 ? 2 : 5;
+                Color fill = e.Role == 2 ? Theme.Hex("3A1E1A") : Theme.Hex("33242A");
+                string name = e.Role == 1 ? "★" + e.Name : e.Name;
+                Unit(i, e, centers[Mathf.Min(i, centers.Length - 1)], size, shape, fill, border, borderW, e.Name.Substring(0, 1), many ? 94 : 130, name, true);
             }
         }
 
-        private static void Log(Transform parent, Battle b)
+        private static Vector2[] EnemyCenters(int n)
         {
-            var bg = UI.Card(parent, Theme.Log, Theme.Log, 10, UI.Pad(0), true, 0);
-            UI.Size(bg, height: 104);
-            var content = UI.Scroll(bg, out var scroll, 0, UI.Pad(12, 12, 8, 8), null, 1);
-            int start = Mathf.Max(0, b.Log.Count - 40);
-            for (int i = start; i < b.Log.Count; i++)
+            switch (n)
             {
-                var line = b.Log[i];
+                case 1: return new[] { new Vector2(286, 150) };
+                case 2: return new[] { new Vector2(286, 92), new Vector2(286, 220) };
+                case 3: return new[] { new Vector2(242, 92), new Vector2(338, 92), new Vector2(290, 220) };
+                default: return new[] { new Vector2(242, 92), new Vector2(338, 92), new Vector2(242, 220), new Vector2(338, 220) };
+            }
+        }
+
+        private void Unit(int index, Combatant c, Vector2 center, float size, Shape shape, Color fill, Color border, float borderW,
+            string glyph, float width, string title, bool enemy)
+        {
+            var v = new UnitView { Center = center, Size = size, MaxHp = c.MaxHp };
+            float top = center.y - size / 2f;
+            int hp = _hpBefore != null && _hpBefore.TryGetValue(index, out int h) ? h : c.Hp;
+            bool alive = hp > 0;
+
+            var name = UI.Label(_stage, title, enemy ? 11 : 12, alive ? Theme.Text : Theme.TextSub, !enemy, TextAnchor.MiddleCenter, false, false);
+            Place(name.rectTransform, new Vector2(center.x - width / 2f, top - 30), new Vector2(width, 16));
+            if (!enemy) v.HpText = name;
+
+            var track = UI.Image(_stage, Theme.Line, 3, "hp");
+            float barW = Mathf.Min(width - 10, 86);
+            Place(track.rectTransform, new Vector2(center.x - barW / 2f, top - 12), new Vector2(barW, 6));
+            var bar = UI.Image(track.transform, enemy ? Theme.Red : Theme.Green, 3, "fill");
+            v.Bar = bar.rectTransform;
+            v.Bar.anchorMin = Vector2.zero;
+            v.Bar.offsetMin = Vector2.zero;
+            v.Bar.offsetMax = Vector2.zero;
+            SetBar(v, hp);
+
+            // 도형 (선택 표시 → 테두리 → 채움 → 글자)
+            var root = UI.Rect(_stage, "shape");
+            root.anchorMin = root.anchorMax = new Vector2(0, 1);
+            root.pivot = new Vector2(0.5f, 0.5f);
+            root.sizeDelta = new Vector2(size, size);
+            root.anchoredPosition = new Vector2(center.x, -center.y);
+            v.Shape = root;
+            v.Group = root.gameObject.AddComponent<CanvasGroup>();
+            bool selected = enemy && index == _target && alive && !_b.IsOver;
+            if (selected)
+            {
+                var ring = ShapeImage(root, shape, Theme.Gold, -7);
+                ring.gameObject.AddComponent<Blink>().Period = 1.4f;
+            }
+            ShapeImage(root, shape, border, 0);
+            v.Fill = ShapeImage(root, shape, fill, borderW);
+            var g = UI.Label(root, glyph, size * 0.36f, enemy ? Theme.Hex("E8C9C4") : Theme.BlueLight, true, TextAnchor.MiddleCenter);
+            UI.Stretch(g.rectTransform);
+            if (!alive) v.Group.alpha = 0.3f;
+
+            if (enemy && alive)
+            {
+                var hit = root.gameObject.AddComponent<Image>();
+                hit.color = new Color(0, 0, 0, 0);
+                var btn = root.gameObject.AddComponent<Button>();
+                btn.transition = Selectable.Transition.None;
+                int idx = index;
+                btn.onClick.AddListener(() => SelectTarget(idx));
+            }
+
+            // 상태 이상 (도형 아래)
+            if (c.Alive && c.Statuses.Visible().Count > 0)
+            {
+                var tags = UI.Row(_stage, 3, null, TextAnchor.MiddleCenter, "status");
+                tags.anchorMin = tags.anchorMax = new Vector2(0, 1);
+                tags.pivot = new Vector2(0.5f, 1);
+                tags.anchoredPosition = new Vector2(center.x, -(center.y + size / 2f + 5));
+                var fit = tags.gameObject.AddComponent<ContentSizeFitter>();
+                fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                int n = 0;
+                foreach (var s in c.Statuses.Visible())
+                {
+                    if (n++ >= 3) break; // 칸이 좁아 3개까지만
+                    bool debuff = StatusContainer.IsDebuff(s.Type);
+                    UI.Pill(tags, Names.Of(s.Type) + s.Turns, debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 10, 6);
+                }
+            }
+            _units[index] = v;
+        }
+
+        private static Image ShapeImage(RectTransform parent, Shape shape, Color color, float inset)
+        {
+            var img = UI.Image(parent, color, 0, "shape-layer");
+            switch (shape)
+            {
+                case Shape.Circle:
+                    img.sprite = Sprites.Circle;
+                    break;
+                case Shape.Hexagon:
+                    img.sprite = Sprites.Hexagon;
+                    break;
+                default:
+                    img.sprite = Sprites.Rounded;
+                    img.type = Image.Type.Sliced;
+                    img.pixelsPerUnitMultiplier = Sprites.MultiplierFor(8);
+                    break;
+            }
+            UI.Stretch(img.rectTransform, inset, inset, inset, inset);
+            return img;
+        }
+
+        private static void SetBar(UnitView v, int hp)
+        {
+            float ratio = v.MaxHp <= 0 ? 0 : Mathf.Clamp01((float)hp / v.MaxHp);
+            v.Bar.anchorMax = new Vector2(ratio, 1);
+            v.Bar.GetComponent<Image>().enabled = ratio > 0.001f;
+            if (v.HpText != null) v.HpText.text = "HP " + Mathf.Max(0, hp) + "/" + v.MaxHp;
+        }
+
+        private static void Place(RectTransform rt, Vector2 topLeft, Vector2 size)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+            rt.pivot = new Vector2(0, 1);
+            rt.sizeDelta = size;
+            rt.anchoredPosition = new Vector2(topLeft.x, -topLeft.y);
+        }
+
+        private void SelectTarget(int index)
+        {
+            if (_playing || _finished || index == _target) return;
+            _target = index;
+            Rebuild();
+        }
+
+        // ── 기록 (최근 3줄) ──
+
+        private void Log(Transform parent)
+        {
+            var bg = UI.Card(parent, Theme.Log, Theme.Log, 0.01f, UI.Pad(16, 16, 8, 8), true, 2, TextAnchor.LowerLeft, "log");
+            UI.Size(bg, height: 74);
+            int start = Mathf.Max(0, _b.Log.Count - 3);
+            for (int i = start; i < _b.Log.Count; i++)
+            {
+                var line = _b.Log[i];
                 Color color = line.Tone == LogTone.Good ? Theme.Gold : line.Tone == LogTone.Bad ? Theme.RedLight : line.Tone == LogTone.System ? Theme.Text : Theme.TextLog;
-                UI.Label(content, line.Text, 13, color);
+                var t = UI.Label(bg, line.Text, 13, i == _b.Log.Count - 1 ? color : color * new Color(1, 1, 1, 0.7f), false, TextAnchor.MiddleLeft, false, false);
+                t.horizontalOverflow = HorizontalWrapMode.Wrap;
+                t.verticalOverflow = VerticalWrapMode.Truncate;
+                UI.Size(t, height: 18);
             }
-            scroll.gameObject.AddComponent<ScrollToBottom>();
+            ScreenKit.BottomLine(bg);
+        }
+
+        // ── 선택지 ──
+
+        private void Choices(Transform parent)
+        {
+            var hint = UI.Row(parent);
+            string targetName = _target >= 0 ? _b.Enemies[_target].Name : "";
+            var hl = UI.Sub(hint, _target >= 0 ? "대상 " + UI.Color(targetName, Theme.GoldHex) + " · 적을 눌러 바꾸기" : "모든 선택은 1턴을 사용합니다");
+            UI.Size(hl, flexW: 1);
+            UI.Sub(hint, "길게 누르면 상세", TextAnchor.MiddleRight);
+            var list = UI.Scroll(parent, out _, 6, UI.Pad(0, 2, 0, 0), null, 1);
+            foreach (var ch in _b.GetChoices())
+            {
+                if (ch.Target >= 0 && ch.Target != _target) continue;
+                Choice(list, ch);
+            }
+            if (_playing) _choicesGroup.interactable = false;
         }
 
         private void Choice(Transform parent, BattleChoice ch)
         {
-            string right = ch.Enabled ? (ch.Kind == ActionKind.Item ? ch.Note : ch.Kind == ActionKind.Wait ? ch.Note : ScreenKit.Percent(ch.Chance)) : ch.Note;
+            string right = ch.Enabled ? (ch.Kind == ActionKind.Item || ch.Kind == ActionKind.Wait ? ch.Note : ScreenKit.Percent(ch.Chance)) : ch.Note;
             bool pct = ch.Enabled && ch.Kind != ActionKind.Item && ch.Kind != ActionKind.Wait;
-            ScreenKit.ChoiceButton(parent, ch.Label, null, right, pct, () => Pick(ch), ch.Enabled);
+            string label = ch.Label;
+            if (ch.Target >= 0)
+            {
+                int cut = label.IndexOf(" · ", StringComparison.Ordinal);
+                if (cut > 0) label = label.Substring(0, cut);
+            }
+            string sub = null;
+            if (ch.Kind == ActionKind.Skill)
+            {
+                var def = SkillDb.Get(ch.SkillId);
+                if (def != null) sub = def.Effect;
+            }
+            var b = ScreenKit.ChoiceButton(parent, label, sub, right, pct, null, ch.Enabled, sub != null ? 56 : 50);
+            var c = ch;
+            LongPress.Add(b, () => ShowDetail(c), () => Pick(c));
+            if (!ch.Enabled)
+            {
+                // 비활성 선택지도 길게 눌러 설명은 볼 수 있게
+                var group = b.GetComponent<CanvasGroup>();
+                group.blocksRaycasts = true;
+                group.interactable = true;
+                b.GetComponent<Button>().interactable = false;
+            }
+        }
+
+        private void ShowDetail(BattleChoice ch)
+        {
+            var body = Overlay.Modal(ch.Label);
+            var t = UI.Label(body, string.IsNullOrEmpty(ch.Detail) ? ch.Note : ch.Detail, 14, Theme.TextBody);
+            t.lineSpacing = 1.3f;
         }
 
         private void Pick(BattleChoice ch)
         {
+            if (_playing || _finished || !ch.Enabled) return;
             if (ch.Kind == ActionKind.Item)
             {
                 ItemMenu();
@@ -115,30 +380,12 @@ namespace Adventure.Game
             Execute(ch);
         }
 
-        private void Execute(BattleChoice ch)
-        {
-            S.ExecuteBattle(ch);
-            var b = S.Battle;
-            if (S.LastDeath != null && !S.InDungeon)
-            {
-                Go(new ResultScreen(S.LastDeath.HardcoreReset ? ResultKind.Hardcore : ResultKind.Death));
-                return;
-            }
-            if (b == null)
-            {
-                // 도망쳤다
-                Go(new DungeonScreen());
-                return;
-            }
-            Rebuild();
-        }
-
         private void ItemMenu()
         {
             var body = Overlay.Modal("아이템 사용", true);
             var modal = Overlay.Top;
             UI.Sub(body, "아이템 사용도 1턴을 씁니다.");
-            foreach (var ch in S.Battle.GetItemChoices())
+            foreach (var ch in _b.GetItemChoices())
             {
                 var c = ch;
                 ScreenKit.ChoiceButton(body, ch.Label, null, ch.Note, false, () =>
@@ -149,24 +396,153 @@ namespace Adventure.Game
             }
         }
 
-        private void Finished(Transform parent, Battle b)
+        private void Execute(BattleChoice ch)
         {
-            if (b.Outcome != BattleOutcome.Victory) return;
-            var card = UI.Card(parent, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 12), true, 6);
-            UI.Label(card, b.IsBoss ? "보스를 쓰러뜨렸다!" : "승리!", 18, Theme.Gold, false, TextAnchor.MiddleLeft, true);
+            _hpBefore = new Dictionary<int, int> { [-1] = _b.Player.Hp };
+            for (int i = 0; i < _b.Enemies.Count; i++) _hpBefore[i] = _b.Enemies[i].Hp;
+            S.ExecuteBattle(ch);
+            _pending = new List<BattleEvent>(_b.LastEvents);
+            Rebuild();
+        }
+
+        // ── 연출 재생 ──
+
+        /// <summary>시작과 동시에 일어난 사건(기습)의 이전 HP를 사건에서 거꾸로 계산한다.</summary>
+        private Dictionary<int, int> InferBefore(List<BattleEvent> events)
+        {
+            var d = new Dictionary<int, int>();
+            foreach (var e in events)
+            {
+                if (d.ContainsKey(e.Target)) continue;
+                var who = e.Target < 0 ? _b.Player : e.Target < _b.Enemies.Count ? _b.Enemies[e.Target] : null;
+                if (who == null) continue;
+                if (e.Kind == BattleEventKind.Damage) d[e.Target] = Mathf.Min(who.MaxHp, e.HpAfter + e.Amount);
+                else if (e.Kind == BattleEventKind.Heal) d[e.Target] = Mathf.Max(0, e.HpAfter - e.Amount);
+                else if (e.Kind == BattleEventKind.Miss) d[e.Target] = e.HpAfter;
+            }
+            return d;
+        }
+
+        private void StartPlayback(List<BattleEvent> events)
+        {
+            _playing = true;
+            if (_choicesGroup != null) _choicesGroup.interactable = false;
+            Delay.Run(_stage, 0.05f, () => PlayNext(events, 0));
+        }
+
+        private void PlayNext(List<BattleEvent> events, int i)
+        {
+            if (_stage == null) return; // 화면이 바뀌었다
+            if (i >= events.Count)
+            {
+                EndPlayback();
+                return;
+            }
+            var e = events[i];
+            float wait = StepTime;
+            switch (e.Kind)
+            {
+                case BattleEventKind.Act:
+                    if (_units.TryGetValue(e.Actor, out var actor))
+                        Dash.Play(actor.Shape, new Vector2(e.Actor < 0 ? 34 : -28, 0));
+                    if (!string.IsNullOrEmpty(e.Text)) Float(e.Actor, e.Text, Theme.Gold, 13, false);
+                    wait = StepTime * 0.6f;
+                    break;
+                case BattleEventKind.Damage:
+                    if (_units.TryGetValue(e.Target, out var hitUnit))
+                    {
+                        Shake.Play(hitUnit.Shape, e.Damage == DamageKind.Crit ? 10 : 6);
+                        Flash.Play(hitUnit.Fill, e.Target < 0 ? Theme.Red : Color.white);
+                        SetBar(hitUnit, e.HpAfter);
+                    }
+                    bool crit = e.Damage == DamageKind.Crit;
+                    Float(e.Target, (crit ? "치명타! " : "") + e.Amount, Theme.DamageColor(e.Damage), crit ? 26 : 19, true);
+                    if (crit && e.Actor == -1) Feedback.Vibrate();
+                    if (e.Target < 0 && e.Actor >= 0) Feedback.Vibrate();
+                    break;
+                case BattleEventKind.Miss:
+                    Float(e.Target, "빗나감", Theme.TextSub, 15, false);
+                    break;
+                case BattleEventKind.Heal:
+                    if (_units.TryGetValue(e.Target, out var healUnit)) SetBar(healUnit, e.HpAfter);
+                    Float(e.Target, "+" + e.Amount, Theme.DamageColor(DamageKind.Heal), 19, true);
+                    break;
+                case BattleEventKind.Status:
+                    Float(e.Target, e.Text, Theme.BlueLight, 13, false);
+                    wait = StepTime * 0.6f;
+                    break;
+                case BattleEventKind.Defeat:
+                    if (_units.TryGetValue(e.Target, out var dead)) dead.Group.alpha = 0.3f;
+                    break;
+                default:
+                    Float(e.Actor, e.Text, Theme.Gold, 16, true);
+                    break;
+            }
+            Delay.Run(_stage, wait, () => PlayNext(events, i + 1), true);
+        }
+
+        private void Float(int index, string text, Color color, float size, bool bold)
+        {
+            if (string.IsNullOrEmpty(text) || !_units.TryGetValue(index, out var u)) return;
+            var t = UI.Label(_stage, text, size, color, bold, TextAnchor.MiddleCenter, false, false);
+            var outline = t.gameObject.AddComponent<Outline>();
+            outline.effectColor = new Color(0, 0, 0, 0.85f);
+            outline.effectDistance = new Vector2(1.5f, -1.5f);
+            var rt = t.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta = new Vector2(160, 30);
+            float jitter = UnityEngine.Random.Range(-10f, 10f);
+            rt.anchoredPosition = new Vector2(Mathf.Clamp(u.Center.x + jitter, 60, StageW - 60), -(u.Center.y - u.Size * 0.15f));
+            t.gameObject.AddComponent<FloatUp>();
+        }
+
+        private void EndPlayback()
+        {
+            _playing = false;
+            _hpBefore = null;
+            switch (_b.Outcome)
+            {
+                case BattleOutcome.Victory:
+                    _finished = true;
+                    if (S.LastLoot != null && S.LastLoot.LevelsGained > 0) Feedback.Vibrate();
+                    Rebuild();
+                    Delay.Run(_stage, 1.8f, Continue);
+                    break;
+                case BattleOutcome.Defeat:
+                    Delay.Run(_stage, 0.8f, () => Go(new ResultScreen(S.LastDeath != null && S.LastDeath.HardcoreReset ? ResultKind.Hardcore : ResultKind.Death)));
+                    break;
+                case BattleOutcome.Fled:
+                    Delay.Run(_stage, 0.4f, () => Go(new DungeonScreen()));
+                    break;
+                default:
+                    FixTarget();
+                    Rebuild();
+                    break;
+            }
+        }
+
+        // ── 승리 ──
+
+        private void Finished(Transform parent)
+        {
+            var card = UI.ButtonCard(parent, Continue, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 12), true, 6, 60);
+            UI.Label(card, _b.IsBoss ? "보스를 쓰러뜨렸다!" : "승리!", 20, Theme.Gold, false, TextAnchor.MiddleLeft, true);
             var loot = S.LastLoot;
             if (loot != null)
             {
                 UI.Label(card, loot.Describe(), 14, Theme.Text);
-                if (loot.LevelsGained > 0) UI.Label(card, "레벨 업! Lv." + C.Level + " · 능력치 포인트 +" + loot.LevelsGained * GameBalance.PointsPerLevel, 14, Theme.Gold, true);
+                if (loot.LevelsGained > 0) UI.Label(card, "레벨 업! Lv." + _b.Character.Level + " · 능력치 포인트 +" + loot.LevelsGained * GameBalance.PointsPerLevel, 14, Theme.Gold, true);
             }
-            if (b.IsBoss) UI.Sub(card, "돌파 층 " + C.HighestFloorCleared + " · 다음 층이 열렸다");
-            UI.Spacer(parent);
-            UI.TextButton(parent, "계속", Continue, ButtonKind.Primary, 52, 16);
+            if (_b.IsBoss) UI.Sub(card, "돌파 층 " + _b.Character.HighestFloorCleared + " · 다음 층이 열렸다");
+            UI.Sub(card, "잠시 후 던전으로 돌아갑니다 · 눌러서 바로 계속");
         }
 
         private void Continue()
         {
+            if (_leaving) return;
+            _leaving = true;
+            int levels = S.LastLoot?.LevelsGained ?? 0;
             S.CloseBattle();
             if (S.JustClearedGame)
             {
@@ -174,7 +550,8 @@ namespace Adventure.Game
                 Go(new ResultScreen(ResultKind.Clear));
                 return;
             }
-            App.GoToCurrent();
+            if (S.InDungeon && S.PendingEvent == null) Go(new DungeonScreen(levels > 0));
+            else App.GoToCurrent();
         }
 
         private void Pause()
@@ -183,11 +560,32 @@ namespace Adventure.Game
             var modal = Overlay.Top;
             UI.Sub(body, "전투 중에 앱을 끄면, 다시 켰을 때 이 방의 전투를 처음부터 다시 시작합니다.");
             UI.TextButton(body, "계속하기", () => Overlay.Close(modal), ButtonKind.Primary);
+            UI.TextButton(body, "설정", () =>
+            {
+                Overlay.Close(modal);
+                SpeedSettings();
+            }, ButtonKind.Secondary);
             UI.TextButton(body, "저장하고 타이틀로", () =>
             {
                 S.Save();
                 Go(new TitleScreen());
             }, ButtonKind.Ghost);
+        }
+
+        private void SpeedSettings()
+        {
+            var body = Overlay.Modal("전투 설정");
+            UI.TextButton(body, "전투 속도 " + (GameSettings.BattleSpeed == 1 ? "1× → 2×" : "2× → 1×"), () =>
+            {
+                GameSettings.BattleSpeed = GameSettings.BattleSpeed == 1 ? 2 : 1;
+                Overlay.CloseAll();
+                Rebuild();
+            });
+            UI.TextButton(body, "진동 " + (GameSettings.Vibration ? "끄기" : "켜기"), () =>
+            {
+                GameSettings.Vibration = !GameSettings.Vibration;
+                Overlay.CloseAll();
+            });
         }
     }
 }

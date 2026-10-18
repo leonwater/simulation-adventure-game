@@ -50,7 +50,24 @@ namespace Adventure.Game
                 bool isPass = ch.Failure == null && always && ch.Success.HpRatio == 0 && ch.Success.Reward == EventReward.None
                               && ch.Success.GoldMult == 0 && ch.Success.ExpMult == 0 && !ch.Success.ReturnToTown;
                 string right = isPass ? "›" : ScreenKit.Percent(EventRules.SuccessChance(ch, C, floor));
-                ScreenKit.ChoiceButton(inner, ch.Label, isPass ? null : hint, right, !isPass, () => Choose(idx), unavailable == null, 60);
+                var b = ScreenKit.ChoiceButton(inner, ch.Label, isPass ? null : hint, right, !isPass, null, unavailable == null, 60);
+                var choice = ch;
+                LongPress.Add(b, () =>
+                {
+                    var detail = Overlay.Modal(choice.Label);
+                    var t = UI.Label(detail, EventRules.Breakdown(choice, C, floor) + (unavailable != null ? "\n\n" + unavailable : ""), 14, Theme.TextBody);
+                    t.lineSpacing = 1.3f;
+                }, () =>
+                {
+                    if (unavailable == null) Choose(idx);
+                });
+                if (unavailable != null)
+                {
+                    var group = b.GetComponent<CanvasGroup>();
+                    group.blocksRaycasts = true;
+                    group.interactable = true;
+                    b.GetComponent<UnityEngine.UI.Button>().interactable = false;
+                }
             }
         }
 
@@ -62,7 +79,7 @@ namespace Adventure.Game
             if (_result.HpChange != 0)
                 UI.Label(card, "HP " + (_result.HpChange > 0 ? "+" : "") + _result.HpChange, 14, _result.HpChange > 0 ? Theme.Green : Theme.RedLight);
             if (!_result.Loot.IsEmpty || _result.Loot.Dropped.Count > 0) UI.Label(card, _result.Loot.Describe(), 14, Theme.Gold);
-            if (_result.Loot.LevelsGained > 0) UI.Label(card, "레벨 업! Lv." + C.Level, 14, Theme.Gold, true);
+            if (_result.Loot.LevelsGained > 0 && C != null) UI.Label(card, "레벨 업! Lv." + C.Level, 14, Theme.Gold, true);
             UI.Spacer(parent, 1, 8);
             string label = _result.StartBattle ? "전투 시작" : _result.ReturnToTown ? "마을로" : "계속";
             UI.TextButton(parent, label, Continue, ButtonKind.Primary, 52, 16);
@@ -77,9 +94,20 @@ namespace Adventure.Game
 
         private void Continue()
         {
+            if (S.LastDeath != null && !S.InDungeon)
+            {
+                // 미믹 기습에 쓰러진 경우
+                Go(new ResultScreen(S.LastDeath.HardcoreReset ? ResultKind.Hardcore : ResultKind.Death));
+                return;
+            }
             if (_result.ReturnToTown)
             {
                 Go(new ResultScreen(ResultKind.Return));
+                return;
+            }
+            if (S.Battle == null && S.InDungeon && _result.Loot.LevelsGained > 0)
+            {
+                Go(new DungeonScreen(true));
                 return;
             }
             App.GoToCurrent();

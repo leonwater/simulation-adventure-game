@@ -38,6 +38,21 @@ namespace Adventure.Core
                 CharacterStats.Total(c, Stat.Luck));
         }
 
+        /// <summary>길게 눌렀을 때 보여 줄 성공률 계산 내역.</summary>
+        public static string Breakdown(EventChoice choice, Character c, int floor)
+        {
+            var stat = CheckStat(choice, c);
+            double chance = SuccessChance(choice, c, floor);
+            if (stat == null) return "능력치 판정 없음\n성공 확률 " + Math.Round(chance * 100) + "%";
+            int have = CharacterStats.Total(c, stat.Value), luck = CharacterStats.Total(c, Stat.Luck);
+            double req = GameBalance.EventRequirement(floor);
+            return Names.Of(stat.Value) + " 판정 (요구치 " + Math.Round(req) + ")\n"
+                   + "기본 " + Math.Round(GameBalance.EventBase * 100) + "%\n"
+                   + "능력치 차이 (" + have + " − " + Math.Round(req) + ") × " + Math.Round(GameBalance.EventPerStatPoint * 100) + "%\n"
+                   + "행운 " + luck + " × " + (GameBalance.EventBonusPerLuck * 100).ToString("0.#") + "%\n"
+                   + "= " + Math.Round(chance * 100) + "% (최소 " + Math.Round(GameBalance.EventMin * 100) + "% · 최대 " + Math.Round(GameBalance.EventMax * 100) + "%)";
+        }
+
         /// <summary>선택 조건(아이템·골드)을 못 채우면 이유를 돌려준다.</summary>
         public static string UnavailableReason(EventChoice choice, Character c, int floor)
         {

@@ -54,6 +54,31 @@ namespace Adventure.Game
         public const float ScreenHeight = 844f;
         public const float MinTouch = 44f;
 
+        // 던전 테마 색 (수정 사항 #19): 동굴 청회색 · 묘지 보라 · 용의 둥지 적갈색
+        private static readonly Color[] DungeonBgs = { Hex("141A21"), Hex("19151F"), Hex("1F1613") };
+        private static readonly Color[] DungeonStages = { Hex("1A222C"), Hex("211B2A"), Hex("2A1D17") };
+        private static readonly Color[] DungeonLines = { Hex("5A7088"), Hex("7A6894"), Hex("9A6A4A") };
+        private static readonly Color[] DungeonAccents = { Hex("8FB0D0"), Hex("B09CD8"), Hex("E0975E") };
+
+        public static Color DungeonBg(int floor) => DungeonBgs[MonsterDb.ThemeIndex(floor)];
+        public static Color DungeonStage(int floor) => DungeonStages[MonsterDb.ThemeIndex(floor)];
+        public static Color DungeonLine(int floor) => DungeonLines[MonsterDb.ThemeIndex(floor)];
+        public static Color DungeonAccent(int floor) => DungeonAccents[MonsterDb.ThemeIndex(floor)];
+
+        /// <summary>피해 숫자 색 (수정 사항 #21).</summary>
+        public static Color DamageColor(DamageKind k)
+        {
+            switch (k)
+            {
+                case DamageKind.Crit: return Gold;
+                case DamageKind.Poison: return Hex("7BC86F");
+                case DamageKind.Bleed: return Hex("E0524A");
+                case DamageKind.Burn: return Hex("F0913A");
+                case DamageKind.Heal: return Hex("A8E6A0");
+                default: return Color.white;
+            }
+        }
+
         public static Color GradeColor(ItemGrade g)
         {
             switch (g)

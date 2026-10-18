@@ -76,27 +76,49 @@ namespace Adventure.Game
             if (!last) ScreenKit.BottomLine(row, Theme.LineSoft);
         }
 
+        /// <summary>패배: 항목 · 이전 · 현재 · 변화를 한 표로 (수정 사항 #12).</summary>
         private void Death(Transform body)
         {
             var d = S.LastDeath;
             if (d == null)
             {
-                Heading(body, "쓰러졌다", Theme.RedLight, "");
+                Heading(body, "패배", Theme.RedLight, "");
                 return;
             }
-            Heading(body, "쓰러졌다", Theme.RedLight, d.Floor + "층 · " + Cause(d.KilledBy));
-            var lost = Panel(body, "잃은 것", Theme.RedLight, Theme.RedBg, Theme.RedBorder);
-            Row(lost, "골드", "−" + d.GoldLost.ToString("#,0") + " G " + UI.Color("(30%)", Theme.SubHex));
-            Row(lost, "경험치", "−" + d.ExpLost.ToString("#,0") + " " + UI.Color("(레벨 유지)", Theme.SubHex));
-            Row(lost, d.Floor + "층 진행도", "초기화");
-            var items = UI.Column(lost, 4, UI.Pad(0, 0, 8, 8));
-            UI.Label(items, "미장착 아이템 " + d.ItemsLost.Count + "개", 14, Theme.Text);
-            if (d.ItemsLost.Count > 0) UI.Sub(items, LootSystem.Names(d.ItemsLost, 5));
+            Heading(body, "패배", Theme.RedLight, d.Floor + "층 · " + Cause(d.KilledBy));
+            var table = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(12, 12, 6, 6), true, 0);
+            TableRow(table, "항목", "이전", "현재", "변화", true);
+            TableRow(table, "골드", d.GoldBefore.ToString("#,0"), d.GoldAfter.ToString("#,0"), Change(-d.GoldLost));
+            int expBefore = Mathf.FloorToInt((float)d.ExpPctBefore * 100), expAfter = Mathf.FloorToInt((float)d.ExpPctAfter * 100);
+            TableRow(table, "경험치", expBefore + "%", expAfter + "%", Change(expAfter - expBefore, "%p"));
+            TableRow(table, "가방 아이템", d.BagBefore + "개", d.BagAfter + "개", Change(d.BagAfter - d.BagBefore, "개"));
+            TableRow(table, d.Floor + "층 진행", d.RoomsExplored + "/" + d.RoomsTotal + "방", "초기화", UI.Color("초기화", Theme.RedHex));
+            TableRow(table, "장착 장비", d.EquippedKept + "개", d.EquippedKept + "개", UI.Color("유지", Theme.GreenHex));
+            TableRow(table, "길드 창고", d.StorageCount + "개", d.StorageCount + "개", UI.Color("유지", Theme.GreenHex), false, true);
+            if (d.ItemsLost.Count > 0) UI.Sub(body, "잃은 아이템: " + LootSystem.Names(d.ItemsLost, 6));
+            UI.Sub(body, "레벨·도달 층(돌파 " + C.HighestFloorCleared + "층)·가방 확장은 그대로입니다.");
+        }
 
-            var kept = Panel(body, "남은 것", Theme.BlueLight, Theme.Card, Theme.CardBorder);
-            Row(kept, "도달 층", "돌파 " + C.HighestFloorCleared + "층 · 도전 " + C.MaxChallengeFloor + "층");
-            Row(kept, "장착 장비", d.EquippedKept + "개");
-            Row(kept, "길드 창고 · 가방 확장", "유지", true);
+        private static string Change(long delta, string unit = "")
+        {
+            if (delta == 0) return UI.Color("−", Theme.SubHex);
+            return delta > 0 ? UI.Color("+" + delta.ToString("#,0") + unit, Theme.GreenHex) : UI.Color("−" + (-delta).ToString("#,0") + unit, Theme.RedHex);
+        }
+
+        private static void TableRow(Transform parent, string a, string b, string c, string d, bool head = false, bool last = false)
+        {
+            var row = UI.Row(parent, 6);
+            UI.Size(row, minH: head ? 34 : 42);
+            Color color = head ? Theme.TextSub : Theme.Text;
+            float size = head ? 12 : 13;
+            var la = UI.Label(row, a, size, color, head);
+            UI.Size(la, width: 86);
+            foreach (var v in new[] { b, c, d })
+            {
+                var l = UI.Label(row, v, size, color, head, TextAnchor.MiddleRight);
+                UI.Size(l, width: 76);
+            }
+            if (!last) ScreenKit.BottomLine(row, head ? Theme.Line : Theme.LineSoft);
         }
 
         private void Hardcore(Transform body)
