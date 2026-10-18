@@ -92,27 +92,29 @@ namespace Adventure.Game
             for (int i = 0; i < stats.Length; i++)
             {
                 var stat = stats[i];
-                var row = UI.Row(panel, 10);
-                UI.Size(row, height: 52);
-                var name = UI.Label(row, Names.Of(stat) + " " + UI.Color(CharacterStats.EffectLabel(C, stat), Theme.SubHex), 14, Theme.Text);
-                UI.Size(name, flexW: 1);
+                var row = UI.Row(panel, 8);
+                UI.Size(row, height: 56);
+                UI.Icon(row, UI.StatIcon(stat), 24);
+                var col = UI.Column(row, 1);
+                UI.Size(col, flexW: 1);
+                UI.Label(col, Names.Of(stat), 14, Theme.Text, true);
+                UI.Label(col, CharacterStats.EffectLabel(C, stat), 12, Theme.TextSub);
                 int pending = _draft.Pending(stat);
-                if (pending > 0)
+                // − · 값 · + 는 항상 같은 자리, 같은 크기 (44×44)
+                var minus = UI.TextButton(row, "−", () =>
                 {
-                    UI.TextButton(row, "−", () =>
-                    {
-                        _draft.Remove(stat);
-                        Rebuild();
-                    }, ButtonKind.Ghost, 44, 18, 44);
-                }
-                string value = CharacterStats.Total(C, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : "");
-                UI.Label(row, value, 16, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+                    _draft.Remove(stat);
+                    Rebuild();
+                }, ButtonKind.Ghost, 44, 20, 44);
+                UI.SetEnabled(minus, pending > 0, 0.3f);
+                var value = UI.Label(row, CharacterStats.Total(C, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""), 16, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
+                UI.Size(value, width: 58);
                 var plus = UI.TextButton(row, "+", () =>
                 {
                     _draft.Add(stat);
                     Rebuild();
                 }, ButtonKind.Outline, 44, 20, 44);
-                UI.SetEnabled(plus, _draft.Remaining > 0);
+                UI.SetEnabled(plus, _draft.Remaining > 0, 0.3f);
                 if (i < stats.Length - 1) ScreenKit.BottomLine(row, Theme.LineSoft);
             }
         }
@@ -141,13 +143,40 @@ namespace Adventure.Game
             Line(body, "드롭률", "+" + CharacterStats.Percent(CharacterStats.DropBonus(C) - 1));
             Line(body, "이벤트 판정 (행운)", "+" + CharacterStats.Percent(CharacterStats.EventLuckBonus(C)));
             UI.Divider(body);
+            UI.Label(body, "능력치별 효과", 14, Theme.Text, true);
             foreach (Stat s in Enum.GetValues(typeof(Stat)))
             {
+                bool mine = System.Array.IndexOf(C.JobData.AllocatableStats, s) >= 0;
                 int own = CharacterStats.OwnStat(C, s), eq = CharacterStats.EquipmentBonus(C, s);
-                string v = CharacterStats.Total(C, s) + UI.Color(" (기본 " + C.BaseStats[s] + " · 배지 " + own + (eq > 0 ? " · 장비 +" + eq : "") + ")", Theme.SubHex);
-                Line(body, Names.Of(s), v);
+                var row = UI.Row(body, 10, UI.Pad(0, 0, 4, 4));
+                UI.Size(row, minH: 48);
+                UI.Icon(row, UI.StatIcon(s), 28);
+                var col = UI.Column(row, 2);
+                UI.Size(col, flexW: 1);
+                UI.Label(col, Names.Of(s) + " " + UI.Color(CharacterStats.Total(C, s) + (eq > 0 ? " (장비 +" + eq + ")" : ""), Theme.GoldHex), 14, Theme.Text, true);
+                UI.Label(col, StatEffect(s) + (mine ? "" : " · 이 직업은 배분 불가"), 12, Theme.TextSub);
+                if (!mine) row.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
             }
-            UI.Sub(body, "배지 효과는 장비·버프를 제외한 캐릭터 자체 능력치에만 곱합니다.");
+            UI.Sub(body, "배지 효과(+" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%)는 장비·버프를 제외한 캐릭터 자체 능력치에만 곱합니다.");
+        }
+
+        /// <summary>능력치가 주는 효과 (상세 능력치 창의 한 줄 설명).</summary>
+        private static string StatEffect(Stat s)
+        {
+            switch (s)
+            {
+                case Stat.Vitality: return "최대 HP 증가 (직업마다 1점당 HP가 다름)";
+                case Stat.Spirit: return "독·기절 같은 디버프에 걸리지 않을 확률";
+                case Stat.Luck: return "아이템 드롭률과 이벤트 판정 성공률";
+                case Stat.Strength: return "전사의 공격력 (1점당 +2)";
+                case Stat.Agility: return "궁수·도적의 공격력, 적 공격 회피";
+                case Stat.Intelligence: return "마법사의 공격력 (1점당 +2)";
+                case Stat.Toughness: return "받는 피해 감소 (최대 40%)";
+                case Stat.Precision: return "공격·스킬 성공률 증가";
+                case Stat.Finesse: return "도적의 회피 증가 (최대 40%)";
+                case Stat.SpellPower: return "스킬 피해 증가 (1점당 +0.5%)";
+                default: return "";
+            }
         }
 
         private static void Line(Transform parent, string label, string value)

@@ -125,8 +125,8 @@ namespace Adventure.Core
         public static string CannotAcceptReason(GuildState g, Character c, Quest q)
         {
             if (q == null) return "없는 퀘스트입니다";
-            if (g.Active.Count >= GameBalance.MaxActiveQuests) return "동시에 " + GameBalance.MaxActiveQuests + "개까지 수주할 수 있습니다";
-            if (!InRange(c.Rank, q.Rank)) return MinQuestRank(c.Rank) + " ~ " + MaxQuestRank(c.Rank) + " 등급만 수주할 수 있습니다";
+            if (g.Active.Count >= GameBalance.MaxActiveQuests) return "동시에 " + GameBalance.MaxActiveQuests + "개까지 수락할 수 있습니다";
+            if (!InRange(c.Rank, q.Rank)) return MinQuestRank(c.Rank) + " ~ " + MaxQuestRank(c.Rank) + " 등급만 수락할 수 있습니다";
             return null;
         }
 
@@ -169,7 +169,7 @@ namespace Adventure.Core
             var q = g.Active.Find(x => x.Id == questId);
             if (q == null)
             {
-                error = "수주 중인 퀘스트가 아닙니다";
+                error = "진행 중인 퀘스트가 아닙니다";
                 return false;
             }
             if (!IsComplete(q, c))

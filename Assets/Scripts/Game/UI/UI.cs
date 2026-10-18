@@ -9,7 +9,7 @@ namespace Adventure.Game
     {
         Primary,   // 금색 채움 (모험 시작, 확정)
         Secondary, // 어두운 채움 + 테두리
-        Outline,   // 금색 테두리 (수주, 즉시 갱신)
+        Outline,   // 금색 테두리 (수락, 즉시 갱신)
         Ghost      // 투명 + 테두리 (이어하기)
     }
 
@@ -288,6 +288,29 @@ namespace Adventure.Game
             rt.anchoredPosition = new Vector2(-inset, -inset);
             return dot;
         }
+
+        /// <summary>Resources/Icons의 아이콘 (가로 배치 안에서 정해진 크기로).</summary>
+        public static RawImage Icon(Transform parent, string name, float size)
+        {
+            var rt = Rect(parent, "icon");
+            Size(rt, height: size, width: size);
+            var raw = rt.gameObject.AddComponent<RawImage>();
+            raw.texture = Resources.Load<Texture2D>("Icons/" + name);
+            raw.raycastTarget = false;
+            if (raw.texture == null) raw.color = new Color(0, 0, 0, 0);
+            return raw;
+        }
+
+        /// <summary>세로 배치 안에서 늘어나지 않도록 가운데 줄에 넣은 아이콘.</summary>
+        public static RawImage CenteredIcon(Transform parent, string name, float size, TextAnchor align = TextAnchor.MiddleCenter)
+        {
+            var row = Row(parent, 0, null, align, "icon-row");
+            return Icon(row, name, size);
+        }
+
+        public static string RankIcon(Adventure.Core.Rank r) => "rank_" + r.ToString().ToLowerInvariant();
+
+        public static string StatIcon(Adventure.Core.Stat s) => "stat_" + s.ToString().ToLowerInvariant();
 
         /// <summary>장비 등급을 색과 글자로 함께 보여 준다 (예: "[희귀] 강철 장검").</summary>
         public static string GradeTag(Adventure.Core.ItemGrade g) => Color("[" + Adventure.Core.Names.Of(g) + "]", Theme.GradeColor(g));

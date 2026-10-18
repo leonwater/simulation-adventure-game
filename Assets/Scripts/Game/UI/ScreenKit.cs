@@ -27,6 +27,7 @@ namespace Adventure.Game
             if (onBack != null)
             {
                 var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
+                Anchors.Set("topbar.back", back);
                 UI.Label(back, "‹ " + backLabel, 14, Theme.Gold, false, TextAnchor.MiddleLeft, false, false);
             }
             var t = UI.Label(bar, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
@@ -223,7 +224,7 @@ namespace Adventure.Game
             const float margin = 12, tab = 12;
             float textSize = 15 * GameSettings.TextScale;
             float lineH = textSize * 1.6f;
-            float boxH = Mathf.Min(Mathf.Max(maxHeight, lineH * 2 + 26), lineH * 3 + 26);
+            float boxH = Mathf.Min(Mathf.Max(maxHeight, lineH * 2 + 36), lineH * 3 + 36);
 
             var box = UI.Rect(holder, "dialogue");
             box.anchorMin = new Vector2(0, 0);
@@ -248,7 +249,7 @@ namespace Adventure.Game
             body.lineSpacing = 1.45f;
             body.alignment = TextAnchor.UpperLeft;
             body.verticalOverflow = VerticalWrapMode.Truncate;
-            UI.Stretch(body.rectTransform, 14, 14, 14, 8);
+            UI.Stretch(body.rectTransform, 14, 24, 14, 8); // 위쪽은 이름표가 걸쳐 있어 10px 더 띄운다
             var tw = Typewriter.Attach(body);
 
             if (!string.IsNullOrEmpty(speaker))
@@ -278,7 +279,9 @@ namespace Adventure.Game
                 UI.Size(tab, flexW: 1);
                 UI.Label(tab, labels[i], 14, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
                 if (i == active) BottomLine(tab, Theme.Accent);
+                Anchors.Set("tab." + i, tab);
             }
+            Anchors.Set("tabs", row);
             BottomLine(row);
         }
     }

@@ -72,7 +72,6 @@ namespace Adventure.Game
         private void Awake()
         {
             _group = gameObject.AddComponent<CanvasGroup>();
-            _group.blocksRaycasts = false;
         }
 
         private void Update()

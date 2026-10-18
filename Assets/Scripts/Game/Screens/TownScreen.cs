@@ -16,7 +16,7 @@ namespace Adventure.Game
             ScreenKit.TownHeader(page, C);
 
             var body = UI.Scroll(page, out _, 16, UI.Pad(16, 16), "town");
-            UI.Illustration(body, "마을 전경", 150, 12);
+            UI.Illustration(body, "마을 전경", 200, 12);
 
             var title = UI.Row(body);
             var name = UI.Label(title, "등불 마을", 22, Theme.Text, false, TextAnchor.MiddleLeft, true);
@@ -73,6 +73,7 @@ namespace Adventure.Game
         private static Text Facility(Transform grid, string icon, string title, string sub, bool alert, Action onClick)
         {
             var card = UI.ButtonCard(grid, onClick, Theme.Card, Theme.CardBorder, 12, UI.Pad(10, 12), true, 4, 128, TextAnchor.MiddleCenter);
+            Anchors.Set("town." + icon, card);
             var tex = Resources.Load<Texture2D>("Icons/" + icon);
             if (tex != null)
             {
@@ -100,13 +101,13 @@ namespace Adventure.Game
                 UI.SetEnabled(minus, floor > 1);
                 var mid = UI.Column(row, 0, null, TextAnchor.MiddleCenter);
                 UI.Size(mid, flexW: 1);
-                UI.Label(mid, "도전 층 " + floor + " / " + max, 14, Theme.Text, true, TextAnchor.MiddleCenter);
-                UI.Sub(mid, floor < max ? "낮은 층은 퀘스트·파밍용" : "가장 깊은 도전 층", TextAnchor.MiddleCenter);
+                UI.Label(mid, "도전 층 " + floor + " / " + max, 15, Theme.Text, true, TextAnchor.MiddleCenter);
                 var plus = UI.TextButton(row, "›", () => Change(1), ButtonKind.Ghost, 44, 18, 56);
                 UI.SetEnabled(plus, floor < max);
             }
 
             var go = UI.ButtonCard(parent, EnterDungeon, Theme.Accent, Theme.Accent, 12, UI.Pad(14, 8), true, 2, 64, TextAnchor.MiddleCenter);
+            Anchors.Set("town.dungeon", go);
             UI.Label(go, "던전 입장", 17, Theme.OnAccent, true, TextAnchor.MiddleCenter);
             UI.Label(go, floor + "층 도전 · " + MonsterDb.ThemeFor(floor).Name, 12, Theme.OnAccent, false, TextAnchor.MiddleCenter);
         }

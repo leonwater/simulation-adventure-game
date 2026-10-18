@@ -30,10 +30,15 @@ namespace Adventure.Game
         {
             if (string.IsNullOrEmpty(message)) return;
             if (_toast != null) UnityEngine.Object.Destroy(_toast);
-            // 터치는 막지 않는 옅은 배경
+            // 옅은 배경: 시간이 지나기 전에 아무 곳이나 누르면 바로 닫힌다
             var dim = UI.Image(_root, new Color(0, 0, 0, 0.35f), 0, "toast");
             UI.Stretch(dim.rectTransform);
             _toast = dim.gameObject;
+            dim.raycastTarget = true;
+            var close = dim.gameObject.AddComponent<Button>();
+            close.transition = Selectable.Transition.None;
+            var toastGo = dim.gameObject;
+            close.onClick.AddListener(() => UnityEngine.Object.Destroy(toastGo));
             var holder = UI.Rect(dim.transform, "holder");
             holder.anchorMin = new Vector2(0, 0.5f);
             holder.anchorMax = new Vector2(1, 0.5f);

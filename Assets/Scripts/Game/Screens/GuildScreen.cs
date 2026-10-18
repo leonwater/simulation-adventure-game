@@ -42,50 +42,84 @@ namespace Adventure.Game
             }
         }
 
-        // ── 퀘스트 ──
+        // ── 퀘스트 (간략 카드, 누르면 상세) ──
 
         private void Quests(Transform body)
         {
             var g = S.Data.Guild;
-            var info = UI.Row(body);
-            var l = UI.Sub(info, "수주 중 " + g.Active.Count + "/" + GameBalance.MaxActiveQuests + " · 내 등급 " + C.Rank);
+            var info = UI.Row(body, 6);
+            var l = UI.Sub(info, "진행 중 " + g.Active.Count + "/" + GameBalance.MaxActiveQuests);
             UI.Size(l, flexW: 1);
-            UI.Sub(info, "수주 가능: " + GuildSystem.MinQuestRank(C.Rank) + " ~ " + GuildSystem.MaxQuestRank(C.Rank), TextAnchor.MiddleRight);
+            UI.Sub(info, "수락 가능", TextAnchor.MiddleRight);
+            UI.Icon(info, UI.RankIcon(GuildSystem.MinQuestRank(C.Rank)), 18);
+            UI.Sub(info, "~", TextAnchor.MiddleCenter);
+            UI.Icon(info, UI.RankIcon(GuildSystem.MaxQuestRank(C.Rank)), 18);
 
-            foreach (var q in new List<Quest>(g.Active)) QuestCard(body, q, true);
-            if (g.Board.Count == 0) UI.Sub(body, "게시판이 비었습니다. 던전에 다녀오면 새 의뢰가 붙습니다.");
-            foreach (var q in new List<Quest>(g.Board)) QuestCard(body, q, false);
+            var list = UI.Column(body, 6);
+            Anchors.Set("guild.list", list);
+            foreach (var q in new List<Quest>(g.Active)) QuestCard(list, q, true);
+            if (g.Board.Count == 0) UI.Sub(list, "게시판이 비었습니다. 던전에 다녀오면 새 의뢰가 붙습니다.");
+            foreach (var q in new List<Quest>(g.Board)) QuestCard(list, q, false);
         }
 
         private void QuestCard(Transform parent, Quest q, bool active)
         {
-            bool sameRank = q.Rank == C.Rank;
-            var card = UI.Card(parent, Theme.Card, active ? Theme.BlueBorder : Theme.CardBorder, 12, UI.Pad(14, 12), true, 6);
-            var head = UI.Row(card, 8);
-            UI.Pill(head, q.Rank.ToString(), q.Rank > C.Rank ? Theme.Accent : Theme.PlaceholderLine, q.Rank > C.Rank ? Theme.Gold : Theme.TextLog, 11, 6);
-            var t = UI.Label(head, q.Title, 15, Theme.Text, true);
-            UI.Size(t, flexW: 1);
-
-            var row = UI.Row(card, 8);
-            string detail = active ? "목표 " + q.TargetFloor + "층 · " + GuildSystem.ProgressText(q, C) + " · " + q.RewardGold.ToString("#,0") + "G" : GuildSystem.Summary(q);
-            var d = UI.Sub(row, detail);
-            UI.Size(d, flexW: 1);
-            if (active)
-            {
-                if (GuildSystem.IsComplete(q, C))
-                    UI.TextButton(row, "보고", () => TurnIn(q), ButtonKind.Primary, 44, 14, 72);
-                else
-                {
-                    var col = UI.Column(row, 2, null, TextAnchor.MiddleRight);
-                    UI.Label(col, "수주 중", 13, Theme.BlueText, false, TextAnchor.MiddleRight, false, false);
-                    UI.TextButton(col, "포기", () => Abandon(q), ButtonKind.Ghost, 36, 12, 64);
-                }
-            }
+            bool done = active && GuildSystem.IsComplete(q, C);
+            var card = UI.ButtonCard(parent, () => QuestDetail(q, active), Theme.Card, done ? Theme.Accent : active ? Theme.BlueBorder : Theme.CardBorder,
+                10, UI.Pad(10, 4), false, 8, 50);
+            UI.Icon(card, UI.RankIcon(q.Rank), 28);
+            var col = UI.Column(card, 1);
+            UI.Size(col, flexW: 1);
+            UI.Label(col, q.Title, 14, Theme.Text, true);
+            UI.Label(col, active ? GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + q.RewardGold.ToString("#,0") + "G", 12,
+                done ? Theme.Gold : Theme.TextSub);
+            if (done) UI.TextButton(card, "보고", () => TurnIn(q), ButtonKind.Primary, 40, 13, 64);
+            else if (active) UI.Label(card, "진행 중", 12, Theme.BlueText, false, TextAnchor.MiddleRight, false, false);
             else
             {
-                var take = UI.TextButton(row, "수주", () => Accept(q), ButtonKind.Outline, 44, 14, 72);
+                var take = UI.TextButton(card, "수락", () => Accept(q), ButtonKind.Outline, 40, 13, 64);
                 UI.SetEnabled(take, GuildSystem.CannotAcceptReason(S.Data.Guild, C, q) == null);
             }
+        }
+
+        /// <summary>퀘스트를 누르면 자세한 내용 (목표·보상·진행·수락/보고/포기).</summary>
+        private void QuestDetail(Quest q, bool active)
+        {
+            var body = Overlay.Modal(q.Title);
+            var modal = Overlay.Top;
+            var head = UI.Row(body, 8);
+            UI.Icon(head, UI.RankIcon(q.Rank), 36);
+            var hl = UI.Label(head, q.Rank + " 등급 의뢰 · 목표 " + q.TargetFloor + "층", 14, Theme.Text, true);
+            UI.Size(hl, flexW: 1);
+            UI.Label(body, "보수 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · 경험치 " + q.RewardExp.ToString("#,0")
+                + UI.Color(" (보상 ×" + q.RewardMultiplier.ToString("0.0#") + ")", Theme.SubHex), 14, Theme.Text);
+            UI.Label(body, active ? GuildSystem.ProgressText(q, C) : GuildSystem.ProgressText(q, C).Replace("진행 0/", "목표 "), 14, Theme.TextBody);
+            if (active)
+            {
+                var row = UI.Row(body, 8);
+                var quit = UI.TextButton(row, "포기", () =>
+                {
+                    Overlay.Close(modal);
+                    Abandon(q);
+                }, ButtonKind.Ghost);
+                UI.Size(quit, flexW: 1);
+                var report = UI.TextButton(row, "보고", () =>
+                {
+                    Overlay.Close(modal);
+                    TurnIn(q);
+                }, ButtonKind.Primary);
+                UI.Size(report, flexW: 1);
+                UI.SetEnabled(report, GuildSystem.IsComplete(q, C));
+                return;
+            }
+            string reason = GuildSystem.CannotAcceptReason(S.Data.Guild, C, q);
+            if (reason != null) UI.Label(body, reason, 13, Theme.RedLight);
+            var accept = UI.TextButton(body, "수락", () =>
+            {
+                Overlay.Close(modal);
+                Accept(q);
+            }, ButtonKind.Primary);
+            UI.SetEnabled(accept, reason == null);
         }
 
         private void Accept(Quest q)
@@ -130,36 +164,45 @@ namespace Adventure.Game
         {
             var st = RankSystem.GetStatus(C);
             var card = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
-            var head = UI.Row(card);
-            var t = UI.Label(head, C.Rank + " 등급 배지", 15, Theme.Text, true);
-            UI.Size(t, flexW: 1);
-            UI.Label(head, "기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%", 13, Theme.Gold, false, TextAnchor.MiddleRight, false, false);
-            UI.Sub(card, "스킬 장착 " + RankSystem.SkillSlots(C.Rank) + "칸 · 창고 " + RankSystem.StorageCapacity(C.Rank) + "칸");
+            var head = UI.Row(card, 10);
+            UI.Icon(head, UI.RankIcon(C.Rank), 48);
+            var hc = UI.Column(head, 2);
+            UI.Size(hc, flexW: 1);
+            UI.Label(hc, C.Rank + " 등급 배지", 17, Theme.Text, true);
+            UI.Label(hc, "기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "% · 스킬 " + RankSystem.SkillSlots(C.Rank) + "칸 · 창고 " + RankSystem.StorageCapacity(C.Rank) + "칸", 13, Theme.Gold);
 
-            if (st.IsMaxRank)
+            if (!st.IsMaxRank)
             {
-                UI.Label(card, "최고 등급에 도달했습니다.", 14, Theme.Gold);
-                return;
+                UI.Divider(card);
+                var nextRow = UI.Row(card, 8);
+                UI.Icon(nextRow, UI.RankIcon(st.Next), 24);
+                UI.Label(nextRow, st.Next + " 등급 승급 조건 (배지 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(st.Next) * 100) + "%)", 14, Theme.Text, true);
+                Condition(card, "돌파 층", st.FloorCurrent, st.FloorRequired, st.FloorMet);
+                Condition(card, "레벨", st.LevelCurrent, st.LevelRequired, st.LevelMet);
+                Condition(card, "퀘스트 완료", st.QuestsCurrent, st.QuestsRequired, st.QuestsMet);
+                var b = UI.TextButton(card, st.Next + " 등급으로 승급", Promote, ButtonKind.Primary);
+                UI.SetEnabled(b, st.CanPromote);
             }
-            UI.Divider(card);
-            UI.Sub(card, st.Next + " 등급 승급 조건 (배지 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(st.Next) * 100) + "%)");
-            Condition(card, "돌파 층", st.FloorCurrent, st.FloorRequired, st.FloorMet);
-            Condition(card, "레벨", st.LevelCurrent, st.LevelRequired, st.LevelMet);
-            Condition(card, "퀘스트 완료", st.QuestsCurrent, st.QuestsRequired, st.QuestsMet);
-            var b = UI.TextButton(card, st.Next + " 등급으로 승급", Promote, ButtonKind.Primary);
-            UI.SetEnabled(b, st.CanPromote);
+            else UI.Label(card, "최고 등급에 도달했습니다.", 14, Theme.Gold);
 
-            var table = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 10), true, 4);
-            UI.Label(table, "등급표", 14, Theme.Text, true);
-            for (int r = 1; r <= (int)Rank.SS; r++)
+            // 등급표: 배지 · 조건 · 보너스 (글자 크게, 줄 간격 넉넉히)
+            var table = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 14, 10, 6), true, 0);
+            UI.Label(table, "모험가 등급표", 16, Theme.Text, true);
+            UI.Spacer(table, 0, 6);
+            for (int r = 0; r <= (int)Rank.SS; r++)
             {
-                var row = UI.Row(table, 8);
-                bool cur = (int)C.Rank == r;
-                var n = UI.Label(row, ((Rank)r).ToString(), 13, cur ? Theme.Gold : Theme.Text, cur);
-                UI.Size(n, width: 36);
-                var req = UI.Sub(row, "층 " + GameBalance.PromotionRequirements[r, 0] + " · Lv." + GameBalance.PromotionRequirements[r, 1] + " · 퀘스트 " + GameBalance.PromotionRequirements[r, 2]);
-                UI.Size(req, flexW: 1);
-                UI.Sub(row, "+" + Mathf.RoundToInt((float)GameBalance.BadgeBonus[r] * 100) + "%", TextAnchor.MiddleRight);
+                var rank = (Rank)r;
+                bool cur = C.Rank == rank;
+                var row = UI.Row(table, 12, UI.Pad(4, 4, 8, 8));
+                UI.Size(row, minH: 60);
+                UI.Icon(row, UI.RankIcon(rank), 40);
+                var col = UI.Column(row, 3);
+                UI.Size(col, flexW: 1);
+                UI.Label(col, rank + " 등급" + (cur ? UI.Color("  현재", Theme.GoldHex) : ""), 16, cur ? Theme.Gold : Theme.Text, true);
+                string req = r == 0 ? "시작 등급" : "돌파 " + GameBalance.PromotionRequirements[r, 0] + "층 · Lv." + GameBalance.PromotionRequirements[r, 1] + " · 퀘스트 " + GameBalance.PromotionRequirements[r, 2];
+                UI.Label(col, req, 13, Theme.TextSub);
+                UI.Label(row, "+" + Mathf.RoundToInt((float)GameBalance.BadgeBonus[r] * 100) + "%", 16, cur ? Theme.Gold : Theme.TextBody, true, TextAnchor.MiddleRight, false, false);
+                if (r < (int)Rank.SS) ScreenKit.BottomLine(row, Theme.LineSoft);
             }
         }
 
@@ -185,9 +228,11 @@ namespace Adventure.Game
 
         private void StorageTab(Transform body)
         {
-            UI.Sub(body, "창고에 맡긴 아이템은 던전에서 쓰러져도 잃지 않습니다.");
-            UI.Label(body, "창고 " + C.Storage.UsedCells + " / " + C.Storage.Capacity, 14, Theme.Text, true);
-            ItemGrid.Build(body, C.Storage, null, item => Overlay.Confirm(item.DisplayName, item.StatLine(), "찾기", () =>
+            var box = UI.Column(body, 8);
+            Anchors.Set("guild.storage", box);
+            UI.Sub(box, "창고에 맡긴 아이템은 던전에서 쓰러져도 잃지 않습니다.");
+            UI.Label(box, "창고 " + C.Storage.UsedCells + " / " + C.Storage.Capacity, 14, Theme.Text, true);
+            ItemGrid.Build(box, C.Storage, null, item => Overlay.Confirm(item.DisplayName, item.StatLine(), "찾기", () =>
             {
                 if (!GuildSystem.Withdraw(C, item.Uid, out string err)) Toast(err);
                 S.Save();

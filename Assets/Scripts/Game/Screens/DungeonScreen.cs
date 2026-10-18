@@ -466,7 +466,7 @@ namespace Adventure.Game
             if (quests.Count > 0)
             {
                 UI.Divider(body);
-                UI.Label(body, "수주 중인 퀘스트", 14, Theme.Text, true);
+                UI.Label(body, "진행 중인 퀘스트", 14, Theme.Text, true);
                 foreach (var q in quests) UI.Sub(body, q.Title + " · 목표 " + q.TargetFloor + "층 · " + GuildSystem.ProgressText(q, C));
             }
         }

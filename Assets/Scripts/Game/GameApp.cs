@@ -95,6 +95,9 @@ namespace Adventure.Game
             UI.Stretch(screens);
             overlay = UI.Rect(safe, "overlay");
             UI.Stretch(overlay);
+            var coach = UI.Rect(safe, "coach"); // 튜토리얼 강조 표시는 팝업보다 위
+            UI.Stretch(coach);
+            Coach.Init(coach);
         }
 
         private void Update()
@@ -128,6 +131,7 @@ namespace Adventure.Game
 
         private void HandleBack()
         {
+            if (Coach.Active) return; // 튜토리얼 진행 중에는 말풍선의 버튼으로만 넘어간다
             if (Overlay.CloseTop()) return;
             if (Router.Current != null && Router.Current.OnBack()) return;
             if (Router.Current is TitleScreen || Router.Current is TownScreen)

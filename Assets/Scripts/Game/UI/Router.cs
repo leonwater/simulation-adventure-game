@@ -44,6 +44,8 @@ namespace Adventure.Game
 
         public void Rebuild()
         {
+            Coach.Clear();
+            Anchors.Clear();
             UI.Clear(_layer);
             var root = UI.Rect(_layer, Current.GetType().Name);
             UI.Stretch(root);

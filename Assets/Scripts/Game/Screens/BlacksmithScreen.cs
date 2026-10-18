@@ -31,16 +31,21 @@ namespace Adventure.Game
             var selected = Blacksmith.FindGear(C, _selected);
             if (selected != null) Detail(body, selected);
 
-            var info = UI.Row(body);
+            var info = UI.Row(body, 6);
+            UI.Size(info, minH: 36);
             var l = UI.Label(info, "장비 선택", 14, Theme.Text, true);
             UI.Size(l, flexW: 1);
-            UI.Sub(info, "강화석 보유 " + C.Inventory.CountOf(ItemDb.EnhanceStoneId) + "개", TextAnchor.MiddleRight);
+            // 강화석은 주요 정보라 아이콘 + 굵은 글씨로 (수정 사항 #14)
+            UI.Icon(info, "enhance_stone", 22);
+            UI.Label(info, "강화석 " + UI.Color(C.Inventory.CountOf(ItemDb.EnhanceStoneId) + "개", Theme.BlueHex), 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+            var list = UI.Column(body, 8);
+            Anchors.Set("smith.list", list);
             foreach (var item in gear)
             {
                 var it = item;
                 bool equipped = C.Equipment.Find(item.Uid) != null;
                 bool sel = item.Uid == _selected;
-                var row = UI.ButtonCard(body, () =>
+                var row = UI.ButtonCard(list, () =>
                 {
                     _selected = it.Uid;
                     Rebuild();
@@ -51,12 +56,13 @@ namespace Adventure.Game
                 UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + Names.Of(item.Gear) + " · " + item.StatLine());
                 UI.Label(row, "+" + item.Enhance, 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             }
-            if (gear.Count == 0) UI.Sub(body, "강화할 장비가 없습니다.");
+            if (gear.Count == 0) UI.Sub(list, "강화할 장비가 없습니다.");
         }
 
         private void Detail(Transform parent, ItemInstance item)
         {
             var card = UI.Card(parent, Theme.Button, Theme.ButtonBorder, 12, UI.Pad(14, 12), true, 6);
+            Anchors.Set("smith.detail", card);
             var head = UI.Row(card);
             var n = UI.Label(head, item.DisplayName, 16, Theme.GradeColor(item.Grade), true);
             UI.Size(n, flexW: 1);
@@ -73,8 +79,13 @@ namespace Adventure.Game
             UI.Label(card, "+" + item.Enhance + " → +" + (item.Enhance + 1) + " · " + what + " " + now + " → " + UI.Color(next.ToString(), Theme.GreenHex), 14, Theme.Text);
             int stones = Blacksmith.StoneCost(item);
             int have = C.Inventory.CountOf(ItemDb.EnhanceStoneId);
-            string stoneText = stones > 0 ? " · 강화석 " + UI.Color(have + "/" + stones, have >= stones ? Theme.GreenHex : Theme.RedHex) : "";
-            UI.Sub(card, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)) + " · 비용 " + Blacksmith.GoldCost(item).ToString("#,0") + "G" + stoneText + (Blacksmith.SuccessRate(item) < 1 ? " · 실패 시 재료·골드만 소모" : ""));
+            UI.Sub(card, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)) + " · 비용 " + Blacksmith.GoldCost(item).ToString("#,0") + "G" + (Blacksmith.SuccessRate(item) < 1 ? " · 실패 시 재료·골드만 소모" : ""));
+            if (stones > 0)
+            {
+                var stoneRow = UI.Row(card, 6);
+                UI.Icon(stoneRow, "enhance_stone", 20);
+                UI.Label(stoneRow, "강화석 " + UI.Color(have + " / " + stones, have >= stones ? Theme.GreenHex : Theme.RedHex), 14, Theme.Text, true);
+            }
             string reason = Blacksmith.CannotEnhanceReason(C, item);
             var b = UI.TextButton(card, reason ?? "강화하기", () => Enhance(item), ButtonKind.Primary);
             UI.SetEnabled(b, reason == null);
