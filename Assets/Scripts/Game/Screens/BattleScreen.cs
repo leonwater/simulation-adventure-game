@@ -47,7 +47,7 @@ namespace Adventure.Game
 
         public override bool OnBack()
         {
-            if (!_playing && !_finished) Pause();
+            if (!_playing && !_finished && !_leaving) Pause();
             return true;
         }
 
@@ -119,7 +119,7 @@ namespace Adventure.Game
             UI.SetEnabled(tp, false, 0.35f); // 전투 중에는 순간이동할 수 없다
             IconButton(head, "Ⅱ", () =>
             {
-                if (!_playing && !_finished) Pause();
+                if (!_playing && !_finished && !_leaving) Pause();
             });
             ScreenKit.BottomLine(head);
         }
@@ -291,7 +291,7 @@ namespace Adventure.Game
 
         private void SelectTarget(int index)
         {
-            if (_playing || _finished || index == _target) return;
+            if (_playing || _finished || _leaving || index == _target) return;
             _target = index;
             Rebuild();
         }
@@ -302,6 +302,7 @@ namespace Adventure.Game
         {
             var bg = UI.Card(parent, Theme.Log, Theme.Log, 0.01f, UI.Pad(16, 16, 8, 8), true, 2, TextAnchor.LowerLeft, "log");
             UI.Size(bg, height: 74);
+            bg.gameObject.AddComponent<RectMask2D>(); // 긴 줄이 넘치면 위쪽 오래된 줄부터 가려진다
             int start = Mathf.Max(0, _b.Log.Count - 3);
             for (int i = start; i < _b.Log.Count; i++)
             {
@@ -309,8 +310,7 @@ namespace Adventure.Game
                 Color color = line.Tone == LogTone.Good ? Theme.Gold : line.Tone == LogTone.Bad ? Theme.RedLight : line.Tone == LogTone.System ? Theme.Text : Theme.TextLog;
                 var t = UI.Label(bg, line.Text, 13, i == _b.Log.Count - 1 ? color : color * new Color(1, 1, 1, 0.7f), false, TextAnchor.MiddleLeft, false, false);
                 t.horizontalOverflow = HorizontalWrapMode.Wrap;
-                t.verticalOverflow = VerticalWrapMode.Truncate;
-                UI.Size(t, height: 18);
+                UI.Size(t, minH: 18);
             }
             ScreenKit.BottomLine(bg);
         }
@@ -371,7 +371,7 @@ namespace Adventure.Game
 
         private void Pick(BattleChoice ch)
         {
-            if (_playing || _finished || !ch.Enabled) return;
+            if (_playing || _finished || _leaving || !ch.Enabled) return;
             if (ch.Kind == ActionKind.Item)
             {
                 ItemMenu();
@@ -510,9 +510,11 @@ namespace Adventure.Game
                     Delay.Run(_stage, 1.8f, Continue);
                     break;
                 case BattleOutcome.Defeat:
+                    _leaving = true; // 이동 전 잠깐 동안 다시 그리면 이동이 사라지므로 입력을 막는다
                     Delay.Run(_stage, 0.8f, () => Go(new ResultScreen(S.LastDeath != null && S.LastDeath.HardcoreReset ? ResultKind.Hardcore : ResultKind.Death)));
                     break;
                 case BattleOutcome.Fled:
+                    _leaving = true;
                     Delay.Run(_stage, 0.4f, () => Go(new DungeonScreen()));
                     break;
                 default:

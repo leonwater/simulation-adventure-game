@@ -109,7 +109,34 @@ namespace Adventure.Game
                 n++;
             }
             while (open.Count > 0) sb.Append("</" + open.Pop() + ">");
+            // 아직 안 나온 글자도 투명하게 넣어 두어 줄 수(높이)가 타이핑 중에 바뀌지 않게 한다
+            if (n >= visible && visible < VisibleLength(s))
+            {
+                string rest = System.Text.RegularExpressions.Regex.Replace(s.Substring(RestStart(s, visible)), "<[^>]*>", "");
+                if (rest.Length > 0) sb.Append("<color=#00000000>").Append(rest).Append("</color>");
+            }
             return sb.ToString();
+        }
+
+        /// <summary>보이는 글자 visible개 다음 위치 (태그 제외).</summary>
+        private static int RestStart(string s, int visible)
+        {
+            int n = 0;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (s[i] == '<')
+                {
+                    int close = s.IndexOf('>', i);
+                    if (close > i)
+                    {
+                        i = close;
+                        continue;
+                    }
+                }
+                if (n == visible) return i;
+                n++;
+            }
+            return s.Length;
         }
     }
 

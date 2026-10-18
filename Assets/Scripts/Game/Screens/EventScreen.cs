@@ -8,6 +8,7 @@ namespace Adventure.Game
     {
         private EventDef _event;
         private EventResult _result;
+        private int _floor;
 
         public override bool OnBack() => true; // 이벤트는 선택으로만 끝난다
 
@@ -19,7 +20,8 @@ namespace Adventure.Game
                 App.GoToCurrent();
                 return;
             }
-            int floor = S.Run?.Floor ?? 1;
+            if (_floor == 0) _floor = S.Run?.Floor ?? 1; // 귀환 결과 뒤에도 층 표시 유지
+            int floor = _floor;
             var page = ScreenKit.Page(root);
             var head = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 6, 6), false, 8, TextAnchor.MiddleLeft, "header");
             UI.Size(head, height: 58);
@@ -88,7 +90,8 @@ namespace Adventure.Game
             if (!_result.Loot.IsEmpty || _result.Loot.Dropped.Count > 0) UI.Label(card, _result.Loot.Describe(), 14, Theme.Gold);
             if (_result.Loot.LevelsGained > 0 && C != null) UI.Label(card, "레벨 업! Lv." + C.Level, 14, Theme.Gold, true);
             UI.Spacer(parent, 1, 8);
-            string label = _result.StartBattle ? "전투 시작" : _result.ReturnToTown ? "마을로" : "계속";
+            bool died = S.LastDeath != null && !S.InDungeon;
+            string label = died ? "결과 보기" : _result.StartBattle ? "전투 시작" : _result.ReturnToTown ? "마을로" : "계속";
             UI.TextButton(parent, label, Continue, ButtonKind.Primary, 52, 16);
         }
 

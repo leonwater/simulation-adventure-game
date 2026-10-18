@@ -421,7 +421,7 @@ namespace Adventure.Game
         {
             var run = S.Run;
             string msg = run.BossDefeated
-                ? "마을로 돌아갑니다. " + (run.Floor + 1) + "층이 열려 있습니다."
+                ? (run.Floor >= GameBalance.MaxFloor ? "던전을 정복했습니다. 마을로 돌아갑니다." : "마을로 돌아갑니다. " + (run.Floor + 1) + "층이 열려 있습니다.")
                 : "귀환 마법진으로 마을에 돌아갑니다. 이번 층 진행은 초기화되지만 얻은 골드·경험치·아이템은 유지됩니다.";
             Overlay.Confirm("마을로 귀환", msg, "귀환", ReturnNow);
         }
