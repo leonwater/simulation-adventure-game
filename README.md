@@ -41,7 +41,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 | `Assets/Scripts/Core/GameBalance.cs` | **모든 밸런스 수치(임시값)를 모아 둔 파일** |
 | `Assets/Scripts/Game` | Unity 실행부: 부트스트랩(`GameApp`), UI 도구(`UI/`), 화면(`Screens/`), 파일 저장 |
 | `Assets/Scripts/Editor` | 프로젝트 자동 설정 |
-| `Assets/Tests/EditMode` | NUnit 테스트 101개 (Unity Test Runner와 `dotnet test` 양쪽에서 실행) |
+| `Assets/Tests/EditMode` | NUnit 테스트 102개 (Unity Test Runner와 `dotnet test` 양쪽에서 실행) |
 | `Assets/Resources/Fonts` | 나눔고딕·고운바탕 (SIL OFL 1.1) |
 | `tools/verify` | Unity 없이 검증하는 스크립트 |
 | `docs/DEV_PLAN.md` | 작업 기획 (파트 구성, 임시로 정한 규칙) |
@@ -52,14 +52,16 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 길드(퀘스트·등급·창고) · 상점(3열 카드) · 대장간 · 수련장 · 캐릭터 · 가방·장비 · 스킬 · 설정 ·
 던전 탐험(테마 색 미니맵·전체 지도) · 전투(도형 무대·연출) · 특수 이벤트 · 정산(패배 비교표·귀환·엔딩)
 
-- 튜토리얼: 등록 → 마을 시설 안내 → 고정 1층(미니맵·길 선택·첫 전투·레벨 업 배분) → 귀환 후 정산·창고 안내. 설정에서 다시 볼 수 있음.
+- 튜토리얼(직접 해 보기): 화면 한 곳만 밝게 남기고 말풍선으로 안내(코치 마크). 상점·길드·대장간·수련장에 직접 들어가 부분별 설명 → 던전 입장 → 고정 1층(미니맵·길 선택·전투·레벨 업) → 귀환 후 정산·창고. 언제든 건너뛰기, 설정에서 다시 보기.
 - 전투: 내 원형(왼쪽), 적 최대 4(일반 사각형·엘리트 굵은 테두리·보스 육각형). 적을 눌러 대상 선택, 선택지를 길게 누르면 계산 내역.
 - 기기 설정(PlayerPrefs): 전투 속도 1×/2×, 대사 한 글자씩, 진동, 글자 크기 3단계.
 - 알림 점: 남은 능력치 포인트, 새 스킬, 승급 가능, 완료 퀘스트, 상점 갱신.
-- 일러스트: 길드(`guild_receptionist.jpg`)·대장간(`blacksmith.jpg`) 적용. 나머지는 점선 상자로 표시됩니다.
+- 일러스트: 마을(`town.jpg`)·길드(`guild_receptionist.jpg`)·대장간(`blacksmith.jpg`) 적용. 나머지는 점선 상자로 표시됩니다.
+  그림은 원본 비율을 유지한 채 잘라 채웁니다 (`Assets/Scripts/Editor/AssetImportRules.cs`가 2의 거듭제곱 늘림을 끄고 압축).
   대사는 일러스트 아래쪽 안에 반투명 상자로 겹쳐 보입니다.
 - 새 일러스트 추가: 그림을 `Assets/Resources/Illustrations/`에 넣고 `Assets/Scripts/Game/UI/IllustrationArt.cs` 표에 한 줄 추가합니다.
-- 시설 아이콘: `Assets/Resources/Icons/` (guild·shop·blacksmith·training.png)
+- 아이콘: `Assets/Resources/Icons/` — 시설 4종, 등급 배지 8종(rank_f~rank_ss), 능력치 10종(stat_*), 강화석, 가방, 귀환, 지도.
+- 앱 크기: 제목 글꼴(고운바탕)은 완성형 한글 2,350자 + 게임 문구만 남겨 8.2MB → 1.4MB. 이름 등 입력 글자는 전체 글꼴(나눔고딕)로 표시. IL2CPP 코드 제거(Medium)·엔진 코드 제거·ASTC 압축.
 
 ## 검증 (Unity 없이)
 
@@ -67,7 +69,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 tools/verify/verify.sh
 ```
 
-1. Core 단위 테스트 101개 (전투 400판·자동 플레이 봇 240회 던전 탐험·저장 왕복 포함)
+1. Core 단위 테스트 102개 (전투 400판·자동 플레이 봇 240회 던전 탐험·저장 왕복 포함)
 2. Core를 Unity와 같은 .NET Standard 2.1 / C# 9로 컴파일
 3. 전체 스크립트를 Unity 참조 어셈블리로 컴파일 (기기 빌드 조건 / 에디터 조건)
 
