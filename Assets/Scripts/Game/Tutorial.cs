@@ -42,7 +42,12 @@ namespace Adventure.Game
         }
 
         /// <summary>가리킨 곳을 플레이어가 직접 누르게 한다.</summary>
-        private static void Do(string anchor, string text) => Coach.Action(Anchors.Get(anchor), text, Skip);
+        private static void Do(string anchor, string text)
+        {
+            // 열린 팝업이 가리킨 곳을 덮으면 누를 수 없으므로 먼저 닫는다
+            GameApp.Instance.Overlay.CloseAll();
+            Coach.Action(Anchors.Get(anchor), text, Skip);
+        }
 
         private static void Skip()
         {

@@ -186,7 +186,12 @@ namespace Adventure.Core
                 Data.Run = new DungeonRun { Floor = 1, Map = map, CurrentRoomId = map.StartId, PreviousRoomId = map.StartId, IsTutorial = true };
                 Data.Tutorial = TutorialStage.FirstDungeon;
             }
-            else Data.Run = DungeonSystem.StartRun(C, Data.SelectedFloor, Rng);
+            else
+            {
+                Data.Run = DungeonSystem.StartRun(C, Data.SelectedFloor, Rng);
+                // 튜토리얼을 다시 보는 경우(이미 층을 돌파함)에는 일반 층에서 던전 안내를 이어 간다
+                if (Data.Tutorial == TutorialStage.TownGuide) Data.Tutorial = TutorialStage.FirstDungeon;
+            }
             Save();
         }
 

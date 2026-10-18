@@ -116,6 +116,12 @@ namespace Adventure.Game
                 Block(holder, Rect.MinMaxRect(area.xMin, hole.yMin, hole.xMin, hole.yMax), dim, action ? null : next);
                 Block(holder, Rect.MinMaxRect(hole.xMax, hole.yMin, area.xMax, hole.yMax), dim, action ? null : next);
                 if (!action) Block(holder, hole, new Color(0, 0, 0, 0), next);
+                else
+                {
+                    // 구멍으로 목록을 끌면 다른 버튼이 구멍 아래로 오므로 스크롤을 잠근다 (코치가 사라지면 화면을 다시 그려 풀린다)
+                    var scroll = target.GetComponentInParent<ScrollRect>();
+                    if (scroll != null) scroll.enabled = false;
+                }
                 var frame = UI.Image(holder, Theme.Gold, 0, "frame");
                 frame.sprite = Sprites.RoundedOutline;
                 frame.type = Image.Type.Sliced;
@@ -136,6 +142,11 @@ namespace Adventure.Game
             UI.Label(bubble, title, 13, Theme.Gold, true);
             var body = UI.Label(bubble, text, 15, Theme.Text);
             body.lineSpacing = 1.35f;
+            // 가리킨 곳이 위쪽이면 말풍선을 아래에, 아래쪽이면 위에 둔다
+            const float gap = 14, estimate = 170;
+            float spaceBelow = hasHole ? hole.yMin - area.yMin : 0, spaceAbove = hasHole ? area.yMax - hole.yMax : 0;
+            bool below = hasHole && spaceBelow >= estimate + gap && (spaceBelow >= spaceAbove || spaceAbove < estimate + gap);
+            bool above = hasHole && !below && spaceAbove >= estimate + gap;
             var row = UI.Row(bubble, 8, null, TextAnchor.MiddleRight);
             if (onSkip != null)
             {
@@ -146,11 +157,9 @@ namespace Adventure.Game
                 }, ButtonKind.Ghost, 40, 12, 132);
             }
             UI.HSpacer(row);
-            if (action) UI.Label(row, "▲ 표시된 곳을 누르세요", 12, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
+            if (action) UI.Label(row, (above ? "▼" : "▲") + " 표시된 곳을 누르세요", 12, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
             else UI.TextButton(row, "다음", next, ButtonKind.Primary, 40, 14, 88);
 
-            // 가리킨 곳이 위쪽이면 아래에, 아래쪽이면 위에
-            const float gap = 14, estimate = 170;
             float x = area.center.x;
             if (!hasHole)
             {
@@ -158,14 +167,12 @@ namespace Adventure.Game
                 bubble.anchoredPosition = new Vector2(x, area.center.y);
                 return;
             }
-            float spaceBelow = hole.yMin - area.yMin, spaceAbove = area.yMax - hole.yMax;
-            bool below = spaceBelow >= estimate + gap ? spaceBelow >= spaceAbove || spaceAbove < estimate + gap : false;
             if (below)
             {
                 bubble.pivot = new Vector2(0.5f, 1);
                 bubble.anchoredPosition = new Vector2(x, hole.yMin - gap);
             }
-            else if (spaceAbove >= estimate + gap)
+            else if (above)
             {
                 bubble.pivot = new Vector2(0.5f, 0);
                 bubble.anchoredPosition = new Vector2(x, hole.yMax + gap);

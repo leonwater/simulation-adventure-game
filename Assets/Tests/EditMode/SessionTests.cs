@@ -109,6 +109,15 @@ namespace Adventure.Tests
             s.SetTutorial(TutorialStage.Done);
             s.EnterDungeon();
             Assert.IsFalse(s.Run.IsTutorial);
+
+            // 층을 돌파한 뒤 튜토리얼을 다시 보면 일반 층에서 던전 안내로 넘어간다
+            s.ReturnToTown();
+            s.C.HighestFloorCleared = 3;
+            s.RestartTutorial();
+            Assert.AreEqual(TutorialStage.TownGuide, s.Data.Tutorial);
+            s.EnterDungeon();
+            Assert.IsFalse(s.Run.IsTutorial);
+            Assert.AreEqual(TutorialStage.FirstDungeon, s.Data.Tutorial);
         }
 
         [Test]
