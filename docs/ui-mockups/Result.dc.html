@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>사망 정산</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.row{display:flex;align-items:center;justify-content:space-between;min-height:44px;border-bottom:1px solid #262A33;font-size:14px}
+.mono{font-family:'IBM Plex Mono',monospace}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; padding: 48px 16px 24px; gap: 18px; overflow: hidden">
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 6px">
+    <h1 style="margin: 0; font-family: 'Gowun Batang', serif; font-size: 32px; color: #E38A82">쓰러졌다</h1>
+    <p style="margin: 0; font-size: 14px; color: #A29E95">7층 · 고블린 궁수에게 패배</p>
+  </div>
+
+  <div style="border-radius: 12px; border: 1px solid #5A3A38; background: #1F1A1C; padding: 6px 14px">
+    <div style="font-size: 13px; font-weight: 600; color: #E38A82; padding: 6px 0">잃은 것</div>
+    <div class="row"><span>골드</span><span class="mono">−372 G <span class="lbl">(30%)</span></span></div>
+    <div class="row"><span>경험치</span><span class="mono">−20% <span class="lbl">(레벨 유지)</span></span></div>
+    <div class="row"><span>7층 진행도</span><span>초기화</span></div>
+    <div class="row" style="border-bottom: none; align-items: flex-start; flex-direction: column; justify-content: center; gap: 4px; padding: 8px 0">
+      <span>미장착 아이템 9개</span>
+      <span class="lbl">전투 도끼, 철 투구, 회복 물약 ×5, 스킬서, 거미 독샘 외 4개</span>
+    </div>
+  </div>
+
+  <div style="border-radius: 12px; border: 1px solid #2F333E; background: #1B1E26; padding: 6px 14px">
+    <div style="font-size: 13px; font-weight: 600; color: #9EC0E8; padding: 6px 0">남은 것</div>
+    <div class="row"><span>도달 층</span><span>7층</span></div>
+    <div class="row"><span>장착 장비</span><span>7개</span></div>
+    <div class="row" style="border-bottom: none"><span>길드 창고 · 가방 확장</span><span>유지</span></div>
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <a href="Town.dc.html" style="display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 12px; background: #D9A441; color: #1A1408; font-size: 16px; font-weight: 600">마을로 돌아가기</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

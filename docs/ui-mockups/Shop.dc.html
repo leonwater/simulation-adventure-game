@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>상점</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.it{display:flex;flex-direction:column;align-items:flex-start;gap:3px;min-height:82px;border-radius:10px;border:1px solid #2F333E;background:#1B1E26;color:#ECE7DD;font:inherit;padding:8px 10px;text-align:left}
+.row{display:flex;align-items:center;justify-content:space-between;min-height:48px;border-bottom:1px solid #262A33;padding:0 2px}
+.price{font-family:'IBM Plex Mono',monospace;font-size:13px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-bottom: 1px solid #2A2E38; background: #181B22">
+    <a href="Town.dc.html" style="display: flex; align-items: center; min-height: 44px; padding: 0 6px; font-size: 14px">‹ 마을</a>
+    <span style="font-size: 16px; font-weight: 600">상점</span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 14px; padding-right: 6px">1,240 G</span>
+  </div>
+
+  <div style="height: 190px; flex-shrink: 0; border-bottom: 1px dashed #4A5060; background: #1A1D24; display: flex; align-items: center; justify-content: center; color: #8F8C85; font-size: 13px">[일러스트: 상점 주인]</div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px; padding: 12px 12px 16px; flex-grow: 1; overflow: hidden">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-radius: 10px; background: #1B1E26; border: 1px solid #2F333E; padding: 8px 8px 8px 12px">
+      <span style="display: flex; flex-direction: column"><span class="lbl">자동 갱신까지</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 18px">12:40</span></span>
+      <button style="min-height: 44px; padding: 0 14px; border-radius: 10px; border: 1px solid #D9A441; background: transparent; color: #E2B657; font: inherit; font-size: 14px; font-weight: 600">즉시 갱신 · 100G</button>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="font-size: 14px; font-weight: 600">장비</div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+        <button class="it"><span style="font-size: 11px; color: #6FB37A">고급</span><span style="font-size: 14px; font-weight: 600">강철 장검</span><span class="lbl">Lv.10 · 전사</span><span class="price">820 G</span></button>
+        <button class="it"><span style="font-size: 11px; color: #D9D5CC">일반</span><span style="font-size: 14px; font-weight: 600">가죽 투구</span><span class="lbl">Lv.8 · 공용</span><span class="price">310 G</span></button>
+        <button class="it"><span style="font-size: 11px; color: #6FB37A">고급</span><span style="font-size: 14px; font-weight: 600">사슬 갑옷</span><span class="lbl">Lv.12 · 공용</span><span class="price">960 G</span></button>
+        <button class="it" style="opacity: 0.55"><span style="font-size: 11px; color: #6FB37A">고급</span><span style="font-size: 14px; font-weight: 600">사냥꾼 활</span><span class="lbl">궁수 전용</span><span class="price">780 G</span></button>
+        <button class="it"><span style="font-size: 11px; color: #D9D5CC">일반</span><span style="font-size: 14px; font-weight: 600">여행자 장화</span><span class="lbl">Lv.5 · 공용</span><span class="price">220 G</span></button>
+        <button class="it"><span style="font-size: 11px; color: #6FB37A">고급</span><span style="font-size: 14px; font-weight: 600">청동 반지</span><span class="lbl">Lv.10 · 공용</span><span class="price">540 G</span></button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column">
+      <div style="font-size: 14px; font-weight: 600; padding-bottom: 4px">소모품 · 스킬 · 가방</div>
+      <div class="row"><span style="font-size: 14px">회복 물약</span><span class="price">50 G</span></div>
+      <div class="row"><span style="font-size: 14px">해독제</span><span class="price">40 G</span></div>
+      <div class="row"><span style="font-size: 14px">스킬서: 강타 <span class="lbl">하급</span></span><span class="price">600 G</span></div>
+      <div class="row" style="border-bottom: none"><span style="font-size: 14px">가방 <span class="lbl">인벤토리 +5칸</span></span><span class="price">2,000 G</span></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>새 게임</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.btn{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:10px;border:1px solid #3A3F4B;background:#1E222B;color:#ECE7DD;font:inherit;font-size:15px;padding:0 14px}
+.opt{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-height:64px;border-radius:10px;border:1px solid #3A3F4B;background:#1B1E26;color:#ECE7DD;font:inherit;padding:10px 12px;text-align:left}
+.opt.on{border-color:#D9A441;background:#262117}
+.lbl{font-size:12px;color:#A29E95}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; padding: 40px 16px 24px; gap: 22px; overflow: hidden">
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 12px">
+    <h1 style="margin: 0; font-family: 'Gowun Batang', serif; font-size: 38px; font-weight: 700; color: #E2B657; letter-spacing: 1px">모험가 키우기</h1>
+    <p style="margin: 0; font-size: 14px; color: #A29E95">던전 최하층을 향한 기록</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <div style="font-size: 14px; font-weight: 600">난이도</div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <button class="opt"><span style="font-size: 15px; font-weight: 600">쉬움</span><span class="lbl">다음 방 종류가 보임</span></button>
+      <button class="opt on"><span style="font-size: 15px; font-weight: 600; color: #E2B657">보통</span><span class="lbl">기준 난이도</span></button>
+      <button class="opt"><span style="font-size: 15px; font-weight: 600">어려움</span><span class="lbl">적 능력치 ×1.25</span></button>
+      <button class="opt"><span style="font-size: 15px; font-weight: 600">하드코어</span><span class="lbl">사망 시 캐릭터 초기화</span></button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <div style="font-size: 14px; font-weight: 600">직업</div>
+      <div class="lbl">시작 후 변경할 수 없습니다</div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <button class="opt on"><span style="font-size: 15px; font-weight: 600; color: #E2B657">전사</span><span class="lbl">체력 · 힘 · 강인함</span></button>
+      <button class="opt"><span style="font-size: 15px; font-weight: 600">궁수</span><span class="lbl">체력 · 민첩 · 정밀</span></button>
+      <button class="opt"><span style="font-size: 15px; font-weight: 600">도적</span><span class="lbl">체력 · 민첩 · 급소</span></button>
+      <button class="opt"><span style="font-size: 15px; font-weight: 600">마법사</span><span class="lbl">체력 · 지능 · 주문력</span></button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <label for="name" style="font-size: 14px; font-weight: 600">모험가 이름</label>
+    <input id="name" type="text" placeholder="이름을 입력하세요" style="height: 48px; border-radius: 10px; border: 1px solid #3A3F4B; background: #1B1E26; color: #ECE7DD; font: inherit; font-size: 15px; padding: 0 14px">
+  </div>
+
+  <div style="flex-grow: 1"></div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px">
+    <a href="Town.dc.html" class="btn" style="background: #D9A441; border-color: #D9A441; color: #1A1408; font-weight: 600; font-size: 16px; min-height: 52px">모험 시작</a>
+    <button class="btn" style="background: transparent">이어하기</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

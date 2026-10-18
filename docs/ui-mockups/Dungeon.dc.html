@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>던전 탐험</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.n{position:absolute;width:36px;height:36px;border-radius:6px;border:1px solid #5A6070;background:#2A2E38;color:#ECE7DD;display:flex;align-items:center;justify-content:center;font-size:13px}
+.n.cur{background:#D9A441;border-color:#D9A441;color:#1A1408;font-weight:600}
+.n.next{background:transparent;border:2px solid #E2B657;color:#E2B657}
+.h{position:absolute;height:2px;background:#5A6070}
+.v{position:absolute;width:2px;background:#5A6070}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.blink{animation:blink 1.2s ease-in-out infinite}
+.go{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:60px;border-radius:12px;border:1px solid #D9A441;background:#262117;color:#ECE7DD;padding:8px 14px}
+.sub{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:10px;border:1px solid #3A3F4B;background:#1E222B;color:#ECE7DD;font:inherit;font-size:14px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 10px 16px; border-bottom: 1px solid #2A2E38; background: #181B22">
+    <div style="display: flex; flex-direction: column; gap: 2px">
+      <span style="font-size: 15px; font-weight: 600">7층 · 어두운 동굴</span>
+      <span class="lbl">탐험한 방 5</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div style="display: flex; flex-direction: column; gap: 3px; align-items: flex-end">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px">HP 182/230</span>
+        <div style="width: 110px; height: 8px; border-radius: 4px; background: #2A2E38; overflow: hidden"><div style="width: 79%; height: 100%; background: #C9483E"></div></div>
+      </div>
+      <button aria-label="일시정지" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #3A3F4B; background: transparent; color: #ECE7DD; display: flex; align-items: center; justify-content: center">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="#ECE7DD" stroke-width="2"><path d="M5 3v10M11 3v10"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; flex-grow: 1">
+    <div style="border-radius: 12px; border: 1px solid #2F333E; background: #191C23; padding: 12px">
+      <div style="position: relative; width: 334px; height: 204px">
+        <div class="h" style="left: 56px; top: 101px; width: 36px"></div>
+        <div class="v" style="left: 109px; top: 56px; height: 28px"></div>
+        <div class="v" style="left: 109px; top: 120px; height: 28px"></div>
+        <div class="h" style="left: 128px; top: 101px; width: 36px"></div>
+        <div class="v blink" style="left: 181px; top: 120px; height: 28px; background: #E2B657"></div>
+        <div class="h blink" style="left: 200px; top: 101px; width: 36px; background: #E2B657"></div>
+
+        <div class="n" style="left: 20px; top: 84px">시</div>
+        <div class="n" style="left: 92px; top: 84px">전</div>
+        <div class="n" style="left: 92px; top: 20px">휴</div>
+        <div class="n" style="left: 92px; top: 148px">보</div>
+        <div class="n cur" style="left: 164px; top: 84px">이</div>
+        <div class="n next blink" style="left: 164px; top: 148px">?</div>
+        <div class="n next blink" style="left: 236px; top: 84px">?</div>
+      </div>
+      <div style="display: flex; gap: 14px; padding-top: 8px; border-top: 1px solid #262A33" class="lbl">
+        <span>■ 탐험함</span><span style="color: #E2B657">■ 현재 위치</span><span style="color: #E2B657">□ 갈 수 있음</span>
+      </div>
+    </div>
+
+    <div style="border-radius: 12px; border: 1px solid #2F333E; background: #1B1E26; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 12px; color: #E2B657">갈림길</span>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6">길이 두 갈래로 나뉜다. 아래 통로에서는 물 떨어지는 소리가 들리고, 오른쪽 통로는 횃불이 모두 꺼져 있다.</p>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <a href="Battle.dc.html" class="go"><span style="font-size: 15px; font-weight: 600">아래 통로로 간다</span><span class="lbl">물소리가 나는 쪽</span></a>
+      <a href="Event.dc.html" class="go"><span style="font-size: 15px; font-weight: 600">오른쪽 통로로 간다</span><span class="lbl">횃불이 꺼진 쪽</span></a>
+    </div>
+
+    <div style="flex-grow: 1"></div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+      <button class="sub">텔레포트</button>
+      <button class="sub">가방</button>
+      <button class="sub" disabled style="opacity: 0.5">귀환 방 미발견</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>스킬</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.eq{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;height:76px;border-radius:10px;border:1px solid #D9A441;background:#262117;color:#ECE7DD;font:inherit;padding:8px 10px;text-align:left}
+.eq.empty{border:1px dashed #4A5060;background:transparent}
+.sk{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:64px;border-bottom:1px solid #262A33}
+.act{min-height:40px;min-width:64px;padding:0 12px;border-radius:10px;border:1px solid #3A3F4B;background:transparent;color:#ECE7DD;font:inherit;font-size:13px}
+.nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid #2A2E38;background:#181B22}
+.nav a{display:flex;align-items:center;justify-content:center;min-height:60px;font-size:13px;color:#A29E95}
+.nav a.on{color:#E2B657;font-weight:600}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; flex-grow: 1; overflow: hidden">
+    <div style="display: flex; justify-content: space-between; align-items: baseline">
+      <span style="font-size: 14px; font-weight: 600">장착 슬롯 <span style="font-family: 'IBM Plex Mono', monospace">3 / 4</span></span>
+      <span class="lbl">B 등급에서 5칸</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <button class="eq"><span style="font-size: 15px; font-weight: 600">강타</span><span class="lbl">재사용 2턴 · +2</span></button>
+      <button class="eq"><span style="font-size: 15px; font-weight: 600">방패 밀치기</span><span class="lbl">재사용 3턴 · 기절</span></button>
+      <button class="eq"><span style="font-size: 15px; font-weight: 600">전투 함성</span><span class="lbl">재사용 4턴 · 강화 3턴</span></button>
+      <button class="eq empty"><span class="lbl">빈 슬롯</span><span class="lbl">아래에서 선택</span></button>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 6px">
+      <span style="font-size: 14px; font-weight: 600">보유 스킬</span>
+      <span class="lbl">강화는 마을 수련장에서</span>
+    </div>
+    <div style="display: flex; flex-direction: column">
+      <div class="sk">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">강타 <span class="lbl">하급 · +2</span></span><span class="lbl">단일 대상 피해 180% · 재사용 2턴</span></span>
+        <button class="act" style="border-color: #D9A441; color: #E2B657">해제</button>
+      </div>
+      <div class="sk">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">방패 밀치기 <span class="lbl">중급</span></span><span class="lbl">피해 90% + 기절 1턴 · 재사용 3턴</span></span>
+        <button class="act" style="border-color: #D9A441; color: #E2B657">해제</button>
+      </div>
+      <div class="sk">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">전투 함성 <span class="lbl">하급</span></span><span class="lbl">강화 3턴 · 재사용 4턴</span></span>
+        <button class="act" style="border-color: #D9A441; color: #E2B657">해제</button>
+      </div>
+      <div class="sk">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">회전 베기 <span class="lbl">상급</span></span><span class="lbl">모든 적 피해 120% · 재사용 4턴</span></span>
+        <button class="act">장착</button>
+      </div>
+      <div class="sk" style="opacity: 0.55">
+        <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px">대지 가르기 <span class="lbl">최상급</span></span><span class="lbl">장착 조건 Lv.30 · C 등급</span></span>
+        <button class="act" disabled>잠김</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="nav" aria-label="주 메뉴">
+    <a href="Town.dc.html">마을</a>
+    <a href="Character.dc.html">캐릭터</a>
+    <a href="Inventory.dc.html">가방</a>
+    <a href="Skills.dc.html" class="on">스킬</a>
+    <a href="#">설정</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

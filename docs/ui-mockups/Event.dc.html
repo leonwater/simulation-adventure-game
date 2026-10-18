@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>특수 이벤트</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:60px;border-radius:12px;border:1px solid #3A3F4B;background:#1E222B;color:#ECE7DD;font:inherit;padding:8px 14px;text-align:left}
+.pct{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#E2B657;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; border-bottom: 1px solid #2A2E38; background: #181B22">
+    <span style="font-size: 15px; font-weight: 600">7층 · 특수 이벤트</span>
+    <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding-right: 4px">HP 182/230</span>
+  </div>
+
+  <div style="height: 300px; flex-shrink: 0; border-bottom: 1px dashed #4A5060; background: #1A1D24; display: flex; align-items: center; justify-content: center; color: #8F8C85; font-size: 13px">[일러스트: 버려진 제단]</div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; flex-grow: 1">
+    <h2 style="margin: 0; font-family: 'Gowun Batang', serif; font-size: 24px">피 묻은 제단</h2>
+    <p style="margin: 0; font-size: 15px; line-height: 1.7; color: #D8D2C6">어둠 속에 오래된 제단이 서 있다. 표면에 새겨진 문양이 희미하게 빛나고, 제단 위 그릇에는 마른 핏자국이 남아 있다.</p>
+
+    <div style="flex-grow: 1"></div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <button class="ch"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">피를 바친다</span><span class="lbl">HP 20% 소모</span></span><span class="pct">100%</span></button>
+      <button class="ch"><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 600">문양을 해독한다</span><span class="lbl">지능 판정</span></span><span class="pct">35%</span></button>
+      <a href="Dungeon.dc.html" class="ch"><span style="font-size: 15px; font-weight: 600">그냥 지나간다</span><span class="lbl">›</span></a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

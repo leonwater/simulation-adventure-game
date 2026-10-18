@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>전투</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.mono{font-family:'IBM Plex Mono',monospace}
+.en{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid #262A33}
+.bar{height:8px;border-radius:4px;background:#2A2E38;overflow:hidden}
+.tag{font-size:11px;padding:2px 7px;border-radius:6px;border:1px solid #4A5060;color:#C9C3B7}
+.tag.b{border-color:#6E9BD1;color:#9EC0E8}
+.tag.d{border-color:#C9483E;color:#E38A82}
+.ch{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:50px;border-radius:10px;border:1px solid #3A3F4B;background:#1E222B;color:#ECE7DD;font:inherit;font-size:15px;padding:0 14px;text-align:left}
+.pct{font-family:'IBM Plex Mono',monospace;font-size:14px;color:#E2B657}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 10px 16px; border-bottom: 1px solid #2A2E38; background: #181B22">
+    <span style="font-size: 15px; font-weight: 600">7층 · 전투 <span class="lbl">3턴째</span></span>
+    <button aria-label="일시정지" style="width: 44px; height: 44px; border-radius: 10px; border: 1px solid #3A3F4B; background: transparent; display: flex; align-items: center; justify-content: center">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" fill="none" stroke="#ECE7DD" stroke-width="2"><path d="M5 3v10M11 3v10"></path></svg>
+    </button>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px 16px 14px; flex-grow: 1; overflow: hidden">
+    <div style="border-radius: 12px; border: 1px solid #2F333E; background: #1B1E26; padding: 4px 14px">
+      <div class="en">
+        <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 14px; font-weight: 600">고블린 A</span><span style="display: flex; gap: 6px; align-items: center"><span class="tag d">독 2</span><span class="mono lbl">34/60</span></span></div>
+        <div class="bar"><div style="width: 57%; height: 100%; background: #C9483E"></div></div>
+      </div>
+      <div class="en">
+        <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 14px; font-weight: 600">고블린 B</span><span class="mono lbl">12/60</span></div>
+        <div class="bar"><div style="width: 20%; height: 100%; background: #C9483E"></div></div>
+      </div>
+      <div class="en" style="border-bottom: none">
+        <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 14px; font-weight: 600">고블린 궁수</span><span class="mono lbl">45/45</span></div>
+        <div class="bar"><div style="width: 100%; height: 100%; background: #C9483E"></div></div>
+      </div>
+    </div>
+
+    <div style="border-radius: 12px; border: 1px solid #3A4A5E; background: #1A1F28; padding: 10px 14px; display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><span style="font-size: 14px; font-weight: 600">에단 <span class="lbl">전사 Lv.12</span></span><span class="mono" style="font-size: 13px">HP 182/230</span></div>
+      <div class="bar"><div style="width: 79%; height: 100%; background: #6FB37A"></div></div>
+      <div style="display: flex; gap: 6px; flex-wrap: wrap"><span class="tag b">강화 3턴</span><span class="tag b">철벽 1턴</span><span class="tag d">출혈 2턴</span></div>
+    </div>
+
+    <div style="height: 92px; overflow-y: auto; border-radius: 10px; background: #111318; padding: 8px 12px; font-size: 13px; line-height: 1.7; color: #C9C3B7">
+      <div>고블린 B에게 강타! <span style="color: #E2B657">치명타 48 피해</span></div>
+      <div>고블린 A의 공격. 12 피해</div>
+      <div>출혈로 4 피해</div>
+      <div style="color: #ECE7DD">▶ 당신의 차례입니다.</div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between" class="lbl"><span>모든 선택은 1턴을 사용합니다</span><span>성공 확률</span></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; height: 286px; overflow-y: auto; padding-right: 2px">
+      <button class="ch">공격 · 고블린 B<span class="pct">82%</span></button>
+      <button class="ch">공격 · 고블린 A<span class="pct">82%</span></button>
+      <button class="ch">공격 · 고블린 궁수<span class="pct">76%</span></button>
+      <button class="ch">전투 함성<span class="pct">100%</span></button>
+      <button class="ch" disabled style="opacity: 0.5">강타<span class="lbl">2턴 후 사용 가능</span></button>
+      <button class="ch">방패 밀치기 · 고블린 A<span class="pct">70%</span></button>
+      <button class="ch">아이템 사용<span class="lbl">›</span></button>
+      <a href="Dungeon.dc.html" class="ch">도망친다<span class="pct">41%</span></a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

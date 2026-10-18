@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>캐릭터</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#0F1115}
+a{color:#E2B657;text-decoration:none}a:hover{color:#F0CB7A}
+*{box-sizing:border-box}
+.lbl{font-size:12px;color:#A29E95}
+.panel{border-radius:12px;border:1px solid #2F333E;background:#1B1E26;padding:12px 14px}
+.st{display:flex;align-items:center;justify-content:space-between;min-height:48px;border-bottom:1px solid #262A33}
+.num{font-family:'IBM Plex Mono',monospace;font-size:16px}
+.plus{width:44px;height:44px;border-radius:10px;border:1px solid #D9A441;background:transparent;color:#E2B657;font:inherit;font-size:20px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:10px;border:1px solid #3A3F4B;background:#1E222B;color:#ECE7DD;font:inherit;font-size:14px;padding:0 12px}
+.nav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid #2A2E38;background:#181B22}
+.nav a{display:flex;align-items:center;justify-content:center;min-height:60px;font-size:13px;color:#A29E95}
+.nav a.on{color:#E2B657;font-weight:600}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; background: #14161C; color: #ECE7DD; font-family: 'IBM Plex Sans KR', sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; flex-grow: 1; overflow: hidden">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end">
+      <div>
+        <h1 style="margin: 0; font-family: 'Gowun Batang', serif; font-size: 26px">에단</h1>
+        <div class="lbl">전사 · Lv.12 / 60</div>
+      </div>
+      <span class="lbl">경험치 62%</span>
+    </div>
+    <div style="height: 8px; border-radius: 4px; background: #2A2E38; overflow: hidden"><div style="width: 62%; height: 100%; background: #6E9BD1"></div></div>
+
+    <div class="panel" style="display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 15px; font-weight: 600">D 등급 배지</span>
+        <span style="font-size: 13px; color: #E2B657">기본 능력치 +4%</span>
+      </div>
+      <div class="lbl">C 등급 승급 조건</div>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; font-size: 13px">
+        <span>층 <span class="num" style="font-size: 13px">7/10</span></span>
+        <span>레벨 <span class="num" style="font-size: 13px">12/18</span></span>
+        <span>퀘스트 <span class="num" style="font-size: 13px">9/15</span></span>
+      </div>
+    </div>
+
+    <div class="panel" style="padding-top: 6px; padding-bottom: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: center; min-height: 40px">
+        <span style="font-size: 14px; font-weight: 600">능력치</span>
+        <span style="font-size: 13px">남은 포인트 <span class="num" style="color: #E2B657">3</span></span>
+      </div>
+      <div class="st"><span>체력 <span class="lbl">HP 230</span></span><span style="display: flex; align-items: center; gap: 12px"><span class="num">18</span><button class="plus" aria-label="체력 올리기">+</button></span></div>
+      <div class="st"><span>힘 <span class="lbl">공격력 58</span></span><span style="display: flex; align-items: center; gap: 12px"><span class="num">24</span><button class="plus" aria-label="힘 올리기">+</button></span></div>
+      <div class="st"><span>강인함 <span class="lbl">받는 피해 −5.5%</span></span><span style="display: flex; align-items: center; gap: 12px"><span class="num">11</span><button class="plus" aria-label="강인함 올리기">+</button></span></div>
+      <div class="st"><span>정신 <span class="lbl">저항 6%</span></span><span style="display: flex; align-items: center; gap: 12px"><span class="num">6</span><button class="plus" aria-label="정신 올리기">+</button></span></div>
+      <div class="st" style="border-bottom: none"><span>행운 <span class="lbl">치명타 7.4%</span></span><span style="display: flex; align-items: center; gap: 12px"><span class="num">8</span><button class="plus" aria-label="행운 올리기">+</button></span></div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+      <button class="btn">자동 배분</button>
+      <button class="btn" style="background: #D9A441; border-color: #D9A441; color: #1A1408; font-weight: 600">확정</button>
+    </div>
+    <button class="btn" style="background: transparent">상세 능력치 보기</button>
+  </div>
+
+  <nav class="nav" aria-label="주 메뉴">
+    <a href="Town.dc.html">마을</a>
+    <a href="Character.dc.html" class="on">캐릭터</a>
+    <a href="Inventory.dc.html">가방</a>
+    <a href="Skills.dc.html">스킬</a>
+    <a href="#">설정</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
