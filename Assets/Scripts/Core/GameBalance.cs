@@ -91,6 +91,8 @@ namespace Adventure.Core
         public const int MaxSkillLevel = 5;
         public const double SkillPowerPerLevel = 0.10;
         public const int TrainingGoldPerLevel = 200; // 수련 비용 = 200G × 다음 강화 단계
+        /// <summary>스킬서로 얻을 수 있는 스킬의 장착 레벨 한도 = 지금 레벨 + 이 값.</summary>
+        public const int SkillBookLevelWindow = 5;
         public static readonly int[] SkillBookPrice = { 600, 1500, 4000, 9000 };
 
         // ── 상점 ───────────────────────────────────────────────

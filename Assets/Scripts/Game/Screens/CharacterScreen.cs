@@ -24,7 +24,7 @@ namespace Adventure.Game
             var head = UI.Row(body, 8, null, TextAnchor.LowerLeft);
             var nameCol = UI.Column(head, 2);
             UI.Size(nameCol, flexW: 1);
-            UI.Label(nameCol, C.Name, 26, Theme.Text, false, TextAnchor.MiddleLeft, true);
+            UI.Label(nameCol, C.Name, 24, Theme.Text, true); // 이름은 어떤 글자든 나오도록 전체 글꼴(고딕)로
             UI.Sub(nameCol, C.JobData.Name + " · Lv." + C.Level + " / " + GameBalance.MaxLevel);
             int pct = Mathf.FloorToInt((float)Leveling.ExpProgress(C) * 100);
             UI.Sub(head, C.Level >= GameBalance.MaxLevel ? "최대 레벨" : "경험치 " + pct + "%", TextAnchor.LowerRight);

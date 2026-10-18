@@ -55,7 +55,7 @@ namespace Adventure.Game
             Overlay.SetBack(() => Overlay.Close(modal));
 
             var card = UI.Card(body, Theme.Bg, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
-            UI.Label(card, c.Name, 20, Theme.Text, false, TextAnchor.MiddleLeft, true);
+            UI.Label(card, c.Name, 20, Theme.Text, true);
             UI.Sub(card, c.JobData.Name + " · Lv." + c.Level);
             UI.Divider(card);
             Pair(card, "등급", c.Rank + " 등급", "난이도", Names.Of(data.Difficulty));

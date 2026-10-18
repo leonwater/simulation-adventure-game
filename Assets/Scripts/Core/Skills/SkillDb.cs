@@ -131,6 +131,14 @@ namespace Adventure.Core
         }
 
         /// <summary>직업이 쓸 수 있는 스킬 중 주어진 등급들.</summary>
+        /// <summary>스킬서로 얻을 수 있는 스킬: 자기 직업, 장착 레벨 ≤ 지금 레벨 + 5.</summary>
+        public static List<SkillDef> Obtainable(Character c, params SkillTier[] tiers)
+        {
+            var list = ForJob(c.Job, tiers.Length > 0 ? tiers : (SkillTier[])Enum.GetValues(typeof(SkillTier)));
+            list.RemoveAll(s => s.ReqLevel > c.Level + GameBalance.SkillBookLevelWindow);
+            return list;
+        }
+
         public static List<SkillDef> ForJob(Job job, params SkillTier[] tiers)
         {
             var list = new List<SkillDef>();

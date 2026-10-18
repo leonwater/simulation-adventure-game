@@ -177,7 +177,7 @@ namespace Adventure.Game
         {
             var data = JobData.Get(_job);
             var card = UI.Card(body, Theme.Card, Theme.Accent, 12, UI.Pad(16, 14), true, 8);
-            UI.Label(card, _name, 22, Theme.Text, false, TextAnchor.MiddleLeft, true);
+            UI.Label(card, _name, 22, Theme.Text, true);
             Row(card, "직업", data.Name + " · " + string.Join(" · ", Array.ConvertAll(data.MainStats, s => Names.Of(s))));
             Row(card, "시작 스킬", SkillDb.Get(SkillDb.StartingSkill(_job)).Name);
             Row(card, "난이도", Names.Of(_difficulty));

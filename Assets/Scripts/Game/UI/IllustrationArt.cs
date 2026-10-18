@@ -12,13 +12,17 @@ namespace Adventure.Game
     {
         public string File;
         public float FocusX = 0.5f, FocusY = 0.5f;
+        /// <summary>원본 가로/세로 비율. 가져오기 설정과 관계없이 원본 비율로 잘라 채운다.</summary>
+        public float Aspect;
 
         private static readonly Dictionary<string, IllustrationArt> Table = new Dictionary<string, IllustrationArt>
         {
             // 접수원 얼굴이 위쪽 1/4 지점에 있어 위를 남긴다.
-            { "길드 접수원", new IllustrationArt { File = "guild_receptionist", FocusX = 0.5f, FocusY = 0.68f } },
+            { "길드 접수원", new IllustrationArt { File = "guild_receptionist", FocusX = 0.5f, FocusY = 0.68f, Aspect = 1.5f } },
             // 대장장이 얼굴·망치와 화로가 함께 보이도록 약간 위를 남긴다.
-            { "대장장이", new IllustrationArt { File = "blacksmith", FocusX = 0.5f, FocusY = 0.62f } },
+            { "대장장이", new IllustrationArt { File = "blacksmith", FocusX = 0.5f, FocusY = 0.62f, Aspect = 1.5f } },
+            // 마을 광장: 건물 지붕과 탑이 보이도록 가운데보다 약간 위를 남긴다.
+            { "마을 전경", new IllustrationArt { File = "town", FocusX = 0.5f, FocusY = 0.56f, Aspect = 1280f / 720f } },
         };
 
         public static IllustrationArt Find(string key)
@@ -33,6 +37,7 @@ namespace Adventure.Game
     public class CoverImage : MonoBehaviour
     {
         public Vector2 Focus = new Vector2(0.5f, 0.5f);
+        public float Aspect;
 
         private void OnEnable() => Apply();
 
@@ -44,7 +49,7 @@ namespace Adventure.Game
             if (raw == null || raw.texture == null) return;
             var size = ((RectTransform)transform).rect.size;
             if (size.x <= 0 || size.y <= 0) return;
-            float texAspect = (float)raw.texture.width / raw.texture.height;
+            float texAspect = Aspect > 0 ? Aspect : (float)raw.texture.width / raw.texture.height;
             float boxAspect = size.x / size.y;
             float w = 1f, h = 1f;
             if (boxAspect > texAspect) h = texAspect / boxAspect; // 칸이 더 넓다 → 위아래를 자른다

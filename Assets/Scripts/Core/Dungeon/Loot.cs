@@ -49,13 +49,19 @@ namespace Adventure.Core
             return EquipmentFactory.CreateRandom(rng, grade, lv, c.Job, 0.7);
         }
 
-        /// <summary>상급·최상급 스킬서 (자기 직업 + 공용 상급). 최상급은 드물다.</summary>
+        /// <summary>
+        /// 스킬서 드롭: 자기 직업 스킬 중 장착 레벨이 지금 레벨 + 5 이하인 것만 (기획서 v1.4).
+        /// 그중 가장 높은 단계를 우선하고(최상급은 25% 확률로만), 아직 배우지 않은 스킬을 먼저 고른다.
+        /// </summary>
         public static ItemInstance HighSkillBook(Character c, Rng rng)
         {
-            var tier = rng.Chance(0.25) ? SkillTier.Top : SkillTier.High;
-            var list = SkillDb.ForJob(c.Job, tier);
-            if (list.Count == 0) list = SkillDb.ForJob(c.Job, SkillTier.High);
-            return ItemDb.CreateSkillBook(rng.Pick(list).Id);
+            var list = SkillDb.Obtainable(c);
+            var best = SkillTier.Low;
+            foreach (var s in list)
+                if (s.Tier > best && (s.Tier != SkillTier.Top || rng.Chance(0.25))) best = s.Tier;
+            var pick = list.FindAll(s => s.Tier == best);
+            var unknown = pick.FindAll(s => !c.Skills.Knows(s.Id));
+            return ItemDb.CreateSkillBook(rng.Pick(unknown.Count > 0 ? unknown : pick).Id);
         }
 
         public static LootReport Treasure(int floor, Character c, Rng rng)

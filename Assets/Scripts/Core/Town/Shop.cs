@@ -100,7 +100,7 @@ namespace Adventure.Core
             s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable(optional[0]), Unlimited = true });
 
             // 하급·중급 스킬서 (아직 배우지 않은 것 우선)
-            var books = SkillDb.ForJob(c.Job, SkillTier.Low, SkillTier.Mid);
+            var books = SkillDb.Obtainable(c, SkillTier.Low, SkillTier.Mid);
             books.RemoveAll(b => c.Skills.Knows(b.Id));
             rng.Shuffle(books);
             int bookCount = 0;

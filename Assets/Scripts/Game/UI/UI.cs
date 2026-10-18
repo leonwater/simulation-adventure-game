@@ -372,6 +372,7 @@ namespace Adventure.Game
                 raw.raycastTarget = false;
                 var cover = rt.gameObject.AddComponent<CoverImage>();
                 cover.Focus = new Vector2(art.FocusX, art.FocusY);
+                cover.Aspect = art.Aspect;
                 return rt;
             }
             var box = Card(parent, Theme.Placeholder, radius > 0 ? Theme.PlaceholderLine : Theme.Placeholder, Mathf.Max(radius, 0.01f), Pad(0), true, 0, TextAnchor.MiddleCenter, "illustration");

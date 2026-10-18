@@ -26,9 +26,14 @@ namespace Adventure.EditorTools
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
 #if UNITY_2021_2_OR_NEWER
             PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
+            // 앱 크기 줄이기: 쓰지 않는 코드 제거 (저장 파일이 리플렉션으로 쓰는 Core는 link.xml로 보존)
+            PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.Android, ManagedStrippingLevel.Medium);
 #else
             PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
+            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.Android, ManagedStrippingLevel.Medium);
 #endif
+            PlayerSettings.stripEngineCode = true;
+            EditorUserBuildSettings.androidBuildSubtarget = MobileTextureSubtarget.ASTC;
             EditorUserBuildSettings.buildAppBundle = false; // .aab가 아니라 바로 설치할 수 있는 .apk
 
             ApplyKeystoreFromArgs();

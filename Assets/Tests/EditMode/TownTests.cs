@@ -74,7 +74,30 @@ namespace Adventure.Tests
                     var tier = SkillDb.Get(g.Item.SkillId).Tier;
                     Assert.IsTrue(tier == SkillTier.Low || tier == SkillTier.Mid);
                     Assert.IsFalse(c.Skills.Knows(g.Item.SkillId));
+                    Assert.LessOrEqual(SkillDb.Get(g.Item.SkillId).ReqLevel, c.Level + GameBalance.SkillBookLevelWindow);
                 }
+            }
+        }
+
+        [Test]
+        public void SkillBookDrops_OnlyUpToLevelPlusFive()
+        {
+            var rng = new Rng(5);
+            foreach (int level in new[] { 1, 3, 12, 13, 25, 40 })
+            {
+                var c = Character.Create("a", Job.Mage);
+                c.Level = level;
+                bool sawHigh = false, sawTop = false;
+                for (int i = 0; i < 300; i++)
+                {
+                    var def = SkillDb.Get(LootSystem.HighSkillBook(c, rng).SkillId);
+                    Assert.AreEqual((int)Job.Mage, def.JobRestriction);
+                    Assert.LessOrEqual(def.ReqLevel, level + 5, "Lv." + level + "에 " + def.Name);
+                    sawHigh |= def.Tier == SkillTier.High;
+                    sawTop |= def.Tier == SkillTier.Top;
+                }
+                Assert.AreEqual(level >= 13, sawHigh || sawTop, "Lv.13부터 상급 스킬서");
+                Assert.AreEqual(level >= 25, sawTop, "Lv.25부터 최상급 스킬서");
             }
         }
 
