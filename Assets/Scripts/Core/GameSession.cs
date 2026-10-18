@@ -46,9 +46,42 @@ namespace Adventure.Core
 
         public void NewGame(string name, Job job, Difficulty difficulty)
         {
-            Data = new SaveData { Difficulty = difficulty, Character = Character.Create(name, job) };
+            Data = new SaveData { Difficulty = difficulty, Character = Character.Create(name, job), Tutorial = TutorialStage.TownGuide };
             ClearTransient();
             EnterTown();
+        }
+
+        /// <summary>저장 파일 요약용으로 읽기만 한다 (없으면 null).</summary>
+        public SaveData PeekSave() => SaveSystem.Load(_store);
+
+        public bool TipShown(string key) => Data != null && Data.TipsShown.Contains(key);
+
+        /// <summary>안내를 보여 줬다고 기록한다. 처음이면 true.</summary>
+        public bool MarkTip(string key)
+        {
+            if (Data == null || Data.TipsShown.Contains(key)) return false;
+            Data.TipsShown.Add(key);
+            Save();
+            return true;
+        }
+
+        public bool InTutorial => Data != null && Data.Tutorial != TutorialStage.Done;
+
+        public void SetTutorial(TutorialStage stage)
+        {
+            if (Data == null) return;
+            Data.Tutorial = stage;
+            if (stage == TutorialStage.Done) Data.TipsShown.Clear();
+            Save();
+        }
+
+        /// <summary>튜토리얼을 처음부터 다시 본다 (설정). 던전 밖에서만.</summary>
+        public void RestartTutorial()
+        {
+            if (Data == null || InDungeon) return;
+            Data.Tutorial = TutorialStage.TownGuide;
+            Data.TipsShown.Clear();
+            Save();
         }
 
         /// <summary>저장을 불러온다. 던전 안에서 전투 중이었다면 그 방의 전투를 다시 시작한다.</summary>
@@ -119,7 +152,16 @@ namespace Adventure.Core
             ClearTransient();
             LastReturn = null;
             LastDeath = null;
-            Data.Run = DungeonSystem.StartRun(C, Data.SelectedFloor, Rng);
+            bool tutorial = (Data.Tutorial == TutorialStage.TownGuide || Data.Tutorial == TutorialStage.FirstDungeon)
+                            && C.HighestFloorCleared == 0 && Data.SelectedFloor == 1;
+            if (tutorial)
+            {
+                var map = DungeonGenerator.GenerateTutorial(Rng);
+                C.CurrentHp = CharacterStats.MaxHp(C);
+                Data.Run = new DungeonRun { Floor = 1, Map = map, CurrentRoomId = map.StartId, PreviousRoomId = map.StartId, IsTutorial = true };
+                Data.Tutorial = TutorialStage.FirstDungeon;
+            }
+            else Data.Run = DungeonSystem.StartRun(C, Data.SelectedFloor, Rng);
             Save();
         }
 
@@ -147,10 +189,8 @@ namespace Adventure.Core
             switch (result)
             {
                 case RoomEnterResult.Battle:
-                    StartBattle(EnemyFactory.CreateGroup(run.Floor, Difficulty, run.Current.Seed), false);
-                    break;
                 case RoomEnterResult.Boss:
-                    StartBattle(EnemyFactory.CreateBoss(run.Floor, Difficulty, run.Current.Seed), true);
+                    StartRoomBattle(run.Current);
                     break;
                 case RoomEnterResult.Treasure:
                     LastLoot = DungeonSystem.OpenTreasure(run, C, Rng);
@@ -172,8 +212,22 @@ namespace Adventure.Core
             var run = Data.Run;
             var room = run.Current;
             if (room.Cleared) return;
-            if (room.Type == RoomType.Battle) StartBattle(EnemyFactory.CreateGroup(run.Floor, Difficulty, room.Seed), false);
-            else if (room.Type == RoomType.Boss) StartBattle(EnemyFactory.CreateBoss(run.Floor, Difficulty, room.Seed), true);
+            if (room.Type == RoomType.Battle || room.Type == RoomType.Boss) StartRoomBattle(room);
+        }
+
+        private void StartRoomBattle(Room room)
+        {
+            var run = Data.Run;
+            bool boss = room.Type == RoomType.Boss;
+            if (run.IsTutorial)
+            {
+                bool first = true;
+                foreach (var r in run.Map.Rooms)
+                    if (r.Type == RoomType.Battle && r.Cleared && r.Id != room.Id) first = false;
+                StartBattle(boss ? EnemyFactory.CreateTutorialBoss(Difficulty) : EnemyFactory.CreateTutorialGroup(first, Difficulty), boss);
+                return;
+            }
+            StartBattle(boss ? EnemyFactory.CreateBoss(run.Floor, Difficulty, room.Seed) : EnemyFactory.CreateGroup(run.Floor, Difficulty, room.Seed), boss);
         }
 
         /// <summary>지금 방이 아직 끝나지 않은 이벤트 방인지.</summary>
@@ -309,6 +363,7 @@ namespace Adventure.Core
             Battle = null;
             LastReturn = Settlement.Return(C, Data.Run);
             Data.Run = null;
+            if (Data.Tutorial == TutorialStage.FirstDungeon) Data.Tutorial = TutorialStage.AfterReturn;
             EnterTown();
         }
 
@@ -327,6 +382,7 @@ namespace Adventure.Core
             LastDeath = Settlement.Die(C, run, Difficulty, killedBy);
             Battle = null;
             Data.Run = null;
+            if (Data.Tutorial == TutorialStage.FirstDungeon) Data.Tutorial = TutorialStage.AfterReturn;
             if (LastDeath.HardcoreReset)
             {
                 _store.Delete();

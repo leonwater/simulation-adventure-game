@@ -95,6 +95,34 @@ namespace Adventure.Core
             return list;
         }
 
+        /// <summary>튜토리얼 전투: 첫 전투는 슬라임 1마리(레벨업할 만큼 경험치), 두 번째는 고블린 2마리.</summary>
+        public static List<Combatant> CreateTutorialGroup(bool first, Difficulty diff)
+        {
+            var list = new List<Combatant>();
+            if (first)
+            {
+                var slime = Create(MonsterDb.Get("slime"), 1, diff, 0);
+                slime.ExpReward = Math.Max(slime.ExpReward, GameBalance.ExpToNext(1));
+                list.Add(slime);
+            }
+            else
+            {
+                list.Add(Create(MonsterDb.Get("goblin"), 1, diff, 0));
+                list.Add(Create(MonsterDb.Get("goblin"), 1, diff, 0));
+            }
+            NameDuplicates(list);
+            return list;
+        }
+
+        /// <summary>튜토리얼 약한 보스 (고블린 우두머리, HP 절반).</summary>
+        public static List<Combatant> CreateTutorialBoss(Difficulty diff)
+        {
+            var boss = Create(MonsterDb.Get("goblin"), 1, diff, 2);
+            boss.MaxHp = boss.Hp = Math.Max(1, boss.MaxHp / 2);
+            boss.Attack = Math.Max(1, (int)Math.Round(boss.Attack * 0.8));
+            return new List<Combatant> { boss };
+        }
+
         /// <summary>같은 이름이 여럿이면 A, B, C…를 붙인다.</summary>
         public static void NameDuplicates(List<Combatant> list)
         {

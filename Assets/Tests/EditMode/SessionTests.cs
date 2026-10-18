@@ -85,6 +85,33 @@ namespace Adventure.Tests
         }
 
         [Test]
+        public void Tutorial_FixedFirstFloorThenAfterReturn()
+        {
+            var store = new MemorySaveStore();
+            var s = NewSession(store);
+            s.NewGame("에단", Job.Archer, Difficulty.Normal);
+            Assert.AreEqual(TutorialStage.TownGuide, s.Data.Tutorial);
+            s.EnterDungeon();
+            Assert.IsTrue(s.Run.IsTutorial);
+            Assert.AreEqual(TutorialStage.FirstDungeon, s.Data.Tutorial);
+            Assert.AreEqual(6, s.Run.Map.Rooms.Count);
+            Assert.AreEqual(RoomEnterResult.Battle, s.Move(1));
+            Assert.AreEqual(1, s.Battle.Enemies.Count, "첫 전투는 슬라임 1마리");
+            int guard = 0;
+            while (s.Battle != null && !s.Battle.IsOver && guard++ < 50) s.ExecuteBattle(PickBattleChoice(s.Battle));
+            Assert.AreEqual(BattleOutcome.Victory, s.Battle.Outcome);
+            Assert.GreaterOrEqual(s.C.Level, 2, "첫 전투 뒤 레벨 업");
+            s.CloseBattle();
+            Assert.AreEqual(RoomEnterResult.Return, s.Move(2));
+            Assert.IsTrue(s.CanReturn);
+            s.ReturnToTown();
+            Assert.AreEqual(TutorialStage.AfterReturn, s.Data.Tutorial);
+            s.SetTutorial(TutorialStage.Done);
+            s.EnterDungeon();
+            Assert.IsFalse(s.Run.IsTutorial);
+        }
+
+        [Test]
         public void Hardcore_DeathDeletesSave()
         {
             var store = new MemorySaveStore();

@@ -12,6 +12,12 @@ namespace Adventure.Core
         public List<ItemInstance> ItemsLost = new List<ItemInstance>();
         public int EquippedKept;
         public bool HardcoreReset;
+        // 패배 화면 비교표 (이전 → 현재)
+        public long GoldBefore, GoldAfter;
+        public double ExpPctBefore, ExpPctAfter;
+        public int BagBefore, BagAfter;
+        public int RoomsExplored, RoomsTotal;
+        public int StorageCount;
     }
 
     public class ReturnReport
@@ -33,7 +39,17 @@ namespace Adventure.Core
         /// </summary>
         public static DeathReport Die(Character c, DungeonRun run, Difficulty difficulty, string killedBy)
         {
-            var report = new DeathReport { Floor = run?.Floor ?? 0, KilledBy = killedBy ?? "" };
+            var report = new DeathReport
+            {
+                Floor = run?.Floor ?? 0,
+                KilledBy = killedBy ?? "",
+                GoldBefore = c.Gold,
+                ExpPctBefore = Leveling.ExpProgress(c),
+                BagBefore = c.Inventory.Items.Count,
+                RoomsExplored = run?.RoomsExplored ?? 0,
+                RoomsTotal = run == null ? 0 : run.Map.Rooms.Count - 1,
+                StorageCount = c.Storage.Items.Count,
+            };
             if (difficulty == Difficulty.Hardcore)
             {
                 report.HardcoreReset = true;
@@ -46,6 +62,9 @@ namespace Adventure.Core
             c.Inventory.Clear();
             report.EquippedKept = c.Equipment.EquippedCount;
             c.CurrentHp = CharacterStats.MaxHp(c);
+            report.GoldAfter = c.Gold;
+            report.ExpPctAfter = Leveling.ExpProgress(c);
+            report.BagAfter = c.Inventory.Items.Count;
             return report;
         }
 

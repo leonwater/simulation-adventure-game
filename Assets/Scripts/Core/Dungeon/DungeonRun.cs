@@ -16,6 +16,10 @@ namespace Adventure.Core
         public long ExpEarned;
         public int EnemiesDefeated;
         public List<string> Loot = new List<string>();
+        /// <summary>튜토리얼 고정 배치 1층.</summary>
+        public bool IsTutorial;
+        /// <summary>층에 막 들어왔는지 (층 진입 타이틀 연출용, 한 번 보여 주면 false).</summary>
+        public bool FloorIntroPending = true;
 
         public Room Current => Map.Get(CurrentRoomId);
 
@@ -245,6 +249,8 @@ namespace Adventure.Core
             run.CurrentRoomId = run.Map.StartId;
             run.PreviousRoomId = run.Map.StartId;
             run.BossDefeated = false;
+            run.IsTutorial = false;
+            run.FloorIntroPending = true;
         }
 
         /// <summary>보스 처치 기록: 돌파 층 갱신, 정복 퀘스트 진행.</summary>

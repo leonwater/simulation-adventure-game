@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Adventure.Core
 {
@@ -21,6 +22,21 @@ namespace Adventure.Core
         public int SelectedFloor = 1;
         public long SavedAtTicks;
         public long PlaySeconds;
+        /// <summary>튜토리얼 단계 (0 = 끝남 또는 예전 저장).</summary>
+        public TutorialStage Tutorial = TutorialStage.Done;
+        /// <summary>이미 보여 준 안내 (다시 켜도 반복하지 않게).</summary>
+        public List<string> TipsShown = new List<string>();
+        /// <summary>마지막으로 확인한 상점 갱신 시각 (알림 점용).</summary>
+        public long ShopSeenTicks;
+    }
+
+    /// <summary>튜토리얼 진행 (수정 사항 #7).</summary>
+    public enum TutorialStage
+    {
+        Done = 0,
+        TownGuide = 1,
+        FirstDungeon = 2,
+        AfterReturn = 3
     }
 
     /// <summary>저장소. Unity에서는 파일, 테스트에서는 메모리를 쓴다.</summary>
@@ -91,6 +107,7 @@ namespace Adventure.Core
             c.Storage.Items.RemoveAll(i => i == null);
             c.RecalculateCapacities();
             c.CurrentHp = GameBalance.Clamp(c.CurrentHp, 0, CharacterStats.MaxHp(c));
+            if (d.TipsShown == null) d.TipsShown = new List<string>();
             if (d.Shop == null) d.Shop = new ShopState();
             if (d.Guild == null) d.Guild = new GuildState();
             if (d.Run != null && (d.Run.Map == null || d.Run.Map.Rooms.Count == 0 || d.Run.Current == null)) d.Run = null;

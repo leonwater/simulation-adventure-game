@@ -204,6 +204,37 @@ namespace Adventure.Core
             }
         }
 
+        /// <summary>
+        /// 튜토리얼 1층 고정 배치: 시작 → 전투 → 갈림길(위: 귀환 방 / 오른쪽: 휴식 → 전투 → 약한 보스).
+        /// </summary>
+        public static FloorMap GenerateTutorial(Rng rng)
+        {
+            var map = new FloorMap { Floor = 1, Pattern = LayoutPattern.Branch };
+            var cells = new Dictionary<long, int>();
+            var start = AddRoom(map, cells, 0, 0);
+            var battle1 = AddRoom(map, cells, 1, 0);
+            var ret = AddRoom(map, cells, 1, -1);
+            var rest = AddRoom(map, cells, 2, 0);
+            var battle2 = AddRoom(map, cells, 3, 0);
+            var boss = AddRoom(map, cells, 4, 0);
+            Link(start, battle1);
+            Link(battle1, ret);
+            Link(battle1, rest);
+            Link(rest, battle2);
+            Link(battle2, boss);
+            start.Type = RoomType.Start;
+            start.Visited = start.Cleared = true;
+            battle1.Type = RoomType.Battle;
+            ret.Type = RoomType.Return;
+            rest.Type = RoomType.Rest;
+            battle2.Type = RoomType.Battle;
+            boss.Type = RoomType.Boss;
+            foreach (var r in map.Rooms) r.Seed = rng.NextSeed();
+            map.StartId = start.Id;
+            map.BossId = boss.Id;
+            return map;
+        }
+
         public static List<ShopGood> MerchantGoods()
         {
             var list = new List<ShopGood>();
