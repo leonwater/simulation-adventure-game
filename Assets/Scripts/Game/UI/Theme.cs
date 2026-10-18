@@ -22,7 +22,6 @@ namespace Adventure.Game
         public static readonly Color PlaceholderText = Hex("8F8C85");
         public static readonly Color MapBg = Hex("191C23");
         public static readonly Color MapNode = Hex("2A2E38");
-        public static readonly Color MapLine = Hex("5A6070");
 
         public static readonly Color Text = Hex("ECE7DD");
         public static readonly Color TextSub = Hex("A29E95");

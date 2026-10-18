@@ -93,8 +93,6 @@ namespace Adventure.Core
             if (Data != null) Data.ShopSeenTicks = Data.Shop.LastRefreshTicks;
         }
 
-        public bool InTutorial => Data != null && Data.Tutorial != TutorialStage.Done;
-
         public void SetTutorial(TutorialStage stage)
         {
             if (Data == null) return;

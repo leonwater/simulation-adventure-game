@@ -44,8 +44,6 @@ namespace Adventure.Core
         public bool IsAttack => DamageMult > 0 || ChainMults.Length > 0;
         public bool NeedsTarget => Target == SkillTarget.SingleEnemy || Target == SkillTarget.MultiEnemy || Target == SkillTarget.ChainEnemies;
 
-        public string EffectText => Effect;
-
         /// <summary>"성공률 −5%" / "성공률 100%" / "" (보정 없음)</summary>
         public string SuccessText
         {

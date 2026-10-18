@@ -24,8 +24,6 @@ namespace Adventure.Game
             _root = root;
         }
 
-        public bool HasModal => _modals.Count > 0;
-
         public void Toast(string message)
         {
             if (string.IsNullOrEmpty(message)) return;

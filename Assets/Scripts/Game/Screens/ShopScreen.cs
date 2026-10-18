@@ -76,6 +76,7 @@ namespace Adventure.Game
                 }
                 if (_timer != null) _timer.text = TimerText();
             };
+            Tutorial.OnFacility("shop");
         }
 
         private string TimerText()

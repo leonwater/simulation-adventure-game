@@ -15,12 +15,5 @@ namespace Adventure.Core
             get => Values[(int)stat];
             set => Values[(int)stat] = value;
         }
-
-        public StatBlock Clone()
-        {
-            var copy = new StatBlock();
-            Array.Copy(Values, copy.Values, Count);
-            return copy;
-        }
     }
 }

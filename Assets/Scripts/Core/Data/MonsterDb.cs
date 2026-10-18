@@ -59,7 +59,6 @@ namespace Adventure.Core
     public sealed class FloorTheme
     {
         public string Name;
-        public string ReturnText;
         public string[] SpeciesIds;
         public string UniqueBossId;
     }

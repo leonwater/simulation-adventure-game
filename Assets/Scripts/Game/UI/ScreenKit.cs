@@ -183,16 +183,6 @@ namespace Adventure.Game
 
         public static string Percent(double p) => Mathf.RoundToInt((float)(p * 100)) + "%";
 
-        /// <summary>상태 이상 태그 줄 (버프 파랑, 디버프 빨강).</summary>
-        public static void StatusTags(Transform parent, Combatant who)
-        {
-            foreach (var s in who.Statuses.Visible())
-            {
-                bool debuff = StatusContainer.IsDebuff(s.Type);
-                UI.Pill(parent, Names.Of(s.Type) + " " + s.Turns, debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 11, 6);
-            }
-        }
-
         /// <summary>
         /// 시설 화면 공통: 일러스트 + 그 아래쪽 안에 겹친 대사 상자 (수정 사항 #5).
         /// 아래쪽 어두운 그라데이션 위에 검은 반투명 상자, 금색 1px 테두리, 왼쪽 위 이름표, 최대 3줄.

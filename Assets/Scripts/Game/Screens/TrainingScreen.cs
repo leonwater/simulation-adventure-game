@@ -39,6 +39,7 @@ namespace Adventure.Game
                 UI.SetEnabled(b, cost > 0 && C.Gold >= cost);
                 ScreenKit.BottomLine(row, Theme.LineSoft);
             }
+            Tutorial.OnFacility("training");
         }
 
         private void Train(SkillState st)

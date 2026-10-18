@@ -121,8 +121,6 @@ namespace Adventure.Core
         // 남은 칸 가중치
         public const int WeightBattle = 50, WeightEvent = 30, WeightTreasure = 10, WeightRest = 10;
 
-        public const int MinEnemies = 1;
-        public const int MaxEnemies = 4;
         public const double EliteChance = 0.12;
 
         public static double DifficultyMultiplier(Difficulty d)

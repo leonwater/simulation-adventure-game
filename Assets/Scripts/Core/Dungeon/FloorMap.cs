@@ -36,8 +36,6 @@ namespace Adventure.Core
 
         public Room Boss => Get(BossId);
 
-        public bool Linked(int a, int b) => Get(a)?.Links.Contains(b) ?? false;
-
         public int CountOf(RoomType type)
         {
             int n = 0;

@@ -42,6 +42,7 @@ namespace Adventure.Game
             string label = _kind == ResultKind.Hardcore ? "처음으로" : "마을로 돌아가기";
             var next = UI.TextButton(body, label, Next, ButtonKind.Primary, 52, 16);
             Anchors.Set("result.next", next);
+            Tutorial.OnResult();
         }
 
         private static void Heading(Transform parent, string title, Color color, string sub)
@@ -88,6 +89,7 @@ namespace Adventure.Game
             }
             Heading(body, "패배", Theme.RedLight, d.Floor + "층 · " + Cause(d.KilledBy));
             var table = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(12, 12, 6, 6), true, 0);
+            Anchors.Set("result.panel", table);
             TableRow(table, "항목", "이전", "현재", "변화", true);
             TableRow(table, "골드", d.GoldBefore.ToString("#,0"), d.GoldAfter.ToString("#,0"), Change(-d.GoldLost));
             int expBefore = Mathf.FloorToInt((float)d.ExpPctBefore * 100), expAfter = Mathf.FloorToInt((float)d.ExpPctAfter * 100);

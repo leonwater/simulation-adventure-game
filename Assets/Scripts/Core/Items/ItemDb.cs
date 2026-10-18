@@ -13,8 +13,6 @@ namespace Adventure.Core
         /// <summary>해제하는 디버프. 없으면 null.</summary>
         public StatusType? Cures;
         public string Description;
-        /// <summary>상점·상인 판매 여부.</summary>
-        public bool SoldInShop = true;
     }
 
     public sealed class MaterialDef
@@ -90,17 +88,6 @@ namespace Adventure.Core
                 SkillId = skillId, Count = count, Price = GameBalance.SkillBookPrice[(int)def.Tier],
                 JobRestriction = def.JobRestriction,
             };
-        }
-
-        /// <summary>
-        /// 테스트·재생성용 템플릿 아이템. TemplateId 만으로 소모품·재료·강화석·스킬서를 다시 만든다.
-        /// </summary>
-        public static ItemInstance CreateStackable(string templateId, int count)
-        {
-            if (templateId == EnhanceStoneId) return CreateEnhanceStone(count);
-            if (templateId.StartsWith("book_")) return CreateSkillBook(templateId.Substring(5), count);
-            if (Consumable(templateId) != null) return CreateConsumable(templateId, count);
-            return CreateMaterial(templateId, count);
         }
     }
 }

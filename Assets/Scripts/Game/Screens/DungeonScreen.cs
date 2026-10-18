@@ -90,11 +90,10 @@ namespace Adventure.Game
                 if (C.UnspentPoints > 0)
                 {
                     LevelUpAllocation(new AllocationDraft(C));
-                    Tutorial.OnLevelUp();
                     return;
                 }
             }
-            Tutorial.OnDungeon(run.Current.Type == RoomType.Return);
+            Tutorial.OnDungeon();
         }
 
         // ── 레벨 업 배분 (수정 사항 #17): 자동 배분 · 확정 · 나중에 ──
@@ -128,6 +127,7 @@ namespace Adventure.Game
             }, ButtonKind.Ghost);
             UI.Size(later, flexW: 1);
             var auto = UI.TextButton(buttons, "자동 배분", () => Redraw(modal, draft, draft.Auto));
+            Anchors.Set("levelup.auto", auto);
             UI.Size(auto, flexW: 1);
             UI.SetEnabled(auto, draft.Remaining > 0);
             var ok = UI.TextButton(buttons, "확정", () =>
@@ -141,6 +141,7 @@ namespace Adventure.Game
             }, ButtonKind.Primary);
             UI.Size(ok, flexW: 1);
             UI.SetEnabled(ok, draft.HasChanges);
+            Tutorial.OnLevelUp();
         }
 
         private void Redraw(GameObject modal, AllocationDraft draft, System.Action change)

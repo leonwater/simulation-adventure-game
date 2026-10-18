@@ -79,8 +79,6 @@ namespace Adventure.Core
 
         public bool Remove(StatusType type) => _list.RemoveAll(s => s.Type == type) > 0;
 
-        public void RemoveDebuffs() => _list.RemoveAll(s => IsDebuff(s.Type));
-
         /// <summary>주인의 턴이 끝날 때 호출: 지속 턴을 1 줄이고 끝난 효과를 지운다.</summary>
         public void Tick()
         {

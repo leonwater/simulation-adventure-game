@@ -105,13 +105,6 @@ namespace Adventure.Core
             return q;
         }
 
-        /// <summary>목록에 보여 줄 설명 한 줄. 예: "목표 7층 · 보상 ×1.5 · 480G · 경험치 650"</summary>
-        public static string Summary(Quest q)
-        {
-            return "목표 " + q.TargetFloor + "층 · 보상 ×" + q.RewardMultiplier.ToString("0.0#") +
-                   " · " + q.RewardGold.ToString("#,0") + "G · 경험치 " + q.RewardExp.ToString("#,0");
-        }
-
         public static string ProgressText(Quest q, Character c)
         {
             switch (q.Kind)

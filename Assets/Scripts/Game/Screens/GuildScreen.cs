@@ -35,11 +35,8 @@ namespace Adventure.Game
             var body = UI.Scroll(page, out _, 8, UI.Pad(12, 12, 12, 16), "guild" + _tab);
             if (_tab == 0) Quests(body);
             else if (_tab == 1) RankTab(body);
-            else
-            {
-                StorageTab(body);
-                Tutorial.OnGuildStorage();
-            }
+            else StorageTab(body);
+            Tutorial.OnGuild(_tab);
         }
 
         // ── 퀘스트 (간략 카드, 누르면 상세) ──

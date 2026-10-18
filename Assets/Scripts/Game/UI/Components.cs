@@ -82,18 +82,6 @@ namespace Adventure.Game
         }
     }
 
-    /// <summary>스크롤을 맨 아래로 내린다 (전투 기록).</summary>
-    public class ScrollToBottom : MonoBehaviour
-    {
-        private int _frames = 2;
-
-        private void LateUpdate()
-        {
-            if (_frames-- > 0) GetComponent<ScrollRect>().verticalNormalizedPosition = 0f;
-            else enabled = false;
-        }
-    }
-
     /// <summary>화면이 매 프레임 할 일 (타이머 갱신 등)을 연결한다.</summary>
     public class Ticker : MonoBehaviour
     {

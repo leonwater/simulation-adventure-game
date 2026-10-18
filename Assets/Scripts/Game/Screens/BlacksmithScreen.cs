@@ -57,6 +57,7 @@ namespace Adventure.Game
                 UI.Label(row, "+" + item.Enhance, 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             }
             if (gear.Count == 0) UI.Sub(list, "강화할 장비가 없습니다.");
+            Tutorial.OnFacility("blacksmith");
         }
 
         private void Detail(Transform parent, ItemInstance item)
