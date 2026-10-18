@@ -19,6 +19,7 @@ namespace Adventure.Game
         public override void Build(RectTransform root)
         {
             S.TickShop();
+            S.MarkShopSeen();
             var shop = S.Data.Shop;
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "상점", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
@@ -39,15 +40,15 @@ namespace Adventure.Game
             var eqBox = UI.Column(inner, 8);
             UI.Label(eqBox, "장비", 14, Theme.Text, true);
             if (shop.Equipment.Count == 0) UI.Sub(eqBox, "장비가 모두 팔렸습니다. 다음 갱신을 기다리세요.");
-            var grid = UI.Grid(eqBox, 3, Theme.ScreenWidth - 24, 82, 8);
+            var grid = UI.Grid(eqBox, 3, Theme.ScreenWidth - 24, 112, 8);
             foreach (var item in shop.Equipment) EquipCell(grid, item);
 
-            // 소모품 · 스킬 · 가방
-            var goods = UI.Column(inner, 0);
+            // 소모품 · 스킬 · 가방 (3열 카드: 이름 · 종류 · 효과 · 가격)
+            var goods = UI.Column(inner, 8);
             UI.Label(goods, "소모품 · 스킬 · 가방", 14, Theme.Text, true);
-            UI.Spacer(goods, 0, 4);
-            foreach (var g in shop.Goods) GoodRow(goods, g);
-            BagRow(goods);
+            var ggrid = UI.Grid(goods, 3, Theme.ScreenWidth - 24, 112, 8);
+            foreach (var g in shop.Goods) GoodCell(ggrid, g);
+            BagCell(ggrid);
 
             // 판매
             var sell = UI.Column(inner, 8);
@@ -81,12 +82,15 @@ namespace Adventure.Game
         private void EquipCell(Transform grid, ItemInstance item)
         {
             bool usable = item.CanBeUsedBy(C.Job);
-            var cell = UI.ButtonCard(grid, () => BuyEquipDialog(item), Theme.Card, Theme.CardBorder, 10, UI.Pad(10, 8), true, 3, 82, TextAnchor.UpperLeft);
-            UI.Label(cell, Names.Of(item.Grade), 11, Theme.GradeColor(item.Grade));
+            var cell = UI.ButtonCard(grid, () => BuyEquipDialog(item), Theme.Card, Theme.CardBorder, 10, UI.Pad(9, 8), true, 2, 112, TextAnchor.UpperLeft);
+            UI.Label(cell, UI.GradeTag(item.Grade) + " " + UI.Color(Names.Of(item.Gear), Theme.SubHex), 11, Theme.Text, false, TextAnchor.MiddleLeft, false, false);
             UI.Label(cell, item.Name, 14, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
-            string job = item.JobRestriction < 0 ? "공용" : Names.Of((Job)item.JobRestriction) + (usable ? "" : " 전용");
-            UI.Sub(cell, item.JobRestriction >= 0 && !usable ? job : "Lv." + item.LevelReq + " · " + job);
-            UI.Label(cell, item.Price.ToString("#,0") + " G", 13, Theme.Text);
+            string main = item.IsWeapon ? "공격력 " + item.Value : item.IsAccessory ? Names.Of(item.BonusStat) + " +" + item.Value : "방어력 " + item.Value;
+            UI.Label(cell, main, 12, Theme.TextBody);
+            if (usable) UI.Label(cell, ScreenKit.CompareText(C, item, false), 12, Theme.Text);
+            else UI.Label(cell, Names.Of((Job)item.JobRestriction) + " 전용", 11, Theme.RedLight);
+            UI.Spacer(cell);
+            UI.Label(cell, item.Price.ToString("#,0") + " G", 13, Theme.Gold, true);
             if (!usable) cell.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
         }
 
@@ -94,9 +98,9 @@ namespace Adventure.Game
         {
             var body = Overlay.Modal(item.Name);
             var modal = Overlay.Top;
-            UI.Label(body, Names.Of(item.Grade) + " · " + Names.Of(item.Gear), 13, Theme.GradeColor(item.Grade));
+            UI.Label(body, UI.GradeTag(item.Grade) + " " + Names.Of(item.Gear), 13, Theme.Text);
             UI.Label(body, item.StatLine(), 14, Theme.Text);
-            Compare(body, item);
+            ScreenKit.CompareLine(body, C, item);
             string reason = EquipmentSystem.CannotEquipReason(C, item);
             if (reason != null) UI.Label(body, reason, 13, Theme.RedLight);
             UI.TextButton(body, "구매 · " + item.Price.ToString("#,0") + "G", () =>
@@ -113,40 +117,29 @@ namespace Adventure.Game
             }, ButtonKind.Primary);
         }
 
-        /// <summary>지금 착용한 장비와 수치 비교.</summary>
-        private void Compare(Transform parent, ItemInstance item)
-        {
-            if (item.Kind != ItemKind.Equipment) return;
-            var cur = C.Equipment[C.Equipment.ChooseSlot(item.Gear)];
-            if (cur == null)
-            {
-                UI.Sub(parent, "현재 " + Names.Of(item.Gear) + " 슬롯이 비어 있습니다.");
-                return;
-            }
-            int diff = item.Value - cur.Value;
-            string sign = diff > 0 ? UI.Color("+" + diff, Theme.GreenHex) : diff < 0 ? UI.Color(diff.ToString(), Theme.RedHex) : "±0";
-            string extra = item.IsAccessory && cur.BonusStat != item.BonusStat ? " (" + Names.Of(cur.BonusStat) + " → " + Names.Of(item.BonusStat) + ")" : "";
-            UI.Sub(parent, "착용 중: " + cur.DisplayName + " (" + cur.Value + ") → " + sign + extra);
-        }
-
-        private void GoodRow(Transform parent, ShopGood g)
+        private void GoodCell(Transform grid, ShopGood g)
         {
             var item = g.Item;
-            var row = UI.ButtonCard(parent, () => BuyGoodDialog(g), Theme.Bg, Theme.Bg, 0.01f, UI.Pad(2, 0), false, 8, 48);
-            string label = item.Name;
+            var cell = UI.ButtonCard(grid, () => BuyGoodDialog(g), Theme.Card, Theme.CardBorder, 10, UI.Pad(9, 8), true, 2, 112, TextAnchor.UpperLeft);
+            string kind, effect;
             if (item.Kind == ItemKind.SkillBook)
             {
                 var def = SkillDb.Get(item.SkillId);
-                label = item.Name + " " + UI.Color(Names.Of(def.Tier), Theme.SubHex);
+                kind = "스킬서 · " + Names.Of(def.Tier);
+                effect = def.Name + (C.Skills.Knows(def.Id) ? " (배움)" : "");
             }
-            else if (item.Kind == ItemKind.Consumable)
+            else
             {
-                label = item.Name + " " + UI.Color("보유 " + C.Inventory.CountOf(item.TemplateId), Theme.SubHex);
+                kind = "소모품 · 보유 " + C.Inventory.CountOf(item.TemplateId);
+                effect = ItemDb.Consumable(item.TemplateId)?.Description ?? "";
             }
-            var l = UI.Label(row, label, 14, Theme.Text);
-            UI.Size(l, flexW: 1);
-            UI.Label(row, item.Price.ToString("#,0") + " G", 13, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            ScreenKit.BottomLine(row, Theme.LineSoft);
+            UI.Label(cell, kind, 11, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
+            UI.Label(cell, item.Kind == ItemKind.SkillBook ? "스킬서" : item.Name, 14, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            var e = UI.Label(cell, effect, 11, Theme.TextBody);
+            e.verticalOverflow = VerticalWrapMode.Truncate;
+            UI.Size(e, height: 30);
+            UI.Spacer(cell);
+            UI.Label(cell, item.Price.ToString("#,0") + " G", 13, Theme.Gold, true);
         }
 
         private void BuyGoodDialog(ShopGood g)
@@ -201,14 +194,16 @@ namespace Adventure.Game
             }
         }
 
-        private void BagRow(Transform parent)
+        private void BagCell(Transform grid)
         {
             bool can = ShopSystem.CanBuyBag(C);
-            var row = UI.ButtonCard(parent, BuyBag, Theme.Bg, Theme.Bg, 0.01f, UI.Pad(2, 0), false, 8, 48);
-            var l = UI.Label(row, "가방 " + UI.Color(can ? "인벤토리 +" + GameBalance.InventoryPerBag + "칸" : "최대 " + GameBalance.InventoryMax + "칸", Theme.SubHex), 14, Theme.Text);
-            UI.Size(l, flexW: 1);
-            UI.Label(row, can ? ShopSystem.BagPrice(C).ToString("#,0") + " G" : "-", 13, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            if (!can) UI.SetEnabled(row, false);
+            var cell = UI.ButtonCard(grid, BuyBag, Theme.Card, Theme.CardBorder, 10, UI.Pad(9, 8), true, 2, 112, TextAnchor.UpperLeft);
+            UI.Label(cell, "확장 · " + C.Inventory.Capacity + "칸", 11, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
+            UI.Label(cell, "가방", 14, Theme.Text, true);
+            UI.Label(cell, can ? "인벤토리 +" + GameBalance.InventoryPerBag + "칸" : "최대 " + GameBalance.InventoryMax + "칸", 11, Theme.TextBody);
+            UI.Spacer(cell);
+            UI.Label(cell, can ? ShopSystem.BagPrice(C).ToString("#,0") + " G" : "-", 13, Theme.Gold, true);
+            if (!can) UI.SetEnabled(cell, false);
         }
 
         private void BuyBag()
@@ -242,6 +237,7 @@ namespace Adventure.Game
         {
             var body = Overlay.Modal(item.DisplayName);
             var modal = Overlay.Top;
+            if (item.Kind == ItemKind.Equipment) UI.Label(body, UI.GradeTag(item.Grade) + " " + Names.Of(item.Gear), 13, Theme.Text);
             UI.Label(body, item.StatLine(), 14, Theme.Text);
             if (S.Data.Guild.Active.Exists(q => q.MaterialId == item.TemplateId))
                 UI.Label(body, "수주 중인 채집 퀘스트에 필요한 재료입니다.", 13, Theme.Gold);

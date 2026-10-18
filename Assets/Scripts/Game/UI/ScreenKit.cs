@@ -89,6 +89,7 @@ namespace Adventure.Game
                 var item = UI.ButtonCard(nav, () => Navigate(idx), Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, 60, TextAnchor.MiddleCenter);
                 UI.Size(item, flexW: 1);
                 UI.Label(item, NavLabels[i], 13, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
+                if (i != active && Alerts.Nav(i)) UI.Dot(item, 9, 12);
             }
             TopLine(nav);
         }
@@ -153,6 +154,30 @@ namespace Adventure.Game
                 UI.Label(b, right, rightIsPercent ? 14 : 12, rightIsPercent ? Theme.Gold : Theme.TextSub, rightIsPercent, TextAnchor.MiddleRight, false, false);
             if (!enabled) UI.SetEnabled(b, false);
             return b;
+        }
+
+        /// <summary>착용 중인 장비와 비교 (+초록 / −빨강). 비교할 것이 없으면 빈 문자열.</summary>
+        public static string CompareText(Character c, ItemInstance item, bool withLabel = true)
+        {
+            var list = EquipmentSystem.Compare(c, item);
+            if (list.Count == 0) return "";
+            var parts = new System.Collections.Generic.List<string>();
+            foreach (var d in list)
+            {
+                string v = d.Delta > 0 ? "+" + d.Delta : d.Delta < 0 ? "−" + (-d.Delta) : "±0";
+                string hex = d.Delta > 0 ? Theme.GreenHex : d.Delta < 0 ? Theme.RedHex : Theme.SubHex;
+                parts.Add(UI.Color((withLabel ? d.Label + " " : "") + v, hex));
+            }
+            return string.Join(" ", parts);
+        }
+
+        /// <summary>장비 상세에 넣는 비교 줄: "착용 중 강철 장검 대비 공격력 +5".</summary>
+        public static void CompareLine(Transform parent, Character c, ItemInstance item)
+        {
+            if (item == null || item.Kind != ItemKind.Equipment || c.Equipment.Find(item.Uid) != null) return;
+            var cur = EquipmentSystem.ReplacedBy(c, item);
+            string head = cur == null ? Names.Of(item.Gear) + " 칸 비어 있음 · " : "착용 중 " + cur.DisplayName + " 대비 ";
+            UI.Label(parent, UI.Color(head, Theme.SubHex) + CompareText(c, item), 13, Theme.Text);
         }
 
         public static string Percent(double p) => Mathf.RoundToInt((float)(p * 100)) + "%";

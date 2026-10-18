@@ -36,24 +36,30 @@ namespace Adventure.Game
                 UI.Size(nl, flexW: 1);
             }
 
-            var list = UI.Column(body, 8);
+            // 시설 2×2 카드 (아이콘 · 이름 · 한 줄 설명 · 알림 점)
+            var grid = UI.Grid(body, 2, ScreenKit.ContentWidth, 128, 10);
             int done = S.Data.Guild.Active.FindAll(q => GuildSystem.IsComplete(q, C)).Count;
-            string guildSub = "퀘스트 " + S.Data.Guild.Active.Count + "/" + GameBalance.MaxActiveQuests + " 수주 중" + (done > 0 ? " · " + done + "개 완료" : "") + " · 창고";
-            Facility(list, "길드", guildSub, () => Go(new GuildScreen()));
-            _shopTimer = Facility(list, "상점", ShopSub(), () => Go(new ShopScreen()));
-            Facility(list, "대장간", "장비 강화", () => Go(new BlacksmithScreen()));
-            Facility(list, "수련장", "보유 스킬 강화", () => Go(new TrainingScreen()));
+            string guildSub = done > 0 ? "완료한 의뢰 " + done + "개" : "의뢰 " + S.Data.Guild.Active.Count + "/" + GameBalance.MaxActiveQuests + " · 창고";
+            Facility(grid, "guild", "길드", guildSub, Alerts.Guild, () => Go(new GuildScreen(done == 0 && Alerts.Promotion ? 1 : 0)));
+            _shopTimer = Facility(grid, "shop", "상점", ShopSub(), Alerts.Shop, () => Go(new ShopScreen()));
+            Facility(grid, "blacksmith", "대장간", "장비 강화 +10까지", false, () => Go(new BlacksmithScreen()));
+            Facility(grid, "training", "수련장", "보유 스킬 강화", false, () => Go(new TrainingScreen()));
 
             UI.Spacer(body, 1, 8);
             FloorSelector(body);
 
             ScreenKit.BottomNav(page, 0);
+            Tutorial.OnTown();
 
             var ticker = root.gameObject.AddComponent<Ticker>();
             ticker.Interval = 1f;
             ticker.OnTick = () =>
             {
-                if (S.TickShop()) Toast("상점 물건이 바뀌었습니다");
+                if (S.TickShop())
+                {
+                    Rebuild();
+                    return;
+                }
                 if (_shopTimer != null) _shopTimer.text = ShopSub();
             };
         }
@@ -61,17 +67,24 @@ namespace Adventure.Game
         private string ShopSub()
         {
             var left = S.ShopTimeLeft;
-            return "자동 갱신까지 " + ((int)left.TotalMinutes).ToString("00") + ":" + left.Seconds.ToString("00");
+            return "갱신까지 " + ((int)left.TotalMinutes).ToString("00") + ":" + left.Seconds.ToString("00");
         }
 
-        private static Text Facility(Transform parent, string title, string sub, Action onClick)
+        private static Text Facility(Transform grid, string icon, string title, string sub, bool alert, Action onClick)
         {
-            var card = UI.ButtonCard(parent, onClick, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 10), false, 10, 64);
-            var col = UI.Column(card, 2);
-            UI.Size(col, flexW: 1);
-            UI.Label(col, title, 16, Theme.Text, true);
-            var s = UI.Sub(col, sub);
-            UI.Label(card, "›", 18, Theme.TextSub, false, TextAnchor.MiddleRight, false, false);
+            var card = UI.ButtonCard(grid, onClick, Theme.Card, Theme.CardBorder, 12, UI.Pad(10, 12), true, 4, 128, TextAnchor.MiddleCenter);
+            var tex = Resources.Load<Texture2D>("Icons/" + icon);
+            if (tex != null)
+            {
+                var holder = UI.Rect(card, "icon");
+                UI.Size(holder, height: 48, width: 48);
+                var raw = holder.gameObject.AddComponent<RawImage>();
+                raw.texture = tex;
+                raw.raycastTarget = false;
+            }
+            UI.Label(card, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
+            var s = UI.Label(card, sub, 12, Theme.TextSub, false, TextAnchor.MiddleCenter);
+            if (alert) UI.Dot(card, 12, 10);
             return s;
         }
 

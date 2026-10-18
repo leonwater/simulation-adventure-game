@@ -63,6 +63,31 @@ namespace Adventure.Tests
         }
 
         [Test]
+        public void Equipment_CompareWithEquipped()
+        {
+            var c = NewWarrior();
+            var cur = c.Equipment[EquipSlot.Weapon];
+            var better = EquipmentFactory.Create(GearType.Weapon, ItemGrade.Rare, 5, Job.Warrior, Stat.Vitality);
+            var d = EquipmentSystem.Compare(c, better);
+            Assert.AreEqual(1, d.Count);
+            Assert.AreEqual("공격력", d[0].Label);
+            Assert.AreEqual(better.Value - cur.Value, d[0].Delta);
+            Assert.AreEqual(0, EquipmentSystem.Compare(c, cur).Count, "착용 중인 장비는 비교하지 않는다");
+
+            var helm = EquipmentFactory.Create(GearType.Helmet, ItemGrade.Common, 1, Job.Warrior, Stat.Vitality);
+            Assert.AreEqual(helm.Value, EquipmentSystem.Compare(c, helm)[0].Delta, "빈 칸이면 전부 증가");
+
+            var ringA = EquipmentFactory.Create(GearType.Ring, ItemGrade.Common, 1, Job.Warrior, Stat.Luck);
+            c.Equipment[EquipSlot.Ring1] = ringA;
+            var ringB = EquipmentFactory.Create(GearType.Ring, ItemGrade.Common, 1, Job.Warrior, Stat.Strength);
+            Assert.AreEqual(1, EquipmentSystem.Compare(c, ringB).Count, "반지 2번 칸이 비어 있으면 그쪽에 낀다");
+            c.Equipment[EquipSlot.Ring2] = ringA.CloneWithCount(1);
+            var cmp = EquipmentSystem.Compare(c, ringB);
+            Assert.AreEqual(2, cmp.Count, "다른 능력치 반지와 바꾸면 + 하나, - 하나");
+            Assert.Less(cmp[1].Delta, 0);
+        }
+
+        [Test]
         public void Equipment_ChecksLevelAndJob()
         {
             var c = NewWarrior();

@@ -7,7 +7,7 @@ namespace Adventure.Game
     /// <summary>가방·창고 5열 격자 (칸마다 등급 색 점 + 이름).</summary>
     public static class ItemGrid
     {
-        public const float CellHeight = 62;
+        public const float CellHeight = 66;
 
         public static void Build(Transform parent, ItemContainer container, string selectedUid, Action<ItemInstance> onTap,
             bool showEmpty = true, float width = ScreenKit.ContentWidth - 0)
@@ -28,6 +28,7 @@ namespace Adventure.Game
                 Dot(cell, Theme.ItemColor(item));
                 string name = item.Count > 1 ? Short(item.Name) + " ×" + item.Count : Short(item.DisplayName);
                 UI.Label(cell, name, 11, Theme.Text, false, TextAnchor.MiddleCenter);
+                if (item.Kind == ItemKind.Equipment) UI.Label(cell, Names.Of(item.Grade), 9, Theme.GradeColor(item.Grade), false, TextAnchor.MiddleCenter);
             }
             if (!showEmpty) return;
             for (int i = container.Items.Count; i < container.Capacity; i++)

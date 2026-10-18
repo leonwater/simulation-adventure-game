@@ -62,9 +62,46 @@ namespace Adventure.Core
         }
     }
 
+    /// <summary>장비 비교 한 줄 (예: 공격력 +5).</summary>
+    public struct StatDelta
+    {
+        public string Label;
+        public int Delta;
+    }
+
     /// <summary>장비 착용·해제 규칙.</summary>
     public static class EquipmentSystem
     {
+        /// <summary>이 장비를 끼면 바뀌는 장비 (반지는 빈 칸 우선). 빈 칸이면 null.</summary>
+        public static ItemInstance ReplacedBy(Character c, ItemInstance item)
+        {
+            if (item == null || item.Kind != ItemKind.Equipment) return null;
+            var cur = c.Equipment[c.Equipment.ChooseSlot(item.Gear)];
+            return cur != null && cur.Uid == item.Uid ? null : cur;
+        }
+
+        /// <summary>지금 낀 장비와 비교한 수치 변화 (착용 중인 같은 장비면 빈 목록).</summary>
+        public static System.Collections.Generic.List<StatDelta> Compare(Character c, ItemInstance item)
+        {
+            var list = new System.Collections.Generic.List<StatDelta>();
+            if (item == null || item.Kind != ItemKind.Equipment || c.Equipment.Find(item.Uid) != null) return list;
+            var cur = ReplacedBy(c, item);
+            if (item.IsAccessory)
+            {
+                if (cur != null && cur.BonusStat == item.BonusStat)
+                    list.Add(new StatDelta { Label = Names.Of(item.BonusStat), Delta = item.Value - cur.Value });
+                else
+                {
+                    list.Add(new StatDelta { Label = Names.Of(item.BonusStat), Delta = item.Value });
+                    if (cur != null) list.Add(new StatDelta { Label = Names.Of(cur.BonusStat), Delta = -cur.Value });
+                }
+                return list;
+            }
+            string label = item.IsWeapon ? "공격력" : "방어력";
+            list.Add(new StatDelta { Label = label, Delta = item.Value - (cur?.Value ?? 0) });
+            return list;
+        }
+
         public static string CannotEquipReason(Character c, ItemInstance item)
         {
             if (item == null || item.Kind != ItemKind.Equipment) return "장비가 아닙니다";

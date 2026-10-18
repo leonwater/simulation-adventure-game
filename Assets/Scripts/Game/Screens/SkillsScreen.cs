@@ -6,6 +6,9 @@ namespace Adventure.Game
     /// <summary>스킬: 장착 슬롯, 보유 스킬(재사용 턴·장착 조건), 장착·해제.</summary>
     public class SkillsScreen : ScreenBase
     {
+        /// <summary>이번에 처음 보는 스킬 (NEW 표시). 화면에 들어오면 모두 확인한 것으로 기록한다.</summary>
+        private System.Collections.Generic.HashSet<string> _new;
+
         public override bool OnBack()
         {
             Go(new TownScreen());
@@ -14,6 +17,14 @@ namespace Adventure.Game
 
         public override void Build(RectTransform root)
         {
+            if (_new == null)
+            {
+                _new = new System.Collections.Generic.HashSet<string>();
+                foreach (var sk in C.Skills.Learned)
+                    if (S.Data.SeenSkills != null && !S.Data.SeenSkills.Contains(sk.SkillId)) _new.Add(sk.SkillId);
+                S.MarkSkillsSeen();
+                S.Save();
+            }
             var page = ScreenKit.Page(root);
             var body = UI.Scroll(page, out _, 12, UI.Pad(16, 16), "skills");
             int slots = RankSystem.SkillSlots(C.Rank);
@@ -62,7 +73,7 @@ namespace Adventure.Game
                 UI.Size(row, minH: 64);
                 var col = UI.Column(row, 2, UI.Pad(0, 0, 8, 8));
                 UI.Size(col, flexW: 1);
-                UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + (st.Level > 0 ? " · +" + st.Level : ""), Theme.SubHex), 15, Theme.Text);
+                UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + (st.Level > 0 ? " · +" + st.Level : ""), Theme.SubHex) + (_new.Contains(def.Id) ? " " + UI.Color("NEW", Theme.RedHex) : ""), 15, Theme.Text);
                 UI.Sub(col, meets ? def.Description : "장착 조건 Lv." + def.ReqLevel + " · " + def.ReqRank + " 등급");
                 string id = def.Id;
                 if (equipped) UI.TextButton(row, "해제", () => Unequip(id), ButtonKind.Outline, 40, 13, 64);
@@ -82,7 +93,14 @@ namespace Adventure.Game
         {
             if (def.Statuses.Length > 0) return Names.Of(def.Statuses[0].Type) + (def.Target == SkillTarget.Self ? " " + def.Statuses[0].Turns + "턴" : "");
             if (def.HealRatio > 0) return "회복";
-            return def.Target == SkillTarget.AllEnemies ? "전체" : "단일";
+            switch (def.Target)
+            {
+                case SkillTarget.AllEnemies: return "전체";
+                case SkillTarget.MultiEnemy: return def.TargetCount + "명";
+                case SkillTarget.ChainEnemies: return "연쇄";
+                case SkillTarget.Self: return "자신";
+                default: return "단일";
+            }
         }
 
         private string NextSlotText(int slots)

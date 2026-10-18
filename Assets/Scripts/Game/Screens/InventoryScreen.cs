@@ -92,9 +92,10 @@ namespace Adventure.Game
             var head = UI.Row(card);
             var n = UI.Label(head, item.Count > 1 ? item.DisplayName + " ×" + item.Count : item.DisplayName, 15, Theme.ItemColor(item), true);
             UI.Size(n, flexW: 1);
-            string kind = item.Kind == ItemKind.Equipment ? Names.Of(item.Grade) + " · " + Names.Of(item.Gear) : KindName(item.Kind);
-            UI.Sub(head, kind, TextAnchor.MiddleRight);
+            string kind = item.Kind == ItemKind.Equipment ? UI.GradeTag(item.Grade) + " " + UI.Color(Names.Of(item.Gear), Theme.SubHex) : UI.Color(KindName(item.Kind), Theme.SubHex);
+            UI.Label(head, kind, 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             UI.Label(card, item.StatLine(), 13, Theme.Text);
+            if (!equipped) ScreenKit.CompareLine(card, C, item);
 
             var row = UI.Row(card, 8);
             if (equipped)

@@ -47,7 +47,7 @@ namespace Adventure.Game
                 }, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(12, 6), false, 8, 52);
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
-                UI.Label(col, item.DisplayName, 14, Theme.GradeColor(item.Grade), true);
+                UI.Label(col, UI.GradeTag(item.Grade) + " " + item.DisplayName, 14, Theme.GradeColor(item.Grade), true);
                 UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + Names.Of(item.Gear) + " · " + item.StatLine());
                 UI.Label(row, "+" + item.Enhance, 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             }
@@ -60,7 +60,8 @@ namespace Adventure.Game
             var head = UI.Row(card);
             var n = UI.Label(head, item.DisplayName, 16, Theme.GradeColor(item.Grade), true);
             UI.Size(n, flexW: 1);
-            UI.Sub(head, Names.Of(item.Grade) + " · " + Names.Of(item.Gear), TextAnchor.MiddleRight);
+            UI.Label(head, UI.GradeTag(item.Grade) + " " + UI.Color(Names.Of(item.Gear), Theme.SubHex), 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            ScreenKit.CompareLine(card, C, item);
             if (item.Enhance >= GameBalance.MaxEnhance)
             {
                 UI.Label(card, "최대 강화(+10)에 도달했습니다.", 14, Theme.Gold);
