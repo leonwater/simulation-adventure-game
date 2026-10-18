@@ -32,7 +32,11 @@ namespace Adventure.Game
             UI.Illustration(body, _event.Illustration, 300);
             var inner = UI.Column(body, 14, UI.Pad(16, 16, 2, 0));
             UI.Label(inner, _event.Title, 24, Theme.Text, false, TextAnchor.MiddleLeft, true);
-            UI.Label(inner, _event.Body, 15, Theme.TextBody);
+            var bodyText = UI.Label(inner, _event.Body, 15, Theme.TextBody);
+            bodyText.lineSpacing = 1.35f;
+            Typewriter.Attach(bodyText);
+            bodyText.gameObject.AddComponent<TypewriterSkip>();
+            bodyText.raycastTarget = true;
 
             if (_result != null)
             {
@@ -75,7 +79,10 @@ namespace Adventure.Game
         {
             var good = _result.Success;
             var card = UI.Card(parent, good ? Theme.AccentBg : Theme.RedBg, good ? Theme.Accent : Theme.RedBorder, 12, UI.Pad(14, 12), true, 6);
-            UI.Label(card, _result.Text, 15, Theme.Text);
+            var resultText = UI.Label(card, _result.Text, 15, Theme.Text);
+            Typewriter.Attach(resultText);
+            card.gameObject.AddComponent<TypewriterSkip>();
+            card.GetComponent<UnityEngine.UI.Image>().raycastTarget = true;
             if (_result.HpChange != 0)
                 UI.Label(card, "HP " + (_result.HpChange > 0 ? "+" : "") + _result.HpChange, 14, _result.HpChange > 0 ? Theme.Green : Theme.RedLight);
             if (!_result.Loot.IsEmpty || _result.Loot.Dropped.Count > 0) UI.Label(card, _result.Loot.Describe(), 14, Theme.Gold);

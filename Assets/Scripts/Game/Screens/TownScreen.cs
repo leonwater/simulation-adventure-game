@@ -76,7 +76,8 @@ namespace Adventure.Game
             var tex = Resources.Load<Texture2D>("Icons/" + icon);
             if (tex != null)
             {
-                var holder = UI.Rect(card, "icon");
+                var row = UI.Row(card, 0, null, TextAnchor.MiddleCenter, "icon-row");
+                var holder = UI.Rect(row, "icon");
                 UI.Size(holder, height: 48, width: 48);
                 var raw = holder.gameObject.AddComponent<RawImage>();
                 raw.texture = tex;

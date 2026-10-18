@@ -106,7 +106,7 @@ namespace Adventure.Game
     /// <summary>프롤로그 2~3줄 → 길드 등록.</summary>
     public class PrologueScreen : ScreenBase
     {
-        private const string Story = "등불 마을 아래에는 끝을 알 수 없는 던전이 잠들어 있다.\n\n가장 깊은 곳에 닿은 자는 아직 아무도 없다.\n\n오늘, 한 명의 모험가가 길드의 문을 두드린다.";
+        private const string Story = "긴 여행 끝에, 던전 입구의 작은 마을에 도착했다.\n\n등불 마을 — 끝을 알 수 없는 던전 위에 세워진 곳.\n\n모험가가 되려면 먼저 길드에 이름을 올려야 한다.";
         private Typewriter _tw;
 
         public override bool OnBack()

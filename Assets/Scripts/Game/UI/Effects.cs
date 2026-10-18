@@ -19,12 +19,13 @@ namespace Adventure.Game
         private string _full = "";
         private int _visible, _total;
         private float _t;
-        private static string _lastFull;
+        /// <summary>이 화면에서 이미 보여 준 대사 (화면을 다시 그려도 다시 타이핑하지 않게).</summary>
+        private static readonly HashSet<string> Typed = new HashSet<string>();
 
         public bool Done => _visible >= _total;
 
         /// <summary>화면을 옮기면 다음 대사는 다시 한 글자씩 나온다.</summary>
-        public static void Forget() => _lastFull = null;
+        public static void Forget() => Typed.Clear();
 
         public static Typewriter Attach(Text text)
         {
@@ -40,9 +41,7 @@ namespace Adventure.Game
             _full = full ?? "";
             _total = VisibleLength(_full);
             _t = 0;
-            // 같은 대사로 화면만 다시 그릴 때는 다시 타이핑하지 않는다
-            _visible = GameSettings.Typewriter && _full != _lastFull ? 0 : _total;
-            _lastFull = _full;
+            _visible = GameSettings.Typewriter && Typed.Add(_full) ? 0 : _total;
             _text.text = Cut(_full, _visible);
         }
 
@@ -130,6 +129,7 @@ namespace Adventure.Game
         public float Delay = 0.5f;
         private float _down = -1;
         private bool _fired;
+        private PointerEventData _data;
 
         public bool ConsumeFired()
         {
@@ -142,6 +142,7 @@ namespace Adventure.Game
         {
             _down = Time.unscaledTime;
             _fired = false;
+            _data = e;
         }
 
         public void OnPointerUp(PointerEventData e) => _down = -1;
@@ -150,6 +151,7 @@ namespace Adventure.Game
 
         private void Update()
         {
+            if (_down >= 0 && _data != null && _data.dragging) _down = -1; // 목록을 끌어 스크롤하는 중
             if (_down < 0 || Time.unscaledTime - _down < Delay) return;
             _down = -1;
             _fired = true;
