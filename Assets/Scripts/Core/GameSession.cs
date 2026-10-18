@@ -187,17 +187,23 @@ namespace Adventure.Core
             }
         }
 
-        private void StartBattle(List<Combatant> enemies, bool boss)
+        private void StartBattle(List<Combatant> enemies, bool boss, bool ambush = false)
         {
-            Battle = new Battle(C, Data.Run.Floor, enemies, boss, Rng);
+            Battle = new Battle(C, Data.Run.Floor, enemies, boss, Rng, ambush);
         }
 
         /// <summary>전투 선택지를 실행한다. 전투가 끝나면 결과를 정산한다.</summary>
         public void ExecuteBattle(BattleChoice choice)
         {
+            Battle.Execute(choice);
+            if (!Battle.IsOver) return;
+            FinishBattle();
+        }
+
+        /// <summary>전투가 끝났을 때 결과를 정산한다 (기습으로 시작 직후 끝난 경우 포함).</summary>
+        private void FinishBattle()
+        {
             var b = Battle;
-            b.Execute(choice);
-            if (!b.IsOver) return;
             b.SyncHp();
             var run = Data.Run;
             switch (b.Outcome)
@@ -239,7 +245,17 @@ namespace Adventure.Core
             LastEvent = EventRules.Resolve(Data.Run, C, index, Rng);
             if (LastEvent.StartBattle)
             {
-                StartBattle(EnemyFactory.CreateMimic(Data.Run.Floor, Difficulty), false);
+                switch (LastEvent.Battle)
+                {
+                    case EventBattle.Gamblers:
+                        StartBattle(EnemyFactory.CreateGamblers(Data.Run.Floor, Difficulty), false);
+                        break;
+                    default:
+                        // 미믹은 상자를 연 순간 기습한다 (궁수가 멀리서 건드리면 기습 없음)
+                        StartBattle(EnemyFactory.CreateMimic(Data.Run.Floor, Difficulty), false, LastEvent.Battle == EventBattle.Mimic);
+                        break;
+                }
+                if (Battle.IsOver) FinishBattle();
             }
             else if (LastEvent.ReturnToTown)
             {

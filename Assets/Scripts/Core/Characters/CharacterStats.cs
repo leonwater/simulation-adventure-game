@@ -35,15 +35,21 @@ namespace Adventure.Core
             return sum;
         }
 
-        public static int MaxHp(Character c) => GameBalance.BaseHp + Total(c, Stat.Vitality) * GameBalance.HpPerVitality;
+        /// <summary>HP = 50 + 체력 × 직업 계수 (전사 12 · 궁수 10 · 도적 9 · 마법사 8).</summary>
+        public static int MaxHp(Character c) => GameBalance.BaseHp + Total(c, Stat.Vitality) * c.JobData.HpPerVitality;
 
         /// <summary>공격력 = 주 공격 능력치 × 2 + 무기</summary>
         public static int Attack(Character c) => Total(c, c.JobData.AttackStat) * GameBalance.AttackPerMainStat + WeaponAttack(c);
 
         public static int Defense(Character c) => ArmorDefense(c);
 
-        public static double Evasion(Character c) =>
-            Math.Min(GameBalance.MaxEvasion, Total(c, Stat.Agility) * GameBalance.EvasionPerAgility);
+        /// <summary>회피 = 민첩 × 0.5% + 기교 × 0.5% (기교는 도적만 배분), 최대 40%.</summary>
+        public static double Evasion(Character c)
+        {
+            double e = Total(c, Stat.Agility) * GameBalance.EvasionPerAgility;
+            if (c.JobData.CanAllocate(Stat.Finesse)) e += Total(c, Stat.Finesse) * GameBalance.EvasionPerFinesse;
+            return Math.Min(GameBalance.MaxEvasion, e);
+        }
 
         public static double DamageReduction(Character c) =>
             Math.Min(GameBalance.MaxReduction, Total(c, Stat.Toughness) * GameBalance.ReductionPerToughness);
@@ -51,20 +57,22 @@ namespace Adventure.Core
         public static double Resist(Character c) =>
             Math.Min(GameBalance.MaxResist, Total(c, Stat.Spirit) * GameBalance.ResistPerSpirit);
 
-        public static double CritChance(Character c) =>
-            GameBalance.BaseCritChance + Total(c, Stat.Luck) * GameBalance.CritPerLuck;
-
-        public static double CritDamage(Character c) =>
-            GameBalance.BaseCritDamage + Total(c, Stat.Vital) * GameBalance.CritDamagePerVital;
+        /// <summary>치명타는 스킬에서만 발생 (피해 ×1.8).</summary>
+        public static double CritDamage(Character c) => GameBalance.CritMultiplier;
 
         public static double SkillDamageBonus(Character c) =>
             Total(c, Stat.SpellPower) * GameBalance.SkillDamagePerSpellPower;
 
+        /// <summary>정밀은 궁수만 배분하지만 장신구로 오른 정밀도 적용된다.</summary>
         public static double PrecisionBonus(Character c) =>
-            Total(c, Stat.Precision) * GameBalance.SuccessPerPrecision;
+            c.JobData.CanAllocate(Stat.Precision) || EquipmentBonus(c, Stat.Precision) > 0
+                ? Total(c, Stat.Precision) * GameBalance.SuccessPerPrecision
+                : 0;
 
         public static double DropBonus(Character c) =>
             1.0 + Total(c, Stat.Luck) * GameBalance.DropBonusPerLuck;
+
+        public static double EventLuckBonus(Character c) => Total(c, Stat.Luck) * GameBalance.EventBonusPerLuck;
 
         /// <summary>능력치 옆에 보여 줄 효과 설명 (캐릭터 화면용).</summary>
         public static string EffectLabel(Character c, Stat stat)
@@ -73,7 +81,7 @@ namespace Adventure.Core
             {
                 case Stat.Vitality: return "HP " + MaxHp(c);
                 case Stat.Spirit: return "저항 " + Percent(Resist(c));
-                case Stat.Luck: return "치명타 " + Percent(CritChance(c));
+                case Stat.Luck: return "드롭 +" + Percent(DropBonus(c) - 1) + " · 이벤트 +" + Percent(EventLuckBonus(c));
                 case Stat.Strength:
                 case Stat.Intelligence:
                     return c.JobData.AttackStat == stat ? "공격력 " + Attack(c) : "-";
@@ -83,7 +91,7 @@ namespace Adventure.Core
                         : "회피 " + Percent(Evasion(c));
                 case Stat.Toughness: return "받는 피해 −" + Percent(DamageReduction(c));
                 case Stat.Precision: return "성공률 +" + Percent(PrecisionBonus(c));
-                case Stat.Vital: return "치명타 피해 " + Percent(CritDamage(c));
+                case Stat.Finesse: return "회피 " + Percent(Evasion(c));
                 case Stat.SpellPower: return "스킬 피해 +" + Percent(SkillDamageBonus(c));
                 default: return "";
             }

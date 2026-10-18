@@ -19,11 +19,9 @@ namespace Adventure.Core
                 gained++;
             }
             if (c.Level >= GameBalance.MaxLevel) c.Exp = 0;
-            if (gained > 0)
-            {
-                // 레벨업 시 늘어난 최대 HP만큼 현재 HP도 늘려 준다.
-                c.CurrentHp = Math.Min(CharacterStats.MaxHp(c), c.CurrentHp + gained * GameBalance.HpPerVitality);
-            }
+            // 레벨업할 때마다 최대 HP의 30% 회복 (여러 레벨이 오르면 레벨마다 적용)
+            for (int i = 0; i < gained; i++)
+                c.CurrentHp = Math.Min(CharacterStats.MaxHp(c), c.CurrentHp + (int)Math.Round(CharacterStats.MaxHp(c) * GameBalance.LevelUpHealRatio));
             return gained;
         }
 

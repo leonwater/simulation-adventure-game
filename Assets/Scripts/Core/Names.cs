@@ -15,7 +15,7 @@ namespace Adventure.Core
                 case Stat.Intelligence: return "지능";
                 case Stat.Toughness: return "강인함";
                 case Stat.Precision: return "정밀";
-                case Stat.Vital: return "급소";
+                case Stat.Finesse: return "기교";
                 case Stat.SpellPower: return "주문력";
                 default: return s.ToString();
             }

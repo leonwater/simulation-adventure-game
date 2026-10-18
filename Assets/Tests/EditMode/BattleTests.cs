@@ -146,16 +146,18 @@ namespace Adventure.Tests
         {
             var b = NewBattle(Job.Warrior, 1, 2, out var c, 1);
             b.Enemies[0].MaxHp = b.Enemies[0].Hp = 100000;
-            var bash = b.GetChoices().Find(x => x.SkillId == "w_bash");
-            b.Execute(bash);
-            Assert.AreEqual(2, b.Cooldown("w_bash"));
+            int cd = SkillDb.Get("w_bash").Cooldown;
+            Assert.AreEqual(4, cd);
+            b.Execute(b.GetChoices().Find(x => x.SkillId == "w_bash"));
+            Assert.AreEqual(cd, b.Cooldown("w_bash"));
             var again = b.GetChoices().Find(x => x.SkillId == "w_bash");
             Assert.IsFalse(again.Enabled);
-            Assert.AreEqual("2턴 후 사용 가능", again.Note);
-            b.Execute(b.GetChoices()[0]);
-            Assert.AreEqual(1, b.Cooldown("w_bash"));
-            b.Execute(b.GetChoices()[0]);
-            Assert.AreEqual(0, b.Cooldown("w_bash"));
+            Assert.AreEqual(cd + "턴 후 사용 가능", again.Note);
+            for (int i = cd - 1; i >= 0; i--)
+            {
+                b.Execute(b.GetChoices()[0]);
+                Assert.AreEqual(i, b.Cooldown("w_bash"));
+            }
             Assert.IsTrue(b.GetChoices().Exists(x => x.SkillId == "w_bash" && x.Enabled));
         }
 
@@ -266,19 +268,23 @@ namespace Adventure.Tests
         [Test]
         public void SuccessModifiers_FocusBlindFear()
         {
-            var b = NewBattle(Job.Warrior, 5, 10, out var c, 1);
+            var b = NewBattle(Job.Warrior, 3, 10, out var c, 1);
             var e = b.Enemies[0];
-            double baseChance = b.HitChance(e);
+            double raw = 0.83 + (CharacterStats.Total(c, Stat.Strength) - e.Requirement) * 0.01;
+            double Clamp(double v) => System.Math.Max(0.60, System.Math.Min(0.95, v));
+            Assert.AreEqual(Clamp(raw), b.HitChance(e), 1e-9);
             b.Player.Statuses.Apply(StatusType.Focus, 10, 3);
-            Assert.AreEqual(System.Math.Min(0.95, baseChance + 0.10), b.HitChance(e), 1e-9);
+            Assert.AreEqual(Clamp(raw + 0.10), b.HitChance(e), 1e-9);
             b.Player.Statuses.Clear();
             b.Player.Statuses.Apply(StatusType.Blind, 15, 3);
-            Assert.AreEqual(System.Math.Max(0.05, baseChance - 0.15), b.HitChance(e), 1e-9);
+            Assert.AreEqual(Clamp(raw - 0.15), b.HitChance(e), 1e-9);
             b.Player.Statuses.Clear();
             double flee = b.FleeChance();
+            Assert.AreEqual(System.Math.Min(0.9, 0.60 + b.Player.Evasion), flee, 1e-9, "도주 = 60% + 회피");
             b.Player.Statuses.Apply(StatusType.Fear, 10, 3);
-            Assert.AreEqual(System.Math.Max(0.05, baseChance - 0.10), b.HitChance(e), 1e-9);
+            Assert.AreEqual(Clamp(raw - 0.10), b.HitChance(e), 1e-9);
             Assert.AreEqual(flee, b.FleeChance(), 1e-9, "공포는 도주에 영향 없음");
+            StringAssert.Contains("기본 83%", b.GetChoices()[0].Detail);
         }
 
         [Test]

@@ -2,54 +2,73 @@ using System;
 
 namespace Adventure.Core
 {
-    /// <summary>직업별 고정 정보: 주력 능력치, 공격 능력치, 자동 배분 비율.</summary>
+    /// <summary>
+    /// 직업별 고정 정보 (기획서 v1.2 '직업'): 주력 능력치, 시작 능력치, HP 계수, 기본 공격 배율, 자동 배분 비율.
+    /// 직업 차이는 시작 능력치·HP 계수·스킬 구성으로 낸다.
+    /// </summary>
     public sealed class JobData
     {
         public readonly Job Job;
         public readonly string Name;
-        /// <summary>간략 화면에 보이는 능력치 3종 (체력 + 공격 + 특화).</summary>
+        /// <summary>간략 화면 능력치 3종 (체력 + 공격 + 특화).</summary>
         public readonly Stat[] MainStats;
         /// <summary>공격력 계산에 쓰는 능력치.</summary>
         public readonly Stat AttackStat;
-        /// <summary>레벨업 포인트를 줄 수 있는 능력치 (주력 3종 + 공통).</summary>
+        /// <summary>특화 능력치 (강인함·정밀·기교·주문력).</summary>
+        public readonly Stat SpecialStat;
+        /// <summary>레벨업 포인트를 줄 수 있는 능력치 (주력 3종 + 정신·행운). 캐릭터 화면의 5줄.</summary>
         public readonly Stat[] AllocatableStats;
         /// <summary>자동 배분 비율 (AllocatableStats 순서, 합 100).</summary>
         public readonly int[] AutoRatio;
-        public readonly string WeaponNames;
+        /// <summary>HP = 50 + 체력 × 계수.</summary>
+        public readonly int HpPerVitality;
+        /// <summary>기본 공격 피해 배율 (마법사 60%).</summary>
+        public readonly double BasicAttackMultiplier;
+        public readonly string WeaponName;
+        public readonly string Concept;
+        /// <summary>Lv.1 능력치: 체력, 공격, 특화, 정신, 행운.</summary>
+        private readonly int[] _start;
 
-        private JobData(Job job, string name, Stat[] main, Stat attack, Stat[] allocatable, int[] ratio, string weapons)
+        private JobData(Job job, string name, Stat attack, Stat special, int[] start, int[] ratio, int hpCoef,
+            double basicMult, string weapon, string concept)
         {
             Job = job;
             Name = name;
-            MainStats = main;
             AttackStat = attack;
-            AllocatableStats = allocatable;
+            SpecialStat = special;
+            MainStats = new[] { Stat.Vitality, attack, special };
+            AllocatableStats = new[] { Stat.Vitality, attack, special, Stat.Spirit, Stat.Luck };
+            _start = start;
             AutoRatio = ratio;
-            WeaponNames = weapons;
+            HpPerVitality = hpCoef;
+            BasicAttackMultiplier = basicMult;
+            WeaponName = weapon;
+            Concept = concept;
         }
 
         private static readonly JobData[] All =
         {
-            new JobData(Job.Warrior, "전사",
-                new[] { Stat.Vitality, Stat.Strength, Stat.Toughness }, Stat.Strength,
-                new[] { Stat.Vitality, Stat.Strength, Stat.Toughness, Stat.Spirit, Stat.Luck },
-                new[] { 30, 40, 20, 0, 10 }, "검·도끼"),
-            new JobData(Job.Archer, "궁수",
-                new[] { Stat.Vitality, Stat.Agility, Stat.Precision }, Stat.Agility,
-                new[] { Stat.Vitality, Stat.Agility, Stat.Precision, Stat.Spirit, Stat.Luck },
-                new[] { 30, 40, 20, 0, 10 }, "활"),
-            new JobData(Job.Rogue, "도적",
-                new[] { Stat.Vitality, Stat.Agility, Stat.Vital }, Stat.Agility,
-                new[] { Stat.Vitality, Stat.Agility, Stat.Vital, Stat.Spirit, Stat.Luck },
-                new[] { 25, 40, 25, 0, 10 }, "단검"),
-            new JobData(Job.Mage, "마법사",
-                new[] { Stat.Vitality, Stat.Intelligence, Stat.SpellPower }, Stat.Intelligence,
-                new[] { Stat.Vitality, Stat.Intelligence, Stat.SpellPower, Stat.Spirit, Stat.Luck },
-                new[] { 30, 40, 20, 10, 0 }, "지팡이"),
+            new JobData(Job.Warrior, "전사", Stat.Strength, Stat.Toughness, new[] { 16, 12, 10, 5, 5 },
+                new[] { 30, 40, 20, 0, 10 }, 12, 1.0, "검", "높은 HP, 한 방이 큰 스킬"),
+            new JobData(Job.Archer, "궁수", Stat.Agility, Stat.Precision, new[] { 10, 13, 10, 6, 8 },
+                new[] { 30, 40, 20, 0, 10 }, 10, 1.0, "활", "짧은 재사용, 여러 번 때리기"),
+            new JobData(Job.Rogue, "도적", Stat.Agility, Stat.Finesse, new[] { 10, 12, 12, 5, 9 },
+                new[] { 25, 40, 25, 0, 10 }, 9, 1.0, "단검", "스킬로 치명타 내기"),
+            new JobData(Job.Mage, "마법사", Stat.Intelligence, Stat.SpellPower, new[] { 8, 14, 10, 9, 6 },
+                new[] { 30, 40, 20, 10, 0 }, 8, GameBalance.MageBasicAttack, "지팡이", "낮은 HP, 강한 화력과 다양한 범위 공격"),
         };
 
         public static JobData Get(Job job) => All[(int)job];
 
         public bool CanAllocate(Stat stat) => Array.IndexOf(AllocatableStats, stat) >= 0;
+
+        /// <summary>Lv.1 능력치. 배분할 수 없는 능력치는 5로 고정.</summary>
+        public StatBlock StartingStats()
+        {
+            var stats = new StatBlock();
+            for (int i = 0; i < StatBlock.Count; i++) stats.Values[i] = GameBalance.FixedStatValue;
+            for (int i = 0; i < AllocatableStats.Length; i++) stats[AllocatableStats[i]] = _start[i];
+            return stats;
+        }
     }
 }

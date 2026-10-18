@@ -234,7 +234,7 @@ namespace Adventure.Tests
             {
                 int best = -1;
                 double bestP = -1;
-                for (int i = 0; i < ev.Choices.Length; i++)
+                foreach (int i in EventRules.VisibleChoices(ev, c))
                 {
                     var ch = ev.Choices[i];
                     if (EventRules.UnavailableReason(ch, c, s.Run.Floor) != null) continue;

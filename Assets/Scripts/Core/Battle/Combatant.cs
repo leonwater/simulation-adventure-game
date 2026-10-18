@@ -17,7 +17,7 @@ namespace Adventure.Core
         public double DamageReduction;
         public double Resist;
         public double CritChance;
-        public double CritDamage = 1.5;
+        public double CritDamage = GameBalance.CritMultiplier;
         public int RegenPercent;
         public readonly StatusContainer Statuses = new StatusContainer();
 
@@ -27,6 +27,8 @@ namespace Adventure.Core
         public int Role; // 0 일반, 1 엘리트, 2 보스
         public long ExpReward;
         public long GoldReward;
+        /// <summary>처치하면 장비 확정 드롭 (미믹).</summary>
+        public bool GuaranteedEquipment;
 
         public bool Alive => Hp > 0;
 

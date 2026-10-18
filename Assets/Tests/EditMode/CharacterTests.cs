@@ -15,16 +15,27 @@ namespace Adventure.Tests
         }
 
         [Test]
-        public void Create_AppliesStartingStatsAndFullHp()
+        public void Create_AppliesJobStartingStatsAndHp()
         {
-            var c = Character.Create("에단", Job.Warrior);
-            Assert.AreEqual(8, c.BaseStats[Stat.Strength]);
-            Assert.AreEqual(8, c.BaseStats[Stat.Toughness]);
-            Assert.AreEqual(8, c.BaseStats[Stat.Vitality]);
-            Assert.AreEqual(5, c.BaseStats[Stat.Agility]);
-            Assert.AreEqual(50 + 8 * 10, CharacterStats.MaxHp(c));
-            Assert.AreEqual(CharacterStats.MaxHp(c), c.CurrentHp);
-            Assert.AreEqual(GameBalance.StartGold, c.Gold);
+            // 기획서 v1.2 직업별 시작 능력치 · 시작 HP 242 / 150 / 140 / 114
+            var w = Character.Create("에단", Job.Warrior);
+            Assert.AreEqual(16, w.BaseStats[Stat.Vitality]);
+            Assert.AreEqual(12, w.BaseStats[Stat.Strength]);
+            Assert.AreEqual(10, w.BaseStats[Stat.Toughness]);
+            Assert.AreEqual(5, w.BaseStats[Stat.Agility], "배분할 수 없는 능력치는 5 고정");
+            Assert.AreEqual(242, CharacterStats.MaxHp(w));
+            Assert.AreEqual(150, CharacterStats.MaxHp(Character.Create("a", Job.Archer)));
+            Assert.AreEqual(140, CharacterStats.MaxHp(Character.Create("a", Job.Rogue)));
+            Assert.AreEqual(114, CharacterStats.MaxHp(Character.Create("a", Job.Mage)));
+            Assert.AreEqual(CharacterStats.MaxHp(w), w.CurrentHp);
+            Assert.AreEqual(GameBalance.StartGold, w.Gold);
+            foreach (Job j in System.Enum.GetValues(typeof(Job)))
+            {
+                var c = Character.Create("a", j);
+                int sum = 0;
+                foreach (var st in c.JobData.AllocatableStats) sum += c.BaseStats[st];
+                Assert.That(sum, Is.InRange(47, 48), j + " 시작 능력치 합");
+            }
         }
 
         [Test]
@@ -81,7 +92,7 @@ namespace Adventure.Tests
             Assert.IsTrue(Leveling.Allocate(c, Stat.Luck));
             Assert.IsTrue(Leveling.Allocate(c, Stat.Spirit));
             Assert.IsFalse(Leveling.Allocate(c, Stat.Strength));
-            Assert.AreEqual(9, c.BaseStats[Stat.Strength]);
+            Assert.AreEqual(13, c.BaseStats[Stat.Strength]);
         }
 
         [Test]
@@ -112,9 +123,9 @@ namespace Adventure.Tests
             Assert.IsTrue(draft.Add(Stat.Intelligence));
             Assert.IsFalse(draft.Add(Stat.Strength));
             Assert.AreEqual(1, draft.Remaining);
-            Assert.AreEqual(8, c.BaseStats[Stat.Intelligence]);
+            Assert.AreEqual(14, c.BaseStats[Stat.Intelligence]);
             draft.Commit();
-            Assert.AreEqual(10, c.BaseStats[Stat.Intelligence]);
+            Assert.AreEqual(16, c.BaseStats[Stat.Intelligence]);
             Assert.AreEqual(1, c.UnspentPoints);
             Assert.IsFalse(draft.HasChanges);
         }
@@ -137,13 +148,41 @@ namespace Adventure.Tests
             var c = Character.Create("a", Job.Rogue);
             c.BaseStats[Stat.Luck] = 8;
             c.BaseStats[Stat.Agility] = 20;
-            c.BaseStats[Stat.Vital] = 10;
+            c.BaseStats[Stat.Finesse] = 10;
             c.BaseStats[Stat.Spirit] = 6;
-            Assert.AreEqual(0.05 + 8 * 0.003, CharacterStats.CritChance(c), 1e-9);
-            Assert.AreEqual(0.10, CharacterStats.Evasion(c), 1e-9);
-            Assert.AreEqual(1.6, CharacterStats.CritDamage(c), 1e-9);
+            Assert.AreEqual(0.15, CharacterStats.Evasion(c), 1e-9, "민첩 20 × 0.5% + 기교 10 × 0.5%");
+            Assert.AreEqual(1.8, CharacterStats.CritDamage(c), 1e-9);
             Assert.AreEqual(0.06, CharacterStats.Resist(c), 1e-9);
+            Assert.AreEqual(0.04, CharacterStats.EventLuckBonus(c), 1e-9);
+            Assert.AreEqual(1.04, CharacterStats.DropBonus(c), 1e-9);
             Assert.AreEqual(40 + 8, CharacterStats.Attack(c)); // 민첩 20 × 2 + 시작 무기 8
+            c.BaseStats[Stat.Agility] = 200;
+            Assert.AreEqual(0.40, CharacterStats.Evasion(c), 1e-9, "회피 최대 40%");
+
+            var w = Character.Create("a", Job.Warrior);
+            w.BaseStats[Stat.Toughness] = 200;
+            Assert.AreEqual(0.40, CharacterStats.DamageReduction(w), 1e-9, "강인함 감소율 최대 40%");
+            w.BaseStats[Stat.Finesse] = 100;
+            Assert.AreEqual(0.025, CharacterStats.Evasion(w), 1e-9, "기교는 도적만 회피에 반영");
+
+            var m = Character.Create("a", Job.Mage);
+            Assert.AreEqual(0.05, CharacterStats.SkillDamageBonus(m), 1e-9, "주문력 10 × 0.5%");
+        }
+
+        [Test]
+        public void LevelUp_HealsThirtyPercentPerLevel()
+        {
+            var c = Character.Create("a", Job.Warrior);
+            c.CurrentHp = 10;
+            Leveling.AddExp(c, 100);
+            Assert.AreEqual(10 + (int)System.Math.Round(242 * 0.3), c.CurrentHp);
+            c.CurrentHp = 1;
+            Leveling.AddExp(c, 283 + 520);
+            Assert.AreEqual(4, c.Level);
+            Assert.AreEqual(1 + 73 + 73, c.CurrentHp, "레벨마다 30%");
+            c.CurrentHp = 240;
+            Leveling.AddExp(c, 800);
+            Assert.AreEqual(CharacterStats.MaxHp(c), c.CurrentHp, "최대 HP를 넘지 않음");
         }
 
         [Test]
@@ -205,12 +244,24 @@ namespace Adventure.Tests
         }
 
         [Test]
-        public void SuccessChance_ClampedBetween5And95()
+        public void HitChance_StartsHighAndClamps()
         {
-            Assert.AreEqual(0.5, GameBalance.SuccessChance(10, 10), 1e-9);
-            Assert.AreEqual(0.8, GameBalance.SuccessChance(24, 18), 1e-9);
-            Assert.AreEqual(0.95, GameBalance.SuccessChance(100, 0), 1e-9);
-            Assert.AreEqual(0.05, GameBalance.SuccessChance(0, 100), 1e-9);
+            Assert.AreEqual(0.83, GameBalance.HitChance(10, 10), 1e-9);
+            Assert.AreEqual(0.95, GameBalance.HitChance(100, 0), 1e-9);
+            Assert.AreEqual(0.60, GameBalance.HitChance(0, 100), 1e-9);
+            // 시작 시 전사 83% · 궁수 89% · 도적 83% · 마법사 85% (1층 요구치 12.4)
+            double req = GameBalance.EnemyRequirement(1);
+            Assert.AreEqual(0.83, GameBalance.HitChance(12, req), 0.006);
+            Assert.AreEqual(0.89, GameBalance.HitChance(13, req, 10 * 0.005), 0.006);
+            Assert.AreEqual(0.85, GameBalance.HitChance(14, req), 0.006);
+        }
+
+        [Test]
+        public void EventChance_UsesLuckAndClamps()
+        {
+            Assert.AreEqual(0.65 + 0.03 + 0.025, GameBalance.EventChance(11, 10, 5), 1e-9);
+            Assert.AreEqual(0.95, GameBalance.EventChance(100, 0, 0), 1e-9);
+            Assert.AreEqual(0.25, GameBalance.EventChance(0, 100, 0), 1e-9);
         }
     }
 }

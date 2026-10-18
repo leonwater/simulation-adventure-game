@@ -20,7 +20,7 @@ namespace Adventure.Core
         Intelligence, // 지능
         Toughness,    // 강인함
         Precision,    // 정밀
-        Vital,        // 급소
+        Finesse,      // 기교 (도적: 회피)
         SpellPower    // 주문력
     }
 
@@ -102,7 +102,11 @@ namespace Adventure.Core
     {
         SingleEnemy,
         AllEnemies,
-        Self
+        Self,
+        /// <summary>고른 적 + 다른 적, 정해진 수만큼 (얼음 창: 2명).</summary>
+        MultiEnemy,
+        /// <summary>고른 적부터 차례로, 대상마다 배율이 줄어든다 (연쇄 번개).</summary>
+        ChainEnemies
     }
 
     /// <summary>버프 5종 + 디버프 9종.</summary>

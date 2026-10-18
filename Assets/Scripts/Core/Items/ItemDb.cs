@@ -44,7 +44,7 @@ namespace Adventure.Core
         {
             foreach (var m in MonsterDb.AllSpecies)
                 if (!string.IsNullOrEmpty(m.MaterialId) && !Materials.ContainsKey(m.MaterialId))
-                    Materials[m.MaterialId] = new MaterialDef { Id = m.MaterialId, Name = m.MaterialName, Price = 6 + m.Tier * 10 };
+                    Materials[m.MaterialId] = new MaterialDef { Id = m.MaterialId, Name = m.MaterialName, Price = 6 + Math.Max(0, m.Tier) * 10 };
         }
 
         public static ConsumableDef Consumable(string id) => Array.Find(Consumables, c => c.Id == id);

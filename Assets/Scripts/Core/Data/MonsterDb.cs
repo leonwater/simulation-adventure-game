@@ -128,6 +128,9 @@ namespace Adventure.Core
                     new EnemySkill("그림자 가루", 0.6, 0.25, S(StatusType.Blind, 15, 2)),
                     new EnemySkill("독칼", 1.0, 0.25, S(StatusType.Poison, 5, 3)),
                 } },
+            // ── 특수: "수상한 상자" 판정 실패 시에만 등장 (층 테마 무관) ──
+            new MonsterSpecies { Id = "mimic", Name = "미믹", Tier = -1, HpMul = GameBalance.MimicHp, AttackMul = GameBalance.MimicAttack,
+                Skills = new[] { new EnemySkill("물어뜯기", 1.0, 0.35, S(StatusType.Bleed, 30, 2)) } },
             new MonsterSpecies { Id = "dragon", Name = "드래곤", Tier = 2, UniqueBoss = true, HpMul = 1.2, AttackMul = 1.15, DefenseMul = 1.3, MaterialId = "mat_scale", MaterialName = "도마뱀 비늘",
                 Skills = new[]
                 {

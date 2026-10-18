@@ -3,6 +3,18 @@ using System.Collections.Generic;
 
 namespace Adventure.Core
 {
+    /// <summary>이벤트 결과로 시작하는 전투.</summary>
+    public enum EventBattle
+    {
+        None,
+        /// <summary>미믹 기습 (미믹이 먼저 행동).</summary>
+        Mimic,
+        /// <summary>미믹이지만 기습 없음 (궁수가 멀리서 건드림).</summary>
+        MimicNoAmbush,
+        /// <summary>속임수가 들통난 도박꾼 고블린들.</summary>
+        Gamblers
+    }
+
     public enum EventReward
     {
         None,
@@ -22,7 +34,11 @@ namespace Adventure.Core
         public double ExpMult;
         public EventReward Reward;
         public bool ReturnToTown;
-        public bool StartBattle;   // 엘리트 전투 시작
+        public EventBattle Battle;
+        /// <summary>궁수 전용: 상자가 미믹인지 굴려 결과를 정한다.</summary>
+        public bool ArcherChest;
+
+        public bool StartBattle => Battle != EventBattle.None;
     }
 
     public sealed class EventChoice
@@ -39,6 +55,8 @@ namespace Adventure.Core
         public double RequiresGoldMult;
         public EventOutcome Success;
         public EventOutcome Failure;
+        /// <summary>-1 = 모든 직업, 그 외 = 이 직업에게만 보이는 선택지.</summary>
+        public int JobOnly = -1;
     }
 
     public sealed class EventDef
@@ -55,8 +73,8 @@ namespace Adventure.Core
     public static class EventDb
     {
         private static EventOutcome O(string text, double hp = 0, double gold = 0, double exp = 0,
-            EventReward reward = EventReward.None, bool returnToTown = false, bool battle = false) =>
-            new EventOutcome { Text = text, HpRatio = hp, GoldMult = gold, ExpMult = exp, Reward = reward, ReturnToTown = returnToTown, StartBattle = battle };
+            EventReward reward = EventReward.None, bool returnToTown = false, EventBattle battle = EventBattle.None, bool archerChest = false) =>
+            new EventOutcome { Text = text, HpRatio = hp, GoldMult = gold, ExpMult = exp, Reward = reward, ReturnToTown = returnToTown, Battle = battle, ArcherChest = archerChest };
 
         private static EventChoice Pass(string label = "그냥 지나간다") =>
             new EventChoice { Label = label, Success = O("발걸음을 돌려 다음 방으로 향한다.") };
@@ -85,7 +103,9 @@ namespace Adventure.Core
                 {
                     new EventChoice { Label = "상자를 연다", Hint = "행운 판정", Check = Stat.Luck,
                         Success = O("상자 안에는 쓸 만한 장비가 들어 있었다.", reward: EventReward.Equipment, gold: 2),
-                        Failure = O("상자가 이빨을 드러냈다. 미믹이다!", battle: true) },
+                        Failure = O("상자가 이빨을 드러냈다. 미믹이다!", battle: EventBattle.Mimic) },
+                    new EventChoice { Label = "멀리서 화살로 건드린다", Hint = "궁수 전용 · 판정 없음", JobOnly = (int)Job.Archer,
+                        Success = O("", archerChest: true) },
                     new EventChoice { Label = "자물쇠를 살핀다", Hint = "민첩 판정", Check = Stat.Agility,
                         Success = O("함정을 풀고 바닥에 숨겨진 금화를 챙겼다.", gold: 6),
                         Failure = O("바늘 함정이 튀어나왔다.", hp: -0.15) },
@@ -154,6 +174,9 @@ namespace Adventure.Core
                     new EventChoice { Label = "판돈을 건다", Hint = "골드 필요 · 확률 50%", FixedChance = 0.5, RequiresGoldMult = 5,
                         Success = O("주사위가 당신 편이었다!", gold: 5),
                         Failure = O("고블린이 낄낄대며 판돈을 쓸어 간다.", gold: -5) },
+                    new EventChoice { Label = "속임수를 쓴다", Hint = "도적 전용 · 민첩 판정", Check = Stat.Agility, RequiresGoldMult = 5, JobOnly = (int)Job.Rogue,
+                        Success = O("주사위를 바꿔치기했다. 판돈의 두 배를 챙겼다!", gold: 10),
+                        Failure = O("속임수가 들통났다! 판돈을 빼앗기고 고블린들이 덤벼든다.", gold: -5, battle: EventBattle.Gamblers) },
                     Pass("무시한다"),
                 },
             },
@@ -178,6 +201,8 @@ namespace Adventure.Core
                     new EventChoice { Label = "글자를 읽는다", Hint = "지능 판정", Check = Stat.Intelligence,
                         Success = O("고대의 전투 기록을 읽고 깨달음을 얻었다.", exp: 6),
                         Failure = O("머리가 깨질 듯 아프다.", hp: -0.1) },
+                    new EventChoice { Label = "마력을 불어넣는다", Hint = "마법사 전용 · 판정 없음", JobOnly = (int)Job.Mage,
+                        Success = O("석판의 글자가 빛나며 머릿속으로 흘러든다. 고대의 전투 기록을 깨우쳤다.", exp: 6) },
                     new EventChoice { Label = "명상한다", Hint = "정신 판정", Check = Stat.Spirit,
                         Success = O("호흡을 고르자 상처가 아문다.", hp: 0.5),
                         Failure = O("잡념만 가득하다.") },
@@ -196,6 +221,8 @@ namespace Adventure.Core
                     new EventChoice { Label = "몸으로 버틴다", Hint = "체력 판정", Check = Stat.Vitality,
                         Success = O("떨어지는 돌을 버텨 냈다."),
                         Failure = O("버티지 못하고 쓰러졌다.", hp: -0.15) },
+                    new EventChoice { Label = "몸으로 받아낸다", Hint = "전사 전용 · HP 8% 소모", JobOnly = (int)Job.Warrior,
+                        Success = O("어깨로 돌덩이를 받아 내고 그대로 걸어 나왔다.", hp: -0.08) },
                 },
             },
             new EventDef

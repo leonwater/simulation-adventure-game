@@ -40,7 +40,7 @@ namespace Adventure.Game
                 return;
             }
             UI.Spacer(inner, 1, 8);
-            for (int i = 0; i < _event.Choices.Length; i++)
+            foreach (int i in EventRules.VisibleChoices(_event, C))
             {
                 var ch = _event.Choices[i];
                 int idx = i;

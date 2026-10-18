@@ -7,29 +7,30 @@ namespace Adventure.Core
     /// </summary>
     public static class GameBalance
     {
-        // ── 캐릭터 ─────────────────────────────────────────────
+        // ── 캐릭터 (기획서 v1.2) ──────────────────────────────────
         public const int MaxLevel = 60;
         public const int PointsPerLevel = 3;
-        public const int StartStatValue = 5;
-        public const int StartMainStatBonus = 3;
+        /// <summary>직업이 배분할 수 없는 능력치의 고정값 (이벤트 판정에만 쓰임).</summary>
+        public const int FixedStatValue = 5;
         public const int StartGold = 300;
 
-        public const int BaseHp = 50;
-        public const int HpPerVitality = 10;
+        public const int BaseHp = 50;                     // HP = 50 + 체력 × 직업 계수
         public const double ResistPerSpirit = 0.01;       // 저항 = 정신 × 1%
-        public const double BaseCritChance = 0.05;        // 치명타 = 5% + 행운 × 0.3%
-        public const double CritPerLuck = 0.003;
         public const double DropBonusPerLuck = 0.005;     // 드롭률 × (1 + 행운 × 0.5%)
+        public const double EventBonusPerLuck = 0.005;    // 이벤트 성공률 + 행운 × 0.5%
         public const int AttackPerMainStat = 2;           // 공격력 = 주 능력치 × 2 + 무기
         public const double EvasionPerAgility = 0.005;    // 회피 = 민첩 × 0.5%
+        public const double EvasionPerFinesse = 0.005;    // 회피 + 기교 × 0.5% (도적)
         public const double ReductionPerToughness = 0.005;// 감소율 = 강인함 × 0.5%
         public const double SuccessPerPrecision = 0.005;  // 성공률 + 정밀 × 0.5%
-        public const double BaseCritDamage = 1.5;         // 치명타 피해 = 150% + 급소 × 1%
-        public const double CritDamagePerVital = 0.01;
-        public const double SkillDamagePerSpellPower = 0.01; // 스킬 피해 + 주문력 × 1%
-        public const double MaxEvasion = 0.6;
-        public const double MaxReduction = 0.6;
+        public const double SkillDamagePerSpellPower = 0.005; // 스킬 피해 + 주문력 × 0.5%
+        /// <summary>치명타는 스킬에서만 발생하며 피해 ×1.8.</summary>
+        public const double CritMultiplier = 1.8;
+        public const double MaxEvasion = 0.40;
+        public const double MaxReduction = 0.40;
         public const double MaxResist = 0.75;
+        /// <summary>레벨업할 때마다 최대 HP의 30% 회복 (수정 사항 #11).</summary>
+        public const double LevelUpHealRatio = 0.30;
 
         /// <summary>다음 레벨까지 필요 경험치 = 100 × 레벨^1.5</summary>
         public static long ExpToNext(int level)
@@ -134,16 +135,18 @@ namespace Adventure.Core
         }
 
         // ── 몬스터 (층 f 기준) ───────────────────────────────────
-        public static double EnemyHp(int f) => 30 + f * 14;
-        public static double EnemyAttack(int f) => 5 + f * 2.4;
+        public static double EnemyHp(int f) => 60 + f * 24 + f * f * 0.6;
+        public static double EnemyAttack(int f) => 5 + f * 2.5 + f * f * 0.08;
         public static double EnemyDefense(int f) => 2 + f * 1.5;
         /// <summary>플레이어 공격 성공률 계산에 쓰는 적 요구치.</summary>
-        public static double EnemyRequirement(int f) => 8 + f * 1.5;
+        public static double EnemyRequirement(int f) => 10 + f * 2.4;
         public static long EnemyExp(int f) => (long)Math.Round(10 + 20 * Math.Pow(f, 1.5));
         public static long EnemyGold(int f) => 8 + f * 6;
         public const double EliteHp = 1.6, EliteAttack = 1.25, EliteReward = 2.0;
         public const double FloorBossHp = 3.5, FloorBossAttack = 1.35, FloorBossReward = 6.0;
         public const double UniqueBossHp = 5.0, UniqueBossAttack = 1.5, UniqueBossReward = 10.0;
+        /// <summary>미믹: 그 층 일반 몬스터 기준 HP ×1.5 · 공격력 ×1.3, 이기면 장비 확정 + 골드 ×3.</summary>
+        public const double MimicHp = 1.5, MimicAttack = 1.3, MimicGold = 3.0;
 
         /// <summary>이벤트 능력치 판정 요구치.</summary>
         public static int EventRequirement(int f) => (int)Math.Round(6 + f * 1.5);
@@ -155,20 +158,33 @@ namespace Adventure.Core
         public const int StoneDropBoss = 2;
         public const double MaterialDrop = 0.55;
 
-        // ── 전투 ───────────────────────────────────────────────
-        public const double BaseSuccess = 0.50;
-        public const double SuccessPerStatPoint = 0.05;
+        // ── 전투 (기획서 v1.2) ──────────────────────────────────
+        /// <summary>기본 공격 성공률 = 83% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 60~95%.</summary>
+        public const double BaseHit = 0.83;
+        public const double HitPerStatPoint = 0.01;
+        public const double MinHit = 0.60;
+        public const double MaxHit = 0.95;
         public const double MinSuccess = 0.05;
         public const double MaxSuccess = 0.95;
         public const double EnemyBaseHit = 0.90;
+        /// <summary>도주 = 60% + 회피 + 집중 − 실명, 최대 90%.</summary>
+        public const double BaseFlee = 0.60;
+        public const double MaxFlee = 0.90;
         public const double BossFleeChance = 0.0;
+        /// <summary>마법사 기본 공격 피해 배율.</summary>
+        public const double MageBasicAttack = 0.60;
 
-        /// <summary>성공률 = 50% + (관련 능력치 − 요구치) × 5%, 5~95%.</summary>
-        public static double SuccessChance(double stat, double requirement, double bonus = 0)
-        {
-            double p = BaseSuccess + (stat - requirement) * SuccessPerStatPoint + bonus;
-            return Clamp(p, MinSuccess, MaxSuccess);
-        }
+        /// <summary>이벤트 판정 = 65% + (능력치 − 요구치) × 3% + 행운 × 0.5%, 25~95%.</summary>
+        public const double EventBase = 0.65;
+        public const double EventPerStatPoint = 0.03;
+        public const double EventMin = 0.25;
+        public const double EventMax = 0.95;
+
+        public static double HitChance(double stat, double requirement, double bonus = 0) =>
+            Clamp(BaseHit + (stat - requirement) * HitPerStatPoint + bonus, MinHit, MaxHit);
+
+        public static double EventChance(double stat, double requirement, int luck) =>
+            Clamp(EventBase + (stat - requirement) * EventPerStatPoint + luck * EventBonusPerLuck, EventMin, EventMax);
 
         public static double Clamp(double v, double min, double max) => v < min ? min : (v > max ? max : v);
         public static int Clamp(int v, int min, int max) => v < min ? min : (v > max ? max : v);

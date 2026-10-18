@@ -33,10 +33,7 @@ namespace Adventure.Core
 
         public static StatBlock StartingStats(Job job)
         {
-            var stats = new StatBlock();
-            for (int i = 0; i < StatBlock.Count; i++) stats.Values[i] = GameBalance.StartStatValue;
-            foreach (Stat s in JobData.Get(job).MainStats) stats[s] += GameBalance.StartMainStatBonus;
-            return stats;
+            return JobData.Get(job).StartingStats();
         }
 
         public static Character Create(string name, Job job)

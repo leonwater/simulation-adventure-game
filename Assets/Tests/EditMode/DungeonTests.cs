@@ -222,6 +222,7 @@ namespace Adventure.Tests
                     for (int k = 0; k < 30; k++)
                     {
                         var c = Character.Create("a", (Job)(k % 4));
+                        if (!EventRules.VisibleChoices(e, c).Contains(choice)) continue;
                         c.Gold = 5000;
                         var run = DungeonSystem.StartRun(c, 1 + k % 30 / 3, rng);
                         var room = run.Map.Rooms.Find(r => r.Type == RoomType.Event);
@@ -240,6 +241,46 @@ namespace Adventure.Tests
                     }
                 }
             }
+        }
+
+        [Test]
+        public void Events_JobOnlyChoicesAppearForThatJobOnly()
+        {
+            var ceiling = EventDb.Get("ceiling");
+            var warrior = Character.Create("a", Job.Warrior);
+            var mage = Character.Create("a", Job.Mage);
+            Assert.AreEqual(3, EventRules.VisibleChoices(ceiling, warrior).Count);
+            Assert.AreEqual(2, EventRules.VisibleChoices(ceiling, mage).Count);
+            Assert.AreEqual(4, EventRules.VisibleChoices(EventDb.Get("chest"), Character.Create("a", Job.Archer)).Count);
+            Assert.AreEqual(3, EventRules.VisibleChoices(EventDb.Get("gamble"), Character.Create("a", Job.Rogue)).Count);
+            Assert.AreEqual(4, EventRules.VisibleChoices(EventDb.Get("tablet"), mage).Count);
+        }
+
+        [Test]
+        public void Events_ArcherChestIsMimicOrTreasure()
+        {
+            int mimic = 0, treasure = 0;
+            var rng = new Rng(4);
+            for (int k = 0; k < 200; k++)
+            {
+                var c = Character.Create("a", Job.Archer);
+                var run = DungeonSystem.StartRun(c, 1, rng);
+                var room = run.Map.Rooms.Find(r => r.Type == RoomType.Event);
+                room.EventId = "chest";
+                ForceAdjacent(run, room);
+                DungeonSystem.MoveTo(run, room.Id);
+                int idx = System.Array.FindIndex(EventDb.Get("chest").Choices, ch => ch.JobOnly == (int)Job.Archer);
+                var r = EventRules.Resolve(run, c, idx, rng);
+                if (r.Battle == EventBattle.MimicNoAmbush) mimic++;
+                else
+                {
+                    Assert.AreEqual(EventBattle.None, r.Battle);
+                    Assert.AreEqual(1, r.Loot.Items.Count + r.Loot.Dropped.Count);
+                    treasure++;
+                }
+            }
+            Assert.Greater(mimic, 0);
+            Assert.Greater(treasure, mimic, "행운이 좋으면 대부분 상자");
         }
 
         [Test]

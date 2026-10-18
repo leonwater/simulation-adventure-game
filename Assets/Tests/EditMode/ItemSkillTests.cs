@@ -177,19 +177,20 @@ namespace Adventure.Tests
         {
             var c = NewWarrior();
             Assert.IsTrue(SkillSystem.Learn(c, "w_warcry"));
-            Assert.IsTrue(SkillSystem.Learn(c, "c_firstaid"));
             Assert.IsTrue(SkillSystem.Learn(c, "w_shield"));
+            Assert.IsTrue(SkillSystem.Learn(c, "w_guard"));
             Assert.IsFalse(SkillSystem.Learn(c, "a_aim"), "다른 직업 스킬은 배울 수 없음");
+            Assert.IsFalse(SkillSystem.Learn(c, "c_firstaid"), "공용 스킬은 v1.2에서 삭제");
             Assert.IsTrue(SkillSystem.Equip(c, "w_warcry", out _));
-            Assert.IsTrue(SkillSystem.Equip(c, "c_firstaid", out _));
             Assert.IsFalse(SkillSystem.Equip(c, "w_shield", out string err));
             StringAssert.Contains("Lv.8", err);
             c.Level = 8;
             c.Rank = Rank.E;
-            Assert.IsFalse(SkillSystem.Equip(c, "w_shield", out err));
+            Assert.IsTrue(SkillSystem.Equip(c, "w_shield", out _));
+            Assert.IsFalse(SkillSystem.Equip(c, "w_guard", out err));
             Assert.AreEqual("장착 슬롯이 가득 찼습니다", err);
             c.Rank = Rank.D;
-            Assert.IsTrue(SkillSystem.Equip(c, "w_shield", out _));
+            Assert.IsTrue(SkillSystem.Equip(c, "w_guard", out _));
             Assert.AreEqual(4, c.Skills.Equipped.Count);
         }
 
@@ -222,28 +223,34 @@ namespace Adventure.Tests
         [Test]
         public void SkillDescriptions_ReadNaturally()
         {
-            Assert.AreEqual("단일 대상 피해 180% · 재사용 2턴", SkillDb.Get("w_bash").Description);
-            Assert.AreEqual("단일 대상 피해 90% + 기절 1턴 · 재사용 3턴", SkillDb.Get("w_shield").Description);
-            Assert.AreEqual("강화 3턴 · 재사용 4턴", SkillDb.Get("w_warcry").Description);
-            Assert.AreEqual("모든 적 피해 120% · 재사용 4턴", SkillDb.Get("w_whirl").Description);
+            Assert.AreEqual("단일 250% · 재사용 4턴", SkillDb.Get("w_bash").Description);
+            Assert.AreEqual("단일 150% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
+            Assert.AreEqual("강화 3턴 · 재사용 6턴", SkillDb.Get("w_warcry").Description);
+            Assert.AreEqual("모든 적 180% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
+            Assert.AreEqual("성공률 −5%", SkillDb.Get("w_bash").SuccessText);
+            Assert.AreEqual("성공률 +10%", SkillDb.Get("a_aim").SuccessText);
+            Assert.AreEqual("성공률 100%", SkillDb.Get("w_guard").SuccessText);
         }
 
         [Test]
         public void EverySkillAndMaterial_IsValid()
         {
-            foreach (var s in SkillDb.All)
+            Assert.AreEqual(24, SkillDb.AllSkills.Length, "직업 6개씩 24개, 공용 스킬 없음");
+            foreach (var s in SkillDb.AllSkills)
             {
                 Assert.IsNotEmpty(s.Name);
+                Assert.IsNotEmpty(s.Effect, s.Id);
+                Assert.GreaterOrEqual(s.JobRestriction, 0, s.Id);
                 Assert.Greater(s.Cooldown, 0, s.Id);
-                Assert.IsTrue(s.DamageMult > 0 || s.HealRatio > 0 || s.Statuses.Length > 0, s.Id);
+                Assert.IsTrue(s.IsAttack || s.Statuses.Length > 0, s.Id);
                 Assert.IsNotNull(ItemDb.CreateSkillBook(s.Id));
             }
             foreach (var m in MonsterDb.AllSpecies)
-                Assert.IsNotNull(ItemDb.Material(m.MaterialId), m.Id);
+                if (!string.IsNullOrEmpty(m.MaterialId)) Assert.IsNotNull(ItemDb.Material(m.MaterialId), m.Id);
             foreach (Job j in System.Enum.GetValues(typeof(Job)))
             {
-                Assert.GreaterOrEqual(SkillDb.ForJob(j, SkillTier.Low, SkillTier.Mid).Count, 4);
-                Assert.GreaterOrEqual(SkillDb.ForJob(j, SkillTier.High, SkillTier.Top).Count, 2);
+                Assert.AreEqual(4, SkillDb.ForJob(j, SkillTier.Low, SkillTier.Mid).Count);
+                Assert.AreEqual(2, SkillDb.ForJob(j, SkillTier.High, SkillTier.Top).Count);
             }
         }
     }

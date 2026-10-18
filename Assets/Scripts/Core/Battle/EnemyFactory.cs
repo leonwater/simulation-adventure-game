@@ -27,7 +27,6 @@ namespace Adventure.Core
                 Defense = (int)Math.Round(GameBalance.EnemyDefense(floor) * sp.DefenseMul),
                 Requirement = GameBalance.EnemyRequirement(floor) * sp.RequirementMul + (role > 0 ? 2 : 0),
                 Resist = role == 2 ? 0.3 : role == 1 ? 0.1 : 0,
-                CritChance = 0.05,
                 RegenPercent = sp.RegenPercent,
                 Species = sp,
                 Skills = sp.Skills,
@@ -76,13 +75,24 @@ namespace Adventure.Core
             return list;
         }
 
-        /// <summary>이벤트 상자에서 나온 미믹 (엘리트급).</summary>
+        /// <summary>
+        /// 미믹: 그 층 일반 몬스터 기준 HP ×1.5 · 공격력 ×1.3, 물어뜯기(출혈). 이기면 장비 확정 + 골드 ×3.
+        /// </summary>
         public static List<Combatant> CreateMimic(int floor, Difficulty diff)
         {
-            var sp = new MonsterSpecies { Id = "mimic", Name = "미믹", Tier = MonsterDb.ThemeIndex(floor), HpMul = 1.2, AttackMul = 1.1 };
-            var m = Create(sp, floor, diff, 1);
-            m.Name = "미믹";
+            var m = Create(MonsterDb.Get("mimic"), floor, diff, 0);
+            m.GoldReward = (long)Math.Round(m.GoldReward * GameBalance.MimicGold);
+            m.GuaranteedEquipment = true;
             return new List<Combatant> { m };
+        }
+
+        /// <summary>도박하는 고블린에게 속임수가 들통났을 때의 전투 (고블린 2마리, 층 수치).</summary>
+        public static List<Combatant> CreateGamblers(int floor, Difficulty diff)
+        {
+            var sp = MonsterDb.Get("goblin");
+            var list = new List<Combatant> { Create(sp, floor, diff, 0), Create(sp, floor, diff, 0) };
+            NameDuplicates(list);
+            return list;
         }
 
         /// <summary>같은 이름이 여럿이면 A, B, C…를 붙인다.</summary>
