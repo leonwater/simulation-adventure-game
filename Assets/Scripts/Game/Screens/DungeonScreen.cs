@@ -51,19 +51,14 @@ namespace Adventure.Game
             var choices = UI.Column(body, 8);
             Choices(choices, run);
 
-            UI.Spacer(body, 1, 4);
-            var bottom = UI.Row(body, 8);
-            bottom.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
-            var targets = DungeonSystem.TeleportTargets(run);
-            var tp = UI.TextButton(bottom, "텔레포트", () => TeleportMenu(targets), ButtonKind.Secondary, 48, 14);
-            UI.Size(tp, flexW: 1);
-            UI.SetEnabled(tp, targets.Count > 0 && DungeonSystem.CanLeave(run));
-            var bag = UI.TextButton(bottom, "가방", () => Go(new InventoryScreen(true)), ButtonKind.Secondary, 48, 14);
-            UI.Size(bag, flexW: 1);
+            // 아래 고정 줄: 왼쪽 가방, 오른쪽 귀환 (아이콘 버튼). 순간이동은 미니맵에서.
+            var bottom = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 8, 8), false, 8, TextAnchor.MiddleCenter, "bottom");
+            ScreenKit.TopLine(bottom);
+            IconButton(bottom, "bag", "가방", () => Go(new InventoryScreen(true)), true);
+            UI.HSpacer(bottom);
             bool canReturn = S.CanReturn;
-            var ret = UI.TextButton(bottom, canReturn ? "귀환" : "귀환 방 미발견", ConfirmReturn, ButtonKind.Secondary, 48, 13);
-            UI.Size(ret, flexW: 1);
-            UI.SetEnabled(ret, canReturn);
+            var ret = IconButton(bottom, "return", canReturn ? "귀환" : "귀환 방 미발견", ConfirmReturn, canReturn);
+            Anchors.Set("dungeon.return", ret);
 
             if (run.FloorIntroPending) FloorIntro(root, run);
             else AfterIntro();
@@ -162,21 +157,34 @@ namespace Adventure.Game
             {
                 if (S.CanDescend)
                     ScreenKit.GoButton(parent, "아래층으로 내려간다", (run.Floor + 1) + "층 · " + MonsterDb.ThemeFor(run.Floor + 1).Name + " · 현재 HP 유지", Descend);
-                ScreenKit.GoButton(parent, "마을로 귀환한다", run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 얻은 것은 모두 유지", ReturnNow);
+                ScreenKit.GoButton(parent, "마을로 귀환한다", run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
             }
             if (room.Type == RoomType.Merchant) ScreenKit.GoButton(parent, "상인과 거래한다", "물약·해독제 (마을보다 20% 비쌈)", Merchant);
-            if (room.Type == RoomType.Return) ScreenKit.GoButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 얻은 것은 유지", ConfirmReturn);
+            if (room.Type == RoomType.Return) ScreenKit.GoButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
 
+            bool first = true;
             foreach (var opt in DungeonSystem.MoveOptions(run, S.Difficulty))
             {
                 var o = opt;
-                if (o.Room.Visited) VisitedButton(parent, o.Direction, o.Hint, () => Move(o.Room.Id));
-                else NewRoomButton(parent, o.Direction, o.Hint, () => Move(o.Room.Id));
+                RectTransform b = o.Room.Visited ? VisitedButton(parent, o.Direction, o.Hint, () => Move(o.Room.Id))
+                    : NewRoomButton(parent, o.Direction, o.Hint, () => Move(o.Room.Id));
+                if (first && !o.Room.Visited) Anchors.Set("dungeon.choice0", b);
+                first = false;
             }
         }
 
+        private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, bool enabled)
+        {
+            var b = UI.ButtonCard(parent, onClick, Theme.Button, Theme.ButtonBorder, 12, UI.Pad(10, 6), true, 2, 60, TextAnchor.MiddleCenter);
+            UI.Size(b, width: 96, minH: 60);
+            UI.CenteredIcon(b, icon, 28);
+            UI.Label(b, label, 12, Theme.Text, true, TextAnchor.MiddleCenter);
+            if (!enabled) UI.SetEnabled(b, false, 0.4f);
+            return b;
+        }
+
         /// <summary>새 방: 금색 테두리 + 위쪽에서 빛나는 줄 (수정 사항 #10).</summary>
-        private static void NewRoomButton(Transform parent, string title, string sub, System.Action onClick)
+        private static RectTransform NewRoomButton(Transform parent, string title, string sub, System.Action onClick)
         {
             var b = ScreenKit.GoButton(parent, title, sub, onClick);
             var glow = UI.Image(b, Theme.Gold, 0, "glow");
@@ -190,15 +198,16 @@ namespace Adventure.Game
             rt.sizeDelta = new Vector2(-16, 12);
             rt.anchoredPosition = new Vector2(0, -7);
             glow.gameObject.AddComponent<Blink>().Period = 1.6f;
+            return b;
         }
 
-        /// <summary>탐험한 방: 회색으로 흐리게, "탐험함" 표시.</summary>
-        private static void VisitedButton(Transform parent, string title, string sub, System.Action onClick)
+        /// <summary>탐험한 방: 푸른 카드 + "탐험함" (빛나지 않지만 눌리는 버튼으로 보이게, 수정 사항 #5).</summary>
+        private static RectTransform VisitedButton(Transform parent, string title, string sub, System.Action onClick)
         {
-            var b = UI.ButtonCard(parent, onClick, Theme.Bg, Theme.LineSoft, 12, UI.Pad(14, 8), true, 2, 52, TextAnchor.MiddleLeft);
-            UI.Label(b, title, 14, Theme.TextSub);
-            if (!string.IsNullOrEmpty(sub)) UI.Label(b, sub, 12, Theme.PlaceholderText);
-            b.gameObject.AddComponent<CanvasGroup>().alpha = 0.7f;
+            var b = UI.ButtonCard(parent, onClick, Theme.BlueBg, Theme.BlueBorder, 12, UI.Pad(14, 8), true, 2, 54, TextAnchor.MiddleLeft);
+            UI.Label(b, title, 15, Theme.BlueLight, true);
+            if (!string.IsNullOrEmpty(sub)) UI.Label(b, sub, 12, Theme.BlueText);
+            return b;
         }
 
         // ── 미니맵 ──
@@ -220,6 +229,7 @@ namespace Adventure.Game
         private void MiniMap(Transform parent, DungeonRun run)
         {
             var card = UI.ButtonCard(parent, FullMap, Theme.MapBg, Theme.DungeonLine(run.Floor) * new Color(1, 1, 1, 0.6f), 12, UI.Pad(12, 12), true, 8, 100, TextAnchor.UpperLeft);
+            Anchors.Set("dungeon.map", card);
             var area = UI.Rect(card, "map");
             UI.Size(area, height: MapH, width: MapW);
             DrawMap(area, MapW, MapH, run, null);
@@ -228,8 +238,19 @@ namespace Adventure.Game
             UI.Sub(legend, "■ 탐험함");
             UI.Label(legend, "■ 현재 위치", 12, Theme.Gold);
             UI.Label(legend, "□ 갈 수 있음", 12, Theme.Gold);
-            var hint = UI.Sub(legend, "눌러서 전체 지도", TextAnchor.MiddleRight);
-            UI.Size(hint, flexW: 1);
+
+            // 오른쪽 위: 눌러서 전체 지도·순간이동 (수정 사항 #19)
+            int targets = DungeonSystem.TeleportTargets(run).Count;
+            var pill = UI.Card(card, new Color(0.10f, 0.09f, 0.06f, 0.92f), Theme.Gold, 10, UI.Pad(8, 4), false, 6, TextAnchor.MiddleCenter, "teleport-hint");
+            pill.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            pill.anchorMin = pill.anchorMax = new Vector2(1, 1);
+            pill.pivot = new Vector2(1, 1);
+            pill.anchoredPosition = new Vector2(-8, -8);
+            var fit = pill.gameObject.AddComponent<ContentSizeFitter>();
+            fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            UI.Icon(pill, "map", 18);
+            UI.Label(pill, targets > 0 && DungeonSystem.CanLeave(run) ? "눌러서 순간이동 · " + targets + "곳" : "눌러서 전체 지도", 12, Theme.Gold, true, TextAnchor.MiddleLeft, false, false);
         }
 
         /// <summary>전체 지도: 크게 보고, 탐험을 마친 방을 눌러 순간이동 (수정 사항 #26).</summary>
@@ -372,27 +393,6 @@ namespace Adventure.Game
                     if (S.LastLoot != null && S.LastLoot.LevelsGained > 0) _levelUp = true;
                     Rebuild();
                     break;
-            }
-        }
-
-        private void TeleportMenu(List<Room> targets)
-        {
-            var body = Overlay.Modal("텔레포트", true);
-            var modal = Overlay.Top;
-            UI.Sub(body, "탐험을 마친 방으로 비용 없이 이동합니다.");
-            var dist = S.Run.Map.Distances(S.Run.CurrentRoomId);
-            targets.Sort((a, b) => dist[a.Id].CompareTo(dist[b.Id]));
-            foreach (var r in targets)
-            {
-                var room = r;
-                int unexplored = r.Links.FindAll(l => !S.Run.Map.Get(l).Visited).Count;
-                string sub = "현재 위치에서 " + dist[r.Id] + "칸" + (unexplored > 0 ? " · 안 가 본 길 " + unexplored + "개" : "");
-                ScreenKit.ChoiceButton(body, Names.Of(r.Type) + " 방", sub, "", false, () =>
-                {
-                    Overlay.Close(modal);
-                    S.Teleport(room.Id);
-                    Rebuild();
-                }, true, 56);
             }
         }
 

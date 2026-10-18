@@ -11,7 +11,7 @@ namespace Adventure.Game
         Clear
     }
 
-    /// <summary>정산: 사망(잃은 것·남은 것), 귀환(얻은 것), 하드코어 초기화, 던전 정복 엔딩.</summary>
+    /// <summary>정산: 패배(이전·현재·변화 표), 귀환(획득, N층 클리어), 하드코어 초기화, 던전 정복 엔딩.</summary>
     public class ResultScreen : ScreenBase
     {
         private readonly ResultKind _kind;
@@ -40,7 +40,8 @@ namespace Adventure.Game
             }
             UI.Spacer(body, 1, 12);
             string label = _kind == ResultKind.Hardcore ? "처음으로" : "마을로 돌아가기";
-            UI.TextButton(body, label, Next, ButtonKind.Primary, 52, 16);
+            var next = UI.TextButton(body, label, Next, ButtonKind.Primary, 52, 16);
+            Anchors.Set("result.next", next);
         }
 
         private static void Heading(Transform parent, string title, Color color, string sub)
@@ -135,11 +136,13 @@ namespace Adventure.Game
             var r = S.LastReturn;
             if (r == null)
             {
-                Heading(body, "무사히 귀환했다", Theme.BlueLight, "");
+                Heading(body, "귀환", Theme.BlueLight, "");
                 return;
             }
-            Heading(body, "무사히 귀환했다", Theme.BlueLight, r.Floor + "층 · 탐험한 방 " + r.Rooms + "개");
-            var got = Panel(body, "얻은 것", Theme.Gold, Theme.Card, Theme.CardBorder);
+            // 보스를 잡았으면 "N층 클리어", 아니면 "N층 귀환" (수정 사항 #6)
+            Heading(body, r.Floor + "층 " + (r.BossCleared ? "클리어" : "귀환"), r.BossCleared ? Theme.Gold : Theme.BlueLight, "탐험한 방 " + r.Rooms + "개");
+            var got = Panel(body, "획득", Theme.Gold, Theme.Card, Theme.CardBorder);
+            Anchors.Set("result.panel", got);
             Row(got, "골드", "+" + r.GoldEarned.ToString("#,0") + " G");
             Row(got, "경험치", "+" + r.ExpEarned.ToString("#,0"));
             var items = UI.Column(got, 4, UI.Pad(0, 0, 8, 8));

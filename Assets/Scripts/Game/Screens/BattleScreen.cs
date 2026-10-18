@@ -149,8 +149,7 @@ namespace Adventure.Game
 
             // 나
             var p = _b.Player;
-            Unit(-1, p, new Vector2(84, 158), 76, Shape.Circle, Theme.Hex("23324A"), Theme.BlueLight, 3,
-                _b.Character.JobData.Name.Substring(0, 1), 130, "HP " + p.Hp + "/" + p.MaxHp, false);
+            Unit(-1, p, new Vector2(84, 158), 76, Shape.Circle, Theme.Hex("23324A"), Theme.BlueLight, 3, 130, "HP " + p.Hp + "/" + p.MaxHp, false);
 
             // 적
             var centers = EnemyCenters(_b.Enemies.Count);
@@ -164,7 +163,7 @@ namespace Adventure.Game
                 float borderW = e.Role == 0 ? 2 : 5;
                 Color fill = e.Role == 2 ? Theme.Hex("3A1E1A") : Theme.Hex("33242A");
                 string name = e.Role == 1 ? "★" + e.Name : e.Name;
-                Unit(i, e, centers[Mathf.Min(i, centers.Length - 1)], size, shape, fill, border, borderW, e.Name.Substring(0, 1), many ? 94 : 130, name, true);
+                Unit(i, e, centers[Mathf.Min(i, centers.Length - 1)], size, shape, fill, border, borderW, many ? 94 : 130, name, true);
             }
         }
 
@@ -180,7 +179,7 @@ namespace Adventure.Game
         }
 
         private void Unit(int index, Combatant c, Vector2 center, float size, Shape shape, Color fill, Color border, float borderW,
-            string glyph, float width, string title, bool enemy)
+            float width, string title, bool enemy)
         {
             var v = new UnitView { Center = center, Size = size, MaxHp = c.MaxHp };
             float top = center.y - size / 2f;
@@ -201,7 +200,7 @@ namespace Adventure.Game
             v.Bar.offsetMax = Vector2.zero;
             SetBar(v, hp);
 
-            // 도형 (선택 표시 → 테두리 → 채움 → 글자)
+            // 도형 (선택 표시 → 테두리 → 채움). 도형 안에는 글자를 넣지 않는다 (수정 사항 #4)
             var root = UI.Rect(_stage, "shape");
             root.anchorMin = root.anchorMax = new Vector2(0, 1);
             root.pivot = new Vector2(0.5f, 0.5f);
@@ -217,8 +216,7 @@ namespace Adventure.Game
             }
             ShapeImage(root, shape, border, 0);
             v.Fill = ShapeImage(root, shape, fill, borderW);
-            var g = UI.Label(root, glyph, size * 0.36f, enemy ? Theme.Hex("E8C9C4") : Theme.BlueLight, true, TextAnchor.MiddleCenter);
-            UI.Stretch(g.rectTransform);
+            if (selected || (enemy && Anchors.Get("battle.enemy0") == null && alive)) Anchors.Set("battle.enemy0", root);
             if (!alive) v.Group.alpha = 0.3f;
 
             if (enemy && alive)
@@ -325,15 +323,46 @@ namespace Adventure.Game
             UI.Size(hl, flexW: 1);
             UI.Sub(hint, "길게 누르면 상세", TextAnchor.MiddleRight);
             var list = UI.Scroll(parent, out _, 6, UI.Pad(0, 2, 0, 0), null, 1);
+            Anchors.Set("battle.choices", list.parent.parent);
             foreach (var ch in _b.GetChoices())
             {
                 if (ch.Target >= 0 && ch.Target != _target) continue;
-                Choice(list, ch);
+                var b = Choice(list, ch);
+                if (ch.Kind == ActionKind.Attack && Anchors.Get("battle.choice0") == null) Anchors.Set("battle.choice0", b);
             }
             if (_playing) _choicesGroup.interactable = false;
         }
 
-        private void Choice(Transform parent, BattleChoice ch)
+        // 선택지 종류별 색 (수정 사항 #18): 바탕은 어둡게 두고 왼쪽 막대와 작은 태그로만 구분해 눈이 피로하지 않게
+        private static void KindStyle(BattleChoice ch, out string tag, out Color bar, out Color fill, out Color border)
+        {
+            switch (ch.Kind)
+            {
+                case ActionKind.Skill:
+                    var def = SkillDb.Get(ch.SkillId);
+                    tag = "스킬" + (def != null ? " · " + Names.Of(def.Tier) : "");
+                    bar = Theme.Hex("7FA8D8"); fill = Theme.Hex("1A2130"); border = Theme.Hex("34465C");
+                    break;
+                case ActionKind.Item:
+                    tag = "아이템";
+                    bar = Theme.Hex("7DB38A"); fill = Theme.Hex("1A231E"); border = Theme.Hex("34503C");
+                    break;
+                case ActionKind.Flee:
+                    tag = "도주";
+                    bar = Theme.Hex("B07A70"); fill = Theme.Hex("221C1D"); border = Theme.Hex("4A3634");
+                    break;
+                case ActionKind.Attack:
+                    tag = "기본 공격";
+                    bar = Theme.Hex("A9A39A"); fill = Theme.Button; border = Theme.ButtonBorder;
+                    break;
+                default:
+                    tag = "대기";
+                    bar = Theme.Hex("6A6E78"); fill = Theme.Button; border = Theme.ButtonBorder;
+                    break;
+            }
+        }
+
+        private RectTransform Choice(Transform parent, BattleChoice ch)
         {
             string right = ch.Enabled ? (ch.Kind == ActionKind.Item || ch.Kind == ActionKind.Wait ? ch.Note : ScreenKit.Percent(ch.Chance)) : ch.Note;
             bool pct = ch.Enabled && ch.Kind != ActionKind.Item && ch.Kind != ActionKind.Wait;
@@ -343,23 +372,40 @@ namespace Adventure.Game
                 int cut = label.IndexOf(" · ", StringComparison.Ordinal);
                 if (cut > 0) label = label.Substring(0, cut);
             }
+            if (ch.Kind == ActionKind.Attack) label = "공격";
             string sub = null;
             if (ch.Kind == ActionKind.Skill)
             {
                 var def = SkillDb.Get(ch.SkillId);
                 if (def != null) sub = def.Effect;
             }
-            var b = ScreenKit.ChoiceButton(parent, label, sub, right, pct, null, ch.Enabled, sub != null ? 56 : 50);
+            KindStyle(ch, out string tag, out Color barColor, out Color fill, out Color border);
+            var b = UI.ButtonCard(parent, null, fill, border, 10, UI.Pad(18, 12, 6, 6), false, 10, sub != null ? 60 : 52);
+            var bar = UI.Image(b, barColor, 2, "kind-bar");
+            bar.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var brt = bar.rectTransform;
+            brt.anchorMin = new Vector2(0, 0);
+            brt.anchorMax = new Vector2(0, 1);
+            brt.pivot = new Vector2(0, 0.5f);
+            brt.sizeDelta = new Vector2(4, -14);
+            brt.anchoredPosition = new Vector2(7, 0);
+            var left = UI.Column(b, 1, null, TextAnchor.MiddleLeft);
+            UI.Size(left, flexW: 1);
+            UI.Label(left, tag, 11, barColor, true);
+            UI.Label(left, label, 15, Theme.Text, true);
+            if (sub != null) UI.Label(left, sub, 12, Theme.TextSub);
+            if (!string.IsNullOrEmpty(right))
+                UI.Label(b, right, pct ? 15 : 12, pct ? Theme.Gold : Theme.TextSub, pct, TextAnchor.MiddleRight, false, false);
             var c = ch;
             LongPress.Add(b, () => ShowDetail(c), () => Pick(c));
             if (!ch.Enabled)
             {
-                // 비활성 선택지도 길게 눌러 설명은 볼 수 있게
-                var group = b.GetComponent<CanvasGroup>();
-                group.blocksRaycasts = true;
-                group.interactable = true;
+                // 비활성 선택지는 흐리게, 길게 눌러 설명은 볼 수 있게
+                var group = b.gameObject.AddComponent<CanvasGroup>();
+                group.alpha = 0.5f;
                 b.GetComponent<Button>().interactable = false;
             }
+            return b;
         }
 
         private void ShowDetail(BattleChoice ch)
