@@ -344,15 +344,18 @@ namespace Adventure.Game
         /// </summary>
         public static RectTransform Illustration(Transform parent, string key, float height, float radius = 0)
         {
-            var sprite = string.IsNullOrEmpty(key) ? null : Resources.Load<Sprite>("Illustrations/" + key);
-            if (sprite != null)
+            var art = IllustrationArt.Find(key);
+            var tex = art == null ? null : Resources.Load<Texture2D>("Illustrations/" + art.File);
+            if (tex != null)
             {
-                var img = Image(parent, UnityEngine.Color.white, 0, "illustration");
-                img.sprite = sprite;
-                img.preserveAspect = false;
-                img.type = UnityEngine.UI.Image.Type.Simple;
-                Size(img, height: height);
-                return img.rectTransform;
+                var rt = Rect(parent, "illustration");
+                Size(rt, height: height);
+                var raw = rt.gameObject.AddComponent<RawImage>();
+                raw.texture = tex;
+                raw.raycastTarget = false;
+                var cover = rt.gameObject.AddComponent<CoverImage>();
+                cover.Focus = new Vector2(art.FocusX, art.FocusY);
+                return rt;
             }
             var box = Card(parent, Theme.Placeholder, radius > 0 ? Theme.PlaceholderLine : Theme.Placeholder, Mathf.Max(radius, 0.01f), Pad(0), true, 0, TextAnchor.MiddleCenter, "illustration");
             Size(box, height: height);
