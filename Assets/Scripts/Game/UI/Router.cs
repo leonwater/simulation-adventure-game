@@ -37,6 +37,7 @@ namespace Adventure.Game
         public void Show(ScreenBase screen)
         {
             GameApp.Instance.Overlay.CloseAll();
+            Typewriter.Forget();
             Current = screen;
             Rebuild();
         }

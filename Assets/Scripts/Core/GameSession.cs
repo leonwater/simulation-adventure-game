@@ -47,6 +47,8 @@ namespace Adventure.Core
         public void NewGame(string name, Job job, Difficulty difficulty)
         {
             Data = new SaveData { Difficulty = difficulty, Character = Character.Create(name, job), Tutorial = TutorialStage.TownGuide };
+            Data.SeenSkills = new List<string>();
+            foreach (var sk in C.Skills.Learned) Data.SeenSkills.Add(sk.SkillId);
             ClearTransient();
             EnterTown();
         }
@@ -65,13 +67,38 @@ namespace Adventure.Core
             return true;
         }
 
+        /// <summary>스킬 화면에서 아직 확인하지 않은 스킬이 있는지.</summary>
+        public bool HasUnseenSkill
+        {
+            get
+            {
+                if (Data?.SeenSkills == null) return false;
+                foreach (var sk in C.Skills.Learned) if (!Data.SeenSkills.Contains(sk.SkillId)) return true;
+                return false;
+            }
+        }
+
+        public void MarkSkillsSeen()
+        {
+            if (Data == null) return;
+            if (Data.SeenSkills == null) Data.SeenSkills = new List<string>();
+            foreach (var sk in C.Skills.Learned) if (!Data.SeenSkills.Contains(sk.SkillId)) Data.SeenSkills.Add(sk.SkillId);
+        }
+
+        /// <summary>상점 물건이 바뀐 뒤 아직 상점에 들어가 보지 않았는지.</summary>
+        public bool ShopUnseen => Data != null && Data.Shop.LastRefreshTicks > Data.ShopSeenTicks;
+
+        public void MarkShopSeen()
+        {
+            if (Data != null) Data.ShopSeenTicks = Data.Shop.LastRefreshTicks;
+        }
+
         public bool InTutorial => Data != null && Data.Tutorial != TutorialStage.Done;
 
         public void SetTutorial(TutorialStage stage)
         {
             if (Data == null) return;
             Data.Tutorial = stage;
-            if (stage == TutorialStage.Done) Data.TipsShown.Clear();
             Save();
         }
 

@@ -25,7 +25,7 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
-            ScreenKit.NpcIllustration(page, "길드 접수원", "접수원", _line, 220);
+            ScreenKit.NpcIllustration(page, "길드 접수원", "접수원", _line, 290);
             UI.Spacer(page, 0, 6);
             ScreenKit.Tabs(page, new[] { "퀘스트", "등급", "창고" }, _tab, i =>
             {
@@ -35,7 +35,11 @@ namespace Adventure.Game
             var body = UI.Scroll(page, out _, 8, UI.Pad(12, 12, 12, 16), "guild" + _tab);
             if (_tab == 0) Quests(body);
             else if (_tab == 1) RankTab(body);
-            else StorageTab(body);
+            else
+            {
+                StorageTab(body);
+                Tutorial.OnGuildStorage();
+            }
         }
 
         // ── 퀘스트 ──

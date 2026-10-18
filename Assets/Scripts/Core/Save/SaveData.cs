@@ -28,6 +28,8 @@ namespace Adventure.Core
         public List<string> TipsShown = new List<string>();
         /// <summary>마지막으로 확인한 상점 갱신 시각 (알림 점용).</summary>
         public long ShopSeenTicks;
+        /// <summary>스킬 화면에서 확인한 스킬 (새 스킬 알림 점용).</summary>
+        public List<string> SeenSkills;
     }
 
     /// <summary>튜토리얼 진행 (수정 사항 #7).</summary>
@@ -108,6 +110,12 @@ namespace Adventure.Core
             c.RecalculateCapacities();
             c.CurrentHp = GameBalance.Clamp(c.CurrentHp, 0, CharacterStats.MaxHp(c));
             if (d.TipsShown == null) d.TipsShown = new List<string>();
+            if (d.SeenSkills == null)
+            {
+                // 예전 저장: 지금 배운 스킬은 모두 확인한 것으로 본다
+                d.SeenSkills = new List<string>();
+                foreach (var s in c.Skills.Learned) d.SeenSkills.Add(s.SkillId);
+            }
             if (d.Shop == null) d.Shop = new ShopState();
             if (d.Guild == null) d.Guild = new GuildState();
             if (d.Run != null && (d.Run.Map == null || d.Run.Map.Rooms.Count == 0 || d.Run.Current == null)) d.Run = null;

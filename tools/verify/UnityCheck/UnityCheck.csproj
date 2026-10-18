@@ -10,7 +10,7 @@
     <Nullable>disable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <UnityRefDir Condition="'$(UnityRefDir)' == ''">$(MSBuildThisFileDirectory)../.cache/unity-ref</UnityRefDir>
-    <DefineConstants>$(DefineConstants);UNITY_2021_3_OR_NEWER;UNITY_ANDROID</DefineConstants>
+    <DefineConstants>$(DefineConstants);UNITY_2021_3_OR_NEWER;UNITY_ANDROID;ADVENTURE_VERIFY</DefineConstants>
     <DefineConstants Condition="'$(Mode)' == 'Editor'">$(DefineConstants);UNITY_EDITOR</DefineConstants>
     <OutputPath>bin/$(Mode)/</OutputPath>
     <NoWarn>$(NoWarn);CS0618;MSB3277;CS1701;CS1702</NoWarn>

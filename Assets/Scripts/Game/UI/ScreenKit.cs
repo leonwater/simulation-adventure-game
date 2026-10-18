@@ -167,27 +167,77 @@ namespace Adventure.Game
             }
         }
 
-        /// <summary>시설 화면 공통: 위 일러스트 + 겹쳐 놓은 대사 상자.</summary>
-        public static void NpcIllustration(Transform parent, string illustration, string speaker, string line, float height)
+        /// <summary>
+        /// 시설 화면 공통: 일러스트 + 그 아래쪽 안에 겹친 대사 상자 (수정 사항 #5).
+        /// 아래쪽 어두운 그라데이션 위에 검은 반투명 상자, 금색 1px 테두리, 왼쪽 위 이름표, 최대 3줄.
+        /// 반환값은 본문 글자 (Typewriter가 붙어 있다).
+        /// </summary>
+        public static Text NpcIllustration(Transform parent, string illustration, string speaker, string line, float height)
         {
             var holder = UI.Rect(parent, "npc");
-            UI.Size(holder, height: height + 34);
+            UI.Size(holder, height: height);
             var ill = UI.Illustration(holder, illustration, height);
-            ill.anchorMin = new Vector2(0, 1);
-            ill.anchorMax = new Vector2(1, 1);
-            ill.pivot = new Vector2(0.5f, 1);
-            ill.sizeDelta = new Vector2(0, height);
-            ill.anchoredPosition = Vector2.zero;
-            if (string.IsNullOrEmpty(line)) return;
-            var box = UI.Card(holder, Theme.Dialog, Theme.ButtonBorder, 12, UI.Pad(14, 10), true, 4, TextAnchor.UpperLeft, "dialogue");
+            UI.Stretch(ill);
+            ill.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+
+            var shade = UI.Image(holder, new Color(0.04f, 0.04f, 0.06f, 0.92f), 0, "shade");
+            shade.sprite = Sprites.GradientUp;
+            var srt = shade.rectTransform;
+            srt.anchorMin = new Vector2(0, 0);
+            srt.anchorMax = new Vector2(1, 0);
+            srt.pivot = new Vector2(0.5f, 0);
+            srt.sizeDelta = new Vector2(0, height * 0.45f);
+            srt.anchoredPosition = Vector2.zero;
+            if (string.IsNullOrEmpty(line)) return null;
+            return DialogueBox(holder, speaker, line, height * 0.3f);
+        }
+
+        /// <summary>일러스트 아래쪽 안쪽의 대사 상자. 누르면 한 글자씩 나오던 대사가 바로 완성된다.</summary>
+        public static Text DialogueBox(RectTransform holder, string speaker, string line, float maxHeight)
+        {
+            const float margin = 12, tab = 12;
+            float textSize = 15 * GameSettings.TextScale;
+            float lineH = textSize * 1.6f;
+            float boxH = Mathf.Min(Mathf.Max(maxHeight, lineH * 2 + 26), lineH * 3 + 26);
+
+            var box = UI.Rect(holder, "dialogue");
             box.anchorMin = new Vector2(0, 0);
             box.anchorMax = new Vector2(1, 0);
             box.pivot = new Vector2(0.5f, 0);
-            box.offsetMin = new Vector2(12, 0);
-            box.offsetMax = new Vector2(-12, 0);
-            box.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            UI.Label(box, speaker, 12, Theme.Gold, true);
-            UI.Label(box, line, 14, Theme.Text);
+            box.offsetMin = new Vector2(margin, margin);
+            box.offsetMax = new Vector2(-margin, margin + boxH);
+            var fill = box.gameObject.AddComponent<Image>();
+            fill.sprite = Sprites.Rounded;
+            fill.type = Image.Type.Sliced;
+            fill.pixelsPerUnitMultiplier = Sprites.MultiplierFor(10);
+            fill.color = new Color(0, 0, 0, 0.76f);
+            fill.raycastTarget = true;
+            box.gameObject.AddComponent<TypewriterSkip>();
+            var border = UI.Image(box, Theme.Gold, 0, "border");
+            border.sprite = Sprites.RoundedOutline;
+            border.type = Image.Type.Sliced;
+            border.pixelsPerUnitMultiplier = Sprites.MultiplierFor(10) * 1.2f;
+            UI.Stretch(border.rectTransform);
+
+            var body = UI.Label(box, line, 15, Theme.Text);
+            body.lineSpacing = 1.45f;
+            body.alignment = TextAnchor.UpperLeft;
+            body.verticalOverflow = VerticalWrapMode.Truncate;
+            UI.Stretch(body.rectTransform, 14, 14, 14, 8);
+            var tw = Typewriter.Attach(body);
+
+            if (!string.IsNullOrEmpty(speaker))
+            {
+                var nameTab = UI.Card(box, new Color(0.08f, 0.07f, 0.05f, 0.95f), Theme.Gold, 6, UI.Pad(10, 3), false, 0, TextAnchor.MiddleCenter, "name");
+                nameTab.anchorMin = nameTab.anchorMax = new Vector2(0, 1);
+                nameTab.pivot = new Vector2(0, 0.5f);
+                nameTab.anchoredPosition = new Vector2(tab, 0);
+                var fit = nameTab.gameObject.AddComponent<ContentSizeFitter>();
+                fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                UI.Label(nameTab, speaker, 12, Theme.Gold, true, TextAnchor.MiddleCenter, false, false);
+            }
+            return body;
         }
 
         /// <summary>탭 줄. 선택된 탭은 금색 + 밑줄.</summary>

@@ -147,7 +147,7 @@ namespace Adventure.Game
             var rt = Rect(parent, "label");
             var t = rt.gameObject.AddComponent<Text>();
             t.font = serif ? Theme.Serif : bold ? Theme.SansBold : Theme.Sans;
-            t.fontSize = Mathf.RoundToInt(size);
+            t.fontSize = Mathf.RoundToInt(size * GameSettings.TextScale);
             t.color = color ?? Theme.Text;
             t.alignment = align;
             t.supportRichText = true;
@@ -274,6 +274,23 @@ namespace Adventure.Game
             // 가로 배치(Row) 안에 넣으면 글자 폭만큼만 차지한다.
             return Label(card, text, size, textColor, false, TextAnchor.MiddleCenter, false, false);
         }
+
+        /// <summary>오른쪽 위 빨간 알림 점 (레이아웃 무시).</summary>
+        public static Image Dot(Transform parent, float size = 10, float inset = 6)
+        {
+            var dot = Image(parent, Theme.Red, 0, "alert-dot");
+            dot.sprite = Sprites.Circle;
+            dot.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var rt = dot.rectTransform;
+            rt.anchorMin = rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(1, 1);
+            rt.sizeDelta = new Vector2(size, size);
+            rt.anchoredPosition = new Vector2(-inset, -inset);
+            return dot;
+        }
+
+        /// <summary>장비 등급을 색과 글자로 함께 보여 준다 (예: "[희귀] 강철 장검").</summary>
+        public static string GradeTag(Adventure.Core.ItemGrade g) => Color("[" + Adventure.Core.Names.Of(g) + "]", Theme.GradeColor(g));
 
         // ── 막대 · 스크롤 · 그림 ─────────────────────────────────
 
