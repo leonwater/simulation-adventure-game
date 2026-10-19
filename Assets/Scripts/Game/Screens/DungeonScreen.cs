@@ -186,7 +186,7 @@ namespace Adventure.Game
         {
             var b = UI.ButtonCard(parent, onClick, returnStyle ? Theme.Hex("15241F") : Theme.Button, returnStyle ? Theme.Hex("3F8A68") : Theme.ButtonBorder,
                 12, UI.Pad(10, 6), true, 2, 60, TextAnchor.MiddleCenter);
-            UI.Size(b, width: 96, minH: 60);
+            UI.Size(b, width: 72, minH: 60);
             UI.CenteredIcon(b, icon, 28);
             UI.Label(b, label, 12, Theme.Text, true, TextAnchor.MiddleCenter);
             if (!enabled) UI.SetEnabled(b, false, 0.4f);
@@ -249,18 +249,17 @@ namespace Adventure.Game
             UI.Label(legend, "■ 현재 위치", 12, Theme.Gold);
             UI.Label(legend, "□ 갈 수 있음", 12, Theme.Gold);
 
-            // 오른쪽 위: 눌러서 전체 지도·순간이동 (수정 사항 #19)
-            int targets = DungeonSystem.TeleportTargets(run).Count;
-            var pill = UI.Card(card, new Color(0.10f, 0.09f, 0.06f, 0.92f), Theme.Gold, 10, UI.Pad(8, 4), false, 6, TextAnchor.MiddleCenter, "teleport-hint");
-            pill.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            pill.anchorMin = pill.anchorMax = new Vector2(1, 1);
-            pill.pivot = new Vector2(1, 1);
-            pill.anchoredPosition = new Vector2(-8, -8);
-            var fit = pill.gameObject.AddComponent<ContentSizeFitter>();
-            fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            UI.Icon(pill, "map", 18);
-            UI.Label(pill, targets > 0 && DungeonSystem.CanLeave(run) ? "눌러서 순간이동 · " + targets + "곳" : "눌러서 전체 지도", 12, Theme.Gold, true, TextAnchor.MiddleLeft, false, false);
+            // 오른쪽 위: 지도 아이콘 버튼 → 전체 지도·순간이동 (순간이동할 곳이 있으면 테두리가 깜빡인다)
+            bool canTeleport = DungeonSystem.TeleportTargets(run).Count > 0 && DungeonSystem.CanLeave(run);
+            var tp = UI.ButtonCard(card, FullMap, new Color(0.10f, 0.09f, 0.06f, 0.92f), canTeleport ? Theme.Gold : Theme.ButtonBorder, 8, UI.Pad(0), false, 0, 36, TextAnchor.MiddleCenter);
+            tp.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            tp.anchorMin = tp.anchorMax = new Vector2(1, 1);
+            tp.pivot = new Vector2(1, 1);
+            tp.sizeDelta = new Vector2(36, 36);
+            tp.anchoredPosition = new Vector2(-8, -8);
+            UI.Icon(tp, "map", 22);
+            if (canTeleport) tp.Find("fill")?.gameObject.AddComponent<Blink>();
+            Anchors.Set("dungeon.teleport", tp);
         }
 
         /// <summary>전체 지도: 크게 보고, 탐험을 마친 방을 눌러 순간이동 (수정 사항 #26).</summary>
@@ -337,7 +336,7 @@ namespace Adventure.Game
             {
                 bool isCur = r.Id == cur.Id;
                 bool next = !r.Visited && cur.Links.Contains(r.Id) && DungeonSystem.CanLeave(run);
-                string label = r.Visited || easy ? Names.ShortOf(r.Type) : "?";
+                bool known = r.Visited || easy;
                 Color fill = isCur ? Theme.Accent : r.Visited ? Theme.MapNode : Theme.MapBg;
                 Color border = isCur ? Theme.Accent : next ? Theme.Gold : r.Visited ? line : Theme.PlaceholderLine;
                 RectTransform n;
@@ -349,13 +348,35 @@ namespace Adventure.Game
                 }
                 else n = UI.Card(area, fill, border, 6, UI.Pad(0), true, 0, TextAnchor.MiddleCenter, "room");
                 Place(n, Pos(r), new Vector2(node, node));
-                UI.Label(n, label, node < 22 ? 9 : node < 28 ? 11 : node < 44 ? 13 : 15, isCur ? Theme.OnAccent : next ? Theme.Gold : r.Visited ? Theme.Text : Theme.TextSub, isCur, TextAnchor.MiddleCenter);
+                // 방 종류는 글자 대신 아이콘 (모르는 방은 "?")
+                Color tint = isCur ? Theme.OnAccent : next ? Theme.Gold : r.Visited ? Theme.Text : Theme.TextSub;
+                if (known)
+                {
+                    var icon = UI.CenteredIcon(n, RoomIcon(r.Type), Mathf.Round(node * 0.62f));
+                    icon.color = tint;
+                }
+                else UI.Label(n, "?", node < 22 ? 9 : node < 28 ? 11 : node < 44 ? 13 : 15, tint, true, TextAnchor.MiddleCenter);
                 if (next)
                 {
                     var inner = n.Find("fill");
                     if (inner != null) UI.Stretch((RectTransform)inner, 2, 2, 2, 2);
                     n.gameObject.AddComponent<Blink>();
                 }
+            }
+        }
+
+        private static string RoomIcon(RoomType t)
+        {
+            switch (t)
+            {
+                case RoomType.Battle: return "room_battle";
+                case RoomType.Boss: return "room_boss";
+                case RoomType.Event: return "room_event";
+                case RoomType.Treasure: return "room_treasure";
+                case RoomType.Rest: return "room_rest";
+                case RoomType.Merchant: return "room_merchant";
+                case RoomType.Return: return "room_return";
+                default: return "room_start";
             }
         }
 

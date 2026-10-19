@@ -32,6 +32,7 @@ namespace Adventure.Game
             public Image Fill;
             public RectTransform Bar;
             public Text HpText;
+            public bool EnemyHp;
             public Vector2 Center;
             public float Size;
             public int MaxHp;
@@ -187,8 +188,16 @@ namespace Adventure.Game
             bool alive = hp > 0;
 
             var name = UI.Label(_stage, title, enemy ? 11 : 12, alive ? Theme.Text : Theme.TextSub, !enemy, TextAnchor.MiddleCenter, false, false);
-            Place(name.rectTransform, new Vector2(center.x - width / 2f, top - 30), new Vector2(width, 16));
+            Place(name.rectTransform, new Vector2(center.x - width / 2f, top - (enemy ? 44 : 30)), new Vector2(width, 16));
             if (!enemy) v.HpText = name;
+            else
+            {
+                // 적 HP 숫자 (이름과 막대 사이)
+                var hpText = UI.Label(_stage, "", 10, Theme.RedLight, false, TextAnchor.MiddleCenter, false, false);
+                Place(hpText.rectTransform, new Vector2(center.x - width / 2f, top - 28), new Vector2(width, 14));
+                v.HpText = hpText;
+                v.EnemyHp = true;
+            }
 
             var track = UI.Image(_stage, Theme.Line, 3, "hp");
             float barW = Mathf.Min(width - 10, 86);
@@ -276,7 +285,7 @@ namespace Adventure.Game
             float ratio = v.MaxHp <= 0 ? 0 : Mathf.Clamp01((float)hp / v.MaxHp);
             v.Bar.anchorMax = new Vector2(ratio, 1);
             v.Bar.GetComponent<Image>().enabled = ratio > 0.001f;
-            if (v.HpText != null) v.HpText.text = "HP " + Mathf.Max(0, hp) + "/" + v.MaxHp;
+            if (v.HpText != null) v.HpText.text = (v.EnemyHp ? "" : "HP ") + Mathf.Max(0, hp) + "/" + v.MaxHp;
         }
 
         private static void Place(RectTransform rt, Vector2 topLeft, Vector2 size)
@@ -373,11 +382,12 @@ namespace Adventure.Game
                 if (cut > 0) label = label.Substring(0, cut);
             }
             if (ch.Kind == ActionKind.Attack) label = "공격";
-            string sub = null;
+            // 예상 피해를 바로 보여 준다 (스킬은 효과 요약도 함께)
+            string sub = string.IsNullOrEmpty(ch.DamageNote) ? null : ch.DamageNote;
             if (ch.Kind == ActionKind.Skill)
             {
                 var def = SkillDb.Get(ch.SkillId);
-                if (def != null) sub = def.Effect;
+                if (def != null) sub = sub == null ? def.Effect : sub + " · " + def.Effect;
             }
             KindStyle(ch, out string tag, out Color barColor, out Color fill, out Color border);
             var b = UI.ButtonCard(parent, null, fill, border, 10, UI.Pad(18, 12, 6, 6), false, 10, sub != null ? 60 : 52);
@@ -393,7 +403,7 @@ namespace Adventure.Game
             UI.Size(left, flexW: 1);
             UI.Label(left, tag, 11, barColor, true);
             UI.Label(left, label, 15, Theme.Text, true);
-            if (sub != null) UI.Label(left, sub, 12, Theme.TextSub);
+            if (sub != null) UI.Label(left, sub, 12, Theme.TextBody);
             if (!string.IsNullOrEmpty(right))
                 UI.Label(b, right, pct ? 15 : 12, pct ? Theme.Gold : Theme.TextSub, pct, TextAnchor.MiddleRight, false, false);
             var c = ch;
@@ -410,8 +420,9 @@ namespace Adventure.Game
 
         private void ShowDetail(BattleChoice ch)
         {
-            var body = Overlay.Modal(ch.Label);
-            var t = UI.Label(body, string.IsNullOrEmpty(ch.Detail) ? ch.Note : ch.Detail, 14, Theme.TextBody);
+            string text = string.IsNullOrEmpty(ch.Detail) ? ch.Note : ch.Detail;
+            var body = Overlay.Modal(ch.Label, text.Length > 260);
+            var t = UI.Label(body, text, 14, Theme.TextBody);
             t.lineSpacing = 1.3f;
         }
 

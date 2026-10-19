@@ -280,11 +280,18 @@ namespace Adventure.Tests
             Assert.AreEqual(Clamp(raw - 0.15), b.HitChance(e), 1e-9);
             b.Player.Statuses.Clear();
             double flee = b.FleeChance();
-            Assert.AreEqual(System.Math.Min(0.9, 0.60 + b.Player.Evasion), flee, 1e-9, "도주 = 60% + 회피");
+            Assert.AreEqual(System.Math.Min(GameBalance.MaxFlee, 0.60 + b.Player.Evasion), flee, 1e-9, "도주 = 60% + 회피");
             b.Player.Statuses.Apply(StatusType.Fear, 10, 3);
             Assert.AreEqual(Clamp(raw - 0.10), b.HitChance(e), 1e-9);
             Assert.AreEqual(flee, b.FleeChance(), 1e-9, "공포는 도주에 영향 없음");
-            StringAssert.Contains("기본 83%", b.GetChoices()[0].Detail);
+            var attack = b.GetChoices()[0];
+            StringAssert.Contains("기본 74%", attack.Detail);
+            StringAssert.Contains("피해 계산", attack.Detail);
+            Assert.AreEqual("피해 약 " + Battle.Damage(b.Player, e, 1.0, false), attack.DamageNote, "기본 공격 예상 피해");
+            var bash = b.GetChoices().Find(x => x.SkillId == "w_bash");
+            StringAssert.Contains("재사용 4턴", bash.Detail);
+            StringAssert.Contains("치명타", bash.Detail);
+            StringAssert.StartsWith("피해 약 ", bash.DamageNote);
         }
 
         [Test]

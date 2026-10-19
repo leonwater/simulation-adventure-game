@@ -89,8 +89,10 @@ namespace Adventure.Core
         public bool Enabled = true;
         /// <summary>쓸 수 없을 때 오른쪽에 보여 줄 문구 (예: "2턴 후 사용 가능").</summary>
         public string Note = "";
-        /// <summary>길게 눌렀을 때 보여 줄 설명과 성공률 계산 내역.</summary>
+        /// <summary>길게 눌렀을 때 보여 줄 설명: 피해 계산식, 부가 효과, 성공률.</summary>
         public string Detail = "";
+        /// <summary>선택지에 바로 보여 줄 예상 피해 (예: "피해 약 34 × 3회").</summary>
+        public string DamageNote = "";
     }
 
     /// <summary>
@@ -178,14 +180,14 @@ namespace Adventure.Core
             return bonus;
         }
 
-        /// <summary>공격 성공률 = 83% + (주 공격 능력치 − 적 요구치) × 1% + 정밀 + 버프 + 스킬 보정, 60~95%.</summary>
+        /// <summary>공격 성공률 = 기본 + (주 공격 능력치 − 적 요구치) × 1% + 정밀 + 버프 + 스킬 보정 (GameBalance).</summary>
         public double HitChance(Combatant target, double skillBonus = 0)
         {
             double stat = CharacterStats.Total(Character, Character.JobData.AttackStat);
             return GameBalance.HitChance(stat, target.Requirement, CharacterStats.PrecisionBonus(Character) + StatusBonus(false) + skillBonus);
         }
 
-        /// <summary>도주 = 60% + 회피 + 집중 − 실명 (공포는 영향 없음), 최대 90%. 보스전은 불가.</summary>
+        /// <summary>도주 = 60% + 회피 + 집중 − 실명 (공포는 영향 없음), 최대 80%. 보스전은 불가.</summary>
         public double FleeChance()
         {
             if (!CanFlee) return GameBalance.BossFleeChance;
@@ -207,7 +209,7 @@ namespace Adventure.Core
         public string HitBreakdown(Combatant target, double skillBonus)
         {
             double stat = CharacterStats.Total(Character, Character.JobData.AttackStat);
-            var parts = new List<string> { "기본 83%" };
+            var parts = new List<string> { "기본 " + Math.Round(GameBalance.BaseHit * 100) + "%" };
             parts.Add(Names.Of(Character.JobData.AttackStat) + " " + stat + " vs 요구치 " + Math.Round(target.Requirement, 1) + ": " + Pct((stat - target.Requirement) * GameBalance.HitPerStatPoint));
             double prec = CharacterStats.PrecisionBonus(Character);
             if (prec > 0) parts.Add("정밀 " + Pct(prec));
@@ -216,7 +218,7 @@ namespace Adventure.Core
             if (s.Has(StatusType.Blind)) parts.Add("실명 " + Pct(-s.Value(StatusType.Blind) / 100.0));
             if (s.Has(StatusType.Fear)) parts.Add("공포 " + Pct(-s.Value(StatusType.Fear) / 100.0));
             if (Math.Abs(skillBonus) > 1e-9) parts.Add("스킬 보정 " + Pct(skillBonus));
-            return string.Join("\n", parts) + "\n= " + Math.Round(HitChance(target, skillBonus) * 100) + "% (60~95% 범위)";
+            return string.Join(" · ", parts) + " = " + Math.Round(HitChance(target, skillBonus) * 100) + "% (" + Math.Round(GameBalance.MinHit * 100) + "~" + Math.Round(GameBalance.MaxHit * 100) + "%)";
         }
 
         private string FleeBreakdown()
@@ -227,7 +229,7 @@ namespace Adventure.Core
             if (s.Has(StatusType.Swift)) parts.Add("날렵함 " + Pct(s.Value(StatusType.Swift) / 100.0));
             if (s.Has(StatusType.Focus)) parts.Add("집중 " + Pct(s.Value(StatusType.Focus) / 100.0));
             if (s.Has(StatusType.Blind)) parts.Add("실명 " + Pct(-s.Value(StatusType.Blind) / 100.0));
-            return string.Join("\n", parts) + "\n= " + Math.Round(FleeChance() * 100) + "% (최대 90%)\n실패하면 적이 행동한다.";
+            return string.Join("\n", parts) + "\n= " + Math.Round(FleeChance() * 100) + "% (최대 " + Math.Round(GameBalance.MaxFlee * 100) + "%)\n실패하면 적이 행동한다.";
         }
 
         // ── 선택지 ─────────────────────────────────────────────
@@ -245,10 +247,13 @@ namespace Adventure.Core
             double basic = Character.JobData.BasicAttackMultiplier;
             foreach (var e in alive)
             {
+                int d = Damage(Player, e, basic, false);
                 list.Add(new BattleChoice
                 {
                     Kind = ActionKind.Attack, Label = "공격 · " + e.Name, Target = Enemies.IndexOf(e), Chance = HitChance(e),
-                    Detail = "기본 공격: 피해 " + Math.Round(basic * 100) + "%, 치명타 없음\n\n" + HitBreakdown(e, 0),
+                    DamageNote = "피해 약 " + d,
+                    Detail = "기본 공격 — 피해 " + Math.Round(basic * 100) + "%, 치명타 없음\n\n" + DamageFormula(basic, e, false)
+                             + "\n\n성공 확률\n" + HitBreakdown(e, 0),
                 });
             }
 
@@ -260,29 +265,31 @@ namespace Adventure.Core
                 int cd = Cooldown(id);
                 string note = silenced ? "침묵 상태" : cd > 0 ? cd + "턴 후 사용 가능" : "";
                 bool enabled = note.Length == 0;
-                string head = def.Name + " (" + Names.Of(def.Tier) + ")\n" + def.Description + (NextSkillCrit && def.IsAttack ? "\n연막: 이번 스킬은 확정 치명타" : "");
                 if (def.NeedsTarget && enabled)
                 {
                     foreach (var e in alive)
                         list.Add(new BattleChoice
                         {
                             Kind = ActionKind.Skill, SkillId = id, Label = def.Name + " · " + e.Name, Target = Enemies.IndexOf(e),
-                            Chance = HitChance(e, def.SuccessBonus), Detail = head + "\n\n" + HitBreakdown(e, def.SuccessBonus),
+                            Chance = HitChance(e, def.SuccessBonus), DamageNote = SkillDamageNote(def, e),
+                            Detail = SkillDetail(def, e, alive),
                         });
                 }
                 else
                 {
                     double chance = 1.0;
-                    string detail = head;
+                    var target = alive.Count > 0 ? alive[0] : null;
                     if (def.Target == SkillTarget.AllEnemies && alive.Count > 0)
                     {
                         chance = 0;
                         foreach (var e in alive) chance += HitChance(e, def.SuccessBonus);
                         chance /= alive.Count;
-                        detail += "\n\n적마다 따로 판정 (평균 " + Math.Round(chance * 100) + "%)\n" + HitBreakdown(alive[0], def.SuccessBonus);
                     }
-                    else if (def.Target == SkillTarget.Self) detail += "\n\n자신에게 거는 스킬: 성공률 100%";
-                    list.Add(new BattleChoice { Kind = ActionKind.Skill, SkillId = id, Label = def.Name, Chance = chance, Enabled = enabled, Note = note, Detail = detail });
+                    list.Add(new BattleChoice
+                    {
+                        Kind = ActionKind.Skill, SkillId = id, Label = def.Name, Chance = chance, Enabled = enabled, Note = note,
+                        DamageNote = target != null ? SkillDamageNote(def, target) : "", Detail = SkillDetail(def, target, alive),
+                    });
                 }
             }
 
@@ -294,6 +301,93 @@ namespace Adventure.Core
                 Note = CanFlee ? "" : "보스에게서는 도망칠 수 없다", Detail = FleeBreakdown(),
             });
             return list;
+        }
+
+        // ── 예상 피해 · 상세 설명 ────────────────────────────────
+
+        private double SkillMult(SkillDef def, int chainIndex = -1)
+        {
+            var state = Character.Skills.Get(def.Id);
+            double baseMult = chainIndex >= 0 && chainIndex < def.ChainMults.Length ? def.ChainMults[chainIndex] : def.DamageMult;
+            return baseMult * SkillSystem.PowerMultiplier(state?.Level ?? 0) * (1.0 + CharacterStats.SkillDamageBonus(Character));
+        }
+
+        private bool SureCrit(SkillDef def) => NextSkillCrit || def.GuaranteedCrit || (def.FirstTurnCrit && Turn == 1);
+
+        /// <summary>선택지에 보여 줄 예상 피해 한 줄 (치명타·처형 제외 기준, 확정 치명타면 반영).</summary>
+        public string SkillDamageNote(SkillDef def, Combatant target)
+        {
+            if (def.Target == SkillTarget.Self)
+            {
+                if (def.HealRatio > 0) return "HP 약 " + (int)Math.Round(Player.MaxHp * def.HealRatio * SkillSystem.PowerMultiplier(Character.Skills.Get(def.Id)?.Level ?? 0)) + " 회복";
+                return def.Statuses.Length > 0 ? Names.Of(def.Statuses[0].Type) + " " + def.Statuses[0].Turns + "턴" : "";
+            }
+            if (!def.IsAttack || target == null) return "";
+            bool crit = SureCrit(def);
+            if (def.Target == SkillTarget.ChainEnemies)
+            {
+                var parts = new List<string>();
+                for (int i = 0; i < def.ChainMults.Length; i++) parts.Add(Damage(Player, target, SkillMult(def, i), crit).ToString());
+                return "피해 약 " + string.Join(" → ", parts) + " (연쇄)";
+            }
+            int d = Damage(Player, target, SkillMult(def), crit);
+            string text = (def.Target == SkillTarget.AllEnemies ? "모든 적 " : "") + "피해 약 " + d + (def.Hits > 1 ? " × " + def.Hits + "회" : "");
+            if (def.Target == SkillTarget.MultiEnemy && def.TargetCount > 1) text += " · " + def.TargetCount + "명";
+            return crit ? text + " (치명타)" : text;
+        }
+
+        /// <summary>피해 계산식: 공격력 × 배율 → 방어력 → 피해 감소 → 치명타.</summary>
+        public string DamageFormula(double mult, Combatant target, bool crit)
+        {
+            if (target == null) return "";
+            var a = Player.Statuses;
+            double buff = a.Value(StatusType.Empower) / 100.0 - a.Value(StatusType.Weaken) / 100.0;
+            var parts = new List<string> { "공격력 " + Player.Attack + " × " + Math.Round(mult * 100) + "%" };
+            if (Math.Abs(buff) > 1e-9) parts.Add("강화/약화 " + Pct(buff));
+            parts.Add("× 방어 보정 " + (100.0 / (100.0 + Math.Max(0, target.Defense))).ToString("0.00") + " (방어력 " + target.Defense + ")");
+            if (target.DamageReduction > 0) parts.Add("× 피해 감소 " + Pct(-target.DamageReduction));
+            var t = target.Statuses;
+            double taken = -t.Value(StatusType.Fortify) / 100.0 + t.Value(StatusType.Vulnerable) / 100.0;
+            if (Math.Abs(taken) > 1e-9) parts.Add("× 철벽/취약 " + Pct(taken));
+            if (crit) parts.Add("× 치명타 " + GameBalance.CritMultiplier);
+            return "피해 계산 (" + target.Name + ")\n" + string.Join(" ", parts) + "\n= 약 " + Damage(Player, target, mult, crit);
+        }
+
+        private string SkillDetail(SkillDef def, Combatant target, List<Combatant> alive)
+        {
+            var lines = new List<string> { def.Name + " (" + Names.Of(def.Tier) + ") — " + def.Effect };
+            if (def.IsAttack && target != null)
+            {
+                lines.Add("");
+                lines.Add(DamageFormula(def.Target == SkillTarget.ChainEnemies ? SkillMult(def, 0) : SkillMult(def), target, SureCrit(def)));
+                if (def.Hits > 1) lines.Add("타격 " + def.Hits + "회, 타격마다 따로 명중 판정");
+                if (def.Target == SkillTarget.AllEnemies) lines.Add("모든 적에게 따로 판정 (적마다 방어력에 따라 피해가 다름)");
+                if (def.Target == SkillTarget.ChainEnemies) lines.Add("연쇄 배율 " + string.Join(" → ", Array.ConvertAll(def.ChainMults, m => Math.Round(m * 100) + "%")));
+                lines.Add("");
+                if (SureCrit(def)) lines.Add("치명타 확정 (피해 ×" + GameBalance.CritMultiplier + ")" + (NextSkillCrit ? " — 연막 효과" : def.FirstTurnCrit ? " — 첫 턴" : ""));
+                else if (def.CritChance > 0) lines.Add("치명타 확률 " + Math.Round(def.CritChance * 100) + "% (피해 ×" + GameBalance.CritMultiplier + ")");
+                else lines.Add("치명타 없음");
+                if (def.ExecuteThreshold > 0) lines.Add("처형: HP " + Math.Round(def.ExecuteThreshold * 100) + "% 이하 적에게 피해 ×" + def.ExecuteMult);
+            }
+            if (def.HealRatio > 0) lines.Add("회복: 최대 HP " + Math.Round(def.HealRatio * 100) + "%");
+            if (def.GrantsNextCrit) lines.Add("다음 공격 스킬은 확정 치명타");
+            if (def.Statuses.Length > 0)
+            {
+                lines.Add("");
+                lines.Add("부가 효과");
+                foreach (var st in def.Statuses)
+                {
+                    string who = st.OnSelf || def.Target == SkillTarget.Self ? "자신: " : "적: ";
+                    string chance = st.Chance < 1 ? " (" + Math.Round(st.Chance * 100) + "% 확률)" : "";
+                    lines.Add("· " + who + Names.Of(st.Type) + " " + st.Turns + "턴 — " + Names.Describe(st.Type, st.Value) + chance);
+                }
+                if (def.Target != SkillTarget.Self) lines.Add("(디버프는 적의 저항 확률만큼 막힐 수 있음)");
+            }
+            lines.Add("");
+            lines.Add("재사용 " + def.Cooldown + "턴");
+            if (def.Target == SkillTarget.Self) lines.Add("자신에게 거는 스킬: 성공률 100%");
+            else if (target != null) lines.Add("성공 확률: " + HitBreakdown(target, def.SuccessBonus));
+            return string.Join("\n", lines);
         }
 
         /// <summary>전투 중 쓸 수 있는 소모품.</summary>

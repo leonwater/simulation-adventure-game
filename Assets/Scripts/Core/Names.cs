@@ -93,6 +93,29 @@ namespace Adventure.Core
             }
         }
 
+        /// <summary>상태 효과 설명 (전투 상세 보기). value는 그 효과의 수치(%, 출혈·화상은 시전자 공격력 %).</summary>
+        public static string Describe(StatusType s, int value)
+        {
+            switch (s)
+            {
+                case StatusType.Empower: return "공격력 +" + value + "%";
+                case StatusType.Fortify: return "받는 피해 −" + value + "%";
+                case StatusType.Regen: return "턴마다 최대 HP " + value + "% 회복";
+                case StatusType.Focus: return "성공률 +" + value + "%";
+                case StatusType.Swift: return "회피 +" + value + "%";
+                case StatusType.Poison: return "턴마다 최대 HP " + value + "% 피해";
+                case StatusType.Bleed: return "행동할 때마다 공격력 " + value + "% 피해";
+                case StatusType.Burn: return "턴마다 공격력 " + value + "% 피해, 받는 회복 −50%";
+                case StatusType.Weaken: return "공격력 −" + value + "%";
+                case StatusType.Vulnerable: return "받는 피해 +" + value + "%";
+                case StatusType.Stun: return "행동 불가";
+                case StatusType.Silence: return "스킬 사용 불가";
+                case StatusType.Blind: return "성공률 −" + value + "%";
+                case StatusType.Fear: return "도주 외 성공률 −" + value + "%";
+                default: return "";
+            }
+        }
+
         public static string Of(StatusType s)
         {
             switch (s)

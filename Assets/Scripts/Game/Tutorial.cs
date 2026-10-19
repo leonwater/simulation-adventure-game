@@ -159,7 +159,8 @@ namespace Adventure.Game
             var run = S.Run;
             Run(new[]
             {
-                Info("dun.map", "dungeon.map", "미니맵", "금색이 지금 위치, 빛나는 칸이 갈 수 있는 방이에요. 미니맵을 누르면 전체 지도가 열리고, 탐험한 방으로 바로 순간이동할 수 있어요."),
+                Info("dun.map", "dungeon.map", "미니맵", "금색이 지금 위치, 빛나는 칸이 갈 수 있는 방이에요. 방마다 종류를 아이콘으로 보여 주고, 아직 모르는 방은 '?'예요."),
+                Info("dun.teleport", "dungeon.teleport", "순간이동", "오른쪽 위 지도 버튼을 누르면 층 전체 지도가 열려요. 탐험을 마친 방을 누르면 그곳으로 바로 순간이동해요. 갈 수 있는 곳이 있으면 버튼 테두리가 금색으로 깜빡여요."),
             }, () =>
             {
                 if (run != null && run.ReturnRoomFound)

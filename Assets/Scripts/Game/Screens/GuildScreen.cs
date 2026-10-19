@@ -62,16 +62,22 @@ namespace Adventure.Game
         private void QuestCard(Transform parent, Quest q, bool active)
         {
             bool done = active && GuildSystem.IsComplete(q, C);
-            var card = UI.ButtonCard(parent, () => QuestDetail(q, active), Theme.Card, done ? Theme.Accent : active ? Theme.BlueBorder : Theme.CardBorder,
+            var card = UI.ButtonCard(parent, () => QuestDetail(q, active), active ? Theme.BlueBg : Theme.Card, done ? Theme.Accent : active ? Theme.Blue : Theme.CardBorder,
                 10, UI.Pad(10, 4), false, 8, 50);
+            if (active)
+            {
+                // 진행 중인 의뢰는 굵은(2px) 테두리
+                var fill = card.Find("fill") as RectTransform;
+                if (fill != null) UI.Stretch(fill, 2, 2, 2, 2);
+            }
             UI.Icon(card, UI.RankIcon(q.Rank), 28);
             var col = UI.Column(card, 1);
             UI.Size(col, flexW: 1);
             UI.Label(col, q.Title, 14, Theme.Text, true);
-            UI.Label(col, active ? GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + q.RewardGold.ToString("#,0") + "G", 12,
+            UI.Label(col, active ? "진행 중 · " + GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + q.RewardGold.ToString("#,0") + "G", 12,
                 done ? Theme.Gold : Theme.TextSub);
             if (done) SmallButton(card, "보고", () => TurnIn(q), ButtonKind.Primary);
-            else if (active) UI.Label(card, "진행 중", 12, Theme.BlueText, false, TextAnchor.MiddleRight, false, false);
+            else if (active) SmallButton(card, "포기", () => Abandon(q), ButtonKind.Ghost);
             else
             {
                 var take = SmallButton(card, "수락", () => Accept(q), ButtonKind.Outline);
