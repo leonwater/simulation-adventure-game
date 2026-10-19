@@ -97,12 +97,12 @@ namespace Adventure.Core
             return list;
         }
 
-        /// <summary>떠도는 모험가 (정예): 골드 ×4, 30% 확률로 장비 확정.</summary>
+        /// <summary>떠돌이 모험가 (정예): 골드 ×4, 30% 확률로 장비 확정.</summary>
         public static List<Combatant> CreateWanderer(int floor, Difficulty diff, int seed)
         {
             var rng = new Rng(seed);
             var w = Create(MonsterDb.Get("wanderer"), floor, diff, 1);
-            w.Name = "떠도는 모험가";
+            w.Name = "떠돌이 모험가";
             w.GoldReward *= 4;
             w.GuaranteedEquipment = rng.Chance(0.3);
             return new List<Combatant> { w };

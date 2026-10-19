@@ -305,7 +305,7 @@ namespace Adventure.Tests
             int fight = Array.FindIndex(def.Choices, ch => ch.Success.Battle == EventBattle.Wanderer);
             s.ChooseEvent(fight);
             Assert.IsNotNull(s.Battle);
-            Assert.AreEqual("떠도는 모험가", s.Battle.Enemies[0].Name);
+            Assert.AreEqual("떠돌이 모험가", s.Battle.Enemies[0].Name);
             for (int i = 0; i < 200 && s.Battle != null && !s.Battle.IsOver; i++)
             {
                 s.Battle.Player.Hp = s.Battle.Player.MaxHp;

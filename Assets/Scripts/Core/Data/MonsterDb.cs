@@ -130,8 +130,8 @@ namespace Adventure.Core
             // ── 특수: "수상한 상자" 판정 실패 시에만 등장 (층 테마 무관) ──
             new MonsterSpecies { Id = "mimic", Name = "미믹", Tier = -1, HpMul = GameBalance.MimicHp, AttackMul = GameBalance.MimicAttack,
                 Skills = new[] { new EnemySkill("물어뜯기", 1.0, 0.35, S(StatusType.Bleed, 30, 2)) } },
-            // ── 특수: "떠도는 모험가" 이벤트에서 싸움을 걸었을 때만 등장 ──
-            new MonsterSpecies { Id = "wanderer", Name = "떠도는 모험가", Tier = -1, HpMul = 1.1, AttackMul = 1.1, RequirementMul = 1.1,
+            // ── 특수: "떠돌이 모험가" 이벤트에서 싸움을 걸었을 때만 등장 ──
+            new MonsterSpecies { Id = "wanderer", Name = "떠돌이 모험가", Tier = -1, HpMul = 1.1, AttackMul = 1.1, RequirementMul = 1.1,
                 Skills = new[]
                 {
                     new EnemySkill("연속 베기", 1.4, 0.25),
