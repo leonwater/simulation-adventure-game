@@ -21,6 +21,10 @@ namespace Adventure.Game
             { "길드 접수원", new IllustrationArt { File = "guild_receptionist", FocusX = 0.5f, FocusY = 0.68f, Aspect = 1.5f } },
             // 대장장이 얼굴·망치와 화로가 함께 보이도록 약간 위를 남긴다.
             { "대장장이", new IllustrationArt { File = "blacksmith", FocusX = 0.5f, FocusY = 0.62f, Aspect = 1.5f } },
+            // 수련 교관은 오른쪽에 서 있어 오른쪽을 남긴다 (원본 2:1, 1024×512로 줄여 둠)
+            { "수련 교관", new IllustrationArt { File = "training", FocusX = 0.76f, FocusY = 0.62f, Aspect = 2f } },
+            // 상점 주인(고블린)은 가운데. 얼굴이 위쪽 1/3에 있어 약간 위를 남긴다
+            { "상점 주인", new IllustrationArt { File = "shop", FocusX = 0.5f, FocusY = 0.6f, Aspect = 2f } },
             // 마을 광장: 건물 지붕과 탑이 보이도록 가운데보다 약간 위를 남긴다.
             { "마을 전경", new IllustrationArt { File = "town", FocusX = 0.5f, FocusY = 0.56f, Aspect = 1280f / 720f } },
         };

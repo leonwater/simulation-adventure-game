@@ -57,7 +57,7 @@ namespace Adventure.Game
             IconButton(bottom, "bag", "가방", () => Go(new InventoryScreen(true)), true);
             UI.HSpacer(bottom);
             bool canReturn = S.CanReturn;
-            var ret = IconButton(bottom, "return", canReturn ? "귀환" : "귀환 방 미발견", ConfirmReturn, canReturn);
+            var ret = IconButton(bottom, "return", canReturn ? "귀환" : "귀환 방 미발견", ConfirmReturn, canReturn, true);
             Anchors.Set("dungeon.return", ret);
 
             if (run.FloorIntroPending) FloorIntro(root, run);
@@ -158,10 +158,10 @@ namespace Adventure.Game
             {
                 if (S.CanDescend)
                     ScreenKit.GoButton(parent, "아래층으로 내려간다", (run.Floor + 1) + "층 · " + MonsterDb.ThemeFor(run.Floor + 1).Name + " · 현재 HP 유지", Descend);
-                ScreenKit.GoButton(parent, "마을로 귀환한다", run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
+                ReturnButton(parent, "마을로 귀환한다", run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
             }
             if (room.Type == RoomType.Merchant) ScreenKit.GoButton(parent, "상인과 거래한다", "물약·해독제 (마을보다 20% 비쌈)", Merchant);
-            if (room.Type == RoomType.Return) ScreenKit.GoButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
+            if (room.Type == RoomType.Return) ReturnButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
 
             bool first = true;
             foreach (var opt in DungeonSystem.MoveOptions(run, S.Difficulty))
@@ -174,9 +174,18 @@ namespace Adventure.Game
             }
         }
 
-        private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, bool enabled)
+        /// <summary>귀환 관련 선택지: 이동 선택지(금색·푸른색)와 다른 초록 계열.</summary>
+        private static void ReturnButton(Transform parent, string title, string sub, System.Action onClick)
         {
-            var b = UI.ButtonCard(parent, onClick, Theme.Button, Theme.ButtonBorder, 12, UI.Pad(10, 6), true, 2, 60, TextAnchor.MiddleCenter);
+            var b = UI.ButtonCard(parent, onClick, Theme.Hex("15241F"), Theme.Hex("3F8A68"), 12, UI.Pad(14, 8), true, 2, 60, TextAnchor.MiddleLeft);
+            UI.Label(b, title, 15, Theme.Hex("9BDDB8"), true);
+            if (!string.IsNullOrEmpty(sub)) UI.Label(b, sub, 12, Theme.Hex("72B892"));
+        }
+
+        private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, bool enabled, bool returnStyle = false)
+        {
+            var b = UI.ButtonCard(parent, onClick, returnStyle ? Theme.Hex("15241F") : Theme.Button, returnStyle ? Theme.Hex("3F8A68") : Theme.ButtonBorder,
+                12, UI.Pad(10, 6), true, 2, 60, TextAnchor.MiddleCenter);
             UI.Size(b, width: 96, minH: 60);
             UI.CenteredIcon(b, icon, 28);
             UI.Label(b, label, 12, Theme.Text, true, TextAnchor.MiddleCenter);

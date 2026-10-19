@@ -25,7 +25,7 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
-            ScreenKit.NpcIllustration(page, "길드 접수원", "접수원", _line, 290);
+            ScreenKit.NpcIllustration(page, "길드 접수원", _line, 290);
             UI.Spacer(page, 0, 6);
             ScreenKit.Tabs(page, new[] { "퀘스트", "등급", "창고" }, _tab, i =>
             {
@@ -70,13 +70,23 @@ namespace Adventure.Game
             UI.Label(col, q.Title, 14, Theme.Text, true);
             UI.Label(col, active ? GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + q.RewardGold.ToString("#,0") + "G", 12,
                 done ? Theme.Gold : Theme.TextSub);
-            if (done) UI.TextButton(card, "보고", () => TurnIn(q), ButtonKind.Primary, 40, 13, 64);
+            if (done) SmallButton(card, "보고", () => TurnIn(q), ButtonKind.Primary);
             else if (active) UI.Label(card, "진행 중", 12, Theme.BlueText, false, TextAnchor.MiddleRight, false, false);
             else
             {
-                var take = UI.TextButton(card, "수락", () => Accept(q), ButtonKind.Outline, 40, 13, 64);
+                var take = SmallButton(card, "수락", () => Accept(q), ButtonKind.Outline);
                 UI.SetEnabled(take, GuildSystem.CannotAcceptReason(S.Data.Guild, C, q) == null);
             }
+        }
+
+        /// <summary>좌우가 좁은 버튼 (퀘스트 카드의 수락·보고).</summary>
+        private static RectTransform SmallButton(Transform parent, string label, System.Action onClick, ButtonKind kind)
+        {
+            UI.Colors(kind, out var fill, out var border, out var text);
+            var b = UI.ButtonCard(parent, onClick, fill, border, 8, UI.Pad(4, 0), false, 0, 36, TextAnchor.MiddleCenter);
+            UI.Size(b, width: 48, height: 36);
+            UI.Label(b, label, 13, text, true, TextAnchor.MiddleCenter, false, false);
+            return b;
         }
 
         /// <summary>퀘스트를 누르면 자세한 내용 (목표·보상·진행·수락/보고/포기).</summary>

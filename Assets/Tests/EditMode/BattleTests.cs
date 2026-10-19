@@ -270,8 +270,8 @@ namespace Adventure.Tests
         {
             var b = NewBattle(Job.Warrior, 3, 10, out var c, 1);
             var e = b.Enemies[0];
-            double raw = 0.83 + (CharacterStats.Total(c, Stat.Strength) - e.Requirement) * 0.01;
-            double Clamp(double v) => System.Math.Max(0.60, System.Math.Min(0.95, v));
+            double raw = GameBalance.BaseHit + (CharacterStats.Total(c, Stat.Strength) - e.Requirement) * 0.01;
+            double Clamp(double v) => System.Math.Max(GameBalance.MinHit, System.Math.Min(GameBalance.MaxHit, v));
             Assert.AreEqual(Clamp(raw), b.HitChance(e), 1e-9);
             b.Player.Statuses.Apply(StatusType.Focus, 10, 3);
             Assert.AreEqual(Clamp(raw + 0.10), b.HitChance(e), 1e-9);

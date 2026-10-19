@@ -34,7 +34,7 @@ namespace Adventure.Game
             UI.Size(t, flexW: 1);
             UI.Sub(head, NextSlotText(slots), TextAnchor.MiddleRight);
 
-            var grid = UI.Grid(body, 2, ScreenKit.ContentWidth, 76, 8);
+            var grid = UI.Grid(body, 3, ScreenKit.ContentWidth, 84, 8);
             for (int i = 0; i < slots; i++)
             {
                 if (i < C.Skills.Equipped.Count)
@@ -42,14 +42,15 @@ namespace Adventure.Game
                     string id = C.Skills.Equipped[i];
                     var def = SkillDb.Get(id);
                     var st = C.Skills.Get(id);
-                    var cell = UI.ButtonCard(grid, () => Unequip(id), Theme.AccentBg, Theme.Accent, 10, UI.Pad(10, 8), true, 0, 76, TextAnchor.UpperLeft);
-                    UI.Label(cell, def.Name, 15, Theme.Text, true);
+                    var cell = UI.ButtonCard(grid, () => Unequip(id), Theme.AccentBg, Theme.Accent, 10, UI.Pad(8, 8), true, 2, 84, TextAnchor.UpperLeft);
+                    UI.Label(cell, def.Name + (st.Level > 0 ? UI.Color(" +" + st.Level, Theme.GoldHex) : ""), 14, Theme.Text, true);
                     UI.Spacer(cell);
-                    UI.Sub(cell, "재사용 " + def.Cooldown + "턴" + (st.Level > 0 ? " · +" + st.Level : "") + " · " + Short(def));
+                    UI.Sub(cell, Short(def));
+                    UI.Sub(cell, "재사용 " + def.Cooldown + "턴");
                 }
                 else
                 {
-                    var cell = UI.Card(grid, Theme.Bg, Theme.PlaceholderLine, 10, UI.Pad(10, 8), true, 0, TextAnchor.UpperLeft, "empty");
+                    var cell = UI.Card(grid, Theme.Bg, Theme.PlaceholderLine, 10, UI.Pad(8, 8), true, 0, TextAnchor.UpperLeft, "empty");
                     UI.Sub(cell, "빈 슬롯");
                     UI.Spacer(cell);
                     UI.Sub(cell, "아래에서 선택");

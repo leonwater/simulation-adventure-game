@@ -31,11 +31,12 @@ namespace Adventure.Game
             {
                 if (S.TipShown(st.Key)) continue;
                 var step = st;
+                // 첫 안내(마을 소개)에는 건너뛰기를 두지 않고, 두 번째부터 화면 위에 둔다
                 Coach.Info(Anchors.Get(step.Anchor), step.Title, step.Text, () =>
                 {
                     S.MarkTip(step.Key);
                     Run(steps, done);
-                }, Skip);
+                }, step.Key == "town.intro" ? null : (Action)Skip);
                 return;
             }
             done?.Invoke();

@@ -18,7 +18,7 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "수련장", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
-            ScreenKit.NpcIllustration(page, "수련 교관", "교관", _line, 260);
+            ScreenKit.NpcIllustration(page, "수련 교관", _line, 260);
             var body = UI.Scroll(page, out _, 0, UI.Pad(16, 16, 16, 16), "training");
             Anchors.Set("train.list", body);
             UI.Sub(body, "강화 단계마다 스킬 위력 +" + Mathf.RoundToInt((float)GameBalance.SkillPowerPerLevel * 100) + "% · 최대 +" + GameBalance.MaxSkillLevel);

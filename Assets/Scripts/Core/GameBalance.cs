@@ -159,26 +159,26 @@ namespace Adventure.Core
         public const double MaterialDrop = 0.55;
 
         // ── 전투 (기획서 v1.2) ──────────────────────────────────
-        /// <summary>기본 공격 성공률 = 83% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 60~95%.</summary>
-        public const double BaseHit = 0.83;
+        /// <summary>기본 공격 성공률 = 74% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 55~85% (대부분 70~80%).</summary>
+        public const double BaseHit = 0.74;
         public const double HitPerStatPoint = 0.01;
-        public const double MinHit = 0.60;
-        public const double MaxHit = 0.95;
+        public const double MinHit = 0.55;
+        public const double MaxHit = 0.85;
         public const double MinSuccess = 0.05;
         public const double MaxSuccess = 0.95;
         public const double EnemyBaseHit = 0.90;
-        /// <summary>도주 = 60% + 회피 + 집중 − 실명, 최대 90%.</summary>
+        /// <summary>도주 = 60% + 회피 + 집중 − 실명, 최대 80%.</summary>
         public const double BaseFlee = 0.60;
-        public const double MaxFlee = 0.90;
+        public const double MaxFlee = 0.80;
         public const double BossFleeChance = 0.0;
         /// <summary>마법사 기본 공격 피해 배율.</summary>
         public const double MageBasicAttack = 0.60;
 
-        /// <summary>이벤트 판정 = 65% + (능력치 − 요구치) × 3% + 행운 × 0.5%, 25~95%.</summary>
-        public const double EventBase = 0.65;
-        public const double EventPerStatPoint = 0.03;
-        public const double EventMin = 0.25;
-        public const double EventMax = 0.95;
+        /// <summary>이벤트 판정 = 72% + (능력치 − 요구치) × 1% + 행운 × 0.5%, 40~85% (대부분 70~80%).</summary>
+        public const double EventBase = 0.72;
+        public const double EventPerStatPoint = 0.01;
+        public const double EventMin = 0.40;
+        public const double EventMax = 0.85;
 
         public static double HitChance(double stat, double requirement, double bonus = 0) =>
             Clamp(BaseHit + (stat - requirement) * HitPerStatPoint + bonus, MinHit, MaxHit);

@@ -246,22 +246,29 @@ namespace Adventure.Tests
         [Test]
         public void HitChance_StartsHighAndClamps()
         {
-            Assert.AreEqual(0.83, GameBalance.HitChance(10, 10), 1e-9);
-            Assert.AreEqual(0.95, GameBalance.HitChance(100, 0), 1e-9);
-            Assert.AreEqual(0.60, GameBalance.HitChance(0, 100), 1e-9);
-            // 시작 시 전사 83% · 궁수 89% · 도적 83% · 마법사 85% (1층 요구치 12.4)
+            Assert.AreEqual(0.74, GameBalance.HitChance(10, 10), 1e-9);
+            Assert.AreEqual(0.85, GameBalance.HitChance(100, 0), 1e-9);
+            Assert.AreEqual(0.55, GameBalance.HitChance(0, 100), 1e-9);
+            // 시작 시 기본 공격은 70~80%대 (1층 요구치 12.4)
             double req = GameBalance.EnemyRequirement(1);
-            Assert.AreEqual(0.83, GameBalance.HitChance(12, req), 0.006);
-            Assert.AreEqual(0.89, GameBalance.HitChance(13, req, 10 * 0.005), 0.006);
-            Assert.AreEqual(0.85, GameBalance.HitChance(14, req), 0.006);
+            foreach (var job in new[] { Job.Warrior, Job.Archer, Job.Rogue, Job.Mage })
+            {
+                var c = Character.Create("a", job);
+                double hit = GameBalance.HitChance(CharacterStats.Total(c, c.JobData.AttackStat), req, CharacterStats.PrecisionBonus(c));
+                Assert.That(hit, Is.InRange(0.70, 0.80), job.ToString());
+            }
         }
 
         [Test]
         public void EventChance_UsesLuckAndClamps()
         {
-            Assert.AreEqual(0.65 + 0.03 + 0.025, GameBalance.EventChance(11, 10, 5), 1e-9);
-            Assert.AreEqual(0.95, GameBalance.EventChance(100, 0, 0), 1e-9);
-            Assert.AreEqual(0.25, GameBalance.EventChance(0, 100, 0), 1e-9);
+            Assert.AreEqual(0.72 + 0.01 + 0.025, GameBalance.EventChance(11, 10, 5), 1e-9);
+            Assert.AreEqual(0.85, GameBalance.EventChance(100, 0, 0), 1e-9);
+            Assert.AreEqual(0.40, GameBalance.EventChance(0, 100, 0), 1e-9);
+            // 1층에서 주력 능력치 판정은 70~85%
+            var w = Character.Create("a", Job.Warrior);
+            double main = GameBalance.EventChance(CharacterStats.Total(w, Stat.Strength), GameBalance.EventRequirement(1), CharacterStats.Total(w, Stat.Luck));
+            Assert.That(main, Is.InRange(0.70, 0.85));
         }
     }
 }

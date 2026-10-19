@@ -68,17 +68,24 @@ namespace Adventure.Game
             UI.Size(bar, height: 64);
             var left = UI.Column(bar, 4);
             UI.Size(left, flexW: 1);
-            UI.Label(left, c.Name + " " + UI.Color(c.JobData.Name + " Lv." + c.Level, Theme.SubHex), 15, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
-            var barRow = UI.Row(left);
-            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 140);
-            UI.Pill(bar, c.Rank + " 등급", Theme.Accent, Theme.Gold);
+            // 이름 옆에 모험가 등급 배지 (수정 사항: 글자 알약 대신 아이콘)
+            var nameRow = UI.Row(left, 6);
+            UI.Label(nameRow, c.Name, 15, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            UI.Icon(nameRow, UI.RankIcon(c.Rank), 22);
+            var barRow = UI.Row(left, 8);
+            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 100);
+            UI.Label(barRow, c.JobData.Name + " Lv." + c.Level, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
             UI.Label(bar, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            // 오른쪽 위 설정 버튼 → 설정 창
+            var gear = UI.ButtonCard(bar, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
+            UI.Size(gear, width: 44, height: 44);
+            UI.Icon(gear, "settings", 24);
             BottomLine(bar);
         }
 
-        private static readonly string[] NavLabels = { "마을", "캐릭터", "가방", "스킬", "설정" };
+        private static readonly string[] NavLabels = { "마을", "캐릭터", "가방", "스킬" };
 
-        /// <summary>마을 계열 하단 메뉴. 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 · 4 설정</summary>
+        /// <summary>마을 계열 하단 메뉴. 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 (설정은 마을 오른쪽 위 버튼)</summary>
         public static void BottomNav(Transform parent, int active)
         {
             var nav = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, TextAnchor.MiddleCenter, "nav");
@@ -103,8 +110,7 @@ namespace Adventure.Game
                 case 0: app.Router.Show(new TownScreen()); break;
                 case 1: app.Router.Show(new CharacterScreen()); break;
                 case 2: app.Router.Show(new InventoryScreen()); break;
-                case 3: app.Router.Show(new SkillsScreen()); break;
-                default: app.Router.Show(new SettingsScreen()); break;
+                default: app.Router.Show(new SkillsScreen()); break;
             }
         }
 
@@ -188,7 +194,7 @@ namespace Adventure.Game
         /// 아래쪽 어두운 그라데이션 위에 검은 반투명 상자, 금색 1px 테두리, 왼쪽 위 이름표, 최대 3줄.
         /// 반환값은 본문 글자 (Typewriter가 붙어 있다).
         /// </summary>
-        public static Text NpcIllustration(Transform parent, string illustration, string speaker, string line, float height)
+        public static Text NpcIllustration(Transform parent, string illustration, string line, float height)
         {
             var holder = UI.Rect(parent, "npc");
             UI.Size(holder, height: height);
@@ -205,16 +211,16 @@ namespace Adventure.Game
             srt.sizeDelta = new Vector2(0, height * 0.45f);
             srt.anchoredPosition = Vector2.zero;
             if (string.IsNullOrEmpty(line)) return null;
-            return DialogueBox(holder, speaker, line, height * 0.3f);
+            return DialogueBox(holder, line, height * 0.3f);
         }
 
         /// <summary>일러스트 아래쪽 안쪽의 대사 상자. 누르면 한 글자씩 나오던 대사가 바로 완성된다.</summary>
-        public static Text DialogueBox(RectTransform holder, string speaker, string line, float maxHeight)
+        public static Text DialogueBox(RectTransform holder, string line, float maxHeight)
         {
-            const float margin = 12, tab = 12;
+            const float margin = 12;
             float textSize = 15 * GameSettings.TextScale;
             float lineH = textSize * 1.6f;
-            float boxH = Mathf.Min(Mathf.Max(maxHeight, lineH * 2 + 36), lineH * 3 + 36);
+            float boxH = Mathf.Min(Mathf.Max(maxHeight, lineH * 2 + 24), lineH * 3 + 24);
 
             var box = UI.Rect(holder, "dialogue");
             box.anchorMin = new Vector2(0, 0);
@@ -239,20 +245,9 @@ namespace Adventure.Game
             body.lineSpacing = 1.45f;
             body.alignment = TextAnchor.UpperLeft;
             body.verticalOverflow = VerticalWrapMode.Truncate;
-            UI.Stretch(body.rectTransform, 14, 24, 14, 8); // 위쪽은 이름표가 걸쳐 있어 10px 더 띄운다
-            var tw = Typewriter.Attach(body);
+            UI.Stretch(body.rectTransform, 14, 12, 14, 8);
+            Typewriter.Attach(body);
 
-            if (!string.IsNullOrEmpty(speaker))
-            {
-                var nameTab = UI.Card(box, new Color(0.08f, 0.07f, 0.05f, 0.95f), Theme.Gold, 6, UI.Pad(10, 3), false, 0, TextAnchor.MiddleCenter, "name");
-                nameTab.anchorMin = nameTab.anchorMax = new Vector2(0, 1);
-                nameTab.pivot = new Vector2(0, 0.5f);
-                nameTab.anchoredPosition = new Vector2(tab, 0);
-                var fit = nameTab.gameObject.AddComponent<ContentSizeFitter>();
-                fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-                fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                UI.Label(nameTab, speaker, 12, Theme.Gold, true, TextAnchor.MiddleCenter, false, false);
-            }
             return body;
         }
 

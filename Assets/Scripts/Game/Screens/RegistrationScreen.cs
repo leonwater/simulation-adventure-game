@@ -34,7 +34,7 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "모험가 길드", _step == 0 ? "처음으로" : "이전", Prev, "등록 " + (_step + 1) + "/4");
-            ScreenKit.NpcIllustration(page, "길드 접수원", "접수원", Line(), 290);
+            ScreenKit.NpcIllustration(page, "길드 접수원", Line(), 290);
             var body = UI.Scroll(page, out _, 10, UI.Pad(16, 16, 14, 16), "register" + _step);
             switch (_step)
             {

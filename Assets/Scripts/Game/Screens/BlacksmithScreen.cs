@@ -20,7 +20,7 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "대장간", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
-            ScreenKit.NpcIllustration(page, "대장장이", "대장장이", _line, 260);
+            ScreenKit.NpcIllustration(page, "대장장이", _line, 260);
             var body = UI.Scroll(page, out _, 8, UI.Pad(12, 12, 16, 16), "smith");
 
             var gear = new List<ItemInstance>();
