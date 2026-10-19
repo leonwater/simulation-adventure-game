@@ -14,7 +14,8 @@ namespace Adventure.Core
             double hpRole = role == 2 ? (sp.UniqueBoss ? GameBalance.UniqueBossHp : GameBalance.FloorBossHp) : role == 1 ? GameBalance.EliteHp : 1.0;
             double atkRole = role == 2 ? (sp.UniqueBoss ? GameBalance.UniqueBossAttack : GameBalance.FloorBossAttack) : role == 1 ? GameBalance.EliteAttack : 1.0;
             double reward = role == 2 ? (sp.UniqueBoss ? GameBalance.UniqueBossReward : GameBalance.FloorBossReward) : role == 1 ? GameBalance.EliteReward : 1.0;
-            int hp = Math.Max(1, (int)Math.Round(GameBalance.EnemyHp(floor) * sp.HpMul * hpRole * d));
+            double early = GameBalance.EarlyBoostScale(diff);
+            int hp = Math.Max(1, (int)Math.Round(GameBalance.EnemyHp(floor, early) * sp.HpMul * hpRole * d));
             string name = sp.Name;
             if (role == 1) name = "정예 " + sp.Name;
             else if (role == 2 && !sp.UniqueBoss) name = sp.Name + " 우두머리";
@@ -23,7 +24,7 @@ namespace Adventure.Core
                 Name = name,
                 MaxHp = hp,
                 Hp = hp,
-                Attack = Math.Max(1, (int)Math.Round(GameBalance.EnemyAttack(floor) * sp.AttackMul * atkRole * d)),
+                Attack = Math.Max(1, (int)Math.Round(GameBalance.EnemyAttack(floor, early) * sp.AttackMul * atkRole * d)),
                 Defense = (int)Math.Round(GameBalance.EnemyDefense(floor) * sp.DefenseMul),
                 Requirement = GameBalance.EnemyRequirement(floor) * sp.RequirementMul + (role > 0 ? 2 : 0),
                 Resist = role == 2 ? 0.3 : role == 1 ? 0.1 : 0,
@@ -128,32 +129,38 @@ namespace Adventure.Core
             return list;
         }
 
-        /// <summary>튜토리얼 전투: 첫 전투는 슬라임 1마리(레벨업할 만큼 경험치), 두 번째는 고블린 2마리.</summary>
+        /// <summary>튜토리얼 전투: 첫 전투는 슬라임 1마리(레벨업할 만큼 경험치), 두 번째는 고블린 2마리. 초반 보정 없이 약하게.</summary>
         public static List<Combatant> CreateTutorialGroup(bool first, Difficulty diff)
         {
             var list = new List<Combatant>();
             if (first)
             {
-                var slime = Create(MonsterDb.Get("slime"), 1, diff, 0);
+                var slime = Tutorial(Create(MonsterDb.Get("slime"), 1, diff, 0), diff, 1.0);
                 slime.ExpReward = Math.Max(slime.ExpReward, GameBalance.ExpToNext(1));
                 list.Add(slime);
             }
             else
             {
-                list.Add(Create(MonsterDb.Get("goblin"), 1, diff, 0));
-                list.Add(Create(MonsterDb.Get("goblin"), 1, diff, 0));
+                list.Add(Tutorial(Create(MonsterDb.Get("goblin"), 1, diff, 0), diff, 1.0));
+                list.Add(Tutorial(Create(MonsterDb.Get("goblin"), 1, diff, 0), diff, 1.0));
             }
             NameDuplicates(list);
             return list;
         }
 
-        /// <summary>튜토리얼 약한 보스 (고블린 우두머리, HP 절반).</summary>
-        public static List<Combatant> CreateTutorialBoss(Difficulty diff)
+        /// <summary>튜토리얼 약한 보스 (고블린 우두머리, HP 절반, 특성 없음).</summary>
+        public static List<Combatant> CreateTutorialBoss(Difficulty diff) =>
+            new List<Combatant> { Tutorial(Create(MonsterDb.Get("goblin"), 1, diff, 2), diff, 0.5, 0.8) };
+
+        /// <summary>튜토리얼 적: 1층 초반 보정을 빼고 배율을 곱한다.</summary>
+        private static Combatant Tutorial(Combatant e, Difficulty diff, double hp, double attack = 1.0)
         {
-            var boss = Create(MonsterDb.Get("goblin"), 1, diff, 2);
-            boss.MaxHp = boss.Hp = Math.Max(1, boss.MaxHp / 2);
-            boss.Attack = Math.Max(1, (int)Math.Round(boss.Attack * 0.8));
-            return new List<Combatant> { boss };
+            double early = GameBalance.EarlyBoostScale(diff);
+            double hpScale = GameBalance.EnemyHp(1, 0) / GameBalance.EnemyHp(1, early) * hp;
+            double atkScale = GameBalance.EnemyAttack(1, 0) / GameBalance.EnemyAttack(1, early) * attack;
+            e.MaxHp = e.Hp = Math.Max(1, (int)Math.Round(e.MaxHp * hpScale));
+            e.Attack = Math.Max(1, (int)Math.Round(e.Attack * atkScale));
+            return e;
         }
 
         /// <summary>같은 이름이 여럿이면 A, B, C…를 붙인다.</summary>

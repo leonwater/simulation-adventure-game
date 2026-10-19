@@ -1,3 +1,5 @@
+using System;
+
 namespace Adventure.Core
 {
     /// <summary>열거형의 한국어 표시 이름.</summary>
@@ -112,6 +114,47 @@ namespace Adventure.Core
                 case StatusType.Silence: return "스킬 사용 불가";
                 case StatusType.Blind: return "성공률 −" + value + "%";
                 case StatusType.Fear: return "도주 외 성공률 −" + value + "%";
+                default: return "";
+            }
+        }
+
+        /// <summary>
+        /// 지금 걸려 있는 효과의 실제 수치 (캐릭터 정보 창). 독·재생은 주인의 최대 HP 기준으로 1턴에 얼마인지,
+        /// 출혈·화상은 걸릴 때 정해진 고정 피해를 보여 준다.
+        /// </summary>
+        public static string DescribeActive(StatusInstance s, int ownerMaxHp)
+        {
+            switch (s.Type)
+            {
+                case StatusType.Poison:
+                    return "턴마다 " + Math.Max(1, (int)Math.Round(ownerMaxHp * s.Value / 100.0)) + " 피해 (최대 HP " + s.Value + "%)";
+                case StatusType.Regen:
+                    return "턴마다 HP " + (int)Math.Round(ownerMaxHp * s.Value / 100.0) + " 회복 (최대 HP " + s.Value + "%)";
+                case StatusType.Bleed: return "행동할 때마다 " + s.Value + " 피해";
+                case StatusType.Burn: return "턴마다 " + s.Value + " 피해 · 받는 회복 −50%";
+                default: return Describe(s.Type, s.Value);
+            }
+        }
+
+        /// <summary>상태 이상 안내 (수치 없이 일반 설명).</summary>
+        public static string Explain(StatusType s)
+        {
+            switch (s)
+            {
+                case StatusType.Empower: return "공격력이 오른다.";
+                case StatusType.Fortify: return "받는 피해가 줄어든다.";
+                case StatusType.Regen: return "내 턴이 시작될 때 최대 HP의 일부를 회복한다.";
+                case StatusType.Focus: return "모든 선택지의 성공률이 오른다.";
+                case StatusType.Swift: return "회피가 올라 적의 공격을 더 잘 피한다.";
+                case StatusType.Poison: return "턴이 시작될 때마다 최대 HP의 일부만큼 피해. 해독제로 풀린다.";
+                case StatusType.Bleed: return "행동할 때마다 정해진 피해. 붕대로 풀린다.";
+                case StatusType.Burn: return "턴마다 정해진 피해, 받는 회복이 절반. 화상 연고로 풀린다.";
+                case StatusType.Weaken: return "공격력이 내려간다.";
+                case StatusType.Vulnerable: return "받는 피해가 늘어난다.";
+                case StatusType.Stun: return "다음 행동을 할 수 없다.";
+                case StatusType.Silence: return "스킬을 쓸 수 없다 (기본 공격·아이템은 가능).";
+                case StatusType.Blind: return "모든 선택지의 성공률이 내려간다.";
+                case StatusType.Fear: return "도주를 뺀 선택지의 성공률이 내려간다.";
                 default: return "";
             }
         }

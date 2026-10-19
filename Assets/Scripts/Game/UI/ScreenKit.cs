@@ -139,6 +139,49 @@ namespace Adventure.Game
             UI.Label(b, "Ⅱ", 15, Theme.Text, true, TextAnchor.MiddleCenter);
         }
 
+        /// <summary>
+        /// 능력치 배분 칸: − · 값 · + 를 고정 폭(152) 안에 절대 위치로 놓아 줄마다 간격이 똑같다
+        /// (캐릭터 화면·던전 레벨 업 창 공통).
+        /// </summary>
+        public static RectTransform Stepper(Transform row, string value, Action onMinus, bool minusEnabled, Action onPlus, bool plusEnabled)
+        {
+            var stepper = UI.Rect(row, "stepper");
+            UI.Size(stepper, height: 44, width: 152);
+            var minus = UI.TextButton(stepper, "−", onMinus, ButtonKind.Outline, 44, 20, 44);
+            PlaceInStepper(minus, 0, 44);
+            UI.SetEnabled(minus, minusEnabled, 0.3f);
+            var label = UI.Label(stepper, value, 16, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
+            PlaceInStepper(label, 44, 64);
+            var plus = UI.TextButton(stepper, "+", onPlus, ButtonKind.Outline, 44, 20, 44);
+            PlaceInStepper(plus, 108, 44);
+            UI.SetEnabled(plus, plusEnabled, 0.3f);
+            return stepper;
+        }
+
+        private static void PlaceInStepper(Component c, float x, float width)
+        {
+            var rt = (RectTransform)c.transform;
+            rt.anchorMin = new Vector2(0, 0);
+            rt.anchorMax = new Vector2(0, 1);
+            rt.pivot = new Vector2(0, 0.5f);
+            rt.sizeDelta = new Vector2(width, 0);
+            rt.anchoredPosition = new Vector2(x, 0);
+        }
+
+        /// <summary>방 안에서 하는 행동 (거래·이벤트 선택 등): 이동(금색·푸른색)·귀환(초록)과 구분되는 보라색.</summary>
+        public static RectTransform ActionButton(Transform parent, string title, string sub, string right, bool rightIsPercent, Action onClick, bool enabled = true, float minHeight = 56)
+        {
+            var b = UI.ButtonCard(parent, onClick, Theme.ActionBg, Theme.ActionBorder, 12, UI.Pad(14, 8), false, 10, minHeight, TextAnchor.MiddleLeft);
+            var left = UI.Column(b, 2, null, TextAnchor.MiddleLeft);
+            UI.Size(left, flexW: 1);
+            UI.Label(left, title, 15, Theme.ActionText, true);
+            if (!string.IsNullOrEmpty(sub)) UI.Label(left, sub, 12, Theme.ActionSub);
+            if (!string.IsNullOrEmpty(right))
+                UI.Label(b, right, rightIsPercent ? 14 : 13, rightIsPercent ? Theme.Gold : Theme.ActionSub, rightIsPercent, TextAnchor.MiddleRight, false, false);
+            if (!enabled) UI.SetEnabled(b, false);
+            return b;
+        }
+
         /// <summary>던전의 길 선택 버튼 (금색 테두리, 제목 + 작은 설명).</summary>
         public static RectTransform GoButton(Transform parent, string title, string sub, Action onClick, bool enabled = true)
         {

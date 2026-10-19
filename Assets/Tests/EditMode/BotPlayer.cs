@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Adventure.Core;
 
@@ -45,7 +46,10 @@ namespace Adventure.Tests
             int need = 6 - c.Inventory.CountOf("potion");
             if (potion != null && need > 0 && c.Gold > 50 * need) ShopSystem.BuyGood(s.Data.Shop, c, potion.Item.Uid, need, out _);
             if (c.Inventory.FreeCells < 4 && ShopSystem.CanBuyBag(c) && c.Gold > ShopSystem.BagPrice(c) * 2) ShopSystem.BuyBag(c, out _);
-            s.SelectFloor(c.MaxChallengeFloor);
+            // 레벨이 모자라면 낮은 층에서 레벨을 올린다 (레벨 ≈ 층 × 1.7)
+            int floor = c.MaxChallengeFloor;
+            while (floor > 1 && c.Level < Math.Round(floor * 1.7)) floor--;
+            s.SelectFloor(floor);
             s.Save();
         }
 
@@ -136,6 +140,9 @@ namespace Adventure.Tests
             {
                 var heal = b.GetItemChoices().Find(x => x.Enabled && x.Label.Contains("회복"));
                 if (heal != null) return heal;
+                // 물약도 없으면 도망친다 (보스전 제외)
+                var flee = all.Find(x => x.Kind == ActionKind.Flee && x.Enabled);
+                if (flee != null && b.Player.HpRatio < 0.25) return flee;
             }
             BattleChoice best = null;
             double bestScore = double.MinValue;

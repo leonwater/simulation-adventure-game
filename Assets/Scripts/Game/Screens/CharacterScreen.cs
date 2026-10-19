@@ -100,37 +100,19 @@ namespace Adventure.Game
                 UI.Label(col, Names.Of(stat), 14, Theme.Text, true);
                 UI.Label(col, CharacterStats.EffectLabel(C, stat), 12, Theme.TextSub);
                 int pending = _draft.Pending(stat);
-                // − · 값 · + 는 고정 폭(152) 칸 안에 절대 위치로 놓아 줄마다 간격이 똑같게 한다
-                var stepper = UI.Rect(row, "stepper");
-                UI.Size(stepper, height: 44, width: 152);
-                var minus = UI.TextButton(stepper, "−", () =>
-                {
-                    _draft.Remove(stat);
-                    Rebuild();
-                }, ButtonKind.Outline, 44, 20, 44);
-                PlaceInStepper(minus, 0, 44);
-                UI.SetEnabled(minus, pending > 0, 0.3f);
-                var value = UI.Label(stepper, CharacterStats.Total(C, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""), 16, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
-                PlaceInStepper(value, 44, 64);
-                var plus = UI.TextButton(stepper, "+", () =>
-                {
-                    _draft.Add(stat);
-                    Rebuild();
-                }, ButtonKind.Outline, 44, 20, 44);
-                PlaceInStepper(plus, 108, 44);
-                UI.SetEnabled(plus, _draft.Remaining > 0, 0.3f);
+                ScreenKit.Stepper(row, CharacterStats.Total(C, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
+                    () =>
+                    {
+                        _draft.Remove(stat);
+                        Rebuild();
+                    }, pending > 0,
+                    () =>
+                    {
+                        _draft.Add(stat);
+                        Rebuild();
+                    }, _draft.Remaining > 0);
                 if (i < stats.Length - 1) ScreenKit.BottomLine(row, Theme.LineSoft);
             }
-        }
-
-        private static void PlaceInStepper(Component c, float x, float width)
-        {
-            var rt = (RectTransform)c.transform;
-            rt.anchorMin = new Vector2(0, 0);
-            rt.anchorMax = new Vector2(0, 1);
-            rt.pivot = new Vector2(0, 0.5f);
-            rt.sizeDelta = new Vector2(width, 0);
-            rt.anchoredPosition = new Vector2(x, 0);
         }
 
         private void Commit()

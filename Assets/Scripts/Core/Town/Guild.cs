@@ -46,18 +46,40 @@ namespace Adventure.Core
 
         public static bool InRange(Rank own, Rank quest) => quest >= MinQuestRank(own) && quest <= MaxQuestRank(own);
 
+        /// <summary>게시판을 새로 채운다. 같은 대상(몬스터·재료·보스 층)의 퀘스트는 게시판과 진행 중 목록을 통틀어 하나만.</summary>
         public static void RefreshBoard(GuildState g, Character c, Rng rng)
         {
             g.Board.Clear();
-            for (int i = 0; i < GameBalance.QuestBoardSize; i++) g.Board.Add(Generate(c, rng));
+            var used = new HashSet<string>();
+            foreach (var q in g.Active) used.Add(Key(q));
+            for (int tries = 0; g.Board.Count < GameBalance.QuestBoardSize && tries < 60; tries++)
+            {
+                var q = Generate(c, rng);
+                if (used.Add(Key(q))) g.Board.Add(q);
+            }
             g.Board.Sort((a, b) => b.Rank.CompareTo(a.Rank));
         }
 
+        /// <summary>같은 퀘스트인지 가르는 열쇠: 종류 + 대상 (토벌은 몬스터, 채집은 재료, 정복은 층).</summary>
+        public static string Key(Quest q)
+        {
+            switch (q.Kind)
+            {
+                case QuestKind.Hunt: return "hunt:" + q.SpeciesId;
+                case QuestKind.Collect: return "collect:" + q.MaterialId;
+                default: return "conquer:" + q.TargetFloor;
+            }
+        }
+
+        /// <summary>
+        /// 퀘스트 하나. 먼저 난이도 단계(쉬움·보통·어려움)를 정하고, 그에 맞춰 목표 층·수량·보상을 정한 뒤
+        /// 등급은 그 난이도로 매긴다 (자기 등급 −1 · 같음 · +1). 첫 등급(F)·마지막 등급(SS)은 넘치는 단계를 뽑지 않는다.
+        /// </summary>
         public static Quest Generate(Character c, Rng rng)
         {
-            Rank min = MinQuestRank(c.Rank), max = MaxQuestRank(c.Rank);
-            var rank = (Rank)rng.RangeInclusive((int)min, (int)max);
-            int rel = GameBalance.Clamp((int)rank - (int)c.Rank, -1, 1);
+            int lo = c.Rank == Rank.F ? 0 : -1, hi = c.Rank == Rank.SS ? 0 : 1;
+            int rel = rng.RangeInclusive(lo, hi);
+            var rank = (Rank)((int)c.Rank + rel);
             int top = Math.Max(1, c.MaxChallengeFloor);
             int floor;
             if (rel < 0) floor = top - rng.RangeInclusive(2, 4);
@@ -73,7 +95,7 @@ namespace Adventure.Core
                 RewardMultiplier = RewardMultiplier(c.Rank, rank),
             };
 
-            // 보스 정복은 이미 클리어했거나 지금 도전 가능한 층에서만
+            // 보스 정복은 이미 클리어했거나 지금 도전 가능한 층에서만. 어려움일수록 많이 잡거나 모아야 한다
             int kindRoll = rng.Range(0, 10);
             var theme = MonsterDb.ThemeFor(floor);
             var species = MonsterDb.Get(rng.Pick(theme.SpeciesIds));
@@ -87,7 +109,7 @@ namespace Adventure.Core
             {
                 q.Kind = QuestKind.Hunt;
                 q.SpeciesId = species.Id;
-                q.Required = rng.RangeInclusive(3, 5) + (rel > 0 ? 2 : 0);
+                q.Required = 3 + (rel + 1) + rng.RangeInclusive(0, 1);   // 쉬움 3~4 · 보통 4~5 · 어려움 5~6
                 q.Title = species.Name + " 토벌";
             }
             else
@@ -95,7 +117,7 @@ namespace Adventure.Core
                 q.Kind = QuestKind.Collect;
                 q.SpeciesId = species.Id;
                 q.MaterialId = species.MaterialId;
-                q.Required = rng.RangeInclusive(2, 4) + (rel > 0 ? 1 : 0);
+                q.Required = 2 + (rel + 1) + rng.RangeInclusive(0, 1);   // 쉬움 2~3 · 보통 3~4 · 어려움 4~5
                 q.Title = species.MaterialName + " 채집";
             }
 

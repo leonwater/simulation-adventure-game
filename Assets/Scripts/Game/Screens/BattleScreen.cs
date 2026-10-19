@@ -118,8 +118,14 @@ namespace Adventure.Game
                 speedLabel.text = GameSettings.BattleSpeed + "×";
             });
             speedLabel = speed.GetComponentInChildren<Text>();
-            var tp = IconButton(head, "◎", null);
-            UI.SetEnabled(tp, false, 0.35f); // 전투 중에는 순간이동할 수 없다
+            // 캐릭터 정보 (상태 이상이 1턴에 얼마인지 등)
+            var info = UI.ButtonCard(head, () =>
+            {
+                if (!_playing && !_leaving) CharacterInfo.Show(Overlay, S, _b);
+            }, Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
+            UI.Size(info, height: 44, width: 44);
+            UI.CenteredIcon(info, "character", 22);
+            Anchors.Set("battle.info", info);
             IconButton(head, "Ⅱ", () =>
             {
                 if (!_playing && !_finished && !_leaving) Pause();
@@ -234,14 +240,19 @@ namespace Adventure.Game
             if (selected || (enemy && Anchors.Get("battle.enemy0") == null && alive)) Anchors.Set("battle.enemy0", root);
             if (!alive) v.Group.alpha = 0.3f;
 
-            if (enemy && alive)
+            if (alive)
             {
+                // 적: 눌러 대상 선택 · 나: 눌러 캐릭터 정보
                 var hit = root.gameObject.AddComponent<Image>();
                 hit.color = new Color(0, 0, 0, 0);
                 var btn = root.gameObject.AddComponent<Button>();
                 btn.transition = Selectable.Transition.None;
                 int idx = index;
-                btn.onClick.AddListener(() => SelectTarget(idx));
+                if (enemy) btn.onClick.AddListener(() => SelectTarget(idx));
+                else btn.onClick.AddListener(() =>
+                {
+                    if (!_playing && !_leaving) CharacterInfo.Show(Overlay, S, _b);
+                });
             }
 
             // 상태 이상 (도형 아래)

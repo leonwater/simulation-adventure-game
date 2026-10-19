@@ -26,6 +26,35 @@ namespace Adventure.Core
         }
     }
 
+    /// <summary>방 안에서 방금 일어난 일: 제목, 설명 줄, 얻은 것 (던전 화면 맨 위에 크게).</summary>
+    public class RoomNotice
+    {
+        public readonly string Title;
+        public readonly List<string> Lines = new List<string>();
+        public readonly LootReport Loot;
+
+        public RoomNotice(string title, LootReport loot, params string[] lines)
+        {
+            Title = title;
+            Loot = loot;
+            foreach (var l in lines)
+                if (!string.IsNullOrEmpty(l)) Lines.Add(l);
+        }
+
+        /// <summary>얻은 것을 한 줄씩: 골드, 경험치, 아이템 하나하나, 두고 온 것.</summary>
+        public List<string> LootLines()
+        {
+            var list = new List<string>();
+            if (Loot == null) return list;
+            if (Loot.Gold != 0) list.Add("골드 " + (Loot.Gold > 0 ? "+" : "") + Loot.Gold.ToString("#,0"));
+            if (Loot.Exp != 0) list.Add("경험치 +" + Loot.Exp.ToString("#,0"));
+            foreach (var i in Loot.Items) list.Add(i.Count > 1 ? i.DisplayName + " ×" + i.Count : i.DisplayName);
+            if (Loot.Dropped.Count > 0) list.Add("가방이 가득 차 두고 옴: " + LootSystem.Names(Loot.Dropped));
+            if (Loot.LevelsGained > 0) list.Add("레벨 업! +" + Loot.LevelsGained);
+            return list;
+        }
+    }
+
     /// <summary>보물 방·이벤트·적 처치 보상.</summary>
     public static class LootSystem
     {

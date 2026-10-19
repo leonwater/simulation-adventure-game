@@ -59,7 +59,11 @@ namespace Adventure.Game
                 bool always = _event.Special != EventSpecial.None || EventRules.CheckStat(ch, C) == null && ch.FixedChance >= 1;
                 string right = always ? "›" : ScreenKit.Percent(EventRules.SuccessChance(ch, C, floor));
                 string label = EventRules.Label(_event, i, run, C);
-                var b = ScreenKit.ChoiceButton(inner, label, string.IsNullOrEmpty(hint) ? null : hint, right, !always, null, unavailable == null, 60);
+                // 행동하는 선택지는 보라색, 아무 일 없이 지나가는 선택지는 기본 색
+                bool pass = always && _event.Special == EventSpecial.None && IsPass(ch);
+                var b = pass
+                    ? ScreenKit.ChoiceButton(inner, label, string.IsNullOrEmpty(hint) ? null : hint, right, false, null, unavailable == null, 60)
+                    : ScreenKit.ActionButton(inner, label, string.IsNullOrEmpty(hint) ? null : hint, right, !always, null, unavailable == null, 60);
                 var choice = ch;
                 LongPress.Add(b, () =>
                 {
@@ -79,6 +83,16 @@ namespace Adventure.Game
                     b.GetComponent<UnityEngine.UI.Button>().interactable = false;
                 }
             }
+        }
+
+        /// <summary>그냥 지나가는 선택지: 판정·보상·효과가 하나도 없다.</summary>
+        private static bool IsPass(EventChoice ch)
+        {
+            var o = ch.Success;
+            return ch.Failure == null && o.HpRatio == 0 && o.Reward == EventReward.None && o.GoldMult == 0 && o.ExpMult == 0
+                   && !o.ReturnToTown && o.Battle == EventBattle.None && o.Effects.Length == 0 && o.Reveal == RevealKind.None
+                   && !o.SpawnTreasure && !o.LinkBoss && !o.FindReturn && string.IsNullOrEmpty(o.Chain) && !o.BecomeMerchant
+                   && string.IsNullOrEmpty(ch.RequiresItem) && ch.GoldPerFloor == 0 && ch.RequiresGoldMult == 0;
         }
 
         private void ResultBox(Transform parent)

@@ -137,8 +137,18 @@ namespace Adventure.Core
         }
 
         // ── 몬스터 (층 f 기준) ───────────────────────────────────
-        public static double EnemyHp(int f) => 60 + f * 24 + f * f * 0.6;
-        public static double EnemyAttack(int f) => 5 + f * 2.5 + f * f * 0.08;
+        /// <summary>
+        /// 초반 보정 (v1.6 밸런싱, 보통 기준): 1층 1.0 → 8층 0. 레벨 업이 빠른 초반이 너무 쉬워 적을 조금 세게 한다.
+        /// 쉬움은 보정 없음, 어려움·하드코어는 40%만 (이미 ×1.25라 초반이 벽이 되지 않게).
+        /// </summary>
+        public static double EarlyBoost(int f) => Math.Max(0, (EarlyBoostUntil - f) / (double)(EarlyBoostUntil - 1));
+        public const int EarlyBoostUntil = 8;
+        public const double EarlyBoostHp = 25, EarlyBoostAttack = 3.5;
+
+        public static double EarlyBoostScale(Difficulty d) => d == Difficulty.Easy ? 0 : d == Difficulty.Normal ? 1.0 : 0.4;
+
+        public static double EnemyHp(int f, double early = 1.0) => 60 + f * 24 + f * f * 0.6 + EarlyBoostHp * EarlyBoost(f) * early;
+        public static double EnemyAttack(int f, double early = 1.0) => 5 + f * 2.5 + f * f * 0.08 + EarlyBoostAttack * EarlyBoost(f) * early;
         public static double EnemyDefense(int f) => 2 + f * 1.5;
         /// <summary>플레이어 공격 성공률 계산에 쓰는 적 요구치.</summary>
         public static double EnemyRequirement(int f) => 10 + f * 2.4;

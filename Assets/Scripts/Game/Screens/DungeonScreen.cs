@@ -43,22 +43,28 @@ namespace Adventure.Game
             if (run.Effects.Count > 0) EffectTags(body, run);
             MiniMap(body, run);
 
+            // 방 안에서 방금 일어난 일(보물·휴식·전투·이벤트 결과)을 먼저 크게, 방 상황은 그 아래 작게
+            if (S.Notice != null) NoticeCard(body, S.Notice);
             string text = DungeonSystem.Situation(run, out string title);
-            var box = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 12), true, 6);
-            UI.Label(box, title, 12, Theme.Gold);
-            UI.Label(box, text, 15, Theme.Text);
-            if (!string.IsNullOrEmpty(S.Notice)) UI.Label(box, S.Notice, 13, Theme.BlueLight);
+            var box = UI.Card(body, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 10), true, 4);
+            UI.Label(box, title, 12, Theme.TextSub, true);
+            UI.Label(box, text, 14, Theme.TextBody);
 
             var choices = UI.Column(body, 8);
             Choices(choices, run);
 
-            // 아래 고정 줄: 왼쪽 가방, 오른쪽 귀환 (아이콘 버튼). 순간이동은 미니맵에서.
+            // 아래 고정 줄: 왼쪽 가방 · 가운데 캐릭터 정보 · 오른쪽 귀환 (아이콘 버튼). 순간이동은 미니맵에서.
             var bottom = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 8, 8), false, 8, TextAnchor.MiddleCenter, "bottom");
             ScreenKit.TopLine(bottom);
-            IconButton(bottom, "bag", "가방", () => Go(new InventoryScreen(true)), true);
+            IconButton(bottom, "bag", "가방", () => Go(new InventoryScreen(true)), BottomStyle.Normal);
             UI.HSpacer(bottom);
+            var info = IconButton(bottom, "character", "정보", () => CharacterInfo.Show(Overlay, S), BottomStyle.Normal);
+            Anchors.Set("dungeon.info", info);
+            UI.HSpacer(bottom);
+            // 귀환 방을 찾기 전에는 붉은 회색으로 잠가 둔다 (누르면 이유를 알려 준다)
             bool canReturn = S.CanReturn;
-            var ret = IconButton(bottom, "return", canReturn ? "귀환" : "귀환 방 미발견", ConfirmReturn, canReturn, true);
+            var ret = IconButton(bottom, "return", "귀환", canReturn ? (System.Action)ConfirmReturn : () => Toast("아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요."),
+                canReturn ? BottomStyle.Return : BottomStyle.Locked);
             Anchors.Set("dungeon.return", ret);
 
             if (run.FloorIntroPending) FloorIntro(root, run);
@@ -106,19 +112,22 @@ namespace Adventure.Game
             Overlay.SetBack(() => Overlay.Close(modal));
             UI.Label(body, "남은 포인트 " + UI.Color(draft.Remaining.ToString(), Theme.GoldHex), 14, Theme.Text);
             var stats = C.JobData.AllocatableStats;
-            foreach (var stat in stats)
+            // 캐릭터 화면과 같은 줄: 아이콘 · 이름/효과 · 고정 폭 − 값 + (줄마다 위치가 같다)
+            for (int i = 0; i < stats.Length; i++)
             {
-                var st = stat;
+                var st = stats[i];
                 var row = UI.Row(body, 8);
-                UI.Size(row, height: 46);
-                var name = UI.Label(row, Names.Of(st) + " " + UI.Color(CharacterStats.EffectLabel(C, st), Theme.SubHex), 13, Theme.Text);
-                UI.Size(name, flexW: 1);
+                UI.Size(row, height: 52);
+                UI.Icon(row, UI.StatIcon(st), 22);
+                var col = UI.Column(row, 1);
+                UI.Size(col, flexW: 1);
+                UI.Label(col, Names.Of(st), 14, Theme.Text, true);
+                UI.Label(col, CharacterStats.EffectLabel(C, st), 11, Theme.TextSub);
                 int pending = draft.Pending(st);
-                var minus = UI.TextButton(row, "−", () => Redraw(modal, draft, () => draft.Remove(st)), ButtonKind.Ghost, 40, 18, 44);
-                UI.SetEnabled(minus, pending > 0);
-                UI.Label(row, CharacterStats.Total(C, st) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""), 15, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-                var plus = UI.TextButton(row, "+", () => Redraw(modal, draft, () => draft.Add(st)), ButtonKind.Outline, 40, 18, 44);
-                UI.SetEnabled(plus, draft.Remaining > 0);
+                ScreenKit.Stepper(row, CharacterStats.Total(C, st) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
+                    () => Redraw(modal, draft, () => draft.Remove(st)), pending > 0,
+                    () => Redraw(modal, draft, () => draft.Add(st)), draft.Remaining > 0);
+                if (i < stats.Length - 1) ScreenKit.BottomLine(row, Theme.LineSoft);
             }
             var buttons = UI.Row(body, 8);
             var later = UI.TextButton(buttons, "나중에", () =>
@@ -159,10 +168,13 @@ namespace Adventure.Game
             {
                 if (S.CanDescend)
                     ScreenKit.GoButton(parent, "아래층으로 내려간다", (run.Floor + 1) + "층 · " + MonsterDb.ThemeFor(run.Floor + 1).Name + " · 현재 HP 유지", Descend);
-                ReturnButton(parent, "마을로 귀환한다", run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
+                var home = ReturnButton(parent, "마을로 귀환한다", S.InTutorialRun ? "첫 모험은 여기까지 · 획득한 것은 모두 유지"
+                    : run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
+                Anchors.Set("dungeon.home", home);
             }
+            // 방 안에서 하는 행동은 보라색 (이동은 금색·푸른색, 귀환은 초록)
             if (room.Type == RoomType.Merchant)
-                ScreenKit.GoButton(parent, "상인과 거래한다", room.MerchantDiscount ? "물약·해독제 (은인 할인: 마을보다 30% 쌈)" : "물약·해독제 (마을보다 20% 비쌈)", Merchant);
+                ScreenKit.ActionButton(parent, "상인과 거래한다", room.MerchantDiscount ? "물약·해독제 (은인 할인: 마을보다 30% 쌈)" : "물약·해독제 (마을보다 20% 비쌈)", "›", false, Merchant);
             if (room.Type == RoomType.Return) ReturnButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
 
             bool first = true;
@@ -177,22 +189,47 @@ namespace Adventure.Game
         }
 
         /// <summary>귀환 관련 선택지: 이동 선택지(금색·푸른색)와 다른 초록 계열.</summary>
-        private static void ReturnButton(Transform parent, string title, string sub, System.Action onClick)
+        private static RectTransform ReturnButton(Transform parent, string title, string sub, System.Action onClick)
         {
-            var b = UI.ButtonCard(parent, onClick, Theme.Hex("15241F"), Theme.Hex("3F8A68"), 12, UI.Pad(14, 8), true, 2, 60, TextAnchor.MiddleLeft);
-            UI.Label(b, title, 15, Theme.Hex("9BDDB8"), true);
-            if (!string.IsNullOrEmpty(sub)) UI.Label(b, sub, 12, Theme.Hex("72B892"));
+            var b = UI.ButtonCard(parent, onClick, Theme.ReturnBg, Theme.ReturnBorder, 12, UI.Pad(14, 8), true, 2, 60, TextAnchor.MiddleLeft);
+            UI.Label(b, title, 15, Theme.ReturnText, true);
+            if (!string.IsNullOrEmpty(sub)) UI.Label(b, sub, 12, Theme.ReturnSub);
+            return b;
         }
 
-        private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, bool enabled, bool returnStyle = false)
+        private enum BottomStyle
         {
-            var b = UI.ButtonCard(parent, onClick, returnStyle ? Theme.Hex("15241F") : Theme.Button, returnStyle ? Theme.Hex("3F8A68") : Theme.ButtonBorder,
-                12, UI.Pad(10, 6), true, 2, 60, TextAnchor.MiddleCenter);
-            UI.Size(b, width: 72, minH: 60);
-            UI.CenteredIcon(b, icon, 28);
-            UI.Label(b, label, 12, Theme.Text, true, TextAnchor.MiddleCenter);
-            if (!enabled) UI.SetEnabled(b, false, 0.4f);
+            Normal,
+            Return,
+            /// <summary>귀환 방 미발견: 붉은 회색.</summary>
+            Locked
+        }
+
+        /// <summary>아래 고정 줄 아이콘 버튼 (폭 48).</summary>
+        private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, BottomStyle style)
+        {
+            Color fill = style == BottomStyle.Return ? Theme.ReturnBg : style == BottomStyle.Locked ? Theme.Hex("221A1B") : Theme.Button;
+            Color border = style == BottomStyle.Return ? Theme.ReturnBorder : style == BottomStyle.Locked ? Theme.Hex("4E3838") : Theme.ButtonBorder;
+            var b = UI.ButtonCard(parent, onClick, fill, border, 12, UI.Pad(4, 6), true, 2, 60, TextAnchor.MiddleCenter);
+            UI.Size(b, width: 48, minH: 60);
+            var img = UI.CenteredIcon(b, icon, 26);
+            Color text = style == BottomStyle.Locked ? Theme.Hex("8A6E6C") : Theme.Text;
+            if (style == BottomStyle.Locked) img.color = text;
+            UI.Label(b, label, 12, text, true, TextAnchor.MiddleCenter);
             return b;
+        }
+
+        /// <summary>방 결과 카드: 제목 크게, 설명과 얻은 것은 한 줄씩.</summary>
+        private static void NoticeCard(Transform parent, RoomNotice n)
+        {
+            var card = UI.Card(parent, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 12), true, 4);
+            UI.Label(card, n.Title, 17, Theme.Gold, true);
+            foreach (var line in n.Lines)
+            {
+                var t = UI.Label(card, line, 15, Theme.Text);
+                t.lineSpacing = 1.25f;
+            }
+            foreach (var line in n.LootLines()) UI.Label(card, "· " + line, 14, Theme.Text);
         }
 
         /// <summary>새 방: 금색 테두리 + 위쪽에서 빛나는 줄 (수정 사항 #10).</summary>
@@ -288,20 +325,17 @@ namespace Adventure.Game
             UI.Size(area, height: MapH, width: MapW);
             DrawMap(area, MapW, MapH, run, null);
 
-            var legend = UI.Row(card, 12);
+            // 범례 줄 오른쪽 끝(카드 오른쪽 아래): 지도 아이콘 버튼 → 전체 지도·순간이동 (갈 곳이 있으면 깜빡인다)
+            var legend = UI.Row(card, 12, null, TextAnchor.MiddleLeft);
+            UI.Size(legend, height: 32);
             UI.Sub(legend, "■ 탐험함");
             UI.Label(legend, "■ 현재 위치", 12, Theme.Gold);
             UI.Label(legend, "□ 갈 수 있음", 12, Theme.Gold);
-
-            // 오른쪽 위: 지도 아이콘 버튼 → 전체 지도·순간이동 (순간이동할 곳이 있으면 테두리가 깜빡인다)
+            UI.HSpacer(legend);
             bool canTeleport = DungeonSystem.TeleportTargets(run).Count > 0 && DungeonSystem.CanLeave(run);
-            var tp = UI.ButtonCard(card, FullMap, new Color(0.10f, 0.09f, 0.06f, 0.92f), canTeleport ? Theme.Gold : Theme.ButtonBorder, 8, UI.Pad(0), false, 0, 36, TextAnchor.MiddleCenter);
-            tp.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            tp.anchorMin = tp.anchorMax = new Vector2(1, 1);
-            tp.pivot = new Vector2(1, 1);
-            tp.sizeDelta = new Vector2(36, 36);
-            tp.anchoredPosition = new Vector2(-8, -8);
-            UI.Icon(tp, "map", 22);
+            var tp = UI.ButtonCard(legend, FullMap, new Color(0.10f, 0.09f, 0.06f, 0.92f), canTeleport ? Theme.Gold : Theme.ButtonBorder, 8, UI.Pad(0), false, 0, 32, TextAnchor.MiddleCenter);
+            UI.Size(tp, width: 28, height: 32);
+            UI.CenteredIcon(tp, "map", 20);
             if (canTeleport) tp.Find("fill")?.gameObject.AddComponent<Blink>();
             Anchors.Set("dungeon.teleport", tp);
         }
@@ -537,31 +571,11 @@ namespace Adventure.Game
             var modal = Overlay.Top;
             UI.Sub(body, "진행 상황은 방을 하나 끝낼 때마다 자동으로 저장됩니다.");
             UI.TextButton(body, "계속하기", () => Overlay.Close(modal), ButtonKind.Primary);
-            UI.TextButton(body, "캐릭터 정보", () =>
-            {
-                Overlay.Close(modal);
-                ShowCharacter();
-            }, ButtonKind.Secondary);
             UI.TextButton(body, "저장하고 타이틀로", () =>
             {
                 S.Save();
                 Go(new TitleScreen());
             }, ButtonKind.Ghost);
-        }
-
-        private void ShowCharacter()
-        {
-            var body = Overlay.Modal(C.Name + " · " + C.JobData.Name + " Lv." + C.Level);
-            UI.Sub(body, "HP " + C.CurrentHp + "/" + CharacterStats.MaxHp(C) + " · 공격력 " + CharacterStats.Attack(C) + " · 방어력 " + CharacterStats.Defense(C));
-            UI.Sub(body, "경험치 " + Mathf.FloorToInt((float)Leveling.ExpProgress(C) * 100) + "% · 골드 " + Names.Gold(C.Gold));
-            if (C.UnspentPoints > 0) UI.Label(body, "남은 능력치 포인트 " + C.UnspentPoints + " (마을 캐릭터 화면에서 배분)", 13, Theme.Gold);
-            var quests = S.Data.Guild.Active;
-            if (quests.Count > 0)
-            {
-                UI.Divider(body);
-                UI.Label(body, "진행 중인 퀘스트", 14, Theme.Text, true);
-                foreach (var q in quests) UI.Sub(body, q.Title + " · 목표 " + q.TargetFloor + "층 · " + GuildSystem.ProgressText(q, C));
-            }
         }
     }
 }

@@ -40,6 +40,16 @@ namespace Adventure.Game
         public static readonly Color RedLight = Hex("E38A82");
         public static readonly Color RedBorder = Hex("5A3A38");
         public static readonly Color RedBg = Hex("1F1A1C");
+        // 방 안 행동 선택지 (보라): 이동·귀환 선택지와 구분
+        public static readonly Color ActionBg = Hex("1E1A2A");
+        public static readonly Color ActionBorder = Hex("6A5A9E");
+        public static readonly Color ActionText = Hex("D6CCFF");
+        public static readonly Color ActionSub = Hex("A89CD6");
+        // 귀환 (초록)
+        public static readonly Color ReturnBg = Hex("15241F");
+        public static readonly Color ReturnBorder = Hex("3F8A68");
+        public static readonly Color ReturnText = Hex("9BDDB8");
+        public static readonly Color ReturnSub = Hex("72B892");
         public static readonly Color Green = Hex("6FB37A");
         public static readonly Color Dim = new Color(0, 0, 0, 0.6f);
 

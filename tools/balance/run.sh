@@ -5,4 +5,4 @@
 #   tools/balance/run.sh boss 300        보스 특성 켬/끔 1:1 비교
 set -euo pipefail
 cd "$(dirname "$0")"
-dotnet run -c Release --nologo -v q -- "$@" 2>&1 | grep -v "warning"
+dotnet run -c Release -- "$@" 2>&1 | grep -v "warning"

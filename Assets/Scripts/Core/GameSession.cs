@@ -21,8 +21,8 @@ namespace Adventure.Core
         public LootReport LastLoot { get; private set; }
         public DeathReport LastDeath { get; private set; }
         public ReturnReport LastReturn { get; private set; }
-        /// <summary>던전 화면에 띄울 한 줄 알림 (휴식 회복량 등).</summary>
-        public string Notice { get; set; } = "";
+        /// <summary>방 안에서 방금 일어난 일 (보물·휴식·전투·이벤트 결과). 던전 화면 맨 위에 크게 보여 준다. 없으면 null.</summary>
+        public RoomNotice Notice { get; private set; }
         /// <summary>방금 30층 보스를 쓰러뜨렸는지 (엔딩 연출용, 한 번 보여 주면 false로 바꾼다).</summary>
         public bool JustClearedGame { get; set; }
 
@@ -139,7 +139,7 @@ namespace Adventure.Core
             Battle = null;
             LastEvent = null;
             LastLoot = null;
-            Notice = "";
+            Notice = null;
         }
 
         // ── 마을 ──────────────────────────────────────────────
@@ -225,14 +225,15 @@ namespace Adventure.Core
                     break;
                 case RoomEnterResult.Treasure:
                     LastLoot = DungeonSystem.OpenTreasure(run, C, Rng);
-                    Notice = "보물을 발견했다! " + LastLoot.Describe();
+                    Notice = new RoomNotice("보물 발견!", LastLoot);
                     break;
                 case RoomEnterResult.Rest:
+                    bool cursed = ExploreEffects.Has(run.Effects, ExploreEffectType.Curse);
                     int healed = DungeonSystem.Rest(run, C);
-                    Notice = "모닥불 곁에서 쉬었다. HP " + healed + " 회복";
+                    Notice = new RoomNotice("모닥불에서 휴식", null, "HP " + healed + " 회복", cursed ? "저주가 풀렸다" : null);
                     break;
                 case RoomEnterResult.Return:
-                    Notice = "귀환 마법진을 발견했다.";
+                    Notice = new RoomNotice("귀환 마법진 발견", null, "이제 언제든 마을로 돌아갈 수 있다");
                     break;
             }
         }
@@ -307,6 +308,7 @@ namespace Adventure.Core
                 case BattleOutcome.Victory:
                     LastLoot = b.CollectRewards(Data.Guild, run);
                     DungeonSystem.ClearCurrent(run);
+                    Notice = new RoomNotice(b.IsBoss ? "보스 처치!" : "전투 승리", LastLoot);
                     if (run.TrialFloor > 0)
                     {
                         // 시련의 문: 고른 층의 보스를 잡은 것으로 친다 (결과를 닫으면 바로 귀환)
@@ -335,7 +337,7 @@ namespace Adventure.Core
                     run.TrialFloor = 0;
                     DungeonSystem.FleeToPrevious(run);
                     Battle = null;
-                    Notice = "전투에서 도망쳐 이전 방으로 돌아왔다.";
+                    Notice = new RoomNotice("도주", null, "전투에서 도망쳐 이전 방으로 돌아왔다");
                     break;
                 case BattleOutcome.Defeat:
                     Die(b.KilledBy);
@@ -406,6 +408,12 @@ namespace Adventure.Core
                 ReturnToTown();
                 return LastEvent;
             }
+            else if (!LastEvent.Continues)
+            {
+                var def = EventDb.Get(run.Current.EventId);
+                Notice = new RoomNotice(def?.Title ?? "특수 이벤트", LastEvent.Loot, LastEvent.Text,
+                    LastEvent.HpChange != 0 ? "HP " + (LastEvent.HpChange > 0 ? "+" : "") + LastEvent.HpChange : null);
+            }
             Save();
             return LastEvent;
         }
@@ -461,10 +469,14 @@ namespace Adventure.Core
             EnterTown();
         }
 
-        public bool CanDescend => InDungeon && Battle == null && DungeonSystem.CanGoDeeper(Run);
+        /// <summary>튜토리얼 던전(첫 1층 또는 튜토리얼을 다시 보는 중)인지. 보스를 잡아도 아래층으로 내려갈 수 없고 귀환해야 한다.</summary>
+        public bool InTutorialRun => InDungeon && (Run.IsTutorial || Data.Tutorial == TutorialStage.FirstDungeon);
+
+        public bool CanDescend => InDungeon && Battle == null && !InTutorialRun && DungeonSystem.CanGoDeeper(Run);
 
         public void Descend()
         {
+            if (!CanDescend) throw new InvalidOperationException("아직 내려갈 수 없습니다");
             ClearTransient();
             DungeonSystem.Descend(Data.Run, Rng);
             Save();
