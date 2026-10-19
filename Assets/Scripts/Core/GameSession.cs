@@ -281,6 +281,7 @@ namespace Adventure.Core
             Battle = new Battle(C, floor > 0 ? floor : run.Floor, enemies, boss, Rng, ambush, b =>
             {
                 b.FleeAllowed = fleeAllowed;
+                b.Difficulty = Difficulty;
                 ExploreEffects.ApplyToBattle(run.Effects, b);
             });
         }

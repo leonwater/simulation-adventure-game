@@ -58,7 +58,7 @@ namespace Adventure.Core
             return list;
         }
 
-        /// <summary>보스 방: 10·20·30층은 고유 보스, 그 외 층은 테마 몬스터의 강화형.</summary>
+        /// <summary>보스 방: 10·20·30층은 고유 보스, 그 외 층은 테마 몬스터의 강화형. 보스는 특성을 가진다.</summary>
         public static List<Combatant> CreateBoss(int floor, Difficulty diff, int seed)
         {
             var rng = new Rng(seed);
@@ -73,6 +73,7 @@ namespace Adventure.Core
                 list.Add(Create(MonsterDb.Get(rng.Pick(theme.SpeciesIds)), floor, diff, 2));
                 if (floor >= 5 && rng.Chance(0.5)) list.Add(Create(MonsterDb.Get(rng.Pick(theme.SpeciesIds)), floor, diff, 0));
             }
+            BossTraits.Equip(list[0], floor); // 보스 특성 (종족별, 층에 따라 수치가 커진다)
             NameDuplicates(list);
             return list;
         }

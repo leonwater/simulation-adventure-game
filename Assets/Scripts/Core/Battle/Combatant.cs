@@ -29,6 +29,10 @@ namespace Adventure.Core
         public long GoldReward;
         /// <summary>처치하면 장비 확정 드롭 (미믹).</summary>
         public bool GuaranteedEquipment;
+        /// <summary>보상·퀘스트 처치에 세지 않는다 (분열한 작은 개체·소환된 졸개).</summary>
+        public bool NoReward;
+        /// <summary>보스 특성 (보스만, 없으면 null).</summary>
+        public BossKit Kit;
 
         public bool Alive => Hp > 0;
 

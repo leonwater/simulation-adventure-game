@@ -37,3 +37,6 @@ crashlytics-build.properties
 # 서명 키 (CI가 만드는 임시 파일 포함)
 *.keystore
 *.jks
+/tools/balance/bin/
+/tools/balance/obj/
+!/tools/balance/*.csproj

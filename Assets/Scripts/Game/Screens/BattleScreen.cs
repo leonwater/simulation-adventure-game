@@ -37,6 +37,8 @@ namespace Adventure.Game
             public float Size;
             public int MaxHp;
             public CanvasGroup Group;
+            // 지금 보이는 값 (보스의 보호막·방어막은 -1이면 없음)
+            public int Hp, Shield = -1, Barrier = -1;
         }
 
         private enum Shape
@@ -187,7 +189,11 @@ namespace Adventure.Game
             int hp = _hpBefore != null && _hpBefore.TryGetValue(index, out int h) ? h : c.Hp;
             bool alive = hp > 0;
 
-            var name = UI.Label(_stage, title, enemy ? 11 : 12, alive ? Theme.Text : Theme.TextSub, !enemy, TextAnchor.MiddleCenter, false, false);
+            // 보스의 다음 턴 행동 예고는 이름 자리에 주황색으로 (연출 중에는 이름)
+            string intent = enemy && alive && c.Kit != null && !_playing && _pending == null ? c.Kit.Intent : "";
+            bool warn = !string.IsNullOrEmpty(intent);
+            var name = UI.Label(_stage, warn ? "! " + intent : title, enemy ? 11 : 12, warn ? Theme.Hex("FF9A4A") : alive ? Theme.Text : Theme.TextSub,
+                !enemy || warn, TextAnchor.MiddleCenter, false, false);
             Place(name.rectTransform, new Vector2(center.x - width / 2f, top - (enemy ? 44 : 30)), new Vector2(width, 16));
             if (!enemy) v.HpText = name;
             else
@@ -207,7 +213,7 @@ namespace Adventure.Game
             v.Bar.anchorMin = Vector2.zero;
             v.Bar.offsetMin = Vector2.zero;
             v.Bar.offsetMax = Vector2.zero;
-            SetBar(v, hp);
+            SetBar(v, hp, c.Kit != null ? c.Kit.Shield : -1, c.Kit != null ? c.Kit.Barrier : -1);
 
             // 도형 (선택 표시 → 테두리 → 채움). 도형 안에는 글자를 넣지 않는다 (수정 사항 #4)
             var root = UI.Rect(_stage, "shape");
@@ -280,12 +286,20 @@ namespace Adventure.Game
             return img;
         }
 
-        private static void SetBar(UnitView v, int hp)
+        /// <summary>HP 막대와 숫자. 보스는 남은 보호막(+푸른 숫자)·방어막(◆횟수)을 함께 보여 준다.</summary>
+        private static void SetBar(UnitView v, int hp, int shield = -2, int barrier = -2)
         {
+            v.Hp = hp;
+            if (shield > -2) v.Shield = shield;
+            if (barrier > -2) v.Barrier = barrier;
             float ratio = v.MaxHp <= 0 ? 0 : Mathf.Clamp01((float)hp / v.MaxHp);
             v.Bar.anchorMax = new Vector2(ratio, 1);
             v.Bar.GetComponent<Image>().enabled = ratio > 0.001f;
-            if (v.HpText != null) v.HpText.text = (v.EnemyHp ? "" : "HP ") + Mathf.Max(0, hp) + "/" + v.MaxHp;
+            if (v.HpText == null) return;
+            string text = (v.EnemyHp ? "" : "HP ") + Mathf.Max(0, hp) + "/" + v.MaxHp;
+            if (hp > 0 && v.Shield > 0) text += " " + UI.Color("+" + v.Shield, "#8FC7FF");
+            if (hp > 0 && v.Barrier > 0) text += " " + UI.Color("◆" + v.Barrier, "#C9B8FF");
+            v.HpText.text = text;
         }
 
         private static void Place(RectTransform rt, Vector2 topLeft, Vector2 size)
@@ -506,11 +520,12 @@ namespace Adventure.Game
                     wait = StepTime * 0.6f;
                     break;
                 case BattleEventKind.Damage:
+                    Shown(e.Target, e.HpAfter);
                     if (_units.TryGetValue(e.Target, out var hitUnit))
                     {
                         Shake.Play(hitUnit.Shape, e.Damage == DamageKind.Crit ? 10 : 6);
                         Flash.Play(hitUnit.Fill, e.Target < 0 ? Theme.Red : Color.white);
-                        SetBar(hitUnit, e.HpAfter);
+                        SetBar(hitUnit, e.HpAfter, e.Shield, e.Barrier);
                     }
                     bool crit = e.Damage == DamageKind.Crit;
                     Float(e.Target, (crit ? "치명타! " : "") + e.Amount, Theme.DamageColor(e.Damage), crit ? 26 : 19, true);
@@ -521,6 +536,7 @@ namespace Adventure.Game
                     Float(e.Target, "빗나감", Theme.TextSub, 15, false);
                     break;
                 case BattleEventKind.Heal:
+                    Shown(e.Target, e.HpAfter);
                     if (_units.TryGetValue(e.Target, out var healUnit)) SetBar(healUnit, e.HpAfter);
                     Float(e.Target, "+" + e.Amount, Theme.DamageColor(DamageKind.Heal), 19, true);
                     break;
@@ -529,13 +545,37 @@ namespace Adventure.Game
                     wait = StepTime * 0.6f;
                     break;
                 case BattleEventKind.Defeat:
+                    Shown(e.Target, 0);
                     if (_units.TryGetValue(e.Target, out var dead)) dead.Group.alpha = 0.3f;
                     break;
+                case BattleEventKind.Spawn:
+                    // 분열·소환: 그 자리에 새 적을 그린다 (다른 적은 지금 보이는 HP 그대로)
+                    Shown(e.Target, e.HpAfter);
+                    RebuildStage();
+                    Float(e.Target, "등장!", Theme.Hex("FF9A4A"), 15, true);
+                    wait = StepTime * 0.8f;
+                    break;
                 default:
+                    // 방어막에 막힘: 남은 횟수를 바로 줄여 보여 준다
+                    if (e.Barrier >= 0 && _units.TryGetValue(e.Target, out var guarded)) SetBar(guarded, guarded.Hp, e.Shield, e.Barrier);
                     Float(e.Actor, e.Text, Theme.Gold, 16, true);
                     break;
             }
             Delay.Run(_stage, wait, () => PlayNext(events, i + 1), true);
+        }
+
+        /// <summary>연출 중 지금 보이는 HP를 기억한다 (무대를 다시 그릴 때 쓴다).</summary>
+        private void Shown(int index, int hp)
+        {
+            if (_hpBefore == null) _hpBefore = new Dictionary<int, int>();
+            _hpBefore[index] = hp;
+        }
+
+        private void RebuildStage()
+        {
+            foreach (Transform child in _stage) UnityEngine.Object.Destroy(child.gameObject);
+            _units.Clear();
+            BuildStage();
         }
 
         private void Float(int index, string text, Color color, float size, bool bold)

@@ -60,7 +60,9 @@ namespace Adventure.Core
         Heal,
         Status,
         Defeat,
-        Text
+        Text,
+        /// <summary>새 적이 나타남 (분열·소환). Target = 자리 번호.</summary>
+        Spawn
     }
 
     /// <summary>화면 연출용 전투 사건. Actor/Target: -1 = 플레이어, 0 이상 = 적 번호.</summary>
@@ -73,6 +75,8 @@ namespace Adventure.Core
         public DamageKind Damage;
         public int HpAfter;
         public string Text;
+        /// <summary>대상 보스의 남은 보호막·방어막 (보스가 아니면 -1).</summary>
+        public int Shield, Barrier;
     }
 
     /// <summary>전투 화면 선택지 하나. 모든 선택은 1턴을 쓴다.</summary>
@@ -100,7 +104,7 @@ namespace Adventure.Core
     /// 치명타는 스킬에서만 발생하며 피해 ×1.8. 여러 번 때리는 스킬은 타격마다 따로 판정한다.
     /// 상태 이상 지속 턴은 주인의 턴이 끝날 때 줄어든다 (이번 턴에 걸린 효과는 다음 턴부터).
     /// </summary>
-    public class Battle
+    public partial class Battle
     {
         public readonly Character Character;
         public readonly Combatant Player;
@@ -117,6 +121,8 @@ namespace Adventure.Core
         public readonly List<Combatant> Defeated = new List<Combatant>();
         /// <summary>연막: 다음에 쓰는 공격 스킬이 확정 치명타.</summary>
         public bool NextSkillCrit;
+        /// <summary>난이도 (보스가 부르는 졸개의 수치).</summary>
+        public Difficulty Difficulty = Difficulty.Normal;
 
         private readonly Dictionary<string, int> _cooldowns = new Dictionary<string, int>();
         private readonly Rng _rng;
@@ -174,7 +180,12 @@ namespace Adventure.Core
 
         private void Event(BattleEventKind kind, int actor, int target, int amount = 0, DamageKind damage = DamageKind.Normal, int hpAfter = 0, string text = null)
         {
-            LastEvents.Add(new BattleEvent { Kind = kind, Actor = actor, Target = target, Amount = amount, Damage = damage, HpAfter = hpAfter, Text = text });
+            var kit = target >= 0 && target < Enemies.Count ? Enemies[target].Kit : null;
+            LastEvents.Add(new BattleEvent
+            {
+                Kind = kind, Actor = actor, Target = target, Amount = amount, Damage = damage, HpAfter = hpAfter, Text = text,
+                Shield = kit?.Shield ?? -1, Barrier = kit?.Barrier ?? -1,
+            });
         }
 
         // ── 확률 ───────────────────────────────────────────────
@@ -258,7 +269,7 @@ namespace Adventure.Core
                 list.Add(new BattleChoice
                 {
                     Kind = ActionKind.Attack, Label = "공격 · " + e.Name, Target = Enemies.IndexOf(e), Chance = HitChance(e),
-                    DamageNote = "피해 약 " + d,
+                    DamageNote = "피해 약 " + d + GuardNote(e),
                     Detail = "기본 공격 — 피해 " + Math.Round(basic * 100) + "%, 치명타 없음\n\n" + DamageFormula(basic, e, false)
                              + "\n\n성공 확률\n" + HitBreakdown(e, 0),
                 });
@@ -278,7 +289,7 @@ namespace Adventure.Core
                         list.Add(new BattleChoice
                         {
                             Kind = ActionKind.Skill, SkillId = id, Label = def.Name + " · " + e.Name, Target = Enemies.IndexOf(e),
-                            Chance = HitChance(e, def.SuccessBonus), DamageNote = SkillDamageNote(def, e),
+                            Chance = HitChance(e, def.SuccessBonus), DamageNote = SkillDamageNote(def, e) + (def.IsAttack ? GuardNote(e) : ""),
                             Detail = SkillDetail(def, e, alive),
                         });
                 }
@@ -449,7 +460,8 @@ namespace Adventure.Core
 
         private void EnemyPhase()
         {
-            foreach (var e in Enemies)
+            // 분열·소환으로 적 목록이 바뀔 수 있어 복사본으로 돈다 (새로 나온 적은 다음 턴부터 행동)
+            foreach (var e in Enemies.ToArray())
             {
                 if (!e.Alive) continue;
                 StartOfTurn(e);
@@ -465,6 +477,7 @@ namespace Adventure.Core
                 EndOfTurn(e);
                 if (CheckEnd()) return;
             }
+            UpdateIntents();
         }
 
         private void TickCooldowns(BattleChoice used)
@@ -565,7 +578,7 @@ namespace Adventure.Core
         {
             if (!target.Alive) return;
             int ti = IndexOf(target);
-            int landed = 0, total = 0;
+            int landed = 0, total = 0, blocked = 0;
             bool anyCrit = false;
             for (int h = 0; h < hits && target.Alive; h++)
             {
@@ -575,21 +588,28 @@ namespace Adventure.Core
                     continue;
                 }
                 bool crit = skill != null && (forcedCrit || skill.GuaranteedCrit || (skill.FirstTurnCrit && Turn == 1) || _rng.Chance(skill.CritChance));
+                if (BlockedByBarrier(target))
+                {
+                    blocked++;
+                    continue;
+                }
                 double m = mult;
                 if (skill != null && skill.ExecuteThreshold > 0 && target.HpRatio <= skill.ExecuteThreshold) m *= skill.ExecuteMult;
                 int dmg = Damage(Player, target, m, crit);
-                target.Hp = Math.Max(0, target.Hp - dmg);
+                target.Hp = Math.Max(0, target.Hp - AbsorbShield(target, dmg));
                 total += dmg;
                 landed++;
                 anyCrit |= crit;
                 Event(BattleEventKind.Damage, -1, ti, dmg, crit ? DamageKind.Crit : DamageKind.Normal, target.Hp);
+                AfterEnemyHit(target, dmg, true);
             }
             string what = skill == null ? "공격" : skill.Name;
-            if (landed == 0) Add(target.Name + "에게 " + what + " — 빗나갔다.");
+            string guard = blocked > 0 ? " (방어막이 " + blocked + "회 막음" + (target.Kit.Barrier > 0 ? ", " + target.Kit.Barrier + "회 남음" : ", 방어막 깨짐") + ")" : "";
+            if (landed == 0) Add(target.Name + "에게 " + what + " — " + (blocked > 0 ? "막혔다." + guard : "빗나갔다."));
             else
             {
                 string count = hits > 1 ? " (" + landed + "/" + hits + "회 명중)" : "";
-                Add(target.Name + "에게 " + (anyCrit ? "치명타 " : "") + total + " 피해" + count, anyCrit ? LogTone.Good : LogTone.Normal);
+                Add(target.Name + "에게 " + (anyCrit ? "치명타 " : "") + total + " 피해" + count + guard, anyCrit ? LogTone.Good : LogTone.Normal);
             }
             if (skill != null && landed > 0 && target.Alive)
                 foreach (var s in skill.Statuses) ApplyStatus(Player, target, s);
@@ -617,6 +637,7 @@ namespace Adventure.Core
                 OnEnemyDown(e);
                 return;
             }
+            if (e.Kit != null && BossTurn(e)) return;
             EnemySkill skill = null;
             foreach (var s in e.Skills)
             {
@@ -647,6 +668,7 @@ namespace Adventure.Core
             Event(BattleEventKind.Damage, ei, -1, dmg, DamageKind.Normal, Player.Hp);
             if (skill?.Status != null && Player.Alive) ApplyStatus(e, skill.Status.OnSelf ? e : Player, skill.Status);
             if (!Player.Alive) KilledBy = e.Name;
+            else DrainLife(e, dmg);
         }
 
         /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 100/(100+방어력) × (1 − 감소율) × (철벽·취약) × 치명타(×1.8)</summary>
@@ -702,10 +724,11 @@ namespace Adventure.Core
 
         private void Hurt(Combatant c, int amount, string cause, DamageKind kind)
         {
-            c.Hp = Math.Max(0, c.Hp - amount);
+            c.Hp = Math.Max(0, c.Hp - (c.IsPlayer ? amount : AbsorbShield(c, amount)));
             Add((c.IsPlayer ? "" : c.Name + ": ") + Names.Josa(cause, "으로/로") + " " + amount + " 피해", c.IsPlayer ? LogTone.Bad : LogTone.Normal);
             Event(BattleEventKind.Damage, -2, IndexOf(c), amount, kind, c.Hp);
             if (c.IsPlayer && !c.Alive) KilledBy = cause;
+            if (!c.IsPlayer) AfterEnemyHit(c, amount, false);
         }
 
         private void Heal(Combatant c, int amount)
@@ -722,10 +745,12 @@ namespace Adventure.Core
 
         private void OnEnemyDown(Combatant e)
         {
-            if (Defeated.Contains(e)) return;
+            if (Defeated.Contains(e) || TryRevive(e)) return;
             Defeated.Add(e);
             Add(Names.Josa(e.Name, "을/를") + " 쓰러뜨렸다!", LogTone.Good);
-            Event(BattleEventKind.Defeat, -1, IndexOf(e));
+            int slot = IndexOf(e);
+            Event(BattleEventKind.Defeat, -1, slot);
+            if (e.Kit != null) AfterBossDown(e, slot);
         }
 
         private bool CheckEnd()
@@ -761,12 +786,13 @@ namespace Adventure.Core
             double drop = CharacterStats.DropBonus(Character) * DropMultiplier;
             foreach (var e in Defeated)
             {
+                if (e.NoReward) continue;
                 report.Exp += e.ExpReward;
                 report.Gold += e.GoldReward;
                 if (e.Species != null && guild != null) GuildSystem.OnEnemyKilled(guild, e.Species.Id, Floor);
                 RollDrops(e, drop, report);
             }
-            if (run != null) run.EnemiesDefeated += Defeated.Count;
+            if (run != null) run.EnemiesDefeated += Defeated.FindAll(e => !e.NoReward).Count;
             LootSystem.Apply(Character, run, report);
             return report;
         }
