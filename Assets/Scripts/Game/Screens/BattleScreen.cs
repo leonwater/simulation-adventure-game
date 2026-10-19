@@ -111,8 +111,8 @@ namespace Adventure.Game
 
         private void TopBar(Transform parent)
         {
-            var head = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 10, 6, 6), false, 6, TextAnchor.MiddleLeft, "header");
-            UI.Size(head, height: 58);
+            var head = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 12, 6, 6), false, 6, TextAnchor.MiddleLeft, "header");
+            UI.Size(head, height: 60);
             var title = UI.Label(head, _b.Floor + "층 · " + (_b.IsBoss ? "보스전" : "전투") + " " + UI.Color(_b.Turn + "턴째", Theme.SubHex), 15, Theme.Text, true);
             UI.Size(title, flexW: 1);
             Text speedLabel = null;
@@ -130,7 +130,7 @@ namespace Adventure.Game
             UI.Size(info, height: 44, width: 44);
             UI.CenteredIcon(info, "character", 22);
             Anchors.Set("battle.info", info);
-            IconButton(head, "Ⅱ", () =>
+            ScreenKit.PauseButton(head, () =>
             {
                 if (!_playing && !_finished && !_leaving) Pause();
             });
@@ -273,7 +273,7 @@ namespace Adventure.Game
                 int n = 0;
                 foreach (var s in c.Statuses.Visible())
                 {
-                    if (n++ >= 3) break; // 칸이 좁아 3개까지만
+                    if (n++ >= (enemy && _b.Enemies.Count > 2 ? 2 : 3)) break; // 칸이 좁아 3개까지 (적이 3마리 이상이면 2개)
                     bool debuff = StatusContainer.IsDebuff(s.Type);
                     UI.Pill(tags, Names.Of(s.Type) + (s.Turns >= 99 ? "" : s.Turns.ToString()), debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 10, 6);
                 }

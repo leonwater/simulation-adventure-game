@@ -185,7 +185,7 @@ namespace Adventure.Game
         private static RectTransform Action(Transform row, string label, ButtonKind kind, System.Action onClick)
         {
             var b = UI.TextButton(row, label, onClick, kind, 44, 14);
-            UI.Size(b, flexW: 1);
+            UI.Size(b, width: 0, flexW: 1);
             return (RectTransform)b.transform;
         }
 

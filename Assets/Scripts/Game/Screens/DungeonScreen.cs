@@ -117,12 +117,12 @@ namespace Adventure.Game
             {
                 var st = stats[i];
                 var row = UI.Row(body, 8);
-                UI.Size(row, height: 52);
-                UI.Icon(row, UI.StatIcon(st), 22);
+                UI.Size(row, height: 56);
+                UI.Icon(row, UI.StatIcon(st), 24);
                 var col = UI.Column(row, 1);
                 UI.Size(col, flexW: 1);
                 UI.Label(col, Names.Of(st), 14, Theme.Text, true);
-                UI.Label(col, CharacterStats.EffectLabel(C, st), 11, Theme.TextSub);
+                UI.Label(col, CharacterStats.EffectLabel(C, st), 12, Theme.TextSub);
                 int pending = draft.Pending(st);
                 ScreenKit.Stepper(row, CharacterStats.Total(C, st) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
                     () => Redraw(modal, draft, () => draft.Remove(st)), pending > 0,
@@ -135,10 +135,10 @@ namespace Adventure.Game
                 Overlay.Close(modal);
                 Toast("남은 포인트는 마을 캐릭터 화면에서도 배분할 수 있습니다");
             }, ButtonKind.Ghost);
-            UI.Size(later, flexW: 1);
+            UI.Size(later, width: 0, flexW: 1);
             var auto = UI.TextButton(buttons, "자동 배분", () => Redraw(modal, draft, draft.Auto));
             Anchors.Set("levelup.auto", auto);
-            UI.Size(auto, flexW: 1);
+            UI.Size(auto, width: 0, flexW: 1);
             UI.SetEnabled(auto, draft.Remaining > 0);
             var ok = UI.TextButton(buttons, "확정", () =>
             {
@@ -149,7 +149,7 @@ namespace Adventure.Game
                 Overlay.Close(modal);
                 Rebuild();
             }, ButtonKind.Primary);
-            UI.Size(ok, flexW: 1);
+            UI.Size(ok, width: 0, flexW: 1);
             UI.SetEnabled(ok, draft.HasChanges);
             Tutorial.OnLevelUp();
         }
@@ -211,7 +211,7 @@ namespace Adventure.Game
             Color fill = style == BottomStyle.Return ? Theme.ReturnBg : style == BottomStyle.Locked ? Theme.Hex("221A1B") : Theme.Button;
             Color border = style == BottomStyle.Return ? Theme.ReturnBorder : style == BottomStyle.Locked ? Theme.Hex("4E3838") : Theme.ButtonBorder;
             var b = UI.ButtonCard(parent, onClick, fill, border, 12, UI.Pad(4, 6), true, 2, 60, TextAnchor.MiddleCenter);
-            UI.Size(b, width: 48, minH: 60);
+            UI.Size(b, width: 48, minH: 60, flexW: 0);
             var img = UI.CenteredIcon(b, icon, 26);
             Color text = style == BottomStyle.Locked ? Theme.Hex("8A6E6C") : Theme.Text;
             if (style == BottomStyle.Locked) img.color = text;
@@ -253,7 +253,7 @@ namespace Adventure.Game
         /// <summary>탐험한 방: 푸른 카드 + "탐험함" (빛나지 않지만 눌리는 버튼으로 보이게, 수정 사항 #5).</summary>
         private static RectTransform VisitedButton(Transform parent, string title, string sub, System.Action onClick)
         {
-            var b = UI.ButtonCard(parent, onClick, Theme.BlueBg, Theme.BlueBorder, 12, UI.Pad(14, 8), true, 2, 54, TextAnchor.MiddleLeft);
+            var b = UI.ButtonCard(parent, onClick, Theme.BlueBg, Theme.BlueBorder, 12, UI.Pad(14, 8), true, 2, 60, TextAnchor.MiddleLeft);
             UI.Label(b, title, 15, Theme.BlueLight, true);
             if (!string.IsNullOrEmpty(sub)) UI.Label(b, sub, 12, Theme.BlueText);
             return b;
@@ -270,8 +270,8 @@ namespace Adventure.Game
             RectTransform row = null;
             for (int i = 0; i < run.Effects.Count; i++)
             {
-                // 한 줄에 3개씩
-                if (i % 3 == 0)
+                // 한 줄에 2개씩 (긴 이름 둘이어도 화면 폭을 넘지 않게)
+                if (i % 2 == 0)
                 {
                     row = UI.Row(parent, 6, null, TextAnchor.MiddleLeft);
                     UI.Size(row, height: 28);
@@ -280,8 +280,6 @@ namespace Adventure.Game
                 bool buff = IsBuff(fx.Type);
                 var tag = UI.ButtonCard(row, () => EffectInfo(run), buff ? Theme.BlueBg : Theme.RedBg, buff ? Theme.BlueBorder : Theme.RedBorder,
                     14, UI.Pad(10, 0), false, 0, 28, TextAnchor.MiddleCenter);
-                var fit = tag.gameObject.AddComponent<ContentSizeFitter>();
-                fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
                 UI.Label(tag, ExploreEffects.Name(fx.Type) + " · " + ExploreEffects.Remaining(fx), 12, buff ? Theme.BlueLight : Theme.RedLight, true,
                     TextAnchor.MiddleCenter, false, false);
             }

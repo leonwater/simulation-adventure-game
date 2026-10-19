@@ -25,14 +25,14 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), C);
-            ScreenKit.NpcIllustration(page, "길드 접수원", _line, 290);
+            ScreenKit.NpcIllustration(page, "길드 접수원", _line, 260);
             UI.Spacer(page, 0, 6);
             ScreenKit.Tabs(page, new[] { "퀘스트", "등급", "창고" }, _tab, i =>
             {
                 _tab = i;
                 Rebuild();
             });
-            var body = UI.Scroll(page, out _, 8, UI.Pad(12, 12, 12, 16), "guild" + _tab);
+            var body = UI.Scroll(page, out _, 8, UI.Pad(16, 16, 12, 16), "guild" + _tab);
             if (_tab == 0) Quests(body);
             else if (_tab == 1) RankTab(body);
             else StorageTab(body);
@@ -117,13 +117,13 @@ namespace Adventure.Game
                     Overlay.Close(modal);
                     Abandon(q);
                 }, ButtonKind.Ghost);
-                UI.Size(quit, flexW: 1);
+                UI.Size(quit, width: 0, flexW: 1);
                 var report = UI.TextButton(row, "보고", () =>
                 {
                     Overlay.Close(modal);
                     TurnIn(q);
                 }, ButtonKind.Primary);
-                UI.Size(report, flexW: 1);
+                UI.Size(report, width: 0, flexW: 1);
                 UI.SetEnabled(report, GuildSystem.IsComplete(q, C));
                 return;
             }

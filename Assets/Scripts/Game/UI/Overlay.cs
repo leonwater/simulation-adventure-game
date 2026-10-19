@@ -169,13 +169,13 @@ namespace Adventure.Game
             UI.Label(body, message, 14, Theme.TextBody);
             var row = UI.Row(body, 8);
             var c = UI.TextButton(row, cancel, () => doCancel(), ButtonKind.Ghost);
-            UI.Size(c, flexW: 1);
+            UI.Size(c, width: 0, flexW: 1);
             var o = UI.TextButton(row, ok, () =>
             {
                 Close(modal);
                 onOk?.Invoke();
             }, okKind);
-            UI.Size(o, flexW: 1);
+            UI.Size(o, width: 0, flexW: 1);
         }
 
         public void Message(string title, string message, string ok = "확인", Action onOk = null)

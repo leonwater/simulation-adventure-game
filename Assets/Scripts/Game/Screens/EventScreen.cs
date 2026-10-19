@@ -23,12 +23,8 @@ namespace Adventure.Game
             if (_floor == 0) _floor = S.Run?.Floor ?? 1; // 귀환 결과 뒤에도 층 표시 유지
             int floor = _floor;
             var page = ScreenKit.Page(root);
-            var head = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 6, 6), false, 8, TextAnchor.MiddleLeft, "header");
-            UI.Size(head, height: 58);
-            var t = UI.Label(head, floor + "층 · 특수 이벤트", 15, Theme.Text, true);
-            UI.Size(t, flexW: 1);
-            if (C != null) UI.Label(head, "HP " + C.CurrentHp + "/" + CharacterStats.MaxHp(C), 13, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            ScreenKit.BottomLine(head);
+            // 던전·전투와 같은 머리줄 (HP 숫자 + 막대)
+            if (C != null) ScreenKit.DungeonHeader(page, floor + "층 · 특수 이벤트", null, C, null);
 
             var body = UI.Scroll(page, out _, 14, UI.Pad(0, 0, 0, 16));
             UI.Illustration(body, _event.Illustration, 300);

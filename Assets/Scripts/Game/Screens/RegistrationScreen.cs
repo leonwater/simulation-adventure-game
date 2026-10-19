@@ -194,9 +194,9 @@ namespace Adventure.Game
             UI.Sub(card, "직업과 난이도는 등록 후 바꿀 수 없습니다.");
             var row = UI.Row(body, 8);
             var back = UI.TextButton(row, "이전", Prev, ButtonKind.Ghost);
-            UI.Size(back, flexW: 1);
+            UI.Size(back, width: 0, flexW: 1);
             var ok = UI.TextButton(row, "등록하기", Register, ButtonKind.Primary);
-            UI.Size(ok, flexW: 2);
+            UI.Size(ok, width: 0, flexW: 2);
         }
 
         private static void Row(Transform parent, string k, string v)
@@ -213,9 +213,9 @@ namespace Adventure.Game
             UI.Spacer(body, 0, 4);
             var row = UI.Row(body, 8);
             var back = UI.TextButton(row, "이전", Prev, ButtonKind.Ghost);
-            UI.Size(back, flexW: 1);
+            UI.Size(back, width: 0, flexW: 1);
             var ok = UI.TextButton(row, next, Next, ButtonKind.Primary);
-            UI.Size(ok, flexW: 2);
+            UI.Size(ok, width: 0, flexW: 2);
         }
 
         private void Register()

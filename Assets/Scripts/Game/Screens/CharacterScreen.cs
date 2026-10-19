@@ -42,10 +42,10 @@ namespace Adventure.Game
                 _draft.Auto();
                 Rebuild();
             });
-            UI.Size(auto, flexW: 1);
+            UI.Size(auto, width: 0, flexW: 1);
             UI.SetEnabled(auto, C.UnspentPoints > 0);
             var ok = UI.TextButton(buttons, "확정", Commit, ButtonKind.Primary);
-            UI.Size(ok, flexW: 1);
+            UI.Size(ok, width: 0, flexW: 1);
             UI.SetEnabled(ok, _draft.HasChanges);
             UI.TextButton(body, "상세 능력치 보기", Details, ButtonKind.Ghost);
 
@@ -77,7 +77,7 @@ namespace Adventure.Game
         {
             bool met = cur >= req;
             var l = UI.Label(parent, label + " " + UI.Color(Math.Min(cur, req) + "/" + req, met ? Theme.GreenHex : "#ECE7DD"), 13, Theme.Text);
-            UI.Size(l, flexW: 1);
+            UI.Size(l, width: 0, flexW: 1); // 세 조건을 같은 폭으로
         }
 
         private void StatsPanel(Transform parent)

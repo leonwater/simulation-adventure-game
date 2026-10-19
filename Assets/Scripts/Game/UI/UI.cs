@@ -246,6 +246,9 @@ namespace Adventure.Game
             Colors(kind, out var fill, out var border, out var textColor);
             var card = Card(parent, fill, border, 10, Pad(14, 0), false, 0, TextAnchor.MiddleCenter, "button");
             var le = Size(card, height: height);
+            // 안의 글자가 늘어나는 칸이라 버튼 전체가 줄을 채우려 하므로, 늘어나지 않게 막는다
+            // (늘리려면 UI.Size(b, flexW: 1), 같은 폭으로 나누려면 UI.Size(b, width: 0, flexW: 1))
+            le.flexibleWidth = 0;
             if (width > 0)
             {
                 le.preferredWidth = width;

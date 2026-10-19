@@ -27,7 +27,7 @@ namespace Adventure.Game
             {
                 var def = st.Def;
                 if (def == null) continue;
-                var row = UI.Row(body, 10);
+                var row = UI.Row(body, 10, UI.Pad(0, 0, 8, 8));
                 UI.Size(row, minH: 64);
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
@@ -35,7 +35,7 @@ namespace Adventure.Game
                 UI.Sub(col, def.Description + (C.Skills.IsEquipped(def.Id) ? " · 장착 중" : ""));
                 int cost = SkillSystem.TrainingCost(st);
                 var state = st;
-                var b = UI.TextButton(row, cost == 0 ? "최대" : "수련 · " + cost.ToString("#,0") + "G", () => Train(state), ButtonKind.Outline, 40, 13);
+                var b = UI.TextButton(row, cost == 0 ? "최대" : "수련 · " + cost.ToString("#,0") + "G", () => Train(state), ButtonKind.Outline, 40, 13, 104);
                 UI.SetEnabled(b, cost > 0 && C.Gold >= cost);
                 ScreenKit.BottomLine(row, Theme.LineSoft);
             }

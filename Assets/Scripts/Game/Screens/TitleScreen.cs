@@ -67,13 +67,13 @@ namespace Adventure.Game
 
             var row = UI.Row(body, 8);
             var cancel = UI.TextButton(row, "취소", () => Overlay.Close(modal), ButtonKind.Ghost);
-            UI.Size(cancel, flexW: 1);
+            UI.Size(cancel, width: 0, flexW: 1);
             var ok = UI.TextButton(row, "이어하기", () =>
             {
                 Overlay.Close(modal);
                 Continue();
             }, ButtonKind.Primary);
-            UI.Size(ok, flexW: 1);
+            UI.Size(ok, width: 0, flexW: 1);
         }
 
         private static void Pair(Transform parent, string k1, string v1, string k2, string v2)
@@ -86,7 +86,7 @@ namespace Adventure.Game
         private static void Cell(Transform row, string key, string value)
         {
             var col = UI.Column(row, 2);
-            UI.Size(col, flexW: 1);
+            UI.Size(col, width: 0, flexW: 1); // 두 칸을 같은 폭으로
             UI.Sub(col, key);
             UI.Label(col, value, 14, Theme.Text, true);
         }

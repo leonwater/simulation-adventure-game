@@ -105,7 +105,7 @@ namespace Adventure.Game
         private static void Cell(Transform row, string label, string value)
         {
             var cell = UI.Row(row, 6);
-            UI.Size(cell, flexW: 1, height: 22);
+            UI.Size(cell, width: 0, flexW: 1, height: 22); // 두 칸을 같은 폭으로
             var l = UI.Label(cell, label, 13, Theme.TextSub);
             UI.Size(l, flexW: 1);
             UI.Label(cell, value, 13, Theme.Text, true, TextAnchor.MiddleRight, false, false);

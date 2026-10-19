@@ -33,7 +33,7 @@ namespace Adventure.Game
                 Rebuild();
             });
             Anchors.Set("shop.sell", Anchors.Get("tab.1"));
-            var inner = UI.Scroll(page, out _, 14, UI.Pad(12, 12, 12, 16), "shop" + _tab);
+            var inner = UI.Scroll(page, out _, 14, UI.Pad(16, 16, 12, 16), "shop" + _tab);
             if (_tab == 0) BuyTab(inner, shop);
             else SellTab(inner);
 
@@ -62,7 +62,7 @@ namespace Adventure.Game
             UI.Sub(tcol, "자동 갱신까지");
             _timer = UI.Label(tcol, TimerText(), 18, Theme.Text);
             UI.Label(refresh, ShopSystem.RerollCost(shop) + "G", 13, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
-            UI.TextButton(refresh, "갱신", ConfirmReroll, ButtonKind.Outline, 40, 12, 32);
+            UI.TextButton(refresh, "갱신", ConfirmReroll, ButtonKind.Outline, 40, 13, 64);
 
             // 장비
             var eqBox = UI.Column(inner, 8);
@@ -70,14 +70,14 @@ namespace Adventure.Game
             UI.Label(eqBox, "장비", 14, Theme.Text, true);
             if (shop.Equipment.Count == 0) UI.Sub(eqBox, "장비가 모두 팔렸습니다. 다음 갱신을 기다리세요.");
             UI.Sub(eqBox, "카드를 누르면 자세한 정보와 착용 장비 비교가 나옵니다.");
-            var grid = UI.Grid(eqBox, 3, Theme.ScreenWidth - 24, 104, 8);
+            var grid = UI.Grid(eqBox, 3, ScreenKit.ContentWidth, 104, 8);
             foreach (var item in shop.Equipment) EquipCell(grid, item);
 
             // 소모품 · 스킬 · 가방
             var goods = UI.Column(inner, 8);
             Anchors.Set("shop.goods", goods);
             UI.Label(goods, "소모품 · 스킬 · 가방", 14, Theme.Text, true);
-            var ggrid = UI.Grid(goods, 3, Theme.ScreenWidth - 24, 104, 8);
+            var ggrid = UI.Grid(goods, 3, ScreenKit.ContentWidth, 104, 8);
             foreach (var g in shop.Goods) GoodCell(ggrid, g);
             BagCell(ggrid);
         }
@@ -96,7 +96,7 @@ namespace Adventure.Game
                 UI.Sub(inner, "가방이 비어 있습니다.");
                 return;
             }
-            var grid = UI.Grid(inner, 3, Theme.ScreenWidth - 24, 104, 8);
+            var grid = UI.Grid(inner, 3, ScreenKit.ContentWidth, 104, 8);
             foreach (var item in C.Inventory.Items) SellCell(grid, item);
         }
 
@@ -105,7 +105,7 @@ namespace Adventure.Game
             var it = item;
             var cell = UI.ButtonCard(grid, () => SellDialog(it), Theme.Card, Theme.CardBorder, 10, UI.Pad(10, 10), true, 5, 104, TextAnchor.UpperLeft);
             ItemGrid.KindLine(cell, item, 12);
-            UI.Label(cell, ItemGrid.Short(item.DisplayName) + (item.Count > 1 ? " ×" + item.Count : ""), 14, ItemGrid.NameColor(item), true, TextAnchor.MiddleLeft, false, false);
+            UI.Label(cell, ItemGrid.Short(item.DisplayName, 6) + (item.Count > 1 ? " ×" + item.Count : ""), 13, ItemGrid.NameColor(item), true, TextAnchor.MiddleLeft, false, false);
             if (item.Kind == ItemKind.Equipment) UI.Label(cell, ItemGrid.LevelCompare(C, item, false), 12, Theme.TextSub);
             UI.Spacer(cell);
             UI.Label(cell, (item.SellPrice * item.Count).ToString("#,0") + " G", 14, Theme.Gold, true);
@@ -190,12 +190,10 @@ namespace Adventure.Game
             Text buyLabel = null;
             if (g.Unlimited)
             {
+                // 능력치 배분과 같은 고정 폭 − 값 + (값이 늘어도 버튼이 움직이지 않는다) + 10개씩
                 var row = UI.Row(body, 8, null, TextAnchor.MiddleCenter);
-                UI.TextButton(row, "−", () => SetCount(-1), ButtonKind.Ghost, 44, 18, 56);
-                countLabel = UI.Label(row, "1개", 16, Theme.Text, true, TextAnchor.MiddleCenter);
-                UI.Size(countLabel, flexW: 1);
-                UI.TextButton(row, "+", () => SetCount(1), ButtonKind.Ghost, 44, 18, 56);
-                UI.TextButton(row, "+10", () => SetCount(10), ButtonKind.Ghost, 44, 14, 56);
+                ScreenKit.Stepper(row, "1개", () => SetCount(-1), true, () => SetCount(1), true, out countLabel);
+                UI.TextButton(row, "+10", () => SetCount(10), ButtonKind.Outline, 44, 16, 56);
             }
             var buy = UI.TextButton(body, "", () =>
             {
@@ -278,10 +276,10 @@ namespace Adventure.Game
             if (item.Count > 1)
             {
                 var one = UI.TextButton(row, "1개 · " + item.SellPrice + "G", () => Sell(item, 1, modal), ButtonKind.Secondary);
-                UI.Size(one, flexW: 1);
+                UI.Size(one, width: 0, flexW: 1);
             }
             var all = UI.TextButton(row, (item.Count > 1 ? "전부 · " : "판매 · ") + (item.SellPrice * item.Count).ToString("#,0") + "G", () => Sell(item, item.Count, modal), ButtonKind.Primary);
-            UI.Size(all, flexW: 1);
+            UI.Size(all, width: 0, flexW: 1);
         }
 
         private void Sell(ItemInstance item, int count, GameObject modal)

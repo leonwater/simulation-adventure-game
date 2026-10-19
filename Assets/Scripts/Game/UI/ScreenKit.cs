@@ -60,7 +60,7 @@ namespace Adventure.Game
         public static void GoldAndSettings(Transform bar, Character c, float width = -1)
         {
             var right = UI.Row(bar, 6, null, TextAnchor.MiddleRight, "gold-settings");
-            if (width > 0) UI.Size(right, width: width);
+            if (width > 0) UI.Size(right, width: width, flexW: 0); // 왼쪽 칸(120)과 같은 폭이라 제목이 가운데
             var gold = UI.Label(right, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             if (width > 0) UI.Size(gold, flexW: 1);
             var gear = UI.ButtonCard(right, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
@@ -124,7 +124,7 @@ namespace Adventure.Game
             {
                 int idx = i;
                 var item = UI.ButtonCard(nav, () => Navigate(idx), Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, 60, TextAnchor.MiddleCenter);
-                UI.Size(item, flexW: 1);
+                UI.Size(item, width: 0, flexW: 1); // 메뉴 칸을 같은 폭으로
                 UI.Label(item, NavLabels[i], 13, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
                 if (i != active && Alerts.Nav(i)) UI.Dot(item, 9, 12);
             }
@@ -154,7 +154,7 @@ namespace Adventure.Game
             if (!string.IsNullOrEmpty(sub)) UI.Sub(left, sub);
             int max = CharacterStats.MaxHp(c);
             var hp = UI.Column(bar, 3, null, TextAnchor.MiddleRight);
-            UI.Size(hp, width: 110);
+            UI.Size(hp, width: 110, flexW: 0);
             UI.Label(hp, "HP " + c.CurrentHp + "/" + max, 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             if (showHpBar) UI.ProgressBar(hp, (float)c.CurrentHp / max, Theme.Red, 8, 110);
             if (onPause != null) PauseButton(bar, onPause);
@@ -172,15 +172,20 @@ namespace Adventure.Game
         /// 능력치 배분 칸: − · 값 · + 를 고정 폭(152) 안에 절대 위치로 놓아 줄마다 간격이 똑같다
         /// (캐릭터 화면·던전 레벨 업 창 공통).
         /// </summary>
-        public static RectTransform Stepper(Transform row, string value, Action onMinus, bool minusEnabled, Action onPlus, bool plusEnabled)
+        public static RectTransform Stepper(Transform row, string value, Action onMinus, bool minusEnabled, Action onPlus, bool plusEnabled) =>
+            Stepper(row, value, onMinus, minusEnabled, onPlus, plusEnabled, out _);
+
+        /// <param name="valueLabel">가운데 값 글자 (값만 바꿔 쓸 때).</param>
+        public static RectTransform Stepper(Transform row, string value, Action onMinus, bool minusEnabled, Action onPlus, bool plusEnabled, out Text valueLabel)
         {
             var stepper = UI.Rect(row, "stepper");
             UI.Size(stepper, height: 44, width: 152);
             var minus = UI.TextButton(stepper, "−", onMinus, ButtonKind.Outline, 44, 20, 44);
             PlaceInStepper(minus, 0, 44);
             UI.SetEnabled(minus, minusEnabled, 0.3f);
-            var label = UI.Label(stepper, value, 16, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
+            var label = UI.Label(stepper, value, 15, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
             PlaceInStepper(label, 44, 64);
+            valueLabel = label;
             var plus = UI.TextButton(stepper, "+", onPlus, ButtonKind.Outline, 44, 20, 44);
             PlaceInStepper(plus, 108, 44);
             UI.SetEnabled(plus, plusEnabled, 0.3f);
@@ -198,7 +203,7 @@ namespace Adventure.Game
         }
 
         /// <summary>방 안에서 하는 행동 (거래·이벤트 선택 등): 이동(금색·푸른색)·귀환(초록)과 구분되는 보라색.</summary>
-        public static RectTransform ActionButton(Transform parent, string title, string sub, string right, bool rightIsPercent, Action onClick, bool enabled = true, float minHeight = 56)
+        public static RectTransform ActionButton(Transform parent, string title, string sub, string right, bool rightIsPercent, Action onClick, bool enabled = true, float minHeight = 60)
         {
             var b = UI.ButtonCard(parent, onClick, Theme.ActionBg, Theme.ActionBorder, 12, UI.Pad(14, 8), false, 10, minHeight, TextAnchor.MiddleLeft);
             var left = UI.Column(b, 2, null, TextAnchor.MiddleLeft);
@@ -227,10 +232,10 @@ namespace Adventure.Game
             var b = UI.ButtonCard(parent, onClick, Theme.Button, Theme.ButtonBorder, 10, UI.Pad(14, 6), false, 10, minHeight);
             var left = UI.Column(b, 2, null, TextAnchor.MiddleLeft);
             UI.Size(left, flexW: 1);
-            UI.Label(left, label, 15, Theme.Text, !string.IsNullOrEmpty(sub));
+            UI.Label(left, label, 15, Theme.Text, true);
             if (!string.IsNullOrEmpty(sub)) UI.Sub(left, sub);
             if (!string.IsNullOrEmpty(right))
-                UI.Label(b, right, rightIsPercent ? 14 : 12, rightIsPercent ? Theme.Gold : Theme.TextSub, rightIsPercent, TextAnchor.MiddleRight, false, false);
+                UI.Label(b, right, rightIsPercent ? 14 : 13, rightIsPercent ? Theme.Gold : Theme.TextSub, rightIsPercent, TextAnchor.MiddleRight, false, false);
             if (!enabled) UI.SetEnabled(b, false);
             return b;
         }
@@ -326,14 +331,14 @@ namespace Adventure.Game
         /// <summary>탭 줄. 선택된 탭은 금색 + 밑줄.</summary>
         public static void Tabs(Transform parent, string[] labels, int active, Action<int> onSelect)
         {
-            var row = UI.Row(parent, 0, UI.Pad(12, 0), TextAnchor.MiddleCenter, "tabs");
+            var row = UI.Row(parent, 0, UI.Pad(16, 0), TextAnchor.MiddleCenter, "tabs");
             row.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
             UI.Size(row, height: 44);
             for (int i = 0; i < labels.Length; i++)
             {
                 int idx = i;
                 var tab = UI.ButtonCard(row, () => onSelect(idx), Theme.Bg, Theme.Bg, 0.01f, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
-                UI.Size(tab, flexW: 1);
+                UI.Size(tab, width: 0, flexW: 1); // 탭을 같은 폭으로
                 UI.Label(tab, labels[i], 14, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
                 if (i == active) BottomLine(tab, Theme.Accent);
                 Anchors.Set("tab." + i, tab);
