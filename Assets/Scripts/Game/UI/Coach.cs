@@ -152,21 +152,21 @@ namespace Adventure.Game
             if (action) UI.Label(row, (above ? "▼" : "▲") + " 표시된 곳을 누르세요", 12, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
             else UI.TextButton(row, "다음", next, ButtonKind.Primary, 40, 14, 88);
 
-            // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 (첫 안내에는 없음)
+            // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 작게 (첫 튜토리얼 동안에는 없음)
             if (onSkip != null)
             {
                 var skip = UI.ButtonCard(holder, () =>
                 {
                     Clear();
                     onSkip();
-                }, Theme.Dialog, Theme.ButtonBorder, 10, UI.Pad(12, 0), false, 0, 40, TextAnchor.MiddleCenter);
+                }, Theme.Dialog, Theme.ButtonBorder, 8, UI.Pad(10, 0), false, 0, 30, TextAnchor.MiddleCenter);
                 skip.anchorMin = skip.anchorMax = new Vector2(1, 1);
                 skip.pivot = new Vector2(1, 1);
-                skip.anchoredPosition = new Vector2(-10, -8);
+                skip.anchoredPosition = new Vector2(-10, -10);
                 var fit = skip.gameObject.AddComponent<ContentSizeFitter>();
                 fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
                 fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                UI.Label(skip, "튜토리얼 건너뛰기 ›", 13, Theme.TextBody, false, TextAnchor.MiddleCenter, false, false);
+                UI.Label(skip, "건너뛰기", 12, Theme.TextBody, false, TextAnchor.MiddleCenter, false, false);
             }
 
             float x = area.center.x;

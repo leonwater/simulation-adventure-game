@@ -17,7 +17,7 @@ namespace Adventure.Game
         public override void Build(RectTransform root)
         {
             var page = ScreenKit.Page(root);
-            ScreenKit.TopBar(page, "수련장", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
+            ScreenKit.TopBar(page, "수련장", "마을", () => Go(new TownScreen()), C);
             ScreenKit.NpcIllustration(page, "수련 교관", _line, 260);
             var body = UI.Scroll(page, out _, 0, UI.Pad(16, 16, 16, 16), "training");
             Anchors.Set("train.list", body);

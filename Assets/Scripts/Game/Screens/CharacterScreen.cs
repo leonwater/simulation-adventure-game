@@ -19,6 +19,7 @@ namespace Adventure.Game
         {
             if (_draft == null) _draft = new AllocationDraft(C);
             var page = ScreenKit.Page(root);
+            ScreenKit.TopBar(page, "캐릭터", "마을", () => Go(new TownScreen()), C);
             var body = UI.Scroll(page, out _, 12, UI.Pad(16, 16), "character");
 
             var head = UI.Row(body, 8, null, TextAnchor.LowerLeft);

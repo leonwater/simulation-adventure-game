@@ -37,6 +37,38 @@ namespace Adventure.Game
             BottomLine(bar);
         }
 
+        /// <summary>마을 쪽 화면 머리줄: 왼쪽 뒤로 · 가운데 제목 · 오른쪽 골드 + 설정 버튼 (던전 밖 모든 화면 공통).</summary>
+        public static void TopBar(Transform parent, string title, string backLabel, Action onBack, Character c)
+        {
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(12, 12, 6, 6), false, 0, TextAnchor.MiddleCenter, "topbar");
+            UI.Size(bar, height: 57);
+            var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
+            UI.Size(left, width: 120);
+            if (onBack != null)
+            {
+                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
+                Anchors.Set("topbar.back", back);
+                UI.Label(back, "‹ " + backLabel, 14, Theme.Gold, false, TextAnchor.MiddleLeft, false, false);
+            }
+            var t = UI.Label(bar, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
+            UI.Size(t, flexW: 1);
+            GoldAndSettings(bar, c, 120);
+            BottomLine(bar);
+        }
+
+        /// <summary>오른쪽 끝: 골드 + 설정 버튼 (마을 머리줄과 같은 모양).</summary>
+        public static void GoldAndSettings(Transform bar, Character c, float width = -1)
+        {
+            var right = UI.Row(bar, 6, null, TextAnchor.MiddleRight, "gold-settings");
+            if (width > 0) UI.Size(right, width: width);
+            var gold = UI.Label(right, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            if (width > 0) UI.Size(gold, flexW: 1);
+            var gear = UI.ButtonCard(right, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
+            UI.Size(gear, width: 40, height: 40);
+            UI.Icon(gear, "settings", 22);
+            Anchors.Set("topbar.settings", gear);
+        }
+
         public static void BottomLine(RectTransform rt, Color? color = null)
         {
             var line = UI.Image(rt, color ?? Theme.Line, 0, "line");
@@ -75,11 +107,8 @@ namespace Adventure.Game
             var barRow = UI.Row(left, 8);
             UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 100);
             UI.Label(barRow, c.JobData.Name + " Lv." + c.Level, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
-            UI.Label(bar, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            // 오른쪽 위 설정 버튼 → 설정 창
-            var gear = UI.ButtonCard(bar, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
-            UI.Size(gear, width: 44, height: 44);
-            UI.Icon(gear, "settings", 24);
+            // 오른쪽 위: 골드 + 설정 버튼 → 설정 창 (다른 마을 화면 머리줄과 같다)
+            GoldAndSettings(bar, c);
             BottomLine(bar);
         }
 

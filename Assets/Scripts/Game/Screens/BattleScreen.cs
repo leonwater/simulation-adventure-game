@@ -94,7 +94,11 @@ namespace Adventure.Game
                 _pending = null;
                 StartPlayback(events);
             }
-            else Tutorial.OnBattle();
+            else
+            {
+                Tutorial.OnBattle();
+                if (!Coach.Active) Tutorial.OnBossIntent();
+            }
         }
 
         private void FixTarget()
@@ -200,6 +204,7 @@ namespace Adventure.Game
             bool warn = !string.IsNullOrEmpty(intent);
             var name = UI.Label(_stage, warn ? "! " + intent : title, enemy ? 11 : 12, warn ? Theme.Hex("FF9A4A") : alive ? Theme.Text : Theme.TextSub,
                 !enemy || warn, TextAnchor.MiddleCenter, false, false);
+            if (warn) Anchors.Set("battle.intent", name);
             Place(name.rectTransform, new Vector2(center.x - width / 2f, top - (enemy ? 44 : 30)), new Vector2(width, 16));
             if (!enemy) v.HpText = name;
             else

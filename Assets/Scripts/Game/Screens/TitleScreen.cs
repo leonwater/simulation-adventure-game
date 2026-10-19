@@ -103,10 +103,10 @@ namespace Adventure.Game
         }
     }
 
-    /// <summary>프롤로그 2~3줄 → 길드 등록.</summary>
+    /// <summary>프롤로그 (던전이 나타난 세상과 모험가) → 길드 등록.</summary>
     public class PrologueScreen : ScreenBase
     {
-        private const string Story = "긴 여행 끝에, 던전 입구의 작은 마을에 도착했다.\n\n등불 마을 — 끝을 알 수 없는 던전 위에 세워진 곳.\n\n모험가가 되려면 먼저 길드에 이름을 올려야 한다.";
+        private const string Story = "평화롭던 세상에 어느 날 갑자기 던전들이 나타났다.\n\n던전에서 쏟아져 나온 몬스터들은 사람들을 약탈하고 죽였다.\n\n소중한 사람들을 지키기 위해, 혹은 명예를 위해.\n저마다의 이유로 던전에 도전하는 이들이 나타났다.\n\n사람들은 그들을 '모험가'라 불렀다.";
         private Typewriter _tw;
 
         public override bool OnBack()

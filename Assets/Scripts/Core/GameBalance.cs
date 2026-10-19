@@ -65,7 +65,6 @@ namespace Adventure.Core
         };
 
         // ── 인벤토리 · 창고 ─────────────────────────────────────
-        public const int InventoryColumns = 5;
         public const int InventoryStart = 20;
         public const int InventoryPerBag = 5;
         public const int InventoryMax = 60;

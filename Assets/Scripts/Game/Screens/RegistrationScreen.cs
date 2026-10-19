@@ -16,10 +16,18 @@ namespace Adventure.Game
         private Job _job = Job.Warrior;
         private Difficulty _difficulty = Difficulty.Normal;
 
+        private static readonly string[] DifficultyPitch =
+        {
+            "초보자에게 추천",
+            "일반적인 모험가에게 추천",
+            "숙련된 모험가에게 추천",
+            "목숨 1개로 던전 격파",
+        };
+
         private static readonly string[] DifficultyDetail =
         {
             "적 능력치 ×0.75 · 다음 방의 종류를 미리 알 수 있음",
-            "기준 난이도 · 처음이라면 추천",
+            "기준 난이도 · 방 종류는 들어가야 알 수 있음",
             "적 능력치 ×1.25 · 방 종류는 들어가야 알 수 있음",
             "적 능력치 ×1.25 · 쓰러지면 캐릭터와 저장이 모두 사라짐",
         };
@@ -164,7 +172,9 @@ namespace Adventure.Game
                     _difficulty = dd;
                     Rebuild();
                 }, on ? Theme.AccentBg : Theme.Card, on ? Theme.Accent : Theme.ButtonBorder, 12, UI.Pad(14, 10), true, 3, 60);
-                UI.Label(card, Names.Of(d), 16, on ? Theme.Gold : d == Difficulty.Hardcore ? Theme.RedLight : Theme.Text, true);
+                var title = UI.Row(card, 8, null, TextAnchor.MiddleLeft);
+                UI.Label(title, Names.Of(d), 16, on ? Theme.Gold : d == Difficulty.Hardcore ? Theme.RedLight : Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+                UI.Label(title, DifficultyPitch[(int)d], 13, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
                 UI.Sub(card, DifficultyDetail[(int)d]);
             }
             UI.Sub(body, "공통: 쓰러지면 골드 30%·경험치 일부와 가방 속 아이템을 잃고 마을로 돌아옵니다 (하드코어 제외).");

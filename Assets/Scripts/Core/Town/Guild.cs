@@ -127,6 +127,17 @@ namespace Adventure.Core
             return q;
         }
 
+        /// <summary>목표 (수락 전 카드): "고블린 4마리 처치" · "점액 3개 채집" · "보스 처치".</summary>
+        public static string GoalText(Quest q)
+        {
+            switch (q.Kind)
+            {
+                case QuestKind.Hunt: return q.Required + "마리 처치";
+                case QuestKind.Collect: return q.Required + "개 채집";
+                default: return "보스 처치";
+            }
+        }
+
         public static string ProgressText(Quest q, Character c)
         {
             switch (q.Kind)

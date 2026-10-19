@@ -26,6 +26,7 @@ namespace Adventure.Game
                 S.Save();
             }
             var page = ScreenKit.Page(root);
+            ScreenKit.TopBar(page, "스킬", "마을", () => Go(new TownScreen()), C);
             var body = UI.Scroll(page, out _, 12, UI.Pad(16, 16), "skills");
             int slots = RankSystem.SkillSlots(C.Rank);
 

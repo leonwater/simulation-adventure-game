@@ -197,23 +197,6 @@ namespace Adventure.Core
             }
         }
 
-        /// <summary>미니맵 칸에 쓰는 한 글자.</summary>
-        public static string ShortOf(RoomType r)
-        {
-            switch (r)
-            {
-                case RoomType.Start: return "시";
-                case RoomType.Battle: return "전";
-                case RoomType.Event: return "이";
-                case RoomType.Treasure: return "보";
-                case RoomType.Rest: return "휴";
-                case RoomType.Merchant: return "상";
-                case RoomType.Return: return "귀";
-                case RoomType.Boss: return "B";
-                default: return "?";
-            }
-        }
-
         public static string Gold(long g) => g.ToString("#,0") + " G";
 
         /// <summary>마지막 글자에 받침이 있는지 (한글이 아니면 읽는 소리 기준으로 대략 판단).</summary>

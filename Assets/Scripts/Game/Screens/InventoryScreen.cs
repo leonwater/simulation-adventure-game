@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Adventure.Game
 {
-    /// <summary>가방·장비: 장비 8칸, 5열 가방, 선택 아이템 정보(착용·판매·사용), 사망 손실 안내.</summary>
+    /// <summary>가방·장비: 장비 8칸, 4열 가방(종류 색 원·등급 색 이름·착용 레벨·비교), 선택 아이템 정보(착용·판매·사용), 사망 손실 안내.</summary>
     public class InventoryScreen : ScreenBase
     {
         private readonly bool _fromDungeon;
@@ -31,6 +31,7 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             if (_fromDungeon) ScreenKit.TopBar(page, "가방", "던전", Back, "HP " + C.CurrentHp + "/" + CharacterStats.MaxHp(C));
+            else ScreenKit.TopBar(page, "가방", "마을", Back, C);
             var body = UI.Scroll(page, out _, 10, UI.Pad(16, 14), "inventory");
 
             UI.Label(body, "장착 장비", 14, Theme.Text, true);
@@ -46,6 +47,7 @@ namespace Adventure.Game
                 var expand = UI.TextButton(head, "가방 확장", () => Go(new ShopScreen()), ButtonKind.Ghost, 40, 13);
                 UI.SetEnabled(expand, ShopSystem.CanBuyBag(C));
             }
+            ItemGrid.Legend(body);
             ItemGrid.Build(body, C.Inventory, _selected, item =>
             {
                 _selected = item.Uid;

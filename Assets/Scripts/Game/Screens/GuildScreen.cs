@@ -24,7 +24,7 @@ namespace Adventure.Game
         public override void Build(RectTransform root)
         {
             var page = ScreenKit.Page(root);
-            ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), Names.Gold(C.Gold));
+            ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), C);
             ScreenKit.NpcIllustration(page, "길드 접수원", _line, 290);
             UI.Spacer(page, 0, 6);
             ScreenKit.Tabs(page, new[] { "퀘스트", "등급", "창고" }, _tab, i =>
@@ -39,7 +39,7 @@ namespace Adventure.Game
             Tutorial.OnGuild(_tab);
         }
 
-        // ── 퀘스트 (간략 카드, 누르면 상세) ──
+        // ── 퀘스트 (카드: 등급 · 이름 · 목표/진행 · 보상, 누르면 상세) ──
 
         private void Quests(Transform body)
         {
@@ -63,7 +63,7 @@ namespace Adventure.Game
         {
             bool done = active && GuildSystem.IsComplete(q, C);
             var card = UI.ButtonCard(parent, () => QuestDetail(q, active), active ? Theme.BlueBg : Theme.Card, done ? Theme.Accent : active ? Theme.Blue : Theme.CardBorder,
-                10, UI.Pad(10, 4), false, 8, 50);
+                10, UI.Pad(10, 6), false, 8, 66);
             if (active)
             {
                 // 진행 중인 의뢰는 굵은(2px) 테두리
@@ -74,8 +74,10 @@ namespace Adventure.Game
             var col = UI.Column(card, 1);
             UI.Size(col, flexW: 1);
             UI.Label(col, q.Title, 14, Theme.Text, true);
-            UI.Label(col, active ? "진행 중 · " + GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + q.RewardGold.ToString("#,0") + "G", 12,
-                done ? Theme.Gold : Theme.TextSub);
+            UI.Label(col, (active ? "진행 중 · " + GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + GuildSystem.GoalText(q)),
+                12, done ? Theme.Gold : Theme.TextSub);
+            // 보상은 카드에 바로 (골드 · 경험치)
+            UI.Label(col, "보상 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · " + UI.Color("경험치 " + q.RewardExp.ToString("#,0"), "#8FC7FF"), 12, Theme.TextBody);
             if (done) SmallButton(card, "보고", () => TurnIn(q), ButtonKind.Primary);
             else if (active) SmallButton(card, "포기", () => Abandon(q), ButtonKind.Ghost);
             else
@@ -106,7 +108,7 @@ namespace Adventure.Game
             UI.Size(hl, flexW: 1);
             UI.Label(body, "보수 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · 경험치 " + q.RewardExp.ToString("#,0")
                 + UI.Color(" (보상 ×" + q.RewardMultiplier.ToString("0.0#") + ")", Theme.SubHex), 14, Theme.Text);
-            UI.Label(body, active ? GuildSystem.ProgressText(q, C) : GuildSystem.ProgressText(q, C).Replace("진행 0/", "목표 "), 14, Theme.TextBody);
+            UI.Label(body, active ? GuildSystem.ProgressText(q, C) : "목표 " + GuildSystem.GoalText(q), 14, Theme.TextBody);
             if (active)
             {
                 var row = UI.Row(body, 8);
@@ -244,6 +246,7 @@ namespace Adventure.Game
             var box = UI.Column(body, 8);
             Anchors.Set("guild.storage", box);
             UI.Sub(box, "창고에 맡긴 아이템은 던전에서 쓰러져도 잃지 않습니다.");
+            ItemGrid.Legend(box);
             UI.Label(box, "창고 " + C.Storage.UsedCells + " / " + C.Storage.Capacity, 14, Theme.Text, true);
             ItemGrid.Build(box, C.Storage, null, item => Overlay.Confirm(item.DisplayName, item.StatLine(), "찾기", () =>
             {
