@@ -37,7 +37,8 @@ namespace Adventure.Core
         }
 
         /// <summary>전투 방의 적 무리 (1~4마리, 낮은 확률로 엘리트 1마리).</summary>
-        public static List<Combatant> CreateGroup(int floor, Difficulty diff, int seed)
+        /// <param name="extra">전쟁의 북소리: 적을 더 부른다 (최대 4마리).</param>
+        public static List<Combatant> CreateGroup(int floor, Difficulty diff, int seed, int extra = 0)
         {
             var rng = new Rng(seed);
             var theme = MonsterDb.ThemeFor(floor);
@@ -45,6 +46,7 @@ namespace Adventure.Core
             // 낮은 층은 적 수를 줄인다
             if (floor <= 2) count = Math.Min(count, 2);
             else if (floor <= 4) count = Math.Min(count, 3);
+            count = Math.Min(4, count + extra);
             var list = new List<Combatant>();
             int elite = rng.Chance(GameBalance.EliteChance) ? rng.Range(0, count) : -1;
             for (int i = 0; i < count; i++)
@@ -91,6 +93,36 @@ namespace Adventure.Core
         {
             var sp = MonsterDb.Get("goblin");
             var list = new List<Combatant> { Create(sp, floor, diff, 0), Create(sp, floor, diff, 0) };
+            NameDuplicates(list);
+            return list;
+        }
+
+        /// <summary>떠도는 모험가 (정예): 골드 ×4, 30% 확률로 장비 확정.</summary>
+        public static List<Combatant> CreateWanderer(int floor, Difficulty diff, int seed)
+        {
+            var rng = new Rng(seed);
+            var w = Create(MonsterDb.Get("wanderer"), floor, diff, 1);
+            w.Name = "떠도는 모험가";
+            w.GoldReward *= 4;
+            w.GuaranteedEquipment = rng.Chance(0.3);
+            return new List<Combatant> { w };
+        }
+
+        /// <summary>도망친 고블린이 데려온 무리: 테마 몬스터 2~3마리 (정예 1) · 보상 ×2.</summary>
+        public static List<Combatant> CreateGoblinChase(int floor, Difficulty diff, int seed)
+        {
+            var rng = new Rng(seed);
+            var theme = MonsterDb.ThemeFor(floor);
+            int count = rng.RangeInclusive(2, 3);
+            int elite = rng.Range(0, count);
+            var list = new List<Combatant>();
+            for (int i = 0; i < count; i++)
+            {
+                var e = Create(MonsterDb.Get(rng.Pick(theme.SpeciesIds)), floor, diff, i == elite ? 1 : 0);
+                e.ExpReward *= 2;
+                e.GoldReward *= 2;
+                list.Add(e);
+            }
             NameDuplicates(list);
             return list;
         }

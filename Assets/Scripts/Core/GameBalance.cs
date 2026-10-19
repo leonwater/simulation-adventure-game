@@ -101,6 +101,8 @@ namespace Adventure.Core
         public static readonly TimeSpan ShopRefreshInterval = TimeSpan.FromMinutes(30);
         public const int ShopRerollBaseCost = 100; // 즉시 갱신 비용, 갱신할 때마다 2배, 자동 갱신 시 초기화
         public const double MerchantPriceMultiplier = 1.2;
+        /// <summary>상인의 보답 (구해 준 상인의 가게).</summary>
+        public const double MerchantDiscountMultiplier = 0.7;
 
         // ── 길드 · 퀘스트 ────────────────────────────────────────
         public const int MaxActiveQuests = 3;

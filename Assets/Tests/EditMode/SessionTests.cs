@@ -270,10 +270,10 @@ namespace Adventure.Tests
             {
                 int best = -1;
                 double bestP = -1;
-                foreach (int i in EventRules.VisibleChoices(ev, c))
+                foreach (int i in EventRules.VisibleChoices(ev, c, s.Run))
                 {
                     var ch = ev.Choices[i];
-                    if (EventRules.UnavailableReason(ch, c, s.Run.Floor) != null) continue;
+                    if (EventRules.UnavailableReason(ev, i, s.Run, c) != null) continue;
                     double p = EventRules.SuccessChance(ch, c, s.Run.Floor);
                     if (ch.Success.ReturnToTown) p = c.CurrentHp < CharacterStats.MaxHp(c) / 3 ? 2 : -1;
                     if (p > bestP)

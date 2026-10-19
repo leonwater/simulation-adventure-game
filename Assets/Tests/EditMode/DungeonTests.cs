@@ -223,21 +223,28 @@ namespace Adventure.Tests
                     {
                         var c = Character.Create("a", (Job)(k % 4));
                         if (!EventRules.VisibleChoices(e, c).Contains(choice)) continue;
-                        c.Gold = 5000;
-                        var run = DungeonSystem.StartRun(c, 1 + k % 30 / 3, rng);
+                        c.Gold = 50000;
+                        var ch = e.Choices[choice];
+                        if (!string.IsNullOrEmpty(ch.RequiresItem)) c.Inventory.Add(ItemDb.CreateConsumable(ch.RequiresItem));
+                        c.HighestFloorCleared = k % 30;
+                        var run = DungeonSystem.StartRun(c, 1 + k % 30, rng);
                         var room = run.Map.Rooms.Find(r => r.Type == RoomType.Event);
                         room.EventId = e.Id;
                         ForceAdjacent(run, room);
                         DungeonSystem.MoveTo(run, room.Id);
-                        var ch = e.Choices[choice];
-                        Assert.IsNull(EventRules.UnavailableReason(ch, c, run.Floor), e.Id + "/" + choice);
+                        if (!EventRules.VisibleChoices(e, c, run).Contains(choice)) continue;
+                        Assert.IsNull(EventRules.UnavailableReason(e, choice, run, c), e.Id + "/" + choice);
+                        Assert.IsNotEmpty(EventRules.Label(e, choice, run, c));
+                        Assert.IsNotEmpty(EventRules.Body(e, run, c));
+                        EventRules.SpecialHint(e, choice, run, c);
                         double p = EventRules.SuccessChance(ch, c, run.Floor);
                         Assert.That(p, Is.InRange(0.05, 1.0));
                         var result = EventRules.Resolve(run, c, choice, rng);
                         Assert.IsNotEmpty(result.Text);
                         Assert.GreaterOrEqual(c.CurrentHp, 1);
                         Assert.GreaterOrEqual(c.Gold, 0);
-                        Assert.AreEqual(!result.StartBattle, room.Cleared);
+                        Assert.AreEqual(!result.StartBattle && !result.Continues, room.Cleared, e.Id + "/" + choice);
+                        Assert.AreEqual(result.Battle == EventBattle.Trial, result.TrialFloor > 0);
                     }
                 }
             }

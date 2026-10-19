@@ -117,6 +117,7 @@ namespace Adventure.Core
             Data = loaded;
             ClearTransient();
             if (Data.Run == null) EnterTown(false);
+            else if (Data.Run.TrialFloor > 0 && Data.Run.Current.Cleared) FinishTrial(); // 시련을 이기고 결과를 보기 전에 꺼졌다
             else ResumeRoom();
             return true;
         }
@@ -241,6 +242,7 @@ namespace Adventure.Core
         {
             var run = Data.Run;
             var room = run.Current;
+            run.TrialFloor = 0; // 끝나지 않은 이벤트 전투는 이벤트부터 다시 고른다
             if (room.Cleared) return;
             if (room.Type == RoomType.Battle || room.Type == RoomType.Boss) StartRoomBattle(room);
         }
@@ -257,7 +259,8 @@ namespace Adventure.Core
                 StartBattle(boss ? EnemyFactory.CreateTutorialBoss(Difficulty) : EnemyFactory.CreateTutorialGroup(first, Difficulty), boss);
                 return;
             }
-            StartBattle(boss ? EnemyFactory.CreateBoss(run.Floor, Difficulty, room.Seed) : EnemyFactory.CreateGroup(run.Floor, Difficulty, room.Seed), boss);
+            int extra = ExploreEffects.Has(run.Effects, ExploreEffectType.Drum) ? 1 : 0;
+            StartBattle(boss ? EnemyFactory.CreateBoss(run.Floor, Difficulty, room.Seed) : EnemyFactory.CreateGroup(run.Floor, Difficulty, room.Seed, extra), boss);
         }
 
         /// <summary>지금 방이 아직 끝나지 않은 이벤트 방인지.</summary>
@@ -271,9 +274,15 @@ namespace Adventure.Core
             }
         }
 
-        private void StartBattle(List<Combatant> enemies, bool boss, bool ambush = false)
+        /// <summary>전투를 시작한다. 탐험 효과는 기습보다 먼저 걸린다.</summary>
+        private void StartBattle(List<Combatant> enemies, bool boss, bool ambush = false, int floor = 0, bool fleeAllowed = false)
         {
-            Battle = new Battle(C, Data.Run.Floor, enemies, boss, Rng, ambush);
+            var run = Data.Run;
+            Battle = new Battle(C, floor > 0 ? floor : run.Floor, enemies, boss, Rng, ambush, b =>
+            {
+                b.FleeAllowed = fleeAllowed;
+                ExploreEffects.ApplyToBattle(run.Effects, b);
+            });
         }
 
         /// <summary>전투 선택지를 실행한다. 전투가 끝나면 결과를 정산한다.</summary>
@@ -290,12 +299,26 @@ namespace Adventure.Core
             var b = Battle;
             b.SyncHp();
             var run = Data.Run;
+            bool battleRoom = run.Current.Type == RoomType.Battle;
+            if (b.Outcome != BattleOutcome.Defeat) ExploreEffects.AfterBattle(run.Effects, battleRoom);
             switch (b.Outcome)
             {
                 case BattleOutcome.Victory:
                     LastLoot = b.CollectRewards(Data.Guild, run);
                     DungeonSystem.ClearCurrent(run);
-                    if (b.IsBoss)
+                    if (run.TrialFloor > 0)
+                    {
+                        // 시련의 문: 고른 층의 보스를 잡은 것으로 친다 (결과를 닫으면 바로 귀환)
+                        C.HighestFloorCleared = Math.Max(C.HighestFloorCleared, run.TrialFloor);
+                        GuildSystem.OnBossKilled(Data.Guild, run.TrialFloor);
+                        if (run.TrialFloor == run.Floor) run.BossDefeated = true;
+                        if (run.TrialFloor >= GameBalance.MaxFloor && !Data.GameCleared)
+                        {
+                            Data.GameCleared = true;
+                            JustClearedGame = true;
+                        }
+                    }
+                    else if (b.IsBoss)
                     {
                         DungeonSystem.OnBossDefeated(run, C, Data.Guild);
                         if (run.Floor >= GameBalance.MaxFloor && !Data.GameCleared)
@@ -306,6 +329,9 @@ namespace Adventure.Core
                     }
                     break;
                 case BattleOutcome.Fled:
+                    // 이벤트 전투에서 도망치면 그 이벤트는 끝난다
+                    if (run.Current.Type == RoomType.Event) DungeonSystem.ClearCurrent(run);
+                    run.TrialFloor = 0;
                     DungeonSystem.FleeToPrevious(run);
                     Battle = null;
                     Notice = "전투에서 도망쳐 이전 방으로 돌아왔다.";
@@ -321,18 +347,51 @@ namespace Adventure.Core
         public void CloseBattle()
         {
             Battle = null;
+            if (Run != null && Run.TrialFloor > 0)
+            {
+                FinishTrial();
+                return;
+            }
             Save();
         }
 
+        /// <summary>시련을 이긴 뒤: 바로 마을로 돌아가며, 정산에는 시련의 층을 클리어한 것으로 보인다.</summary>
+        private void FinishTrial()
+        {
+            int floor = Run.TrialFloor;
+            Run.TrialFloor = 0;
+            ReturnToTown();
+            LastReturn.Floor = floor;
+            LastReturn.BossCleared = true;
+        }
+
+        /// <summary>시련을 이겼고 결과 화면을 닫으면 마을로 돌아가는지.</summary>
+        public bool TrialWon => Battle != null && Battle.Outcome == BattleOutcome.Victory && Run != null && Run.TrialFloor > 0;
+
         public EventResult ChooseEvent(int index)
         {
-            LastEvent = EventRules.Resolve(Data.Run, C, index, Rng);
+            var run = Data.Run;
+            LastEvent = EventRules.Resolve(run, C, index, Rng);
+            run.TrialFloor = LastEvent.TrialFloor;
             if (LastEvent.StartBattle)
             {
+                int seed = run.Current.Seed;
                 switch (LastEvent.Battle)
                 {
                     case EventBattle.Gamblers:
-                        StartBattle(EnemyFactory.CreateGamblers(Data.Run.Floor, Difficulty), false);
+                        StartBattle(EnemyFactory.CreateGamblers(run.Floor, Difficulty), false);
+                        break;
+                    case EventBattle.Normal:
+                        StartBattle(EnemyFactory.CreateGroup(run.Floor, Difficulty, seed), false);
+                        break;
+                    case EventBattle.Wanderer:
+                        StartBattle(EnemyFactory.CreateWanderer(run.Floor, Difficulty, seed), false);
+                        break;
+                    case EventBattle.GoblinChase:
+                        StartBattle(EnemyFactory.CreateGoblinChase(run.Floor, Difficulty, seed), false);
+                        break;
+                    case EventBattle.Trial:
+                        StartBattle(EnemyFactory.CreateBoss(run.TrialFloor, Difficulty, run.TrialFloor * 7919), true, false, run.TrialFloor, true);
                         break;
                     default:
                         // 미믹은 상자를 연 순간 기습한다 (궁수가 멀리서 건드리면 기습 없음)
@@ -378,12 +437,16 @@ namespace Adventure.Core
         {
             var room = Data.Run.Current;
             var state = new ShopState { Goods = room.MerchantGoods };
-            bool ok = ShopSystem.BuyGood(state, C, uid, count, out error, GameBalance.MerchantPriceMultiplier);
+            bool ok = ShopSystem.BuyGood(state, C, uid, count, out error, MerchantMultiplier);
             if (ok) Save();
             return ok;
         }
 
-        public int MerchantPrice(ItemInstance item) => (int)Math.Round(item.Price * GameBalance.MerchantPriceMultiplier);
+        /// <summary>떠돌이 상인은 마을 가격 × 1.2, 구해 준 상인은 × 0.7.</summary>
+        public double MerchantMultiplier => Run?.Current != null && Run.Current.MerchantDiscount
+            ? GameBalance.MerchantDiscountMultiplier : GameBalance.MerchantPriceMultiplier;
+
+        public int MerchantPrice(ItemInstance item) => (int)Math.Round(item.Price * MerchantMultiplier);
 
         /// <summary>귀환 방(발견한 경우)·이벤트·보스 처치 후 마을로 돌아간다.</summary>
         public bool CanReturn => InDungeon && Battle == null && (Run.ReturnRoomFound || Run.BossDefeated);

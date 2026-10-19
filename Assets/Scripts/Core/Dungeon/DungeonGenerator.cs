@@ -187,6 +187,7 @@ namespace Adventure.Core
             var shuffled = new List<RoomType>(types);
             rng.Shuffle(shuffled);
             int i = 0;
+            var usedEvents = new HashSet<string>(); // 한 층에 같은 이벤트는 한 번만
             foreach (var r in map.Rooms)
             {
                 r.Seed = rng.NextSeed();
@@ -199,7 +200,11 @@ namespace Adventure.Core
                 else if (r.Id == map.BossId) r.Type = RoomType.Boss;
                 else r.Type = shuffled[i++];
 
-                if (r.Type == RoomType.Event) r.EventId = EventDb.PickEvent(rng).Id;
+                if (r.Type == RoomType.Event)
+                {
+                    r.EventId = EventDb.PickEvent(rng, floor, usedEvents).Id;
+                    usedEvents.Add(r.EventId);
+                }
                 if (r.Type == RoomType.Merchant) r.MerchantGoods = MerchantGoods();
             }
         }

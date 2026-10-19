@@ -40,6 +40,7 @@ namespace Adventure.Game
             ScreenKit.DungeonHeader(page, run.Floor + "층 · " + theme.Name, "탐험한 방 " + run.RoomsExplored, C, Pause);
 
             var body = UI.Scroll(page, out _, 12, UI.Pad(16, 16, 14, 16));
+            if (run.Effects.Count > 0) EffectTags(body, run);
             MiniMap(body, run);
 
             string text = DungeonSystem.Situation(run, out string title);
@@ -160,7 +161,8 @@ namespace Adventure.Game
                     ScreenKit.GoButton(parent, "아래층으로 내려간다", (run.Floor + 1) + "층 · " + MonsterDb.ThemeFor(run.Floor + 1).Name + " · 현재 HP 유지", Descend);
                 ReturnButton(parent, "마을로 귀환한다", run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
             }
-            if (room.Type == RoomType.Merchant) ScreenKit.GoButton(parent, "상인과 거래한다", "물약·해독제 (마을보다 20% 비쌈)", Merchant);
+            if (room.Type == RoomType.Merchant)
+                ScreenKit.GoButton(parent, "상인과 거래한다", room.MerchantDiscount ? "물약·해독제 (은인 할인: 마을보다 30% 쌈)" : "물약·해독제 (마을보다 20% 비쌈)", Merchant);
             if (room.Type == RoomType.Return) ReturnButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
 
             bool first = true;
@@ -220,6 +222,47 @@ namespace Adventure.Game
             return b;
         }
 
+        // ── 탐험 효과 (이벤트로 얻은 버프·디버프) ──
+
+        private static bool IsBuff(ExploreEffectType t) =>
+            t == ExploreEffectType.Regen || t == ExploreEffectType.Focus || t == ExploreEffectType.DemonPact;
+
+        /// <summary>머리줄 아래 효과 태그 줄. 누르면 효과 설명.</summary>
+        private void EffectTags(Transform parent, DungeonRun run)
+        {
+            RectTransform row = null;
+            for (int i = 0; i < run.Effects.Count; i++)
+            {
+                // 한 줄에 3개씩
+                if (i % 3 == 0)
+                {
+                    row = UI.Row(parent, 6, null, TextAnchor.MiddleLeft);
+                    UI.Size(row, height: 28);
+                }
+                var fx = run.Effects[i];
+                bool buff = IsBuff(fx.Type);
+                var tag = UI.ButtonCard(row, () => EffectInfo(run), buff ? Theme.BlueBg : Theme.RedBg, buff ? Theme.BlueBorder : Theme.RedBorder,
+                    14, UI.Pad(10, 0), false, 0, 28, TextAnchor.MiddleCenter);
+                var fit = tag.gameObject.AddComponent<ContentSizeFitter>();
+                fit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+                UI.Label(tag, ExploreEffects.Name(fx.Type) + " · " + ExploreEffects.Remaining(fx), 12, buff ? Theme.BlueLight : Theme.RedLight, true,
+                    TextAnchor.MiddleCenter, false, false);
+            }
+        }
+
+        private void EffectInfo(DungeonRun run)
+        {
+            var body = Overlay.Modal("탐험 효과");
+            UI.Sub(body, "이벤트에서 얻은 효과입니다. 마을로 돌아가면 모두 사라집니다.");
+            foreach (var e in run.Effects)
+            {
+                bool buff = IsBuff(e.Type);
+                var card = UI.Card(body, buff ? Theme.BlueBg : Theme.RedBg, buff ? Theme.BlueBorder : Theme.RedBorder, 10, UI.Pad(12, 10), true, 4);
+                UI.Label(card, ExploreEffects.Name(e.Type) + " · " + ExploreEffects.Remaining(e), 14, buff ? Theme.BlueLight : Theme.RedLight, true);
+                UI.Label(card, ExploreEffects.Describe(e.Type), 13, Theme.TextBody);
+            }
+        }
+
         // ── 미니맵 ──
 
         private static List<Room> Discovered(DungeonRun run)
@@ -227,6 +270,7 @@ namespace Adventure.Game
             var set = new HashSet<int>();
             foreach (var r in run.Map.Rooms)
             {
+                if (r.Revealed) set.Add(r.Id); // 이벤트로 공개된 방
                 if (!r.Visited) continue;
                 set.Add(r.Id);
                 foreach (int l in r.Links) set.Add(l);
@@ -325,9 +369,10 @@ namespace Adventure.Game
                 {
                     if (l < r.Id || !shown.Contains(l)) continue;
                     var o = run.Map.Get(l);
-                    if (!r.Visited && !o.Visited) continue;
+                    bool revealedOnly = !r.Visited && !o.Visited;
+                    if (revealedOnly && !(r.Revealed && o.Revealed)) continue;
                     bool next = (r.Id == cur.Id && !o.Visited) || (o.Id == cur.Id && !r.Visited);
-                    Edge(area, Pos(r), Pos(o), node, next && DungeonSystem.CanLeave(run), line);
+                    Edge(area, Pos(r), Pos(o), node, next && DungeonSystem.CanLeave(run), revealedOnly ? line * new Color(1, 1, 1, 0.45f) : line);
                 }
             }
             // 방
@@ -336,9 +381,10 @@ namespace Adventure.Game
             {
                 bool isCur = r.Id == cur.Id;
                 bool next = !r.Visited && cur.Links.Contains(r.Id) && DungeonSystem.CanLeave(run);
-                bool known = r.Visited || easy;
+                bool known = r.Visited || easy || r.Revealed;
+                bool chain = r.Chain && !r.Visited;
                 Color fill = isCur ? Theme.Accent : r.Visited ? Theme.MapNode : Theme.MapBg;
-                Color border = isCur ? Theme.Accent : next ? Theme.Gold : r.Visited ? line : Theme.PlaceholderLine;
+                Color border = isCur ? Theme.Accent : next ? Theme.Gold : chain ? Theme.Gold * new Color(1, 1, 1, 0.7f) : r.Visited ? line : Theme.PlaceholderLine;
                 RectTransform n;
                 bool tappable = onTeleport != null && !isCur && r.Visited && r.Cleared;
                 if (tappable)
@@ -350,9 +396,12 @@ namespace Adventure.Game
                 Place(n, Pos(r), new Vector2(node, node));
                 // 방 종류는 글자 대신 아이콘 (모르는 방은 "?")
                 Color tint = isCur ? Theme.OnAccent : next ? Theme.Gold : r.Visited ? Theme.Text : Theme.TextSub;
-                if (known)
+                // 이벤트로 공개만 된 방은 흐리게
+                if (!r.Visited && !next && r.Revealed) tint *= new Color(1, 1, 1, 0.6f);
+                if (chain) UI.Label(n, "!", node < 22 ? 10 : node < 28 ? 12 : node < 44 ? 15 : 18, Theme.Gold, true, TextAnchor.MiddleCenter);
+                else if (known)
                 {
-                    var icon = UI.CenteredIcon(n, RoomIcon(r.Type), Mathf.Round(node * 0.62f));
+                    var icon = UI.CenteredIcon(n, RoomIcon(r.DisplayType), Mathf.Round(node * 0.62f));
                     icon.color = tint;
                 }
                 else UI.Label(n, "?", node < 22 ? 9 : node < 28 ? 11 : node < 44 ? 13 : 15, tint, true, TextAnchor.MiddleCenter);
@@ -396,6 +445,19 @@ namespace Adventure.Game
             Vector2 ca = a + new Vector2(half, half), cb = b + new Vector2(half, half);
             Vector2 min = Vector2.Min(ca, cb), max = Vector2.Max(ca, cb);
             bool horizontal = Mathf.Abs(ca.y - cb.y) < 0.5f;
+            if (!horizontal && Mathf.Abs(ca.x - cb.x) >= 0.5f)
+            {
+                // 지름길(개구멍)처럼 비스듬한 연결은 기울인 선으로
+                var rt = img.rectTransform;
+                rt.anchorMin = rt.anchorMax = new Vector2(0, 1);
+                rt.pivot = new Vector2(0.5f, 0.5f);
+                Vector2 mid = (ca + cb) / 2f, d = cb - ca;
+                rt.sizeDelta = new Vector2(d.magnitude, 2);
+                rt.anchoredPosition = new Vector2(mid.x, -mid.y);
+                rt.localRotation = Quaternion.Euler(0, 0, -Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+                if (next) img.gameObject.AddComponent<Blink>();
+                return;
+            }
             var size = horizontal ? new Vector2(max.x - min.x, 2) : new Vector2(2, max.y - min.y);
             var topLeft = horizontal ? new Vector2(min.x, min.y - 1) : new Vector2(min.x - 1, min.y);
             Place(img.rectTransform, topLeft, size);
@@ -429,7 +491,7 @@ namespace Adventure.Game
 
         private void Merchant()
         {
-            var body = Overlay.Modal("떠돌이 상인", true);
+            var body = Overlay.Modal(S.Run.Current.MerchantDiscount ? "구해 준 상인" : "떠돌이 상인", true);
             UI.Sub(body, "보유 골드 " + Names.Gold(C.Gold) + " · 가방 " + C.Inventory.UsedCells + "/" + C.Inventory.Capacity);
             foreach (var g in S.Run.Current.MerchantGoods)
             {

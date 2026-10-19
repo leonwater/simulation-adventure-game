@@ -122,7 +122,8 @@ namespace Adventure.Core
         private readonly Rng _rng;
 
         /// <param name="ambush">true면 적이 먼저 행동한다 (미믹 기습).</param>
-        public Battle(Character c, int floor, List<Combatant> enemies, bool isBoss, Rng rng, bool ambush = false)
+        /// <param name="setup">기습 전에 적용할 준비 (탐험 효과·시련의 문).</param>
+        public Battle(Character c, int floor, List<Combatant> enemies, bool isBoss, Rng rng, bool ambush = false, Action<Battle> setup = null)
         {
             Character = c;
             Floor = floor;
@@ -142,6 +143,7 @@ namespace Adventure.Core
                 Resist = CharacterStats.Resist(c),
                 CritDamage = GameBalance.CritMultiplier,
             };
+            setup?.Invoke(this);
             var names = new List<string>();
             foreach (var e in enemies) names.Add(e.Name);
             Add(Names.Josa((isBoss ? "보스 " : "") + string.Join(", ", names), "이/가") + " 나타났다!", LogTone.Bad);
@@ -157,9 +159,14 @@ namespace Adventure.Core
 
         public bool IsOver => Outcome != BattleOutcome.Ongoing;
 
+        /// <summary>드롭률 배율 (저주 0.5).</summary>
+        public double DropMultiplier = 1.0;
+        /// <summary>보스전이어도 도주할 수 있다 (시련의 문).</summary>
+        public bool FleeAllowed;
+
         public int Cooldown(string skillId) => _cooldowns.TryGetValue(skillId, out int n) ? n : 0;
 
-        public bool CanFlee => !IsBoss;
+        public bool CanFlee => !IsBoss || FleeAllowed;
 
         public int IndexOf(Combatant c) => c.IsPlayer ? -1 : Enemies.IndexOf(c);
 
@@ -751,7 +758,7 @@ namespace Adventure.Core
         {
             var report = new LootReport();
             if (Outcome != BattleOutcome.Victory) return report;
-            double drop = CharacterStats.DropBonus(Character);
+            double drop = CharacterStats.DropBonus(Character) * DropMultiplier;
             foreach (var e in Defeated)
             {
                 report.Exp += e.ExpReward;

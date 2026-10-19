@@ -18,6 +18,20 @@ namespace Adventure.Core
         public string EventId = "";
         /// <summary>상인 방 재고.</summary>
         public List<ShopGood> MerchantGoods = new List<ShopGood>();
+        /// <summary>이벤트로 위치와 종류가 공개된 방 (미니맵에 흐리게).</summary>
+        public bool Revealed;
+        /// <summary>공개됐지만 틀리게 알려진 종류 (갈림길 표지판 실패). -1이면 실제 종류.</summary>
+        public int ShownType = -1;
+        /// <summary>연쇄 후속 이벤트가 생긴 방 (미니맵에 '!').</summary>
+        public bool Chain;
+        /// <summary>여러 번 고르는 이벤트(보물 더미·피의 우물)의 진행 단계와 모은 골드.</summary>
+        public int EventStep;
+        public long EventBank;
+        /// <summary>상인의 보답: 마을 가격 × 0.7.</summary>
+        public bool MerchantDiscount;
+
+        /// <summary>미니맵·길 선택에 보여 줄 종류.</summary>
+        public RoomType DisplayType => !Visited && ShownType >= 0 ? (RoomType)ShownType : Type;
     }
 
     /// <summary>한 층의 방 배치. 도전할 때마다 새로 만든다.</summary>

@@ -253,7 +253,7 @@ namespace Adventure.Game
                 {
                     if (n++ >= 3) break; // 칸이 좁아 3개까지만
                     bool debuff = StatusContainer.IsDebuff(s.Type);
-                    UI.Pill(tags, Names.Of(s.Type) + s.Turns, debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 10, 6);
+                    UI.Pill(tags, Names.Of(s.Type) + (s.Turns >= 99 ? "" : s.Turns.ToString()), debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 10, 6);
                 }
             }
             _units[index] = v;
@@ -593,8 +593,10 @@ namespace Adventure.Game
                 UI.Label(card, loot.Describe(), 14, Theme.Text);
                 if (loot.LevelsGained > 0) UI.Label(card, "레벨 업! Lv." + _b.Character.Level + " · 능력치 포인트 +" + loot.LevelsGained * GameBalance.PointsPerLevel, 14, Theme.Gold, true);
             }
-            if (_b.IsBoss) UI.Sub(card, "돌파 층 " + _b.Character.HighestFloorCleared + " · 다음 층이 열렸다");
-            UI.Sub(card, "잠시 후 던전으로 돌아갑니다 · 눌러서 바로 계속");
+            bool trial = S.TrialWon;
+            if (trial) UI.Sub(card, "시련 통과! " + S.Run.TrialFloor + "층까지 클리어 · 돌파 층 " + _b.Character.HighestFloorCleared);
+            else if (_b.IsBoss) UI.Sub(card, "돌파 층 " + _b.Character.HighestFloorCleared + " · 다음 층이 열렸다");
+            UI.Sub(card, (trial ? "잠시 후 마을로 귀환합니다" : "잠시 후 던전으로 돌아갑니다") + " · 눌러서 바로 계속");
         }
 
         private void Continue()
@@ -602,11 +604,18 @@ namespace Adventure.Game
             if (_leaving) return;
             _leaving = true;
             int levels = S.LastLoot?.LevelsGained ?? 0;
+            bool trial = S.TrialWon;
             S.CloseBattle();
             if (S.JustClearedGame)
             {
                 S.JustClearedGame = false;
                 Go(new ResultScreen(ResultKind.Clear));
+                return;
+            }
+            if (trial)
+            {
+                // 시련의 문: 이기면 바로 마을로 돌아간다
+                Go(new ResultScreen(ResultKind.Return));
                 return;
             }
             if (S.InDungeon && S.PendingEvent == null) Go(new DungeonScreen(levels > 0));

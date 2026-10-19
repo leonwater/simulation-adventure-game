@@ -34,7 +34,8 @@ namespace Adventure.Game
             UI.Illustration(body, _event.Illustration, 300);
             var inner = UI.Column(body, 14, UI.Pad(16, 16, 2, 0));
             UI.Label(inner, _event.Title, 24, Theme.Text, false, TextAnchor.MiddleLeft, true);
-            var bodyText = UI.Label(inner, _event.Body, 15, Theme.TextBody);
+            var run = S.Run;
+            var bodyText = UI.Label(inner, EventRules.Body(_event, run, C), 15, Theme.TextBody);
             bodyText.lineSpacing = 1.35f;
             Typewriter.Attach(bodyText);
             bodyText.gameObject.AddComponent<TypewriterSkip>();
@@ -43,25 +44,28 @@ namespace Adventure.Game
             if (_result != null)
             {
                 ResultBox(inner);
-                return;
+                // 보물 더미·피의 우물: 같은 이벤트에서 다시 고른다
+                if (!_result.Continues || S.PendingEvent != _event) return;
             }
             UI.Spacer(inner, 1, 8);
-            foreach (int i in EventRules.VisibleChoices(_event, C))
+            foreach (int i in EventRules.VisibleChoices(_event, C, run))
             {
                 var ch = _event.Choices[i];
                 int idx = i;
-                string unavailable = EventRules.UnavailableReason(ch, C, floor);
-                string hint = unavailable ?? EventRules.ChoiceHint(ch, C, floor);
-                bool always = EventRules.CheckStat(ch, C) == null && ch.FixedChance >= 1;
-                bool isPass = ch.Failure == null && always && ch.Success.HpRatio == 0 && ch.Success.Reward == EventReward.None
-                              && ch.Success.GoldMult == 0 && ch.Success.ExpMult == 0 && !ch.Success.ReturnToTown;
-                string right = isPass ? "›" : ScreenKit.Percent(EventRules.SuccessChance(ch, C, floor));
-                var b = ScreenKit.ChoiceButton(inner, ch.Label, isPass ? null : hint, right, !isPass, null, unavailable == null, 60);
+                string unavailable = EventRules.UnavailableReason(_event, i, run, C);
+                string special = EventRules.SpecialHint(_event, i, run, C);
+                string hint = unavailable ?? special ?? EventRules.ChoiceHint(ch, C, floor);
+                // 판정이 없는 선택지(특별한 이벤트 포함)는 확률 대신 ›
+                bool always = _event.Special != EventSpecial.None || EventRules.CheckStat(ch, C) == null && ch.FixedChance >= 1;
+                string right = always ? "›" : ScreenKit.Percent(EventRules.SuccessChance(ch, C, floor));
+                string label = EventRules.Label(_event, i, run, C);
+                var b = ScreenKit.ChoiceButton(inner, label, string.IsNullOrEmpty(hint) ? null : hint, right, !always, null, unavailable == null, 60);
                 var choice = ch;
                 LongPress.Add(b, () =>
                 {
-                    var detail = Overlay.Modal(choice.Label);
-                    var t = UI.Label(detail, EventRules.Breakdown(choice, C, floor) + (unavailable != null ? "\n\n" + unavailable : ""), 14, Theme.TextBody);
+                    var detail = Overlay.Modal(label);
+                    string text = special ?? EventRules.Breakdown(choice, C, floor);
+                    var t = UI.Label(detail, text + (unavailable != null ? "\n\n" + unavailable : ""), 14, Theme.TextBody);
                     t.lineSpacing = 1.3f;
                 }, () =>
                 {
@@ -89,6 +93,7 @@ namespace Adventure.Game
                 UI.Label(card, "HP " + (_result.HpChange > 0 ? "+" : "") + _result.HpChange, 14, _result.HpChange > 0 ? Theme.Green : Theme.RedLight);
             if (!_result.Loot.IsEmpty || _result.Loot.Dropped.Count > 0) UI.Label(card, _result.Loot.Describe(), 14, Theme.Gold);
             if (_result.Loot.LevelsGained > 0 && C != null) UI.Label(card, "레벨 업! Lv." + C.Level, 14, Theme.Gold, true);
+            if (_result.Continues && S.PendingEvent == _event) return; // 선택지가 이어서 나온다
             UI.Spacer(parent, 1, 8);
             bool died = S.LastDeath != null && !S.InDungeon;
             string label = died ? "결과 보기" : _result.StartBattle ? "전투 시작" : _result.ReturnToTown ? "마을로" : "계속";

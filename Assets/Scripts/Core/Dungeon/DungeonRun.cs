@@ -20,6 +20,10 @@ namespace Adventure.Core
         public bool IsTutorial;
         /// <summary>층에 막 들어왔는지 (층 진입 타이틀 연출용, 한 번 보여 주면 false).</summary>
         public bool FloorIntroPending = true;
+        /// <summary>탐험 효과 (귀환·사망하면 사라지고, 다음 층으로 내려가면 유지).</summary>
+        public List<ExploreEffect> Effects = new List<ExploreEffect>();
+        /// <summary>시련의 문에서 고른 보스 층 (전투 중에만, 아니면 0).</summary>
+        public int TrialFloor;
 
         public Room Current => Map.Get(CurrentRoomId);
 
@@ -91,12 +95,12 @@ namespace Adventure.Core
             foreach (int id in cur.Links)
             {
                 var r = run.Map.Get(id);
-                bool known = r.Visited || difficulty == Difficulty.Easy;
+                bool known = r.Visited || difficulty == Difficulty.Easy || r.Revealed;
                 list.Add(new MoveOption
                 {
                     Room = r,
                     Direction = DirectionText(cur, r) + (r.Visited ? "로 돌아간다" : "로 간다"),
-                    Hint = r.Visited ? Names.Of(r.Type) + " · 탐험함" : (known ? Names.Of(r.Type) : Atmospheres[(r.Seed & 0x7fffffff) % Atmospheres.Length]),
+                    Hint = r.Visited ? Names.Of(r.Type) + " · 탐험함" : r.Chain ? "무언가 기다리고 있다 (!)" : (known ? Names.Of(r.DisplayType) : Atmospheres[(r.Seed & 0x7fffffff) % Atmospheres.Length]),
                     Known = known,
                 });
             }
@@ -222,6 +226,7 @@ namespace Adventure.Core
         /// <summary>휴식 방: 최대 HP 40% 회복.</summary>
         public static int Rest(DungeonRun run, Character c)
         {
+            ExploreEffects.OnRest(run.Effects);
             int max = CharacterStats.MaxHp(c);
             int before = c.CurrentHp;
             c.CurrentHp = Math.Min(max, c.CurrentHp + (int)Math.Round(max * GameBalance.RestHealRatio));
