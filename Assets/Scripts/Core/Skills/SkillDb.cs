@@ -72,35 +72,38 @@ namespace Adventure.Core
 
         public static readonly SkillDef[] AllSkills =
         {
+            // v1.8: 위력이 낮은 스킬은 성공률 +5~10%, 높은 스킬은 −5~10% (자신에게 거는 스킬은 100%).
             // ── 전사: 높은 HP, 한 방이 큰 스킬, 재사용 4~8턴 ──
-            new SkillDef { Id = "w_bash", Name = "강타", JobRestriction = W, Tier = SkillTier.Low, Target = One, DamageMult = 2.5, SuccessBonus = -0.05, Cooldown = 4, Effect = "단일 250%" },
+            new SkillDef { Id = "w_bash", Name = "강타", JobRestriction = W, Tier = SkillTier.Low, Target = One, DamageMult = 2.5, SuccessBonus = -0.10, Cooldown = 4, Effect = "단일 250%" },
             new SkillDef { Id = "w_warcry", Name = "전투 함성", JobRestriction = W, Tier = SkillTier.Low, Target = Self, Cooldown = 6, Statuses = new[] { S(StatusType.Empower, 20, 3, true) }, Effect = "강화 3턴" },
-            new SkillDef { Id = "w_shield", Name = "방패 밀치기", JobRestriction = W, Tier = SkillTier.Mid, Target = One, DamageMult = 1.5, Cooldown = 5, Statuses = new[] { S(StatusType.Stun, 1, 1, false, 0.6) }, Effect = "단일 150% + 60% 확률로 기절 1턴" },
+            new SkillDef { Id = "w_shield", Name = "방패 밀치기", JobRestriction = W, Tier = SkillTier.Mid, Target = One, DamageMult = 1.5, SuccessBonus = 0.05, Cooldown = 5, Statuses = new[] { S(StatusType.Stun, 1, 1, false, 0.6) }, Effect = "단일 150% + 60% 확률로 기절 1턴" },
             new SkillDef { Id = "w_guard", Name = "철벽 태세", JobRestriction = W, Tier = SkillTier.Mid, Target = Self, Cooldown = 6, Statuses = new[] { S(StatusType.Fortify, 20, 3, true) }, Effect = "철벽 3턴" },
             new SkillDef { Id = "w_whirl", Name = "회전 베기", JobRestriction = W, Tier = SkillTier.High, Target = Every, DamageMult = 1.8, SuccessBonus = -0.05, Cooldown = 6, Effect = "모든 적 180%" },
             new SkillDef { Id = "w_earth", Name = "대지 가르기", JobRestriction = W, Tier = SkillTier.Top, Target = Every, DamageMult = 3.5, SuccessBonus = -0.10, Cooldown = 8, Statuses = new[] { S(StatusType.Vulnerable, 20, 2) }, Effect = "모든 적 350% + 취약 2턴" },
 
             // ── 궁수: 짧은 재사용, 여러 번 때리기 ──
             new SkillDef { Id = "a_aim", Name = "조준 사격", JobRestriction = A, Tier = SkillTier.Low, Target = One, DamageMult = 1.4, SuccessBonus = 0.10, Cooldown = 1, Effect = "단일 140%" },
-            new SkillDef { Id = "a_double", Name = "연속 사격", JobRestriction = A, Tier = SkillTier.Low, Target = One, DamageMult = 0.6, Hits = 3, Cooldown = 2, Effect = "단일 60% × 3회" },
-            new SkillDef { Id = "a_poison", Name = "독화살", JobRestriction = A, Tier = SkillTier.Mid, Target = One, DamageMult = 0.8, Cooldown = 2, Statuses = new[] { S(StatusType.Poison, 4, 3) }, Effect = "단일 80% + 독 3턴" },
-            new SkillDef { Id = "a_flash", Name = "섬광 화살", JobRestriction = A, Tier = SkillTier.Mid, Target = One, DamageMult = 0.7, Hits = 2, Cooldown = 3, Statuses = new[] { S(StatusType.Blind, 15, 2) }, Effect = "단일 70% × 2회 + 실명 2턴" },
-            new SkillDef { Id = "a_rain", Name = "화살비", JobRestriction = A, Tier = SkillTier.High, Target = Every, DamageMult = 0.7, Hits = 2, Cooldown = 3, Effect = "모든 적 70% × 2회" },
-            new SkillDef { Id = "a_storm", Name = "폭풍 사격", JobRestriction = A, Tier = SkillTier.Top, Target = One, DamageMult = 0.5, Hits = 7, SuccessBonus = 0.05, Cooldown = 4, Effect = "단일 50% × 7회" },
+            new SkillDef { Id = "a_double", Name = "연속 사격", JobRestriction = A, Tier = SkillTier.Low, Target = One, DamageMult = 0.6, Hits = 3, SuccessBonus = 0.05, Cooldown = 2, Effect = "단일 60% × 3회" },
+            new SkillDef { Id = "a_poison", Name = "독화살", JobRestriction = A, Tier = SkillTier.Mid, Target = One, DamageMult = 0.8, SuccessBonus = 0.10, Cooldown = 2, Statuses = new[] { S(StatusType.Poison, 4, 3) }, Effect = "단일 80% + 독 3턴" },
+            new SkillDef { Id = "a_flash", Name = "섬광 화살", JobRestriction = A, Tier = SkillTier.Mid, Target = One, DamageMult = 0.7, Hits = 2, SuccessBonus = 0.05, Cooldown = 3, Statuses = new[] { S(StatusType.Blind, 15, 2) }, Effect = "단일 70% × 2회 + 실명 2턴" },
+            new SkillDef { Id = "a_rain", Name = "화살비", JobRestriction = A, Tier = SkillTier.High, Target = Every, DamageMult = 0.7, Hits = 2, SuccessBonus = -0.05, Cooldown = 3, Effect = "모든 적 70% × 2회" },
+            new SkillDef { Id = "a_storm", Name = "폭풍 사격", JobRestriction = A, Tier = SkillTier.Top, Target = One, DamageMult = 0.5, Hits = 7, SuccessBonus = -0.05, Cooldown = 4, Effect = "단일 50% × 7회" },
 
-            // ── 도적: 스킬로 치명타 내기 (치명타 피해 ×1.8) ──
-            new SkillDef { Id = "r_ambush", Name = "기습", JobRestriction = R, Tier = SkillTier.Low, Target = One, DamageMult = 1.4, CritChance = 0.5, FirstTurnCrit = true, Cooldown = 2, Effect = "단일 140%, 치명타 50%. 전투 첫 턴이면 확정 치명타" },
-            new SkillDef { Id = "r_venom", Name = "독 바르기", JobRestriction = R, Tier = SkillTier.Low, Target = One, DamageMult = 1.0, CritChance = 0.2, Cooldown = 3, Statuses = new[] { S(StatusType.Poison, 4, 3) }, Effect = "단일 100% + 독 3턴, 치명타 20%" },
-            new SkillDef { Id = "r_vital", Name = "급소 찌르기", JobRestriction = R, Tier = SkillTier.Mid, Target = One, DamageMult = 1.3, GuaranteedCrit = true, Cooldown = 4, Statuses = new[] { S(StatusType.Bleed, 40, 2) }, Effect = "단일 130%, 확정 치명타 + 출혈 2턴" },
+            // ── 도적: 스킬 피해는 다른 직업의 80%, 대신 치명타 피해 ×2.3 ──
+            new SkillDef { Id = "r_ambush", Name = "기습", JobRestriction = R, Tier = SkillTier.Low, Target = One, DamageMult = 1.1, SuccessBonus = 0.10, CritChance = 0.5, FirstTurnCrit = true, Cooldown = 2, Effect = "단일 110%, 치명타 50%. 전투 첫 턴이면 확정 치명타" },
+            new SkillDef { Id = "r_venom", Name = "독 바르기", JobRestriction = R, Tier = SkillTier.Low, Target = One, DamageMult = 0.8, SuccessBonus = 0.10, CritChance = 0.2, Cooldown = 3, Statuses = new[] { S(StatusType.Poison, 4, 3) }, Effect = "단일 80% + 독 3턴, 치명타 20%" },
+            new SkillDef { Id = "r_keen", Name = "약점 간파", JobRestriction = R, Tier = SkillTier.Low, Target = Self, Cooldown = 5, Statuses = new[] { S(StatusType.Keen, 25, 3, true) }, Effect = "예리함 3턴 (스킬 치명타 확률 +25%)" },
+            new SkillDef { Id = "r_vital", Name = "급소 찌르기", JobRestriction = R, Tier = SkillTier.Mid, Target = One, DamageMult = 1.05, GuaranteedCrit = true, SuccessBonus = -0.05, Cooldown = 4, Statuses = new[] { S(StatusType.Bleed, 40, 2) }, Effect = "단일 105%, 확정 치명타 + 출혈 2턴" },
             new SkillDef { Id = "r_smoke", Name = "연막", JobRestriction = R, Tier = SkillTier.Mid, Target = Self, GrantsNextCrit = true, Cooldown = 5, Statuses = new[] { S(StatusType.Swift, 15, 3, true) }, Effect = "날렵함 3턴, 다음에 쓰는 스킬은 확정 치명타" },
-            new SkillDef { Id = "r_storm", Name = "칼날 폭풍", JobRestriction = R, Tier = SkillTier.High, Target = Every, DamageMult = 0.9, CritChance = 0.4, Cooldown = 5, Statuses = new[] { S(StatusType.Bleed, 30, 2) }, Effect = "모든 적 90%, 치명타 40% + 출혈 2턴" },
-            new SkillDef { Id = "r_assassin", Name = "암살", JobRestriction = R, Tier = SkillTier.Top, Target = One, DamageMult = 2.5, GuaranteedCrit = true, ExecuteThreshold = 0.3, ExecuteMult = 1.5, Cooldown = 6, Effect = "단일 250%, 확정 치명타. 대상 HP 30% 이하면 피해 ×1.5" },
+            new SkillDef { Id = "r_cruel", Name = "살의", JobRestriction = R, Tier = SkillTier.High, Target = Self, Cooldown = 6, Statuses = new[] { S(StatusType.Cruel, 50, 3, true) }, Effect = "잔혹함 3턴 (치명타 피해 +50%)" },
+            new SkillDef { Id = "r_storm", Name = "칼날 폭풍", JobRestriction = R, Tier = SkillTier.High, Target = Every, DamageMult = 0.7, CritChance = 0.4, SuccessBonus = -0.05, Cooldown = 5, Statuses = new[] { S(StatusType.Bleed, 30, 2) }, Effect = "모든 적 70%, 치명타 40% + 출혈 2턴" },
+            new SkillDef { Id = "r_assassin", Name = "암살", JobRestriction = R, Tier = SkillTier.Top, Target = One, DamageMult = 2.0, GuaranteedCrit = true, ExecuteThreshold = 0.3, ExecuteMult = 1.5, SuccessBonus = -0.10, Cooldown = 6, Effect = "단일 200%, 확정 치명타. 대상 HP 30% 이하면 피해 ×1.5" },
 
             // ── 마법사: 낮은 HP, 강한 화력과 다양한 범위 ──
-            new SkillDef { Id = "m_fireball", Name = "화염구", JobRestriction = M, Tier = SkillTier.Low, Target = One, DamageMult = 1.8, Cooldown = 2, Statuses = new[] { S(StatusType.Burn, 30, 2) }, Effect = "단일 180% + 화상 2턴" },
+            new SkillDef { Id = "m_fireball", Name = "화염구", JobRestriction = M, Tier = SkillTier.Low, Target = One, DamageMult = 1.8, SuccessBonus = 0.05, Cooldown = 2, Statuses = new[] { S(StatusType.Burn, 30, 2) }, Effect = "단일 180% + 화상 2턴" },
             new SkillDef { Id = "m_barrier", Name = "마력 방벽", JobRestriction = M, Tier = SkillTier.Low, Target = Self, Cooldown = 5, Statuses = new[] { S(StatusType.Fortify, 20, 3, true) }, Effect = "철벽 3턴" },
-            new SkillDef { Id = "m_ice", Name = "얼음 창", JobRestriction = M, Tier = SkillTier.Mid, Target = SkillTarget.MultiEnemy, TargetCount = 2, DamageMult = 1.3, Cooldown = 3, Statuses = new[] { S(StatusType.Weaken, 20, 2) }, Effect = "적 2명 130% + 약화 2턴" },
-            new SkillDef { Id = "m_chain", Name = "연쇄 번개", JobRestriction = M, Tier = SkillTier.Mid, Target = SkillTarget.ChainEnemies, ChainMults = new[] { 1.4, 1.0, 0.7 }, Cooldown = 3, Effect = "적 3명에게 차례로 140% → 100% → 70%" },
+            new SkillDef { Id = "m_ice", Name = "얼음 창", JobRestriction = M, Tier = SkillTier.Mid, Target = SkillTarget.MultiEnemy, TargetCount = 2, DamageMult = 1.3, SuccessBonus = 0.05, Cooldown = 3, Statuses = new[] { S(StatusType.Weaken, 20, 2) }, Effect = "적 2명 130% + 약화 2턴" },
+            new SkillDef { Id = "m_chain", Name = "연쇄 번개", JobRestriction = M, Tier = SkillTier.Mid, Target = SkillTarget.ChainEnemies, ChainMults = new[] { 1.4, 1.0, 0.7 }, SuccessBonus = 0.05, Cooldown = 3, Effect = "적 3명에게 차례로 140% → 100% → 70%" },
             new SkillDef { Id = "m_meteor", Name = "운석 낙하", JobRestriction = M, Tier = SkillTier.High, Target = Every, DamageMult = 1.6, SuccessBonus = -0.10, Cooldown = 5, Statuses = new[] { S(StatusType.Burn, 35, 2) }, Effect = "모든 적 160% + 화상 2턴" },
             new SkillDef { Id = "m_overload", Name = "마력 폭주", JobRestriction = M, Tier = SkillTier.Top, Target = One, DamageMult = 4.0, SuccessBonus = -0.10, Cooldown = 6, Effect = "단일 400%" },
         };
@@ -128,11 +131,10 @@ namespace Adventure.Core
             }
         }
 
-        /// <summary>직업이 쓸 수 있는 스킬 중 주어진 등급들.</summary>
-        /// <summary>스킬서로 얻을 수 있는 스킬: 자기 직업, 장착 레벨 ≤ 지금 레벨 + 5.</summary>
-        public static List<SkillDef> Obtainable(Character c, params SkillTier[] tiers)
+        /// <summary>스킬서로 나올 수 있는 스킬: 그 직업, 장착 레벨 ≤ 지금 레벨 + 5.</summary>
+        public static List<SkillDef> Obtainable(Character c, Job job, params SkillTier[] tiers)
         {
-            var list = ForJob(c.Job, tiers.Length > 0 ? tiers : (SkillTier[])Enum.GetValues(typeof(SkillTier)));
+            var list = ForJob(job, tiers.Length > 0 ? tiers : (SkillTier[])Enum.GetValues(typeof(SkillTier)));
             list.RemoveAll(s => s.ReqLevel > c.Level + GameBalance.SkillBookLevelWindow);
             return list;
         }

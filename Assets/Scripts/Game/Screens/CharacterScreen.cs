@@ -56,7 +56,8 @@ namespace Adventure.Game
         {
             var st = RankSystem.GetStatus(C);
             var panel = UI.Card(parent, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
-            var row = UI.Row(panel);
+            var row = UI.Row(panel, 8);
+            UI.Icon(row, UI.RankIcon(C.Rank), 32);
             var t = UI.Label(row, C.Rank + " 등급 배지", 15, Theme.Text, true);
             UI.Size(t, flexW: 1);
             UI.Label(row, "기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%", 13, Theme.Gold, false, TextAnchor.MiddleRight, false, false);
@@ -65,10 +66,10 @@ namespace Adventure.Game
                 UI.Sub(panel, "최고 등급입니다");
                 return;
             }
-            UI.Sub(panel, st.Next + " 등급 승급 조건");
+            UI.Sub(panel, st.Next + " 등급 승급 조건 · 모두 채우면 자동 승급");
             var grid = UI.Row(panel, 8);
             grid.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childForceExpandWidth = true;
-            Cond(grid, "던전 층", st.FloorCurrent, st.FloorRequired);
+            Cond(grid, "돌파 층", st.FloorCurrent, st.FloorRequired);
             Cond(grid, "레벨", st.LevelCurrent, st.LevelRequired);
             Cond(grid, "퀘스트", st.QuestsCurrent, st.QuestsRequired);
         }
@@ -125,7 +126,7 @@ namespace Adventure.Game
             Line(body, "회피", CharacterStats.Percent(CharacterStats.Evasion(C)));
             Line(body, "받는 피해 감소", CharacterStats.Percent(CharacterStats.DamageReduction(C)));
             Line(body, "디버프 저항", CharacterStats.Percent(CharacterStats.Resist(C)));
-            Line(body, "치명타", "스킬 전용 · 피해 ×1.8");
+            if (C.Job == Job.Rogue) Line(body, "치명타", "도적 스킬 전용 · 피해 ×" + GameBalance.CritMultiplier);
             Line(body, "드롭률", "+" + CharacterStats.Percent(CharacterStats.DropBonus(C) - 1));
             Line(body, "이벤트 판정 (행운)", "+" + CharacterStats.Percent(CharacterStats.EventLuckBonus(C)));
             UI.Divider(body);
@@ -140,7 +141,7 @@ namespace Adventure.Game
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
                 UI.Label(col, Names.Of(s) + " " + UI.Color(CharacterStats.Total(C, s) + (eq > 0 ? " (장비 +" + eq + ")" : ""), Theme.GoldHex)
-                              + UI.Color(" · 최대 " + GameBalance.MaxStat(s), Theme.SubHex), 14, Theme.Text, true);
+                              + UI.Color(" · 최대 " + GameBalance.StatCap, Theme.SubHex), 14, Theme.Text, true);
                 UI.Label(col, StatEffect(s) + (mine ? "" : " · 이 직업은 배분 불가"), 12, Theme.TextSub);
                 if (!mine) row.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
             }

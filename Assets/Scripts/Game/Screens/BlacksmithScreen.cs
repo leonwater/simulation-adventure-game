@@ -53,7 +53,7 @@ namespace Adventure.Game
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
                 UI.Label(col, UI.GradeTag(item.Grade) + " " + item.DisplayName, 14, Theme.GradeColor(item.Grade), true);
-                UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + Names.Of(item.Gear) + " · " + item.StatLine());
+                UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + ItemGrid.GearText(item) + " · " + item.StatLine());
                 UI.Label(row, "+" + item.Enhance, 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             }
             if (gear.Count == 0) UI.Sub(list, "강화할 장비가 없습니다.");
@@ -67,7 +67,7 @@ namespace Adventure.Game
             var head = UI.Row(card);
             var n = UI.Label(head, item.DisplayName, 16, Theme.GradeColor(item.Grade), true);
             UI.Size(n, flexW: 1);
-            UI.Label(head, UI.GradeTag(item.Grade) + " " + UI.Color(Names.Of(item.Gear), Theme.SubHex), 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            UI.Label(head, UI.GradeTag(item.Grade) + " " + UI.Color(ItemGrid.GearText(item), Theme.SubHex), 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             ScreenKit.CompareLine(card, C, item);
             if (item.Enhance >= GameBalance.MaxEnhance)
             {
@@ -75,12 +75,18 @@ namespace Adventure.Game
                 return;
             }
             int now = item.Value;
-            int next = (int)System.Math.Round(item.BaseValue * (1.0 + GameBalance.EnhanceValuePerLevel * (item.Enhance + 1)));
+            int next = item.ValueAt(item.Enhance + 1);
             string what = item.IsWeapon ? "공격력" : item.IsAccessory ? Names.Of(item.BonusStat) : "방어력";
-            UI.Label(card, "+" + item.Enhance + " → +" + (item.Enhance + 1) + " · " + what + " " + now + " → " + UI.Color(next.ToString(), Theme.GreenHex), 14, Theme.Text);
+            // 왼쪽: 강화 단계와 수치 변화 · 오른쪽: 성공률과 비용 (흰 글씨, v1.8)
+            var change = UI.Row(card, 8);
+            var left = UI.Label(change, "+" + item.Enhance + " → +" + (item.Enhance + 1) + "\n" + what + " " + now + " → " + UI.Color(next.ToString(), Theme.GreenHex), 14, Theme.Text);
+            UI.Size(left, flexW: 1);
+            var right = UI.Column(change, 2, null, TextAnchor.MiddleRight);
+            UI.Label(right, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)), 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+            UI.Label(right, Blacksmith.GoldCost(item).ToString("#,0") + " G", 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+            if (Blacksmith.SuccessRate(item) < 1) UI.Sub(card, "실패해도 장비는 그대로이고 재료·골드만 소모됩니다.");
             int stones = Blacksmith.StoneCost(item);
             int have = C.Inventory.CountOf(ItemDb.EnhanceStoneId);
-            UI.Sub(card, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)) + " · 비용 " + Blacksmith.GoldCost(item).ToString("#,0") + "G" + (Blacksmith.SuccessRate(item) < 1 ? " · 실패 시 재료·골드만 소모" : ""));
             if (stones > 0)
             {
                 var stoneRow = UI.Row(card, 6);

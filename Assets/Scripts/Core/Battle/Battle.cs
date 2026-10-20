@@ -101,7 +101,7 @@ namespace Adventure.Core
 
     /// <summary>
     /// 선택지 기반 턴제 전투. 플레이어가 하나 고르면 1턴: 플레이어 행동 → 살아 있는 적들의 행동.
-    /// 치명타는 스킬에서만 발생하며 피해 ×1.8. 여러 번 때리는 스킬은 타격마다 따로 판정한다.
+    /// 치명타는 도적 스킬에서만 발생하며 피해 ×2.3 (잔혹함으로 증가). 여러 번 때리는 스킬은 타격마다 따로 판정한다.
     /// 상태 이상 지속 턴은 주인의 턴이 끝날 때 줄어든다 (이번 턴에 걸린 효과는 다음 턴부터).
     /// </summary>
     public partial class Battle
@@ -147,7 +147,6 @@ namespace Adventure.Core
                 Evasion = CharacterStats.Evasion(c),
                 DamageReduction = CharacterStats.DamageReduction(c),
                 Resist = CharacterStats.Resist(c),
-                CritDamage = GameBalance.CritMultiplier,
             };
             setup?.Invoke(this);
             var names = new List<string>();
@@ -242,7 +241,7 @@ namespace Adventure.Core
         private string FleeBreakdown()
         {
             if (!CanFlee) return "보스에게서는 도망칠 수 없다.";
-            var parts = new List<string> { "기본 60%", "회피 " + Pct(Player.Evasion) };
+            var parts = new List<string> { "기본 " + Math.Round(GameBalance.BaseFlee * 100) + "%", "회피 " + Pct(Player.Evasion) };
             var s = Player.Statuses;
             if (s.Has(StatusType.Swift)) parts.Add("날렵함 " + Pct(s.Value(StatusType.Swift) / 100.0));
             if (s.Has(StatusType.Focus)) parts.Add("집중 " + Pct(s.Value(StatusType.Focus) / 100.0));
@@ -332,6 +331,12 @@ namespace Adventure.Core
 
         private bool SureCrit(SkillDef def) => NextSkillCrit || def.GuaranteedCrit || (def.FirstTurnCrit && Turn == 1);
 
+        /// <summary>공격 스킬의 치명타 확률 = 스킬 치명타 + 예리함.</summary>
+        private double CritChance(SkillDef def) => def.CritChance + Player.Statuses.Value(StatusType.Keen) / 100.0;
+
+        /// <summary>지금 치명타 배율 = 기본 ×2.3 + 잔혹함.</summary>
+        private double CritNow => Player.CritDamage + Player.Statuses.Value(StatusType.Cruel) / 100.0;
+
         /// <summary>선택지에 보여 줄 예상 피해 한 줄 (치명타·처형 제외 기준, 확정 치명타면 반영).</summary>
         public string SkillDamageNote(SkillDef def, Combatant target)
         {
@@ -367,7 +372,7 @@ namespace Adventure.Core
             var t = target.Statuses;
             double taken = -t.Value(StatusType.Fortify) / 100.0 + t.Value(StatusType.Vulnerable) / 100.0;
             if (Math.Abs(taken) > 1e-9) parts.Add("× 철벽/취약 " + Pct(taken));
-            if (crit) parts.Add("× 치명타 " + GameBalance.CritMultiplier);
+            if (crit) parts.Add("× 치명타 " + Math.Round(CritNow, 2));
             return "피해 계산 (" + target.Name + ")\n" + string.Join(" ", parts) + "\n= 약 " + Damage(Player, target, mult, crit);
         }
 
@@ -382,8 +387,8 @@ namespace Adventure.Core
                 if (def.Target == SkillTarget.AllEnemies) lines.Add("모든 적에게 따로 판정 (적마다 방어력에 따라 피해가 다름)");
                 if (def.Target == SkillTarget.ChainEnemies) lines.Add("연쇄 배율 " + string.Join(" → ", Array.ConvertAll(def.ChainMults, m => Math.Round(m * 100) + "%")));
                 lines.Add("");
-                if (SureCrit(def)) lines.Add("치명타 확정 (피해 ×" + GameBalance.CritMultiplier + ")" + (NextSkillCrit ? " — 연막 효과" : def.FirstTurnCrit ? " — 첫 턴" : ""));
-                else if (def.CritChance > 0) lines.Add("치명타 확률 " + Math.Round(def.CritChance * 100) + "% (피해 ×" + GameBalance.CritMultiplier + ")");
+                if (SureCrit(def)) lines.Add("치명타 확정 (피해 ×" + Math.Round(CritNow, 2) + ")" + (NextSkillCrit ? " — 연막 효과" : def.FirstTurnCrit ? " — 첫 턴" : ""));
+                else if (CritChance(def) > 0) lines.Add("치명타 확률 " + Math.Round(Math.Min(1, CritChance(def)) * 100) + "% (피해 ×" + Math.Round(CritNow, 2) + ")");
                 else lines.Add("치명타 없음");
                 if (def.ExecuteThreshold > 0) lines.Add("처형: HP " + Math.Round(def.ExecuteThreshold * 100) + "% 이하 적에게 피해 ×" + def.ExecuteMult);
             }
@@ -587,7 +592,7 @@ namespace Adventure.Core
                     Event(BattleEventKind.Miss, -1, ti, hpAfter: target.Hp);
                     continue;
                 }
-                bool crit = skill != null && (forcedCrit || skill.GuaranteedCrit || (skill.FirstTurnCrit && Turn == 1) || _rng.Chance(skill.CritChance));
+                bool crit = skill != null && (forcedCrit || SureCrit(skill) || _rng.Chance(CritChance(skill)));
                 if (BlockedByBarrier(target))
                 {
                     blocked++;
@@ -671,7 +676,7 @@ namespace Adventure.Core
             else DrainLife(e, dmg);
         }
 
-        /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 100/(100+방어력) × (1 − 감소율) × (철벽·취약) × 치명타(×1.8)</summary>
+        /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 100/(100+방어력) × (1 − 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함)</summary>
         public static int Damage(Combatant attacker, Combatant target, double mult, bool crit)
         {
             var a = attacker.Statuses;
@@ -680,7 +685,7 @@ namespace Adventure.Core
             double dmg = atk * 100.0 / (100.0 + Math.Max(0, target.Defense));
             dmg *= 1.0 - target.DamageReduction;
             dmg *= 1.0 - t.Value(StatusType.Fortify) / 100.0 + t.Value(StatusType.Vulnerable) / 100.0;
-            if (crit) dmg *= attacker.CritDamage;
+            if (crit) dmg *= attacker.CritDamage + a.Value(StatusType.Cruel) / 100.0;
             return Math.Max(1, (int)Math.Round(dmg));
         }
 

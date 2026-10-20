@@ -146,8 +146,8 @@ namespace Adventure.Tests
             EquipmentSystem.Equip(c, helm.Uid, out _);
             EquipmentSystem.Equip(c, armor.Uid, out _);
             Assert.AreEqual(8, helm.Value); // 2 + 10 × 0.6
-            Assert.AreEqual(20, armor.Value); // (4 + 10) × 1.45 = 20.3
-            Assert.AreEqual(28, CharacterStats.Defense(c));
+            Assert.AreEqual(23, armor.Value); // (4 + 10) × 1.65 = 23.1
+            Assert.AreEqual(31, CharacterStats.Defense(c));
         }
 
         [Test]
@@ -252,7 +252,8 @@ namespace Adventure.Tests
             Assert.AreEqual("단일 150% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
             Assert.AreEqual("강화 3턴 · 재사용 6턴", SkillDb.Get("w_warcry").Description);
             Assert.AreEqual("모든 적 180% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
-            Assert.AreEqual("성공률 −5%", SkillDb.Get("w_bash").SuccessText);
+            Assert.AreEqual("성공률 −10%", SkillDb.Get("w_bash").SuccessText);
+            Assert.AreEqual("성공률 +5%", SkillDb.Get("w_shield").SuccessText);
             Assert.AreEqual("성공률 +10%", SkillDb.Get("a_aim").SuccessText);
             Assert.AreEqual("성공률 100%", SkillDb.Get("w_guard").SuccessText);
         }
@@ -260,7 +261,7 @@ namespace Adventure.Tests
         [Test]
         public void EverySkillAndMaterial_IsValid()
         {
-            Assert.AreEqual(24, SkillDb.AllSkills.Length, "직업 6개씩 24개, 공용 스킬 없음");
+            Assert.AreEqual(26, SkillDb.AllSkills.Length, "직업 6개씩 + 도적 치명 버프 2개, 공용 스킬 없음");
             foreach (var s in SkillDb.AllSkills)
             {
                 Assert.IsNotEmpty(s.Name);
@@ -274,8 +275,9 @@ namespace Adventure.Tests
                 if (!string.IsNullOrEmpty(m.MaterialId)) Assert.IsNotNull(ItemDb.Material(m.MaterialId), m.Id);
             foreach (Job j in System.Enum.GetValues(typeof(Job)))
             {
-                Assert.AreEqual(4, SkillDb.ForJob(j, SkillTier.Low, SkillTier.Mid).Count);
-                Assert.AreEqual(2, SkillDb.ForJob(j, SkillTier.High, SkillTier.Top).Count);
+                bool rogue = j == Job.Rogue;
+                Assert.AreEqual(rogue ? 5 : 4, SkillDb.ForJob(j, SkillTier.Low, SkillTier.Mid).Count);
+                Assert.AreEqual(rogue ? 3 : 2, SkillDb.ForJob(j, SkillTier.High, SkillTier.Top).Count);
             }
         }
     }

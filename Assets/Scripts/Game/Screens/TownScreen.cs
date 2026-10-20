@@ -19,7 +19,7 @@ namespace Adventure.Game
             var title = UI.Row(body);
             var name = UI.Label(title, "라브 마을", 22, Theme.Text, false, TextAnchor.MiddleLeft, true);
             UI.Size(name, flexW: 1);
-            UI.Sub(title, "돌파 " + C.HighestFloorCleared + "층 · " + Names.Of(S.Difficulty), TextAnchor.MiddleRight);
+            UI.Label(title, Names.Of(S.Difficulty), 14, Theme.DifficultyColor(S.Difficulty), true, TextAnchor.MiddleRight, false, false);
 
             if (C.UnspentPoints > 0)
             {
@@ -35,17 +35,10 @@ namespace Adventure.Game
                 var nl = UI.Label(notice, S.LastReturn.Floor + "층 돌파! 길드에 " + next + "층 의뢰가 새로 붙었습니다", 13, Theme.Gold);
                 UI.Size(nl, flexW: 1);
             }
-            if (RankSystem.GetStatus(C).CanPromote)
-            {
-                var notice = UI.ButtonCard(body, () => Go(new GuildScreen(1)), Theme.AccentBg, Theme.Accent, 10, UI.Pad(14, 8), false, 8, 44);
-                var nl = UI.Label(notice, RankSystem.GetStatus(C).Next + " 등급 승급 조건을 채웠습니다 — 길드에서 승급하세요", 13, Theme.Gold);
-                UI.Size(nl, flexW: 1);
-            }
 
             // 시설 2×2 카드 (아이콘 · 이름 · 알림 점)
             var grid = UI.Grid(body, 2, ScreenKit.ContentWidth, 112, 10);
-            int done = S.Data.Guild.Active.FindAll(q => GuildSystem.IsComplete(q, C)).Count;
-            Facility(grid, "guild", "길드", Alerts.Guild, () => Go(new GuildScreen(done == 0 && Alerts.Promotion ? 1 : 0)));
+            Facility(grid, "guild", "길드", Alerts.Guild, () => Go(new GuildScreen()));
             Facility(grid, "shop", "상점", Alerts.Shop, () => Go(new ShopScreen()));
             Facility(grid, "blacksmith", "대장간", false, () => Go(new BlacksmithScreen()));
             Facility(grid, "training", "수련장", false, () => Go(new TrainingScreen()));

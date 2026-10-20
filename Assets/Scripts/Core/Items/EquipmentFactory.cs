@@ -81,13 +81,14 @@ namespace Adventure.Core
             return item;
         }
 
-        /// <summary>무작위 장비. 무기는 forJob 직업 확률 ownJobChance, 장신구 보너스는 그 직업이 쓰는 능력치에서 고른다.</summary>
-        public static ItemInstance CreateRandom(Rng rng, ItemGrade grade, int itemLevel, Job forJob, double ownJobChance = 1.0)
+        /// <summary>
+        /// 무작위 장비. 무기 직업·장신구 보너스 능력치는 지금 직업 70%, 다른 세 직업 각 10% (방어구는 직업 구분 없음).
+        /// </summary>
+        public static ItemInstance CreateRandom(Rng rng, ItemGrade grade, int itemLevel, Job forJob)
         {
             GearType gear = rng.Pick(AllGear);
-            Job weaponJob = rng.Chance(ownJobChance) ? forJob : (Job)rng.Range(0, 4);
-            Stat stat = rng.Pick(JobData.Get(forJob).AllocatableStats);
-            return Create(gear, grade, itemLevel, weaponJob, stat);
+            Job job = JobData.RollItemJob(forJob, rng);
+            return Create(gear, grade, itemLevel, job, rng.Pick(JobData.Get(job).AllocatableStats));
         }
 
         /// <summary>층에서 나올 수 있는 최고 등급.</summary>

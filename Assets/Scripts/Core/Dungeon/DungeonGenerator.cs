@@ -205,7 +205,7 @@ namespace Adventure.Core
                     r.EventId = EventDb.PickEvent(rng, floor, usedEvents).Id;
                     usedEvents.Add(r.EventId);
                 }
-                if (r.Type == RoomType.Merchant) r.MerchantGoods = MerchantGoods();
+                if (r.Type == RoomType.Merchant) r.MerchantGoods = MerchantGoods(rng);
             }
         }
 
@@ -240,11 +240,12 @@ namespace Adventure.Core
             return map;
         }
 
-        public static List<ShopGood> MerchantGoods()
+        /// <summary>던전 상인 물건: 소모품 5종, 물건마다 2~5개까지만 판다.</summary>
+        public static List<ShopGood> MerchantGoods(Rng rng)
         {
             var list = new List<ShopGood>();
             foreach (var id in new[] { "potion", "potion_hi", "antidote", "bandage", "salve" })
-                list.Add(new ShopGood { Item = ItemDb.CreateConsumable(id), Unlimited = true });
+                list.Add(new ShopGood { Item = ItemDb.CreateConsumable(id), Stock = rng.RangeInclusive(GameBalance.MerchantStockMin, GameBalance.MerchantStockMax) });
             return list;
         }
 

@@ -5,7 +5,7 @@ using Adventure.Core;
 using Adventure.Tests;
 
 // 난이도별로 봇이 몇 번 도전해 몇 층을 돌파하는지, 어디서 쓰러지는지 잰다.
-// 사용: dotnet run -c Release -- [도전 횟수=150] [시드 수=3] [난이도=Normal,Hard]
+// 사용: dotnet run -c Release -- [도전 횟수=150] [시드 수=3] [난이도=Normal,Hard] [직업=모두, 예: Rogue]
 //       dotnet run -c Release -- boss [판 수=300]   보스 특성 켬/끔 1:1 비교 (층에 맞춘 캐릭터)
 //       dotnet run -c Release -- fight [판 수=300] [난이도=Normal]   층별 일반 전투·보스전 HP 소모 (봇이 그 층에 오는 레벨)
 public static class Program
@@ -40,13 +40,16 @@ public static class Program
         var diffs = args.Length > 2
             ? args[2].Split(',').Select(x => (Difficulty)Enum.Parse(typeof(Difficulty), x)).ToArray()
             : new[] { Difficulty.Normal, Difficulty.Hard };
-        foreach (var diff in diffs) Print(diff, runs, Simulate(diff, runs, seeds));
+        var jobs = args.Length > 3
+            ? args[3].Split(',').Select(x => (Job)Enum.Parse(typeof(Job), x)).ToArray()
+            : (Job[])Enum.GetValues(typeof(Job));
+        foreach (var diff in diffs) Print(diff, runs, Simulate(diff, runs, seeds, jobs));
     }
 
-    private static Stats Simulate(Difficulty diff, int runs, int seeds)
+    private static Stats Simulate(Difficulty diff, int runs, int seeds, Job[] jobs)
     {
         var st = new Stats();
-        foreach (Job job in Enum.GetValues(typeof(Job)))
+        foreach (Job job in jobs)
         {
             for (int seed = 0; seed < seeds; seed++)
             {

@@ -5,9 +5,17 @@ namespace Adventure.Game
     /// <summary>기기별 설정 (PlayerPrefs). 저장 파일과 별개라 새 게임을 해도 유지된다.</summary>
     public static class GameSettings
     {
-        private const string KeySpeed = "battle_speed", KeyTypewriter = "typewriter", KeyVibration = "vibration", KeyTextSize = "text_size";
+        private const string KeySpeed = "battle_speed", KeyTypewriter = "typewriter", KeyVibration = "vibration", KeyTextSize = "text_size",
+            KeyTutorial = "tutorial_completed";
 
-        private static int? _speed, _typewriter, _vibration, _textSize;
+        private static int? _speed, _typewriter, _vibration, _textSize, _tutorial;
+
+        /// <summary>이 기기에서 튜토리얼을 한 번이라도 끝까지 마쳤는지 (그 뒤로는 튜토리얼마다 건너뛰기 버튼이 나온다).</summary>
+        public static bool TutorialCompleted
+        {
+            get => Get(ref _tutorial, KeyTutorial, 0) == 1;
+            set => Set(ref _tutorial, KeyTutorial, value ? 1 : 0);
+        }
 
         /// <summary>전투 연출 속도 1 또는 2.</summary>
         public static int BattleSpeed

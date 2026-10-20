@@ -105,6 +105,8 @@ namespace Adventure.Core
                 case StatusType.Regen: return "턴마다 최대 HP " + value + "% 회복";
                 case StatusType.Focus: return "성공률 +" + value + "%";
                 case StatusType.Swift: return "회피 +" + value + "%";
+                case StatusType.Keen: return "스킬 치명타 확률 +" + value + "%";
+                case StatusType.Cruel: return "치명타 피해 +" + value + "%";
                 case StatusType.Poison: return "턴마다 최대 HP " + value + "% 피해";
                 case StatusType.Bleed: return "행동할 때마다 공격력 " + value + "% 피해";
                 case StatusType.Burn: return "턴마다 공격력 " + value + "% 피해, 받는 회복 −50%";
@@ -146,6 +148,8 @@ namespace Adventure.Core
                 case StatusType.Regen: return "내 턴이 시작될 때 최대 HP의 일부를 회복한다.";
                 case StatusType.Focus: return "모든 선택지의 성공률이 오른다.";
                 case StatusType.Swift: return "회피가 올라 적의 공격을 더 잘 피한다.";
+                case StatusType.Keen: return "공격 스킬의 치명타 확률이 오른다.";
+                case StatusType.Cruel: return "치명타로 주는 피해가 커진다.";
                 case StatusType.Poison: return "턴이 시작될 때마다 최대 HP의 일부만큼 피해. 해독제로 풀린다.";
                 case StatusType.Bleed: return "행동할 때마다 정해진 피해. 붕대로 풀린다.";
                 case StatusType.Burn: return "턴마다 정해진 피해, 받는 회복이 절반. 화상 연고로 풀린다.";
@@ -168,6 +172,8 @@ namespace Adventure.Core
                 case StatusType.Regen: return "재생";
                 case StatusType.Focus: return "집중";
                 case StatusType.Swift: return "날렵함";
+                case StatusType.Keen: return "예리함";
+                case StatusType.Cruel: return "잔혹함";
                 case StatusType.Poison: return "독";
                 case StatusType.Bleed: return "출혈";
                 case StatusType.Burn: return "화상";
@@ -198,6 +204,14 @@ namespace Adventure.Core
         }
 
         public static string Gold(long g) => g.ToString("#,0") + " G";
+
+        /// <summary>머리줄 골드 (좁은 칸에서 잘리지 않게): 99,999까지 그대로, 10만부터 "12.3만", 1억부터 "1.2억".</summary>
+        public static string GoldCompact(long g)
+        {
+            if (g < 100000) return g.ToString("#,0");
+            if (g < 100000000) return (g / 10000.0).ToString(g < 1000000 ? "0.#" : "0") + "만";
+            return (g / 100000000.0).ToString("0.#") + "억";
+        }
 
         /// <summary>마지막 글자에 받침이 있는지 (한글이 아니면 읽는 소리 기준으로 대략 판단).</summary>
         public static bool HasBatchim(string word, out bool rieul)

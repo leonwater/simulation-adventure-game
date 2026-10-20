@@ -15,7 +15,7 @@ namespace Adventure.Core
         public bool CanPromote => !IsMaxRank && FloorMet && LevelMet && QuestsMet;
     }
 
-    /// <summary>모험가 등급 F~SS. 세 조건을 모두 충족하면 길드에서 승급한다. 강등 없음.</summary>
+    /// <summary>모험가 등급 F~SS. 세 조건을 모두 충족하면 자동으로 승급한다 (v1.8, GameSession.Save). 강등 없음.</summary>
     public static class RankSystem
     {
         public const Rank MaxRank = Rank.SS;

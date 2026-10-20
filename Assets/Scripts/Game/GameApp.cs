@@ -29,6 +29,13 @@ namespace Adventure.Game
             go.AddComponent<GameApp>();
         }
 
+        private void Start()
+        {
+            // 예전 버전에서 이미 튜토리얼을 마친 기기: 건너뛰기를 보여 준다
+            var save = Session.PeekSave();
+            if (save != null && save.Tutorial == TutorialStage.Done) GameSettings.TutorialCompleted = true;
+        }
+
         private void Awake()
         {
             if (Instance != null && Instance != this)
@@ -77,11 +84,9 @@ namespace Adventure.Game
             var canvas = go.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.pixelPerfect = false;
+            // 배율은 ScreenFit이 화면 비율에 맞춰 정한다 (폭 390 기둥, 최소 높이 700)
             var scaler = go.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(Theme.ScreenWidth, Theme.ScreenHeight);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0f; // 폭 390 고정, 세로는 기기에 따라 늘어난다
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
             scaler.referencePixelsPerUnit = 100f;
 
             var page = UI.Image(go.transform, Theme.Page, 0, "page");
@@ -89,13 +94,17 @@ namespace Adventure.Game
 
             var safe = UI.Rect(go.transform, "safe-area");
             UI.Stretch(safe);
-            safe.gameObject.AddComponent<SafeArea>();
+            var column = UI.Rect(safe, "column");
+            var fit = safe.gameObject.AddComponent<ScreenFit>();
+            fit.Scaler = scaler;
+            fit.Column = column;
+            fit.Apply();
 
-            screens = UI.Rect(safe, "screens");
+            screens = UI.Rect(column, "screens");
             UI.Stretch(screens);
-            overlay = UI.Rect(safe, "overlay");
+            overlay = UI.Rect(column, "overlay");
             UI.Stretch(overlay);
-            var coach = UI.Rect(safe, "coach"); // 튜토리얼 강조 표시는 팝업보다 위
+            var coach = UI.Rect(column, "coach"); // 튜토리얼 강조 표시는 팝업보다 위
             UI.Stretch(coach);
             Coach.Init(coach);
         }
@@ -112,6 +121,29 @@ namespace Adventure.Game
                 }
             }
             if (BackPressed()) HandleBack();
+            if (Session != null && Session.Promotions.Count > 0) TryShowPromotion();
+        }
+
+        /// <summary>
+        /// 자동 승급 알림 (v1.8). 다른 창·튜토리얼 강조가 없고 전투 연출 중이 아닐 때 하나씩 띄운다.
+        /// 배지 효과·스킬 칸·창고 칸은 승급하는 순간 이미 적용되어 있다.
+        /// </summary>
+        private void TryShowPromotion()
+        {
+            if (Coach.Active || Overlay.Top != null || Router.Current is BattleScreen || Router.Current is TitleScreen) return;
+            var rank = Session.Promotions[0];
+            Session.Promotions.RemoveAt(0);
+            var body = Overlay.Modal("등급 승급", false, false, showClose: false);
+            var modal = Overlay.Top;
+            UI.CenteredIcon(body, UI.RankIcon(rank), 96);
+            UI.Label(body, rank + " 등급 모험가가 되었습니다!", 18, Theme.Gold, true, TextAnchor.MiddleCenter);
+            UI.Label(body, "배지 효과 · 기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(rank) * 100) + "%\n스킬 " + RankSystem.SkillSlots(rank)
+                           + "칸 · 창고 " + RankSystem.StorageCapacity(rank) + "칸", 14, Theme.Text, false, TextAnchor.MiddleCenter);
+            UI.TextButton(body, "확인", () =>
+            {
+                Overlay.Close(modal);
+                Router.Rebuild(); // 머리줄 배지·능력치를 새 등급으로
+            }, ButtonKind.Primary);
         }
 
         private bool BackPressed()
@@ -131,7 +163,8 @@ namespace Adventure.Game
 
         private void HandleBack()
         {
-            if (Coach.Active) return; // 튜토리얼 진행 중에는 말풍선의 버튼으로만 넘어간다
+            // 튜토리얼 강조 중이거나 마을·귀환 안내 중에는 말풍선의 버튼으로만 넘어간다
+            if (Coach.Active || (Tutorial.Running && !Session.InDungeon)) return;
             if (Overlay.CloseTop()) return;
             if (Router.Current != null && Router.Current.OnBack()) return;
             if (Router.Current is TitleScreen || Router.Current is TownScreen)

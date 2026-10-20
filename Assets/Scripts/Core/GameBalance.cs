@@ -12,25 +12,10 @@ namespace Adventure.Core
         public const int PointsPerLevel = 3;
 
         /// <summary>
-        /// 능력치별 최대값 (캐릭터 자체 능력치, 장비 보너스 제외). 최대 레벨까지 받는 포인트(59 × 3 = 177)를 한 능력치에
-        /// 몰아도 넘지 않게 막고, 효과 상한(회피·감소 40%, 저항 75%, 성공률 85%)에 맞춰 그 이상은 의미 없는 능력치를 묶는다.
+        /// 능력치 최대값 (캐릭터 자체 능력치, 장비 보너스 제외, v1.8: 모두 99로 통일). 효과 상한(회피·감소 40%, 저항 75%,
+        /// 성공률 92%)은 그대로라 상한을 넘는 투자는 효과가 없다.
         /// </summary>
-        public static int MaxStat(Stat s)
-        {
-            switch (s)
-            {
-                case Stat.Toughness:   // 감소율 0.5%/점, 최대 40%
-                case Stat.Finesse:     // 회피 0.5%/점, 최대 40%
-                    return 80;
-                case Stat.Spirit:      // 저항 1%/점, 최대 75%
-                    return 75;
-                case Stat.Precision:   // 성공률 0.5%/점 (성공률은 최대 85%)
-                case Stat.Luck:        // 드롭률·이벤트 0.5%/점
-                    return 60;
-                default:               // 체력·힘·민첩·지능·주문력
-                    return 99;
-            }
-        }
+        public const int StatCap = 99;
         /// <summary>직업이 배분할 수 없는 능력치의 고정값 (이벤트 판정에만 쓰임).</summary>
         public const int FixedStatValue = 5;
         public const int StartGold = 300;
@@ -45,8 +30,8 @@ namespace Adventure.Core
         public const double ReductionPerToughness = 0.005;// 감소율 = 강인함 × 0.5%
         public const double SuccessPerPrecision = 0.005;  // 성공률 + 정밀 × 0.5%
         public const double SkillDamagePerSpellPower = 0.005; // 스킬 피해 + 주문력 × 0.5%
-        /// <summary>치명타는 스킬에서만 발생하며 피해 ×1.8.</summary>
-        public const double CritMultiplier = 1.8;
+        /// <summary>치명타는 도적 스킬에서만 발생하며 피해 ×2.3 (v1.8: 도적 스킬 피해를 80%로 낮춘 대신).</summary>
+        public const double CritMultiplier = 2.3;
         public const double MaxEvasion = 0.40;
         public const double MaxReduction = 0.40;
         public const double MaxResist = 0.75;
@@ -71,6 +56,8 @@ namespace Adventure.Core
         public static readonly int[] SkillSlots = { 3, 3, 4, 4, 5, 5, 6, 6 };
         public const int StorageBase = 20;
         public const int StoragePerRank = 5;
+        /// <summary>창고 보관·출고 수수료 (1회, 한 칸 기준) = 10 + 돌파 층 × 5.</summary>
+        public static int StorageFee(int highestFloor) => 10 + highestFloor * 5;
 
         /// <summary>승급 조건 (1차 30층): [다음 등급 인덱스] = (돌파 층, 레벨, 퀘스트). 인덱스 0(F)은 사용 안 함.</summary>
         public static readonly int[,] PromotionRequirements =
@@ -93,14 +80,18 @@ namespace Adventure.Core
         public const int BagBasePrice = 500; // 구매할 때마다 2배
 
         // ── 장비 ───────────────────────────────────────────────
-        public static readonly double[] GradeValueMultiplier = { 1.0, 1.2, 1.45, 1.75, 2.1 };
+        /// <summary>등급별 기본 수치 배율 (v1.8: 등급 차이를 키움).</summary>
+        public static readonly double[] GradeValueMultiplier = { 1.0, 1.3, 1.65, 2.1, 2.7 };
         public static readonly double[] GradePriceMultiplier = { 1.0, 1.6, 2.6, 4.0, 6.0 };
         /// <summary>등급별 첫 등장 층.</summary>
         public static readonly int[] GradeFirstFloor = { 1, 1, 5, 12, 20 };
         public const double SellRatio = 0.5;
 
         public const int MaxEnhance = 10;
-        public const double EnhanceValuePerLevel = 0.05;
+        /// <summary>강화 1단계마다 기본 수치 + 등급별 비율 (v1.8: 높은 등급일수록 많이 오른다).</summary>
+        public static readonly double[] EnhanceValuePerLevel = { 0.05, 0.06, 0.07, 0.08, 0.10 };
+        /// <summary>강화한 장비를 팔면 들어간 강화 골드의 이 비율을 판매가에 더한다.</summary>
+        public const double EnhanceSellRefund = 0.5;
         /// <summary>목표 강화 단계별 성공률. 인덱스 = 목표 단계(1~10).</summary>
         public static readonly double[] EnhanceSuccess = { 0, 1, 1, 1, 1, 1, 0.70, 0.60, 0.50, 0.30, 0.15 };
         /// <summary>목표 강화 단계별 필요 강화석.</summary>
@@ -123,6 +114,10 @@ namespace Adventure.Core
         public const double MerchantPriceMultiplier = 1.2;
         /// <summary>상인의 보답 (구해 준 상인의 가게).</summary>
         public const double MerchantDiscountMultiplier = 0.7;
+        /// <summary>던전 상인 물건마다 살 수 있는 최대 개수.</summary>
+        public const int MerchantStockMin = 2, MerchantStockMax = 5;
+        /// <summary>장비·스킬서가 지금 직업용으로 나올 확률. 나머지는 다른 세 직업이 똑같이 나눈다 (각 10%).</summary>
+        public const double OwnJobChance = 0.7;
 
         // ── 길드 · 퀘스트 ────────────────────────────────────────
         public const int MaxActiveQuests = 3;
@@ -166,7 +161,8 @@ namespace Adventure.Core
 
         public static double EarlyBoostScale(Difficulty d) => d == Difficulty.Easy ? 0 : d == Difficulty.Normal ? 1.0 : 0.4;
 
-        public static double EnemyHp(int f, double early = 1.0) => 60 + f * 24 + f * f * 0.6 + EarlyBoostHp * EarlyBoost(f) * early;
+        /// <summary>적 HP (v1.8: 성공률 +7%p에 맞춰 ×1.1).</summary>
+        public static double EnemyHp(int f, double early = 1.0) => 66 + f * 26.4 + f * f * 0.66 + EarlyBoostHp * EarlyBoost(f) * early;
         public static double EnemyAttack(int f, double early = 1.0) => 5 + f * 2.5 + f * f * 0.08 + EarlyBoostAttack * EarlyBoost(f) * early;
         public static double EnemyDefense(int f) => 2 + f * 1.5;
         /// <summary>플레이어 공격 성공률 계산에 쓰는 적 요구치.</summary>
@@ -190,17 +186,17 @@ namespace Adventure.Core
         public const double MaterialDrop = 0.55;
 
         // ── 전투 (기획서 v1.2) ──────────────────────────────────
-        /// <summary>기본 공격 성공률 = 74% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 55~85% (대부분 70~80%).</summary>
-        public const double BaseHit = 0.74;
+        /// <summary>기본 공격 성공률 = 81% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 62~92% (v1.8: +7%p, 대부분 77~87%).</summary>
+        public const double BaseHit = 0.81;
         public const double HitPerStatPoint = 0.01;
-        public const double MinHit = 0.55;
-        public const double MaxHit = 0.85;
+        public const double MinHit = 0.62;
+        public const double MaxHit = 0.92;
         public const double MinSuccess = 0.05;
         public const double MaxSuccess = 0.95;
         public const double EnemyBaseHit = 0.90;
-        /// <summary>도주 = 60% + 회피 + 집중 − 실명, 최대 80%.</summary>
-        public const double BaseFlee = 0.60;
-        public const double MaxFlee = 0.80;
+        /// <summary>도주 = 67% + 회피 + 집중 − 실명, 최대 87% (v1.8: +7%p).</summary>
+        public const double BaseFlee = 0.67;
+        public const double MaxFlee = 0.87;
         public const double BossFleeChance = 0.0;
         /// <summary>마법사 기본 공격 피해 배율.</summary>
         public const double MageBasicAttack = 0.60;

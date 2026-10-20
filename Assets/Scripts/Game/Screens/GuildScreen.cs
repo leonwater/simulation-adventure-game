@@ -8,12 +8,9 @@ namespace Adventure.Game
     public class GuildScreen : ScreenBase
     {
         private int _tab;
+        /// <summary>창고 탭: false = 보관(기본), true = 출고.</summary>
+        private bool _withdraw;
         private string _line = "무사히 돌아오셨네요. 오늘은 어떤 일로 오셨나요?";
-
-        public GuildScreen(int tab = 0)
-        {
-            _tab = tab;
-        }
 
         public override bool OnBack()
         {
@@ -195,8 +192,7 @@ namespace Adventure.Game
                 Condition(card, "돌파 층", st.FloorCurrent, st.FloorRequired, st.FloorMet);
                 Condition(card, "레벨", st.LevelCurrent, st.LevelRequired, st.LevelMet);
                 Condition(card, "퀘스트 완료", st.QuestsCurrent, st.QuestsRequired, st.QuestsMet);
-                var b = UI.TextButton(card, st.Next + " 등급으로 승급", Promote, ButtonKind.Primary);
-                UI.SetEnabled(b, st.CanPromote);
+                UI.Sub(card, "세 조건을 모두 채우면 자동으로 승급합니다.");
             }
             else UI.Label(card, "최고 등급에 도달했습니다.", 14, Theme.Gold);
 
@@ -230,39 +226,43 @@ namespace Adventure.Game
             UI.Label(row, Mathf.Min(cur, req) + " / " + req, 14, met ? Theme.Green : Theme.TextSub, met, TextAnchor.MiddleRight, false, false);
         }
 
-        private void Promote()
-        {
-            if (!RankSystem.TryPromote(C)) return;
-            _line = "축하드립니다! 이제 " + C.Rank + " 등급 모험가입니다.";
-            Toast(C.Rank + " 등급으로 승급했다! 배지 효과 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%");
-            S.Save();
-            Rebuild();
-        }
-
-        // ── 창고 ──
+        // ── 창고: 보관(가방 → 창고) / 출고(창고 → 가방), 한 번 옮길 때마다 수수료 (v1.8) ──
 
         private void StorageTab(Transform body)
         {
             var box = UI.Column(body, 8);
             Anchors.Set("guild.storage", box);
-            UI.Sub(box, "창고에 맡긴 아이템은 던전에서 쓰러져도 잃지 않습니다.");
+            var seg = UI.Row(box, 8);
+            for (int i = 0; i < 2; i++)
+            {
+                int idx = i;
+                var b = UI.TextButton(seg, i == 0 ? "보관" : "출고", () =>
+                {
+                    _withdraw = idx == 1;
+                    Rebuild();
+                }, (idx == 1) == _withdraw ? ButtonKind.Primary : ButtonKind.Ghost, 40, 14);
+                UI.Size(b, width: 0, flexW: 1);
+            }
+            int fee = GuildSystem.StorageFee(C);
+            UI.Sub(box, "창고에 맡긴 아이템은 던전에서 쓰러져도 잃지 않습니다. 맡기거나 찾을 때마다 수수료 " + UI.Color(fee + "G", Theme.GoldHex) + "가 듭니다.");
             ItemGrid.Legend(box);
-            UI.Label(box, "창고 " + C.Storage.UsedCells + " / " + C.Storage.Capacity, 14, Theme.Text, true);
-            ItemGrid.Build(box, C.Storage, null, item => Overlay.Confirm(item.DisplayName, item.StatLine(), "찾기", () =>
+            UI.Label(box, "창고 " + C.Storage.UsedCells + " / " + C.Storage.Capacity + " · 가방 " + C.Inventory.UsedCells + " / " + C.Inventory.Capacity, 14, Theme.Text, true);
+            var from = _withdraw ? C.Storage : C.Inventory;
+            if (from.Items.Count == 0) UI.Sub(box, _withdraw ? "창고가 비어 있습니다." : "가방이 비어 있습니다.");
+            string verb = _withdraw ? "찾기" : "맡기기";
+            ItemGrid.Build(box, from, null, item => Overlay.Confirm(item.DisplayName, item.StatLine() + "\n\n수수료 " + fee + "G", verb + " · " + fee + "G", () =>
             {
-                if (!GuildSystem.Withdraw(C, item.Uid, out string err)) Toast(err);
+                string err;
+                bool ok = _withdraw ? GuildSystem.Withdraw(C, item.Uid, out err) : GuildSystem.Deposit(C, item.Uid, out err);
+                if (!ok)
+                {
+                    Toast(err);
+                    return;
+                }
                 S.Save();
+                Toast(item.DisplayName + (_withdraw ? " 찾음" : " 맡김") + " · 수수료 " + fee + "G");
                 Rebuild();
-            }, "닫기"));
-
-            UI.Spacer(body, 0, 6);
-            UI.Label(body, "가방 " + C.Inventory.UsedCells + " / " + C.Inventory.Capacity, 14, Theme.Text, true);
-            ItemGrid.Build(body, C.Inventory, null, item => Overlay.Confirm(item.DisplayName, item.StatLine(), "맡기기", () =>
-            {
-                if (!GuildSystem.Deposit(C, item.Uid, out string err)) Toast(err);
-                S.Save();
-                Rebuild();
-            }, "닫기"));
+            }, "닫기"), false);
         }
     }
 }

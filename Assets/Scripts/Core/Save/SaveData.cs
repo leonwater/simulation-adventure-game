@@ -24,8 +24,6 @@ namespace Adventure.Core
         public long PlaySeconds;
         /// <summary>튜토리얼 단계 (0 = 끝남 또는 예전 저장).</summary>
         public TutorialStage Tutorial = TutorialStage.Done;
-        /// <summary>설정에서 튜토리얼을 다시 보는 중 (처음 튜토리얼에는 건너뛰기 버튼이 없다).</summary>
-        public bool TutorialReplay;
         /// <summary>이미 보여 준 안내 (다시 켜도 반복하지 않게).</summary>
         public List<string> TipsShown = new List<string>();
         /// <summary>마지막으로 확인한 상점 갱신 시각 (알림 점용).</summary>
@@ -112,7 +110,7 @@ namespace Adventure.Core
             // 능력치 최대값을 넘는 예전 저장: 넘친 만큼 포인트로 돌려준다
             foreach (Stat s in Enum.GetValues(typeof(Stat)))
             {
-                int over = c.BaseStats[s] - GameBalance.MaxStat(s);
+                int over = c.BaseStats[s] - GameBalance.StatCap;
                 if (over <= 0) continue;
                 c.BaseStats[s] -= over;
                 c.UnspentPoints += over;
@@ -127,6 +125,8 @@ namespace Adventure.Core
                 foreach (var s in c.Skills.Learned) d.SeenSkills.Add(s.SkillId);
             }
             if (d.Shop == null) d.Shop = new ShopState();
+            // v1.7 이전 저장: 스킬서는 1권만
+            foreach (var g in d.Shop.Goods) if (g.Item?.Kind == ItemKind.SkillBook) g.Stock = 1;
             if (d.Guild == null) d.Guild = new GuildState();
             if (d.Run != null && (d.Run.Map == null || d.Run.Map.Rooms.Count == 0 || d.Run.Current == null)) d.Run = null;
             d.SelectedFloor = GameBalance.Clamp(d.SelectedFloor, 1, c.MaxChallengeFloor);

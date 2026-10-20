@@ -51,6 +51,19 @@ namespace Adventure.Game
         public static readonly Color ReturnText = Hex("9BDDB8");
         public static readonly Color ReturnSub = Hex("72B892");
         public static readonly Color Green = Hex("6FB37A");
+        public static readonly Color Orange = Hex("E8954A");
+
+        /// <summary>난이도 글자색: 쉬움 파랑 · 보통 초록 · 어려움 주황 · 하드코어 빨강.</summary>
+        public static Color DifficultyColor(Adventure.Core.Difficulty d)
+        {
+            switch (d)
+            {
+                case Adventure.Core.Difficulty.Easy: return Blue;
+                case Adventure.Core.Difficulty.Hard: return Orange;
+                case Adventure.Core.Difficulty.Hardcore: return Red;
+                default: return Green;
+            }
+        }
         public static readonly Color Dim = new Color(0, 0, 0, 0.6f);
 
         public const string GoldHex = "#E2B657";
@@ -60,6 +73,7 @@ namespace Adventure.Game
         public const string BlueHex = "#9EC0E8";
 
         public const float ScreenWidth = 390f;
+        /// <summary>기준 세로 길이 (시안). 실제 높이는 기기마다 다르다 (ScreenFit.Height, 최소 700).</summary>
         public const float ScreenHeight = 844f;
         public const float MinTouch = 44f;
 

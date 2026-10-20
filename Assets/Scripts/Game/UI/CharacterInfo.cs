@@ -16,7 +16,7 @@ namespace Adventure.Game
         };
 
         private static readonly StatusType[] Buffs =
-            { StatusType.Empower, StatusType.Fortify, StatusType.Regen, StatusType.Focus, StatusType.Swift };
+            { StatusType.Empower, StatusType.Fortify, StatusType.Regen, StatusType.Focus, StatusType.Swift, StatusType.Keen, StatusType.Cruel };
 
         public static void Show(Overlay overlay, GameSession session, Battle battle = null)
         {
@@ -122,7 +122,9 @@ namespace Adventure.Game
                 bool debuff = StatusContainer.IsDebuff(s.Type);
                 var card = UI.Card(body, debuff ? Theme.RedBg : Theme.BlueBg, debuff ? Theme.RedBorder : Theme.BlueBorder, 10, UI.Pad(12, 8), true, 2);
                 string turns = s.Turns >= 99 ? "전투 내내" : s.Turns + "턴 남음";
-                UI.Label(card, Names.Of(s.Type) + " · " + turns, 14, debuff ? Theme.RedLight : Theme.BlueLight, true);
+                var head = UI.Row(card, 6);
+                UI.Icon(head, UI.StatusIcon(s.Type), 20);
+                UI.Label(head, Names.Of(s.Type) + " · " + turns, 14, debuff ? Theme.RedLight : Theme.BlueLight, true);
                 UI.Label(card, Names.DescribeActive(s, maxHp), 13, Theme.TextBody);
             }
         }
@@ -151,9 +153,10 @@ namespace Adventure.Game
 
         private static void Glossary(Transform parent, StatusType t, bool debuff)
         {
-            var row = UI.Row(parent, 8, null, TextAnchor.UpperLeft);
+            var row = UI.Row(parent, 6, null, TextAnchor.UpperLeft);
+            UI.Icon(row, UI.StatusIcon(t), 18);
             var tag = UI.Label(row, Names.Of(t), 13, debuff ? Theme.RedLight : Theme.BlueLight, true);
-            UI.Size(tag, width: 52);
+            UI.Size(tag, width: 48);
             var text = UI.Label(row, Names.Explain(t), 12, Theme.TextBody);
             UI.Size(text, flexW: 1);
         }

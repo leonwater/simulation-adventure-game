@@ -57,9 +57,6 @@ namespace Adventure.Core
         public static double Resist(Character c) =>
             Math.Min(GameBalance.MaxResist, Total(c, Stat.Spirit) * GameBalance.ResistPerSpirit);
 
-        /// <summary>치명타는 스킬에서만 발생 (피해 ×1.8).</summary>
-        public static double CritDamage(Character c) => GameBalance.CritMultiplier;
-
         public static double SkillDamageBonus(Character c) =>
             Total(c, Stat.SpellPower) * GameBalance.SkillDamagePerSpellPower;
 

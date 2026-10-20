@@ -265,10 +265,10 @@ namespace Adventure.Game
             }
             if (!enemy) Anchors.Set("battle.player", root);
 
-            // 상태 이상 (도형 아래)
+            // 상태 이상 아이콘 (도형 아래). 이름·남은 턴은 누르면 나오는 상세 창에, 1턴 남으면 천천히 깜빡인다
             if (c.Alive && c.Statuses.Visible().Count > 0)
             {
-                var tags = UI.Row(_stage, 3, null, TextAnchor.MiddleCenter, "status");
+                var tags = UI.Row(_stage, 2, null, TextAnchor.MiddleCenter, "status");
                 tags.anchorMin = tags.anchorMax = new Vector2(0, 1);
                 tags.pivot = new Vector2(0.5f, 1);
                 tags.anchoredPosition = new Vector2(center.x, -(center.y + size / 2f + 5));
@@ -278,9 +278,9 @@ namespace Adventure.Game
                 int n = 0;
                 foreach (var s in c.Statuses.Visible())
                 {
-                    if (n++ >= (enemy && _b.Enemies.Count > 1 ? 2 : 3)) break; // 칸이 좁아 3개까지 (적이 2마리 이상이면 2개)
-                    bool debuff = StatusContainer.IsDebuff(s.Type);
-                    UI.Pill(tags, Names.Of(s.Type) + (s.Turns >= 99 ? "" : s.Turns.ToString()), debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 10, 6);
+                    if (n++ >= (enemy && _b.Enemies.Count > 1 ? 4 : 6)) break; // 적이 2마리 이상이면 칸이 좁아 4개까지
+                    var icon = UI.Icon(tags, UI.StatusIcon(s.Type), 18);
+                    if (s.Turns == 1) icon.gameObject.AddComponent<Blink>().Period = 2.2f;
                 }
             }
             _units[index] = v;
@@ -482,6 +482,7 @@ namespace Adventure.Game
                 ItemMenu();
                 return;
             }
+            if (ch.Kind == ActionKind.Flee && Tutorial.Blocks("도주")) return;
             Execute(ch);
         }
 
@@ -709,6 +710,7 @@ namespace Adventure.Game
             }, ButtonKind.Secondary);
             UI.TextButton(body, "저장하고 타이틀로", () =>
             {
+                if (Tutorial.Blocks("타이틀로 가기")) return;
                 S.Save();
                 Go(new TitleScreen());
             }, ButtonKind.Ghost);

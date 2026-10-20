@@ -44,7 +44,7 @@ namespace Adventure.Core
         public static bool Allocate(Character c, Stat stat, int points = 1)
         {
             if (points <= 0 || c.UnspentPoints < points || !c.JobData.CanAllocate(stat)) return false;
-            if (c.BaseStats[stat] + points > GameBalance.MaxStat(stat)) return false;
+            if (c.BaseStats[stat] + points > GameBalance.StatCap) return false;
             c.BaseStats[stat] += points;
             c.UnspentPoints -= points;
             return true;
@@ -75,7 +75,7 @@ namespace Adventure.Core
                 {
                     if (job.AutoRatio[i] <= 0) continue;
                     var st = job.AllocatableStats[i];
-                    if (c.BaseStats[st] + plan[i] >= GameBalance.MaxStat(st)) continue;
+                    if (c.BaseStats[st] + plan[i] >= GameBalance.StatCap) continue;
                     double deficit = job.AutoRatio[i] / 100.0 * total - assigned[i];
                     if (deficit > bestDeficit)
                     {
@@ -139,7 +139,7 @@ namespace Adventure.Core
 
         /// <summary>남은 포인트가 있고 최대값에 닿지 않았으면 더할 수 있다.</summary>
         public bool CanAdd(Stat stat) =>
-            Remaining > 0 && _character.JobData.CanAllocate(stat) && _character.BaseStats[stat] + _pending[(int)stat] < GameBalance.MaxStat(stat);
+            Remaining > 0 && _character.JobData.CanAllocate(stat) && _character.BaseStats[stat] + _pending[(int)stat] < GameBalance.StatCap;
 
         public bool Remove(Stat stat)
         {

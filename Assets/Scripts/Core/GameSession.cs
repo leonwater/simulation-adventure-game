@@ -97,7 +97,6 @@ namespace Adventure.Core
         {
             if (Data == null) return;
             Data.Tutorial = stage;
-            if (stage == TutorialStage.Done) Data.TutorialReplay = false;
             Save();
         }
 
@@ -106,28 +105,53 @@ namespace Adventure.Core
         {
             if (Data == null || InDungeon) return;
             Data.Tutorial = TutorialStage.TownGuide;
-            Data.TutorialReplay = true;
             Data.TipsShown.Clear();
             Save();
         }
 
-        /// <summary>저장을 불러온다. 던전 안에서 전투 중이었다면 그 방의 전투를 다시 시작한다.</summary>
+        /// <summary>
+        /// 저장을 불러온다. 던전 안에서 전투 중이었다면 그 방의 전투를 다시 시작한다.
+        /// 앱을 업데이트한 뒤 예전 버전의 던전 진행을 이어 가지 못하면(데이터가 바뀌어 오류) 캐릭터는 그대로 두고 마을에서 시작한다 (v1.8).
+        /// </summary>
         public bool Continue()
         {
             var loaded = SaveSystem.Load(_store);
             if (loaded == null) return false;
             Data = loaded;
             ClearTransient();
-            if (Data.Run == null) EnterTown(false);
-            else if (Data.Run.TrialFloor > 0 && Data.Run.Current.Cleared) FinishTrial(); // 시련을 이기고 결과를 보기 전에 꺼졌다
-            else ResumeRoom();
+            if (Data.Run == null)
+            {
+                EnterTown(false);
+                return true;
+            }
+            try
+            {
+                if (Data.Run.TrialFloor > 0 && Data.Run.Current.Cleared) FinishTrial(); // 시련을 이기고 결과를 보기 전에 꺼졌다
+                else ResumeRoom();
+            }
+            catch (Exception)
+            {
+                Data.Run = null;
+                ClearTransient();
+                if (Data.Tutorial == TutorialStage.FirstDungeon) Data.Tutorial = TutorialStage.AfterReturn;
+                EnterTown(false);
+            }
             return true;
         }
 
+        /// <summary>
+        /// 저장할 때마다 승급 조건을 확인해 채웠으면 바로 승급한다 (v1.8 자동 승급). 레벨 업·층 돌파·퀘스트 보고처럼
+        /// 조건이 바뀌는 일은 모두 저장으로 끝나므로 여기 한 곳에서 본다. 화면은 Promotions를 보고 알림을 띄운다.
+        /// </summary>
         public void Save()
         {
-            if (Data != null) SaveSystem.Save(_store, Data, Now);
+            if (Data == null) return;
+            while (RankSystem.TryPromote(C)) Promotions.Add(C.Rank);
+            SaveSystem.Save(_store, Data, Now);
         }
+
+        /// <summary>아직 알림을 보여 주지 않은 승급 (오른 등급 순서대로).</summary>
+        public readonly List<Rank> Promotions = new List<Rank>();
 
         public void DeleteSave()
         {
@@ -138,6 +162,7 @@ namespace Adventure.Core
 
         private void ClearTransient()
         {
+            Promotions.Clear();
             Battle = null;
             LastEvent = null;
             LastLoot = null;

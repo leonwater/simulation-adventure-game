@@ -43,7 +43,7 @@ namespace Adventure.Game
             var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(12, 12, 6, 6), false, 0, TextAnchor.MiddleCenter, "topbar");
             UI.Size(bar, height: 57);
             var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
-            UI.Size(left, width: 120);
+            UI.Size(left, width: 130);
             if (onBack != null)
             {
                 var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
@@ -52,7 +52,7 @@ namespace Adventure.Game
             }
             var t = UI.Label(bar, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
             UI.Size(t, flexW: 1);
-            GoldAndSettings(bar, c, 120);
+            GoldAndSettings(bar, c, 130);
             BottomLine(bar);
         }
 
@@ -60,10 +60,12 @@ namespace Adventure.Game
         public static void GoldAndSettings(Transform bar, Character c, float width = -1)
         {
             var right = UI.Row(bar, 6, null, TextAnchor.MiddleRight, "gold-settings");
-            if (width > 0) UI.Size(right, width: width, flexW: 0); // 왼쪽 칸(120)과 같은 폭이라 제목이 가운데
+            if (width > 0) UI.Size(right, width: width, flexW: 0); // 왼쪽 칸과 같은 폭이라 제목이 가운데
             if (width > 0) UI.HSpacer(right);
             UI.Icon(right, "gold", 18);
-            UI.Label(right, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            // 큰 금액도 잘리지 않게 줄여 쓰고(12.3만), 글자 폭만큼은 꼭 차지한다
+            var gold = UI.Label(right, Names.GoldCompact(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            UI.Size(gold, flexW: 0).minWidth = gold.preferredWidth;
             var gear = UI.ButtonCard(right, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
             UI.Size(gear, width: 40, height: 40);
             UI.Icon(gear, "settings", 22);
@@ -103,20 +105,21 @@ namespace Adventure.Game
             lrt.anchoredPosition = Vector2.zero;
         }
 
-        /// <summary>마을 머리줄: 이름 · 직업 레벨 · 경험치 막대 · 등급 · 골드.</summary>
+        /// <summary>마을 머리줄: 1줄 이름 · 직업 · 등급 배지 / 2줄 Lv. · 경험치 막대 (v1.8) · 오른쪽 골드 + 설정.</summary>
         public static void TownHeader(Transform parent, Character c)
         {
             var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 12, 12), false, 8, TextAnchor.MiddleLeft, "header");
             UI.Size(bar, height: 64);
             var left = UI.Column(bar, 4);
             UI.Size(left, flexW: 1);
-            // 이름 옆에 모험가 등급 배지 (수정 사항: 글자 알약 대신 아이콘)
             var nameRow = UI.Row(left, 6);
             UI.Label(nameRow, c.Name, 15, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            JobLine(nameRow, c.Job, c.JobData.Name, 12, Theme.TextSub);
             UI.Icon(nameRow, UI.RankIcon(c.Rank), 22);
-            var barRow = UI.Row(left, 8);
-            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 100);
-            JobLine(barRow, c.Job, c.JobData.Name + " Lv." + c.Level, 12, Theme.TextSub);
+            // 경험치 막대는 윗줄(이름·직업·배지)과 비슷한 길이로
+            var barRow = UI.Row(left, 6);
+            UI.Label(barRow, "Lv." + c.Level, 12, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 104);
             // 오른쪽 위: 골드 + 설정 버튼 → 설정 창 (다른 마을 화면 머리줄과 같다)
             GoldAndSettings(bar, c);
             BottomLine(bar);
@@ -219,7 +222,7 @@ namespace Adventure.Game
         public static void StatRow(Transform parent, Character c, Stat stat, AllocationDraft draft, Action onMinus, Action onPlus, bool line)
         {
             int pending = draft.Pending(stat);
-            int own = c.BaseStats[stat] + pending, cap = GameBalance.MaxStat(stat);
+            int own = c.BaseStats[stat] + pending, cap = GameBalance.StatCap;
             var row = UI.Row(parent, 8);
             UI.Size(row, height: 60);
             UI.Icon(row, UI.StatIcon(stat), 24);
@@ -305,6 +308,8 @@ namespace Adventure.Game
         /// </summary>
         public static Text NpcIllustration(Transform parent, string illustration, string line, float height)
         {
+            // 세로가 짧은 화면(16:9 등)에서는 아래 목록이 넉넉하도록 일러스트를 줄인다
+            height = Mathf.Min(height, Mathf.Round(ScreenFit.Height * 0.345f));
             var holder = UI.Rect(parent, "npc");
             UI.Size(holder, height: height);
             var ill = UI.Illustration(holder, illustration, height);

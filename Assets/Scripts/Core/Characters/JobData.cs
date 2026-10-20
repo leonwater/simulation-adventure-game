@@ -60,6 +60,14 @@ namespace Adventure.Core
 
         public static JobData Get(Job job) => All[(int)job];
 
+        /// <summary>장비·스킬서가 어느 직업용으로 나올지: 지금 직업 70%, 다른 세 직업 각 10%.</summary>
+        public static Job RollItemJob(Job own, Rng rng)
+        {
+            if (rng.Chance(GameBalance.OwnJobChance)) return own;
+            int other = rng.Range(0, 3);
+            return (Job)(other >= (int)own ? other + 1 : other);
+        }
+
         public bool CanAllocate(Stat stat) => Array.IndexOf(AllocatableStats, stat) >= 0;
 
         /// <summary>Lv.1 능력치. 배분할 수 없는 능력치는 5로 고정.</summary>

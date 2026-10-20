@@ -303,7 +303,7 @@ namespace Adventure.Core
             if (outcome.LinkBoss) MapEvents.LinkBoss(run);
             if (outcome.FindReturn) MapEvents.FindReturn(run);
             if (!string.IsNullOrEmpty(outcome.Chain)) MapEvents.Chain(run, outcome.Chain, rng);
-            if (outcome.BecomeMerchant) MapEvents.BecomeMerchant(run);
+            if (outcome.BecomeMerchant) MapEvents.BecomeMerchant(run, rng);
         }
 
         private static void ChangeHp(Character c, double ratio, EventResult result)
@@ -322,7 +322,7 @@ namespace Adventure.Core
             {
                 case EventReward.GoodEquipment:
                     var grade = (ItemGrade)Math.Max((int)ItemGrade.Uncommon, (int)EquipmentFactory.RollDropGrade(rng, run.Floor, 1));
-                    result.Loot.Items.Add(EquipmentFactory.CreateRandom(rng, grade, EquipmentFactory.ItemLevelForFloor(run.Floor, rng), c.Job, 0.7));
+                    result.Loot.Items.Add(EquipmentFactory.CreateRandom(rng, grade, EquipmentFactory.ItemLevelForFloor(run.Floor, rng), c.Job));
                     break;
                 case EventReward.Consumables:
                     var ids = new[] { "potion", "potion_hi", "antidote", "bandage", "salve" };

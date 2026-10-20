@@ -15,6 +15,10 @@ namespace Adventure.Core
         public static int GoldCost(ItemInstance item) =>
             GameBalance.EnhanceGoldPerLevel * (item.Enhance + 1) * ((int)item.Grade + 1);
 
+        /// <summary>지금 강화 단계까지 들어간 골드 (성공한 단계 기준).</summary>
+        public static int GoldSpent(ItemInstance item) =>
+            GameBalance.EnhanceGoldPerLevel * ((int)item.Grade + 1) * item.Enhance * (item.Enhance + 1) / 2;
+
         public static int StoneCost(ItemInstance item) =>
             item.Enhance >= GameBalance.MaxEnhance ? 0 : GameBalance.EnhanceStones[item.Enhance + 1];
 
