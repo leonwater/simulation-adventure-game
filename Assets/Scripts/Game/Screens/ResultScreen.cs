@@ -11,7 +11,7 @@ namespace Adventure.Game
         Clear
     }
 
-    /// <summary>정산: 패배(이전·현재·변화 표), 귀환(획득, N층 클리어), 하드코어 초기화, 던전 정복 엔딩.</summary>
+    /// <summary>정산: 패배(이전·현재·변화 표), 귀환(획득, N층 클리어), 하드코어 초기화, 게임 클리어 엔딩.</summary>
     public class ResultScreen : ScreenBase
     {
         private readonly ResultKind _kind;
@@ -164,7 +164,7 @@ namespace Adventure.Game
 
         private void Clear(Transform body)
         {
-            Heading(body, "던전 정복", Theme.Gold, GameBalance.MaxFloor + "층 · 드래곤 처치");
+            Heading(body, "게임 클리어", Theme.Gold, GameBalance.MaxFloor + "층 · 드래곤 처치");
             var card = Panel(body, "기록", Theme.Gold, Theme.AccentBg, Theme.Accent);
             UI.Label(card, Names.Josa(C.Name, "은/는") + " 마침내 던전 최하층의 주인을 쓰러뜨렸다. 라브 마을의 사람들은 오래도록 그 이름을 이야기할 것이다.", 15, Theme.Text);
             UI.Spacer(card, 0, 6);

@@ -40,7 +40,7 @@ namespace Adventure.Game
                 UI.Size(UI.Sub(who, "모험가"), flexW: 1);
                 ScreenKit.JobLine(who, c.Job, c.Name + " · " + c.JobData.Name + " Lv." + c.Level, 14, Theme.Text);
                 Line(info, "난이도", Names.Of(S.Difficulty));
-                Line(info, "돌파 층", c.HighestFloorCleared + " / " + GameBalance.MaxFloor + (S.Data.GameCleared ? " · 던전 정복" : ""));
+                Line(info, "돌파 층", c.HighestFloorCleared + " / " + GameBalance.MaxFloor + (S.Data.GameCleared ? " · 게임 클리어" : ""));
                 Line(info, "완료한 퀘스트", c.QuestsCompleted.ToString());
                 long sec = S.Data.PlaySeconds;
                 Line(info, "플레이 시간", (sec / 3600) + "시간 " + (sec / 60 % 60) + "분");
