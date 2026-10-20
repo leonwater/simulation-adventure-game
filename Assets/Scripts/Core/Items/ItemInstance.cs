@@ -33,10 +33,13 @@ namespace Adventure.Core
 
         public bool IsAccessory => Kind == ItemKind.Equipment && (Gear == GearType.Necklace || Gear == GearType.Ring);
 
-        /// <summary>강화가 반영된 수치. 강화 1단계마다 기본 수치 +5%.</summary>
-        public int Value => (int)Math.Round(BaseValue * (1.0 + GameBalance.EnhanceValuePerLevel * Enhance));
+        /// <summary>강화가 반영된 수치. 강화 1단계마다 기본 수치 + 등급별 5~10%.</summary>
+        public int Value => ValueAt(Enhance);
 
-        public int SellPrice => Math.Max(1, (int)Math.Round(Price * GameBalance.SellRatio));
+        public int ValueAt(int enhance) => (int)Math.Round(BaseValue * (1.0 + GameBalance.EnhanceValuePerLevel[(int)Grade] * enhance));
+
+        /// <summary>판매가 = 구매가의 50% + 강화에 든 골드의 50%.</summary>
+        public int SellPrice => Math.Max(1, (int)Math.Round(Price * GameBalance.SellRatio + Blacksmith.GoldSpent(this) * GameBalance.EnhanceSellRefund));
 
         public string DisplayName => Enhance > 0 ? Name + " +" + Enhance : Name;
 

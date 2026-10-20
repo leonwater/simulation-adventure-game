@@ -219,7 +219,7 @@ namespace Adventure.Game
         public static void StatRow(Transform parent, Character c, Stat stat, AllocationDraft draft, Action onMinus, Action onPlus, bool line)
         {
             int pending = draft.Pending(stat);
-            int own = c.BaseStats[stat] + pending, cap = GameBalance.MaxStat(stat);
+            int own = c.BaseStats[stat] + pending, cap = GameBalance.StatCap;
             var row = UI.Row(parent, 8);
             UI.Size(row, height: 60);
             UI.Icon(row, UI.StatIcon(stat), 24);

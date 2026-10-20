@@ -151,7 +151,7 @@ namespace Adventure.Tests
             c.BaseStats[Stat.Finesse] = 10;
             c.BaseStats[Stat.Spirit] = 6;
             Assert.AreEqual(0.15, CharacterStats.Evasion(c), 1e-9, "민첩 20 × 0.5% + 기교 10 × 0.5%");
-            Assert.AreEqual(1.8, CharacterStats.CritDamage(c), 1e-9);
+            Assert.AreEqual(2.3, new Combatant().CritDamage, 1e-9);
             Assert.AreEqual(0.06, CharacterStats.Resist(c), 1e-9);
             Assert.AreEqual(0.04, CharacterStats.EventLuckBonus(c), 1e-9);
             Assert.AreEqual(1.04, CharacterStats.DropBonus(c), 1e-9);

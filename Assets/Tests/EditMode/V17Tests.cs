@@ -24,11 +24,11 @@ namespace Adventure.Tests
                 var attack = c.JobData.AttackStat;
                 // 한 능력치에 몰아도 최대값에서 멈춘다
                 while (Leveling.Allocate(c, attack)) { }
-                Assert.AreEqual(GameBalance.MaxStat(attack), c.BaseStats[attack]);
+                Assert.AreEqual(GameBalance.StatCap, c.BaseStats[attack]);
                 Assert.Greater(c.UnspentPoints, 0);
                 // 나머지는 자동 배분이 최대값을 지키며 나눈다
                 Leveling.AutoAllocate(c);
-                foreach (var st in c.JobData.AllocatableStats) Assert.LessOrEqual(c.BaseStats[st], GameBalance.MaxStat(st), st.ToString());
+                foreach (var st in c.JobData.AllocatableStats) Assert.LessOrEqual(c.BaseStats[st], GameBalance.StatCap, st.ToString());
                 Assert.AreEqual(0, c.UnspentPoints, "다섯 능력치 최대값 합이면 포인트를 모두 쓸 수 있다");
             }
 
@@ -36,7 +36,7 @@ namespace Adventure.Tests
             var draft = new AllocationDraft(d);
             int guard = 0;
             while (draft.Add(Stat.Luck) && guard++ < 500) { }
-            Assert.AreEqual(GameBalance.MaxStat(Stat.Luck), d.BaseStats[Stat.Luck] + draft.Pending(Stat.Luck));
+            Assert.AreEqual(GameBalance.StatCap, d.BaseStats[Stat.Luck] + draft.Pending(Stat.Luck));
             Assert.IsFalse(draft.CanAdd(Stat.Luck));
         }
 
@@ -50,8 +50,8 @@ namespace Adventure.Tests
             s.C.UnspentPoints = 2;
             s.Save();
             Assert.IsTrue(s.Continue());
-            Assert.AreEqual(GameBalance.MaxStat(Stat.Strength), s.C.BaseStats[Stat.Strength]);
-            Assert.AreEqual(2 + 150 - GameBalance.MaxStat(Stat.Strength), s.C.UnspentPoints);
+            Assert.AreEqual(GameBalance.StatCap, s.C.BaseStats[Stat.Strength]);
+            Assert.AreEqual(2 + 150 - GameBalance.StatCap, s.C.UnspentPoints);
         }
 
         [Test]

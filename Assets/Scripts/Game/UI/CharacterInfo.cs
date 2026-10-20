@@ -16,7 +16,7 @@ namespace Adventure.Game
         };
 
         private static readonly StatusType[] Buffs =
-            { StatusType.Empower, StatusType.Fortify, StatusType.Regen, StatusType.Focus, StatusType.Swift };
+            { StatusType.Empower, StatusType.Fortify, StatusType.Regen, StatusType.Focus, StatusType.Swift, StatusType.Keen, StatusType.Cruel };
 
         public static void Show(Overlay overlay, GameSession session, Battle battle = null)
         {

@@ -75,7 +75,7 @@ namespace Adventure.Game
                 return;
             }
             int now = item.Value;
-            int next = (int)System.Math.Round(item.BaseValue * (1.0 + GameBalance.EnhanceValuePerLevel * (item.Enhance + 1)));
+            int next = item.ValueAt(item.Enhance + 1);
             string what = item.IsWeapon ? "공격력" : item.IsAccessory ? Names.Of(item.BonusStat) : "방어력";
             UI.Label(card, "+" + item.Enhance + " → +" + (item.Enhance + 1) + " · " + what + " " + now + " → " + UI.Color(next.ToString(), Theme.GreenHex), 14, Theme.Text);
             int stones = Blacksmith.StoneCost(item);

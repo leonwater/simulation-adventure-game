@@ -140,7 +140,7 @@ namespace Adventure.Game
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
                 UI.Label(col, Names.Of(s) + " " + UI.Color(CharacterStats.Total(C, s) + (eq > 0 ? " (장비 +" + eq + ")" : ""), Theme.GoldHex)
-                              + UI.Color(" · 최대 " + GameBalance.MaxStat(s), Theme.SubHex), 14, Theme.Text, true);
+                              + UI.Color(" · 최대 " + GameBalance.StatCap, Theme.SubHex), 14, Theme.Text, true);
                 UI.Label(col, StatEffect(s) + (mine ? "" : " · 이 직업은 배분 불가"), 12, Theme.TextSub);
                 if (!mine) row.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
             }

@@ -112,7 +112,7 @@ namespace Adventure.Core
             // 능력치 최대값을 넘는 예전 저장: 넘친 만큼 포인트로 돌려준다
             foreach (Stat s in Enum.GetValues(typeof(Stat)))
             {
-                int over = c.BaseStats[s] - GameBalance.MaxStat(s);
+                int over = c.BaseStats[s] - GameBalance.StatCap;
                 if (over <= 0) continue;
                 c.BaseStats[s] -= over;
                 c.UnspentPoints += over;

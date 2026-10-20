@@ -117,6 +117,8 @@ namespace Adventure.Core
         Regen,      // 재생: 턴마다 최대 HP % 회복
         Focus,      // 집중: 선택지 성공률 +
         Swift,      // 날렵함: 회피 +
+        Keen,       // 예리함: 스킬 치명타 확률 +
+        Cruel,      // 잔혹함: 치명타 피해 +
         Poison,     // 독: 턴마다 최대 HP % 피해
         Bleed,      // 출혈: 행동할 때마다 고정 피해
         Burn,       // 화상: 턴마다 고정 피해, 받는 회복량 −50%
