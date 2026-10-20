@@ -30,16 +30,17 @@ namespace Adventure.Core
             GearType.Necklace, GearType.Ring, GearType.Weapon
         };
 
+        /// <summary>장비 기본 수치 (v1.9: 장비 비중을 키우려고 1.4배).</summary>
         public static int BaseValueFor(GearType gear, int itemLevel)
         {
             switch (gear)
             {
-                case GearType.Weapon: return (int)Math.Round(6 + itemLevel * 2.2);
-                case GearType.Helmet: return (int)Math.Round(2 + itemLevel * 0.6);
-                case GearType.Armor: return (int)Math.Round(4 + itemLevel * 1.0);
-                case GearType.Pants: return (int)Math.Round(3 + itemLevel * 0.8);
-                case GearType.Boots: return (int)Math.Round(2 + itemLevel * 0.5);
-                default: return (int)Math.Round(1 + itemLevel * 0.25); // 장신구: 능력치 보너스
+                case GearType.Weapon: return (int)Math.Round(8.4 + itemLevel * 3.08);
+                case GearType.Helmet: return (int)Math.Round(2.8 + itemLevel * 0.84);
+                case GearType.Armor: return (int)Math.Round(5.6 + itemLevel * 1.4);
+                case GearType.Pants: return (int)Math.Round(4.2 + itemLevel * 1.12);
+                case GearType.Boots: return (int)Math.Round(2.8 + itemLevel * 0.7);
+                default: return (int)Math.Round(1.4 + itemLevel * 0.35); // 장신구: 능력치 보너스
             }
         }
 

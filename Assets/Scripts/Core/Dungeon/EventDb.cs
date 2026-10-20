@@ -296,7 +296,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "vein", Title = "빛나는 광맥", Illustration = "빛나는 광맥",
+                Id = "vein", Title = "빛나는 광맥", Illustration = "빛나는 광맥", MinFloor = GameBalance.StoneFirstFloor,
                 Body = "바위 틈에서 은은하게 빛나는 광석이 보인다. 대장장이가 반길 만한 물건이다.",
                 Choices = new[]
                 {

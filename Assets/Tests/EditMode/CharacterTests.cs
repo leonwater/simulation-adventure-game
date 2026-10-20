@@ -155,7 +155,7 @@ namespace Adventure.Tests
             Assert.AreEqual(0.06, CharacterStats.Resist(c), 1e-9);
             Assert.AreEqual(0.04, CharacterStats.EventLuckBonus(c), 1e-9);
             Assert.AreEqual(1.04, CharacterStats.DropBonus(c), 1e-9);
-            Assert.AreEqual(40 + 8, CharacterStats.Attack(c)); // 민첩 20 × 2 + 시작 무기 8
+            Assert.AreEqual(40 + 11, CharacterStats.Attack(c)); // 민첩 20 × 2 + 시작 무기 11 (v1.9: 8.4 + 3.08)
             c.BaseStats[Stat.Agility] = 200;
             Assert.AreEqual(0.40, CharacterStats.Evasion(c), 1e-9, "회피 최대 40%");
 

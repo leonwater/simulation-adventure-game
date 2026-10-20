@@ -133,7 +133,26 @@ namespace Adventure.Core
         }
 
         /// <summary>
-        /// 보스에게 특성을 붙인다. 수치는 층(1~30)에 따라 커지고, 특성이 강한 만큼 HP·공격력을 낮춰 맞춘다 (수치 보정).
+        /// 특성별 체격 (v1.9): HP · 공격력 · 방어력 배율. 특성이 강한 만큼 다른 능력치를 낮춰 맞추고(수치 보정),
+        /// 특성에 어울리게 단단한 보스·날랜 보스·힘센 보스를 나눈다. 보호막 보스의 HP는 막 크기에 따라 따로 줄인다.
+        /// </summary>
+        private static readonly Dictionary<BossTrait, (double hp, double atk, double def)> Profile = new Dictionary<BossTrait, (double, double, double)>
+        {
+            { BossTrait.Barrier, (0.8, 1.0, 1.2) },     // 단단한 갑주
+            { BossTrait.Shield, (1.0, 0.95, 1.0) },     // 마법사형
+            { BossTrait.Thorns, (0.9, 0.95, 1.35) },    // 비늘
+            { BossTrait.Smash, (1.05, 1.25, 0.9) },     // 힘센 거구 (기를 모으고 쉬는 턴만큼 평소 공격을 세게)
+            { BossTrait.Flurry, (0.85, 1.0, 0.8) },     // 날랜 몸
+            { BossTrait.Lifesteal, (0.95, 1.05, 0.9) },
+            { BossTrait.Enrage, (1.1, 0.95, 1.0) },
+            { BossTrait.Split, (0.65, 0.9, 0.8) },
+            { BossTrait.Ritual, (0.9, 0.95, 1.0) },
+            { BossTrait.Revive, (0.8, 1.0, 1.1) },
+            { BossTrait.Summon, (0.9, 0.9, 1.0) },
+        };
+
+        /// <summary>
+        /// 보스에게 특성을 붙인다. 수치는 층(1~30)에 따라 커지고, 특성별 체격(HP·공격력·방어력 배율)을 곱한다.
         /// </summary>
         public static void Equip(Combatant boss, int floor)
         {
@@ -142,14 +161,17 @@ namespace Adventure.Core
             int f = GameBalance.Clamp(floor, 1, GameBalance.MaxFloor);
             var k = new BossKit();
             k.Traits.AddRange(traits);
-            double hpMul = 1, atkMul = 1, shield = 0;
+            double hpMul = 1, atkMul = 1, defMul = 1, shield = 0;
             foreach (var t in traits)
             {
+                var body = Profile[t];
+                hpMul *= body.hp;
+                atkMul *= body.atk;
+                defMul *= body.def;
                 switch (t)
                 {
                     case BossTrait.Barrier:
                         k.Barrier = 1 + (f - 1) / 8;                 // 1~8층 1회 · 9~16층 2회 · 17~24층 3회 · 25층~ 4회
-                        hpMul *= 0.8;
                         break;
                     case BossTrait.Shield:
                         shield = 0.10 + f * 0.005;                     // 10층 15% · 20층 20% · 30층 25% (보정 뒤 HP 기준)
@@ -157,13 +179,11 @@ namespace Adventure.Core
                         break;
                     case BossTrait.Thorns:
                         k.Thorns = 0.015 + f * 0.0005;                 // 21층 2.6% · 30층 3% (보스 HP가 커서 조금만 돌려줘도 아프다)
-                        hpMul *= 0.9;
                         break;
                     case BossTrait.Smash:
                         k.SmashEvery = f < 15 ? 4 : 3;
                         k.SmashMult = 2.0 + f * 0.025;                 // 10층 ×2.25 · 30층 ×2.75
                         k.ExhaustTurns = f < 15 ? 2 : 1;
-                        atkMul *= 1.25;                                // 기를 모으고 쉬는 턴만큼 평소 공격을 세게
                         break;
                     case BossTrait.Flurry:
                         k.FlurryHits = 3 + f / 12;                     // 3회 · 12층~ 4회 · 24층~ 5회
@@ -172,27 +192,22 @@ namespace Adventure.Core
                         break;
                     case BossTrait.Lifesteal:
                         k.Lifesteal = 0.20 + f * 0.005;                // 5층 22% · 15층 27%
-                        hpMul *= 0.95;
                         break;
                     case BossTrait.Enrage:
                         k.EnrageAttack = 0.20 + f * 0.005;             // 공격력 +20%(1층) ~ +35%(30층)
-                        atkMul *= 0.95;
                         break;
                     case BossTrait.Split:
                         k.SplitCount = f < 4 ? 2 : 3;
                         k.SplitHp = f < 4 ? 0.25 : 0.20;               // 작은 개체 하나의 HP (보스 최대 HP 대비)
-                        hpMul *= 0.65;
                         break;
                     case BossTrait.Ritual:
                         k.RitualAt = 0.30;
                         k.RitualHeal = 0.15 + f * 0.005;               // 20층 25% · 30층 30%
                         k.RitualUses = f >= 25 ? 2 : 1;
-                        hpMul *= 0.9;
                         break;
                     case BossTrait.Revive:
                         k.ReviveHp = 0.20 + f * 0.005;                 // 11층 26% · 20층 30%
                         k.Revives = 1;
-                        hpMul *= 0.8;
                         break;
                     case BossTrait.Summon:
                         if (Minion.TryGetValue(boss.Species.Id, out var m))
@@ -207,6 +222,7 @@ namespace Adventure.Core
             }
             boss.MaxHp = boss.Hp = Math.Max(1, (int)Math.Round(boss.MaxHp * hpMul));
             boss.Attack = Math.Max(1, (int)Math.Round(boss.Attack * atkMul));
+            boss.Defense = (int)Math.Round(boss.Defense * defMul);
             if (shield > 0) k.MaxShield = k.Shield = Math.Max(1, (int)Math.Round(boss.MaxHp * shield));
             boss.Kit = k;
         }

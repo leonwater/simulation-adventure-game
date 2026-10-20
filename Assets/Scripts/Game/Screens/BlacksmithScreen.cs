@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Adventure.Game
 {
-    /// <summary>대장간: 장착 중·가방의 장비를 +10까지 강화. 실패해도 장비는 부서지지 않는다.</summary>
+    /// <summary>대장간: 장착 중·가방의 장비를 +15까지 강화. 장비는 부서지지 않고, +7 이상 실패 시 일정 확률로 한 단계 내려간다.</summary>
     public class BlacksmithScreen : ScreenBase
     {
         private string _selected;
@@ -71,7 +71,7 @@ namespace Adventure.Game
             ScreenKit.CompareLine(card, C, item);
             if (item.Enhance >= GameBalance.MaxEnhance)
             {
-                UI.Label(card, "최대 강화(+10)에 도달했습니다.", 14, Theme.Gold);
+                UI.Label(card, "최대 강화(+" + GameBalance.MaxEnhance + ")에 도달했습니다.", 14, Theme.Gold);
                 return;
             }
             int now = item.Value;
@@ -84,7 +84,9 @@ namespace Adventure.Game
             var right = UI.Column(change, 2, null, TextAnchor.MiddleRight);
             UI.Label(right, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)), 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
             UI.Label(right, Blacksmith.GoldCost(item).ToString("#,0") + " G", 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
-            if (Blacksmith.SuccessRate(item) < 1) UI.Sub(card, "실패해도 장비는 그대로이고 재료·골드만 소모됩니다.");
+            double down = Blacksmith.DowngradeChance(item);
+            if (down > 0) UI.Label(card, "실패하면 " + ScreenKit.Percent(down) + " 확률로 +" + (item.Enhance - 1) + "로 내려갑니다.", 13, Theme.RedLight);
+            else if (Blacksmith.SuccessRate(item) < 1) UI.Sub(card, "실패해도 장비는 그대로이고 재료·골드만 소모됩니다.");
             int stones = Blacksmith.StoneCost(item);
             int have = C.Inventory.CountOf(ItemDb.EnhanceStoneId);
             if (stones > 0)
@@ -110,6 +112,10 @@ namespace Adventure.Game
                 case EnhanceResult.Failed:
                     _line = "쯧, 이번엔 안 됐네. 장비는 멀쩡하니 다시 해 보게.";
                     Toast("강화 실패… 장비는 그대로입니다");
+                    break;
+                case EnhanceResult.Downgraded:
+                    _line = "이런, 손이 미끄러졌군. 한 단계 깎였지만 부서지진 않았네.";
+                    Toast("강화 실패… " + item.DisplayName + "(으)로 내려갔습니다");
                     break;
                 default:
                     Toast(err);

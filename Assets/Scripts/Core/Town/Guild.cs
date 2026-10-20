@@ -247,7 +247,7 @@ namespace Adventure.Core
             return true;
         }
 
-        // ── 창고 (v1.8: 보관·출고할 때마다 수수료) ──
+        // ── 창고: 맡길 때마다 수수료, 찾을 때는 무료 (v1.9) ──
 
         public static int StorageFee(Character c) => GameBalance.StorageFee(c.HighestFloorCleared);
 
@@ -282,8 +282,8 @@ namespace Adventure.Core
                 error = "가방이 가득 찼습니다";
                 return false;
             }
-            if (!PayFee(c, out error)) return false;
             c.Inventory.Add(c.Storage.Take(uid));
+            error = null;
             return true;
         }
 

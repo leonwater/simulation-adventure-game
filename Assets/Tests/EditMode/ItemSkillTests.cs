@@ -145,9 +145,9 @@ namespace Adventure.Tests
             c.Inventory.Add(armor);
             EquipmentSystem.Equip(c, helm.Uid, out _);
             EquipmentSystem.Equip(c, armor.Uid, out _);
-            Assert.AreEqual(8, helm.Value); // 2 + 10 × 0.6
-            Assert.AreEqual(23, armor.Value); // (4 + 10) × 1.65 = 23.1
-            Assert.AreEqual(31, CharacterStats.Defense(c));
+            Assert.AreEqual(11, helm.Value); // 2.8 + 10 × 0.84 = 11.2
+            Assert.AreEqual(33, armor.Value); // round(5.6 + 14) = 20 × 1.65
+            Assert.AreEqual(44, CharacterStats.Defense(c));
         }
 
         [Test]
@@ -172,25 +172,31 @@ namespace Adventure.Tests
             c.Gold = 1_000_000;
             var weapon = c.Equipment[EquipSlot.Weapon];
             var rng = new Rng(7);
-            for (int i = 0; i < 5; i++)
-                Assert.AreEqual(EnhanceResult.Success, Blacksmith.Enhance(c, weapon.Uid, rng, out _));
+            int tries = 0;
+            while (weapon.Enhance < 5 && tries++ < 100)
+                Assert.AreNotEqual(EnhanceResult.Downgraded, Blacksmith.Enhance(c, weapon.Uid, rng, out _), "+5까지는 내려가지 않는다");
             Assert.AreEqual(5, weapon.Enhance);
             Assert.AreEqual(EnhanceResult.NotAllowed, Blacksmith.Enhance(c, weapon.Uid, rng, out string err));
             Assert.AreEqual("강화석이 부족합니다", err);
             c.Inventory.Add(ItemDb.CreateEnhanceStone(50));
             int guard = 0;
-            while (weapon.Enhance < 10 && guard++ < 500) Blacksmith.Enhance(c, weapon.Uid, rng, out _);
-            Assert.AreEqual(10, weapon.Enhance);
+            c.Gold = 100_000_000;
+            while (weapon.Enhance < GameBalance.MaxEnhance && guard++ < 5000)
+            {
+                if (c.Inventory.CountOf(ItemDb.EnhanceStoneId) < 3) c.Inventory.Add(ItemDb.CreateEnhanceStone(99));
+                Blacksmith.Enhance(c, weapon.Uid, rng, out _);
+            }
+            Assert.AreEqual(15, weapon.Enhance);
             Assert.AreEqual(EnhanceResult.NotAllowed, Blacksmith.Enhance(c, weapon.Uid, rng, out err));
-            Assert.AreEqual((int)System.Math.Round(weapon.BaseValue * 1.5), weapon.Value);
+            Assert.AreEqual((int)System.Math.Round(weapon.BaseValue * 1.75), weapon.Value, "일반 +15 = +75%");
         }
 
         [Test]
         public void Blacksmith_SuccessRatesMatchDesign()
         {
             var item = new ItemInstance { Kind = ItemKind.Equipment };
-            double[] expected = { 1, 1, 1, 1, 1, 0.7, 0.6, 0.5, 0.3, 0.15 };
-            for (int i = 0; i < 10; i++)
+            double[] expected = { 1, 1, 1, 0.95, 0.90, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.25, 0.20, 0.15, 0.10 };
+            for (int i = 0; i < 15; i++)
             {
                 item.Enhance = i;
                 Assert.AreEqual(expected[i], Blacksmith.SuccessRate(item), 1e-9, "+" + (i + 1));
@@ -242,19 +248,20 @@ namespace Adventure.Tests
             Assert.AreEqual(5, c.Skills.Get("w_bash").Level);
             Assert.IsFalse(SkillSystem.Train(c, "w_bash", out string err));
             Assert.AreEqual("최대 강화 단계입니다", err);
-            Assert.AreEqual(1.5, SkillSystem.PowerMultiplier(5), 1e-9);
+            Assert.AreEqual(1.4, SkillSystem.PowerMultiplier(SkillDb.Get("w_bash"), 5), 1e-9, "하급 +8% × 5");
+            Assert.AreEqual(1.75, SkillSystem.PowerMultiplier(SkillDb.Get("w_earth"), 5), 1e-9, "최상급 +15% × 5");
         }
 
         [Test]
         public void SkillDescriptions_ReadNaturally()
         {
             Assert.AreEqual("단일 250% · 재사용 4턴", SkillDb.Get("w_bash").Description);
-            Assert.AreEqual("단일 150% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
+            Assert.AreEqual("단일 165% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
             Assert.AreEqual("강화 3턴 · 재사용 6턴", SkillDb.Get("w_warcry").Description);
-            Assert.AreEqual("모든 적 180% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
-            Assert.AreEqual("성공률 −10%", SkillDb.Get("w_bash").SuccessText);
-            Assert.AreEqual("성공률 +5%", SkillDb.Get("w_shield").SuccessText);
-            Assert.AreEqual("성공률 +10%", SkillDb.Get("a_aim").SuccessText);
+            Assert.AreEqual("모든 적 215% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
+            Assert.AreEqual("성공률 −12%", SkillDb.Get("w_bash").SuccessText);
+            Assert.AreEqual("성공률 −5%", SkillDb.Get("w_shield").SuccessText);
+            Assert.AreEqual("성공률 −3%", SkillDb.Get("a_aim").SuccessText);
             Assert.AreEqual("성공률 100%", SkillDb.Get("w_guard").SuccessText);
         }
 

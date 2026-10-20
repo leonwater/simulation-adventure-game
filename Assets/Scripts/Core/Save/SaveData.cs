@@ -105,6 +105,9 @@ namespace Adventure.Core
             if (c.Skills == null) c.Skills = new SkillSet();
             c.Skills.Learned.RemoveAll(s => s == null || SkillDb.Get(s.SkillId) == null);
             c.Skills.Equipped.RemoveAll(id => !c.Skills.Knows(id));
+            // 같은 스킬이 여러 칸에 장착된 예전 저장 정리
+            for (int i = c.Skills.Equipped.Count - 1; i > 0; i--)
+                if (c.Skills.Equipped.IndexOf(c.Skills.Equipped[i]) < i) c.Skills.Equipped.RemoveAt(i);
             c.Inventory.Items.RemoveAll(i => i == null);
             c.Storage.Items.RemoveAll(i => i == null);
             // 능력치 최대값을 넘는 예전 저장: 넘친 만큼 포인트로 돌려준다
