@@ -482,6 +482,7 @@ namespace Adventure.Game
                 ItemMenu();
                 return;
             }
+            if (ch.Kind == ActionKind.Flee && Tutorial.Blocks("도주")) return;
             Execute(ch);
         }
 
@@ -709,6 +710,7 @@ namespace Adventure.Game
             }, ButtonKind.Secondary);
             UI.TextButton(body, "저장하고 타이틀로", () =>
             {
+                if (Tutorial.Blocks("타이틀로 가기")) return;
                 S.Save();
                 Go(new TitleScreen());
             }, ButtonKind.Ghost);

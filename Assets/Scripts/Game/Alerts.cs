@@ -2,7 +2,7 @@ using Adventure.Core;
 
 namespace Adventure.Game
 {
-    /// <summary>빨간 알림 점 조건 (수정 사항 #23): 남은 포인트, 새 스킬, 승급 가능, 완료 퀘스트, 상점 갱신.</summary>
+    /// <summary>빨간 알림 점 조건 (수정 사항 #23): 남은 포인트, 새 스킬, 완료 퀘스트, 상점 갱신 (승급은 v1.8부터 자동).</summary>
     public static class Alerts
     {
         private static GameSession S => GameApp.Instance.Session;
@@ -11,11 +11,9 @@ namespace Adventure.Game
 
         public static bool NewSkill => S.HasGame && S.HasUnseenSkill;
 
-        public static bool Promotion => S.HasGame && RankSystem.GetStatus(S.C).CanPromote;
-
         public static bool QuestDone => S.HasGame && S.Data.Guild.Active.Exists(q => GuildSystem.IsComplete(q, S.C));
 
-        public static bool Guild => Promotion || QuestDone;
+        public static bool Guild => QuestDone;
 
         public static bool Shop => S.HasGame && S.ShopUnseen;
 

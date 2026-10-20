@@ -105,20 +105,21 @@ namespace Adventure.Game
             lrt.anchoredPosition = Vector2.zero;
         }
 
-        /// <summary>마을 머리줄: 이름 · 직업 레벨 · 경험치 막대 · 등급 · 골드.</summary>
+        /// <summary>마을 머리줄: 1줄 이름 · 직업 · 등급 배지 / 2줄 Lv. · 경험치 막대 (v1.8) · 오른쪽 골드 + 설정.</summary>
         public static void TownHeader(Transform parent, Character c)
         {
             var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 12, 12), false, 8, TextAnchor.MiddleLeft, "header");
             UI.Size(bar, height: 64);
             var left = UI.Column(bar, 4);
             UI.Size(left, flexW: 1);
-            // 이름 옆에 모험가 등급 배지 (수정 사항: 글자 알약 대신 아이콘)
             var nameRow = UI.Row(left, 6);
             UI.Label(nameRow, c.Name, 15, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            JobLine(nameRow, c.Job, c.JobData.Name, 12, Theme.TextSub);
             UI.Icon(nameRow, UI.RankIcon(c.Rank), 22);
-            var barRow = UI.Row(left, 8);
-            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 100);
-            JobLine(barRow, c.Job, c.JobData.Name + " Lv." + c.Level, 12, Theme.TextSub);
+            // 경험치 막대는 윗줄(이름·직업·배지)과 비슷한 길이로
+            var barRow = UI.Row(left, 6);
+            UI.Label(barRow, "Lv." + c.Level, 12, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+            UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 104);
             // 오른쪽 위: 골드 + 설정 버튼 → 설정 창 (다른 마을 화면 머리줄과 같다)
             GoldAndSettings(bar, c);
             BottomLine(bar);

@@ -56,7 +56,10 @@ namespace Adventure.Game
             // 아래 고정 줄: 왼쪽 가방 · 가운데 캐릭터 정보 · 오른쪽 귀환 (아이콘 버튼). 순간이동은 미니맵에서.
             var bottom = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 8, 8), false, 8, TextAnchor.MiddleCenter, "bottom");
             ScreenKit.TopLine(bottom);
-            IconButton(bottom, "bag", "가방", () => Go(new InventoryScreen(true)), BottomStyle.Normal);
+            IconButton(bottom, "bag", "가방", () =>
+            {
+                if (!Tutorial.Blocks("가방")) Go(new InventoryScreen(true));
+            }, BottomStyle.Normal);
             UI.HSpacer(bottom);
             var info = IconButton(bottom, "character", "정보", () => CharacterInfo.Show(Overlay, S), BottomStyle.Normal);
             Anchors.Set("dungeon.info", info);
@@ -572,6 +575,7 @@ namespace Adventure.Game
             UI.TextButton(body, "계속하기", () => Overlay.Close(modal), ButtonKind.Primary);
             UI.TextButton(body, "저장하고 타이틀로", () =>
             {
+                if (Tutorial.Blocks("타이틀로 가기")) return;
                 S.Save();
                 Go(new TitleScreen());
             }, ButtonKind.Ghost);

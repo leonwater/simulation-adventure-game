@@ -58,9 +58,13 @@ namespace Adventure.Game
             var holder = UI.Rect(_layer, "coach");
             UI.Stretch(holder);
             _current = holder.gameObject;
+            // 말풍선이 그려지기 전 잠깐 사이에도 다른 버튼이 눌리지 않게 화면 전체를 막아 둔다
+            var guard = holder.gameObject.AddComponent<Image>();
+            guard.color = new Color(0, 0, 0, 0);
             Delay.Run(holder, 0.05f, () =>
             {
                 if (token != _token) return;
+                guard.raycastTarget = false; // 이제부터는 어두운 판·구멍이 대신 막는다 (구멍은 눌려야 한다)
                 Canvas.ForceUpdateCanvases();
                 if (target != null && ScrollIntoView(target)) Canvas.ForceUpdateCanvases();
                 Build(holder, target, title, text, action, onNext, onSkip);
@@ -152,7 +156,7 @@ namespace Adventure.Game
             if (action) UI.Label(row, (above ? "▼" : "▲") + " 표시된 곳을 누르세요", 12, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
             else UI.TextButton(row, "다음", next, ButtonKind.Primary, 40, 14, 88);
 
-            // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 작게 (첫 튜토리얼 동안에는 없음)
+            // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 작게. 막는 판보다 위라 언제나 눌린다 (이 기기의 첫 튜토리얼 동안에는 없음)
             if (onSkip != null)
             {
                 var skip = UI.ButtonCard(holder, () =>

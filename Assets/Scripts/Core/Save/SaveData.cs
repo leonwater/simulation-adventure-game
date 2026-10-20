@@ -24,8 +24,6 @@ namespace Adventure.Core
         public long PlaySeconds;
         /// <summary>튜토리얼 단계 (0 = 끝남 또는 예전 저장).</summary>
         public TutorialStage Tutorial = TutorialStage.Done;
-        /// <summary>설정에서 튜토리얼을 다시 보는 중 (처음 튜토리얼에는 건너뛰기 버튼이 없다).</summary>
-        public bool TutorialReplay;
         /// <summary>이미 보여 준 안내 (다시 켜도 반복하지 않게).</summary>
         public List<string> TipsShown = new List<string>();
         /// <summary>마지막으로 확인한 상점 갱신 시각 (알림 점용).</summary>

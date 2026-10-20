@@ -77,10 +77,16 @@ namespace Adventure.Game
             int now = item.Value;
             int next = item.ValueAt(item.Enhance + 1);
             string what = item.IsWeapon ? "공격력" : item.IsAccessory ? Names.Of(item.BonusStat) : "방어력";
-            UI.Label(card, "+" + item.Enhance + " → +" + (item.Enhance + 1) + " · " + what + " " + now + " → " + UI.Color(next.ToString(), Theme.GreenHex), 14, Theme.Text);
+            // 왼쪽: 강화 단계와 수치 변화 · 오른쪽: 성공률과 비용 (흰 글씨, v1.8)
+            var change = UI.Row(card, 8);
+            var left = UI.Label(change, "+" + item.Enhance + " → +" + (item.Enhance + 1) + "\n" + what + " " + now + " → " + UI.Color(next.ToString(), Theme.GreenHex), 14, Theme.Text);
+            UI.Size(left, flexW: 1);
+            var right = UI.Column(change, 2, null, TextAnchor.MiddleRight);
+            UI.Label(right, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)), 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+            UI.Label(right, Blacksmith.GoldCost(item).ToString("#,0") + " G", 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+            if (Blacksmith.SuccessRate(item) < 1) UI.Sub(card, "실패해도 장비는 그대로이고 재료·골드만 소모됩니다.");
             int stones = Blacksmith.StoneCost(item);
             int have = C.Inventory.CountOf(ItemDb.EnhanceStoneId);
-            UI.Sub(card, "성공률 " + ScreenKit.Percent(Blacksmith.SuccessRate(item)) + " · 비용 " + Blacksmith.GoldCost(item).ToString("#,0") + "G" + (Blacksmith.SuccessRate(item) < 1 ? " · 실패 시 재료·골드만 소모" : ""));
             if (stones > 0)
             {
                 var stoneRow = UI.Row(card, 6);

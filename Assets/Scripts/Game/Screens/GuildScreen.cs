@@ -12,11 +12,6 @@ namespace Adventure.Game
         private bool _withdraw;
         private string _line = "무사히 돌아오셨네요. 오늘은 어떤 일로 오셨나요?";
 
-        public GuildScreen(int tab = 0)
-        {
-            _tab = tab;
-        }
-
         public override bool OnBack()
         {
             Go(new TownScreen());

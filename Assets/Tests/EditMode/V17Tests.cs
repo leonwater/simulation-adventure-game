@@ -4,7 +4,7 @@ using NUnit.Framework;
 
 namespace Adventure.Tests
 {
-    /// <summary>기획서 v1.7: 능력치 최대값, 처음 튜토리얼에는 건너뛰기 없음(다시 보기에서만).</summary>
+    /// <summary>기획서 v1.7: 능력치 최대값 (v1.8: 모두 99).</summary>
     public class V17Tests
     {
         private static Character MaxLevel(Job job)
@@ -52,19 +52,6 @@ namespace Adventure.Tests
             Assert.IsTrue(s.Continue());
             Assert.AreEqual(GameBalance.StatCap, s.C.BaseStats[Stat.Strength]);
             Assert.AreEqual(2 + 150 - GameBalance.StatCap, s.C.UnspentPoints);
-        }
-
-        [Test]
-        public void Tutorial_ReplayFlagOnlyWhenRestarted()
-        {
-            var s = new GameSession(new MemorySaveStore(), () => new DateTime(2026, 10, 20, 9, 0, 0, DateTimeKind.Utc), 4);
-            s.NewGame("a", Job.Archer, Difficulty.Normal);
-            Assert.IsFalse(s.Data.TutorialReplay, "처음 튜토리얼");
-            s.SetTutorial(TutorialStage.Done);
-            s.RestartTutorial();
-            Assert.IsTrue(s.Data.TutorialReplay, "설정에서 다시 보기");
-            s.SetTutorial(TutorialStage.Done);
-            Assert.IsFalse(s.Data.TutorialReplay);
         }
     }
 }

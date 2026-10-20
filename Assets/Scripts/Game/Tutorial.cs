@@ -8,8 +8,10 @@ namespace Adventure.Game
     /// - 마을: 상점 → 길드 → 대장간 → 수련장 순으로 직접 들어가, 화면의 각 부분을 차례로 설명한 뒤 마을로 돌아온다. 마지막에 던전 입장.
     /// - 첫 1층: 미니맵 → 순간이동 → 캐릭터 정보 → 길 고르기 → 전투(대상·확률·공격) → 레벨 업 배분 → 보스를 잡으면 귀환 (아래층으로는 못 감).
     /// - 귀환 후: 정산 → 길드 창고 → 끝.
-    /// 본 설명은 TipsShown에 남아 다시 켜도 이어서 진행한다. 처음 튜토리얼에는 건너뛰기가 없고,
-    /// 설정에서 다시 볼 때만 화면 오른쪽 위 "건너뛰기"로 끝낼 수 있다. 말풍선의 중요한 말은 금색, 좋고 나쁨은 초록·빨강으로 칠한다.
+    /// 본 설명은 TipsShown에 남아 다시 켜도 이어서 진행한다. 이 기기에서 튜토리얼을 처음 끝까지 하는 동안에는 건너뛰기가 없고,
+    /// 한 번 마친 뒤로는(새 게임·다시 보기 모두) 화면 오른쪽 위 "건너뛰기"로 끝낼 수 있다 (v1.8).
+    /// 튜토리얼 중에는 안내한 곳과 건너뛰기만 눌리고, 첫 던전에서는 안내하지 않은 가방·도주·타이틀로 가기를 잠근다 (v1.8).
+    /// 말풍선의 중요한 말은 금색, 좋고 나쁨은 초록·빨강으로 칠한다.
     /// </summary>
     public static class Tutorial
     {
@@ -17,8 +19,26 @@ namespace Adventure.Game
 
         private static TutorialStage Stage => S.HasGame ? S.Data.Tutorial : TutorialStage.Done;
 
-        /// <summary>건너뛰기 버튼은 설정에서 튜토리얼을 다시 볼 때만 (처음 튜토리얼은 끝까지 진행).</summary>
-        private static Action SkipButton => S.HasGame && S.Data.TutorialReplay ? (Action)Skip : null;
+        /// <summary>건너뛰기 버튼: 이 기기에서 튜토리얼을 한 번 마친 뒤부터 (처음 튜토리얼은 끝까지 진행).</summary>
+        private static Action SkipButton => GameSettings.TutorialCompleted ? (Action)Skip : null;
+
+        /// <summary>튜토리얼 중인지 (마을 안내·첫 던전·귀환 후 안내).</summary>
+        public static bool Running => Stage != TutorialStage.Done;
+
+        /// <summary>튜토리얼에서 아직 안내하지 않은 행동이면 막고 알린다 (막았으면 true).</summary>
+        public static bool Blocks(string what)
+        {
+            if (!Running) return false;
+            GameApp.Instance.Overlay.Toast("튜토리얼이 끝나면 " + what + Names.Josa(what, "을/를").Substring(what.Length) + " 쓸 수 있어요");
+            return true;
+        }
+
+        /// <summary>튜토리얼을 끝까지 마쳤다: 이 기기에서는 다음부터 건너뛰기가 나온다.</summary>
+        private static void Finish()
+        {
+            GameSettings.TutorialCompleted = true;
+            S.SetTutorial(TutorialStage.Done);
+        }
 
         // 말풍선 강조: 중요한 말은 금색, 좋음 초록, 나쁨 빨강
         private static string H(string t) => UI.Color(t, Theme.GoldHex);
@@ -116,7 +136,7 @@ namespace Adventure.Game
                     steps = new[]
                     {
                         Info("guild.1", "guild.list", "길드 · 퀘스트", "의뢰 카드에 " + H("목표") + "와 " + H("보상(골드·경험치)") + "이 바로 보여요. 수락하고 조건을 채운 뒤 " + H("보고") + "하면 보상을 받아요. 등급이 높을수록 어렵고 보상이 커요."),
-                        Info("guild.2", "tabs", "길드 · 탭", H("'등급'") + " 탭에서 승급 조건을 보고 승급하고, " + H("'창고'") + " 탭에서 아이템을 맡겨요."),
+                        Info("guild.2", "tabs", "길드 · 탭", H("'등급'") + " 탭에서 승급 조건을 볼 수 있어요. 조건을 모두 채우면 " + Good("자동으로 승급") + "해요. " + H("'창고'") + " 탭에서는 아이템을 맡겨요."),
                     };
                     break;
                 case "blacksmith":
@@ -156,9 +176,9 @@ namespace Adventure.Game
             }
             Run(new[]
             {
-                Info("storage.1", "guild.storage", "길드 창고", "창고에 맡긴 아이템은 던전에서 쓰러져도 " + Good("잃지 않아요") + ". 아래 가방에서 아이템을 눌러 맡길 수 있어요."),
+                Info("storage.1", "guild.storage", "길드 창고", "창고에 맡긴 아이템은 던전에서 쓰러져도 " + Good("잃지 않아요") + ". " + H("'보관'") + "에서 가방 아이템을 눌러 맡기고, " + H("'출고'") + "에서 찾아요. 맡기거나 찾을 때마다 " + H("수수료") + "가 들어요."),
                 Info("storage.2", null, "튜토리얼 끝", "이제 혼자서도 충분해요! 퀘스트를 받고 장비를 키워 " + H("던전 최하층") + "에 도전해 보세요."),
-            }, () => S.SetTutorial(TutorialStage.Done));
+            }, Finish);
         }
 
         // ── 던전 ──
@@ -202,7 +222,7 @@ namespace Adventure.Game
             Run(new[]
             {
                 Info("bat.1", "battle.enemy0", "전투 · 대상", "적의 도형을 누르면 공격할 " + H("대상") + "을 바꿀 수 있어요. 금색으로 깜빡이는 적이 지금 대상이에요."),
-                Info("bat.status", "battle.player", "전투 · 상태 이상", "도형 아래 작은 태그가 " + Bad("상태 이상") + "이에요. " + H("내 원") + "이나 " + H("대상인 적을 한 번 더") + " 누르면(길게 눌러도 돼요) 상태 이상이 1턴에 주는 피해와 남은 턴을 자세히 볼 수 있어요."),
+                Info("bat.status", "battle.player", "전투 · 상태 이상", "도형 아래 작은 아이콘이 " + Bad("상태 이상") + "이에요 (1턴 남으면 깜빡여요). " + H("내 원") + "이나 " + H("대상인 적을 한 번 더") + " 누르면(길게 눌러도 돼요) 상태 이상이 1턴에 주는 피해와 남은 턴을 자세히 볼 수 있어요."),
                 Info("bat.2", "battle.choices", "전투 · 선택지", "오른쪽 숫자는 " + H("성공 확률") + ", 아래 줄은 " + H("예상 피해") + "예요. 선택지를 " + H("길게 누르면") + " 피해 계산식과 부가 효과를 볼 수 있어요."),
             }, () =>
             {

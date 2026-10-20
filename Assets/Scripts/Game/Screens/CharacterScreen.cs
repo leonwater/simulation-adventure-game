@@ -56,7 +56,8 @@ namespace Adventure.Game
         {
             var st = RankSystem.GetStatus(C);
             var panel = UI.Card(parent, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
-            var row = UI.Row(panel);
+            var row = UI.Row(panel, 8);
+            UI.Icon(row, UI.RankIcon(C.Rank), 32);
             var t = UI.Label(row, C.Rank + " 등급 배지", 15, Theme.Text, true);
             UI.Size(t, flexW: 1);
             UI.Label(row, "기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%", 13, Theme.Gold, false, TextAnchor.MiddleRight, false, false);
@@ -65,10 +66,10 @@ namespace Adventure.Game
                 UI.Sub(panel, "최고 등급입니다");
                 return;
             }
-            UI.Sub(panel, st.Next + " 등급 승급 조건");
+            UI.Sub(panel, st.Next + " 등급 승급 조건 · 모두 채우면 자동 승급");
             var grid = UI.Row(panel, 8);
             grid.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childForceExpandWidth = true;
-            Cond(grid, "던전 층", st.FloorCurrent, st.FloorRequired);
+            Cond(grid, "돌파 층", st.FloorCurrent, st.FloorRequired);
             Cond(grid, "레벨", st.LevelCurrent, st.LevelRequired);
             Cond(grid, "퀘스트", st.QuestsCurrent, st.QuestsRequired);
         }
