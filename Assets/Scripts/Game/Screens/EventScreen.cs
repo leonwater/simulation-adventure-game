@@ -26,9 +26,9 @@ namespace Adventure.Game
             // 던전·전투와 같은 머리줄 (HP 숫자 + 막대)
             if (C != null) ScreenKit.DungeonHeader(page, floor + "층 · 특수 이벤트", null, C, null);
 
+            // 특수 이벤트에는 일러스트 칸을 두지 않는다 (v1.9)
             var body = UI.Scroll(page, out _, 14, UI.Pad(0, 0, 0, 16));
-            UI.Illustration(body, _event.Illustration, 300);
-            var inner = UI.Column(body, 14, UI.Pad(16, 16, 2, 0));
+            var inner = UI.Column(body, 14, UI.Pad(16, 16, 16, 0));
             UI.Label(inner, _event.Title, 24, Theme.Text, false, TextAnchor.MiddleLeft, true);
             var run = S.Run;
             var bodyText = UI.Label(inner, EventRules.Body(_event, run, C), 15, Theme.TextBody);

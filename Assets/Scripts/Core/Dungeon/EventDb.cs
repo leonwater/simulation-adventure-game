@@ -122,7 +122,6 @@ namespace Adventure.Core
         public string Id;
         public string Title;
         public string Body;
-        public string Illustration;
         public EventChoice[] Choices;
         public int Weight = 10;
         public EventSpecial Special;
@@ -152,7 +151,7 @@ namespace Adventure.Core
         {
             new EventDef
             {
-                Id = "altar", Title = "피 묻은 제단", Illustration = "버려진 제단",
+                Id = "altar", Title = "피 묻은 제단",
                 Body = "어둠 속에 오래된 제단이 서 있다. 표면에 새겨진 문양이 희미하게 빛나고, 제단 위 그릇에는 마른 핏자국이 남아 있다.",
                 Choices = new[]
                 {
@@ -166,7 +165,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "chest", Title = "수상한 상자", Illustration = "이끼 낀 상자",
+                Id = "chest", Title = "수상한 상자",
                 Body = "통로 한가운데 이끼 낀 상자가 놓여 있다. 경첩이 미세하게 떨리는 것 같기도 하다.",
                 Choices = new[]
                 {
@@ -183,7 +182,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "wounded", Title = "쓰러진 모험가", Illustration = "쓰러진 모험가",
+                Id = "wounded", Title = "쓰러진 모험가",
                 Body = "벽에 기대 쓰러진 모험가가 가쁜 숨을 몰아쉰다. 허리춤의 주머니가 묵직해 보인다.",
                 Choices = new[]
                 {
@@ -197,35 +196,33 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "spring", Title = "빛나는 샘", Illustration = "빛나는 샘",
+                Id = "spring", Title = "빛나는 샘",
                 Body = "푸른빛을 내는 작은 샘이 바위 틈에서 솟아난다. 물맛이 어떨지는 알 수 없다.",
                 Choices = new[]
                 {
                     new EventChoice { Label = "샘물을 마신다", Hint = "정신 판정", Check = Stat.Spirit,
                         Success = O("차가운 물이 상처를 씻어 낸다. 체력이 모두 회복됐다.", hp: 1.0),
                         Failure = O("물에 섞인 독기가 속을 뒤집는다.", hp: -0.15) },
-                    new EventChoice { Label = "병에 담는다", Hint = "고급 회복 물약 1개",
-                        Success = O("샘물을 병에 담았다.", reward: EventReward.HighPotion) },
+                    new EventChoice { Label = "병에 담는다",                         Success = O("샘물을 병에 담았다.", reward: EventReward.HighPotion) },
                     Pass(),
                 },
             },
             new EventDef
             {
-                Id = "swordsman", Title = "떠돌이 검객", Illustration = "떠돌이 검객", Weight = 10,
+                Id = "swordsman", Title = "떠돌이 검객", Weight = 10,
                 Body = "모닥불 곁에 앉은 검객이 당신을 훑어본다. \"실력을 보여 준다면 비기를 하나 알려 주지.\"",
                 Choices = new[]
                 {
                     new EventChoice { Label = "대련을 청한다", Hint = "주 능력치 판정", CheckAttackStat = true,
                         Success = O("검객이 웃으며 낡은 비급서를 건넨다.", reward: EventReward.HighSkillBook),
                         Failure = O("눈 깜짝할 새 바닥에 쓰러졌다.", hp: -0.25) },
-                    new EventChoice { Label = "이야기를 듣는다", Hint = "경험치",
-                        Success = O("던전 깊은 곳의 이야기를 들으며 많은 것을 배웠다.", exp: 3) },
+                    new EventChoice { Label = "이야기를 듣는다",                         Success = O("던전 깊은 곳의 이야기를 들으며 많은 것을 배웠다.", exp: 3) },
                     Pass("자리를 뜬다"),
                 },
             },
             new EventDef
             {
-                Id = "rope", Title = "지상으로 이어진 밧줄", Illustration = "늘어진 밧줄", Weight = 10,
+                Id = "rope", Title = "지상으로 이어진 밧줄", Weight = 10,
                 Body = "천장의 틈 사이로 굵은 밧줄이 늘어져 있다. 위에서 희미하게 바람 소리가 들린다.",
                 Choices = new[]
                 {
@@ -236,7 +233,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "gamble", Title = "도박하는 고블린", Illustration = "도박하는 고블린",
+                Id = "gamble", Title = "도박하는 고블린",
                 Body = "주사위를 굴리던 고블린이 손짓한다. \"한 판 할래? 이기면 두 배!\"",
                 Choices = new[]
                 {
@@ -251,7 +248,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "rack", Title = "녹슨 무기 거치대", Illustration = "무기 거치대",
+                Id = "rack", Title = "녹슨 무기 거치대",
                 Body = "무너진 벽 아래 녹슨 무기 거치대가 있다. 아직 쓸 만한 장비가 단단히 박혀 있다.",
                 Choices = new[]
                 {
@@ -263,7 +260,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "tablet", Title = "고대 석판", Illustration = "고대 석판",
+                Id = "tablet", Title = "고대 석판",
                 Body = "벽에 박힌 석판에 알 수 없는 글자가 빼곡하다. 가만히 보고 있으면 마음이 차분해진다.",
                 Choices = new[]
                 {
@@ -280,7 +277,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "ceiling", Title = "무너지는 천장", Illustration = "무너지는 천장",
+                Id = "ceiling", Title = "무너지는 천장",
                 Body = "발을 딛는 순간 천장에서 돌가루가 쏟아진다. 곧 무너질 것 같다!",
                 Choices = new[]
                 {
@@ -296,7 +293,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "vein", Title = "빛나는 광맥", Illustration = "빛나는 광맥",
+                Id = "vein", Title = "빛나는 광맥", MinFloor = GameBalance.StoneFirstFloor,
                 Body = "바위 틈에서 은은하게 빛나는 광석이 보인다. 대장장이가 반길 만한 물건이다.",
                 Choices = new[]
                 {
@@ -310,7 +307,7 @@ namespace Adventure.Core
             // ── v1.5 아이템 사용 ──
             new EventDef
             {
-                Id = "evt_poison_fog", Title = "독 안개 통로", Illustration = "독 안개 통로",
+                Id = "evt_poison_fog", Title = "독 안개 통로",
                 Body = "초록빛 안개가 낮게 깔린 통로다. 숨을 들이켜기만 해도 목이 따끔거린다. 안개 너머로 누군가 떨어뜨린 주머니가 보인다.",
                 Choices = new[]
                 {
@@ -323,7 +320,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_lantern_keeper", Title = "꺼진 등불의 문지기", Illustration = "등불 문지기",
+                Id = "evt_lantern_keeper", Title = "꺼진 등불의 문지기",
                 Body = "꺼진 등불을 든 유령 문지기가 길을 막는다. \"불을 밝혀 주는 자에게 숨겨진 방을 보여 주지.\"",
                 Choices = new[]
                 {
@@ -338,7 +335,7 @@ namespace Adventure.Core
             // ── v1.5 탐험 효과 ──
             new EventDef
             {
-                Id = "evt_blessed_shrine", Title = "축복의 성소", Illustration = "축복의 성소",
+                Id = "evt_blessed_shrine", Title = "축복의 성소",
                 Body = "작은 성소에 은은한 빛이 고여 있다. 기도하는 이에게 축복을 내린다고 한다.",
                 Choices = new[]
                 {
@@ -351,36 +348,33 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_war_drum", Title = "전쟁의 북", Illustration = "전쟁의 북",
+                Id = "evt_war_drum", Title = "전쟁의 북",
                 Body = "가죽이 팽팽한 커다란 북이 놓여 있다. 치면 피가 끓어오르겠지만, 소리가 멀리 퍼질 것이다.",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "친다", Hint = "집중 2회 · 다음 전투 방 적 +1",
-                        Success = new EventOutcome { Text = "둥, 둥! 정신이 날카로워진다. 어딘가에서 발소리가 다가온다.", Effects = Fx((ExploreEffectType.Focus, 2), (ExploreEffectType.Drum, 1)) } },
+                    new EventChoice { Label = "친다",                         Success = new EventOutcome { Text = "둥, 둥! 정신이 날카로워진다. 어딘가에서 발소리가 다가온다.", Effects = Fx((ExploreEffectType.Focus, 2), (ExploreEffectType.Drum, 1)) } },
                     Choice("북을 부순다", "힘 판정", O("북을 부수자 마음이 후련하다.", exp: 3), Stat.Strength, O("북채가 튕겨 나와 이마를 때렸다.", hp: -0.1)),
                     Pass(),
                 },
             },
             new EventDef
             {
-                Id = "evt_demon_whisper", Title = "악마의 속삭임", Illustration = "악마의 속삭임",
+                Id = "evt_demon_whisper", Title = "악마의 속삭임",
                 Body = "어둠 속에서 달콤한 목소리가 들린다. \"힘을 주마. 대가는… 조금만 아프면 된다.\"",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "받아들인다", Hint = "공격력 +20% · 받는 피해 +15% (귀환까지)",
-                        Success = new EventOutcome { Text = "검은 힘이 팔을 타고 흐른다. (악마의 계약)", Effects = Fx((ExploreEffectType.DemonPact, -1)) } },
+                    new EventChoice { Label = "받아들인다",                         Success = new EventOutcome { Text = "검은 힘이 팔을 타고 흐른다. (악마의 계약)", Effects = Fx((ExploreEffectType.DemonPact, -1)) } },
                     Choice("거절한다", "정신 판정", O("목소리를 떨쳐 내자 머리가 맑아졌다.", exp: 3), Stat.Spirit,
                         new EventOutcome { Text = "목소리가 귓가에 남아 떠나지 않는다. (공포: 전투 1회)", Effects = Fx((ExploreEffectType.Fear, 1)) }),
                 },
             },
             new EventDef
             {
-                Id = "evt_cursed_skull", Title = "저주받은 해골", Illustration = "저주받은 해골",
+                Id = "evt_cursed_skull", Title = "저주받은 해골",
                 Body = "금화를 입에 문 해골이 제단 위에 놓여 있다. 손대면 좋지 않은 일이 생길 것 같다.",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "만진다", Hint = "골드 · 저주 (드롭률 −50%)",
-                        Success = new EventOutcome { Text = "금화를 챙기자 등 뒤가 서늘해진다. (저주)", GoldMult = 6, Effects = Fx((ExploreEffectType.Curse, -1)) } },
+                    new EventChoice { Label = "만진다",                         Success = new EventOutcome { Text = "금화를 챙기자 등 뒤가 서늘해진다. (저주)", GoldMult = 6, Effects = Fx((ExploreEffectType.Curse, -1)) } },
                     Choice("정화한다", "정신 판정", O("해골이 잿빛 가루가 되고 금화만 남았다.", gold: 3), Stat.Spirit,
                         new EventOutcome { Text = "정화에 실패했다. 금화는 챙겼지만 저주가 따라붙었다.", GoldMult = 3, Effects = Fx((ExploreEffectType.Curse, -1)) }),
                     Pass(),
@@ -390,18 +384,18 @@ namespace Adventure.Core
             // ── v1.5 연쇄 ──
             new EventDef
             {
-                Id = "evt_wounded_merchant", Title = "다친 상인", Illustration = "다친 상인",
+                Id = "evt_wounded_merchant", Title = "다친 상인",
                 Body = "짐을 진 상인이 다리를 다쳐 주저앉아 있다. \"물약… 하나만 나눠 주시겠소?\"",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "물약을 건넨다", Hint = "회복 물약 1개", RequiresItem = "potion",
+                    new EventChoice { Label = "물약을 건넨다", Hint = "회복 물약 1개 필요", RequiresItem = "potion",
                         Success = new EventOutcome { Text = "\"이 은혜는 잊지 않겠소!\" 상인은 절뚝이며 앞쪽 방으로 사라졌다.", Chain = "evt_merchant_reward" } },
                     new EventChoice { Label = "무시한다", Success = new EventOutcome { Text = "등 뒤로 신음이 멀어진다.", Chain = "evt_merchant_corpse" } },
                 },
             },
             new EventDef
             {
-                Id = "evt_captive", Title = "갇힌 포로", Illustration = "갇힌 포로",
+                Id = "evt_captive", Title = "갇힌 포로",
                 Body = "쇠사슬에 묶인 모험가가 손짓한다. \"풀어 주면 귀환 마법진이 어디 있는지 알려 주겠소!\"",
                 Choices = new[]
                 {
@@ -412,7 +406,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_goblin_map", Title = "고블린의 지도", Illustration = "고블린의 지도",
+                Id = "evt_goblin_map", Title = "고블린의 지도",
                 Body = "고블린 무리가 모닥불 옆에서 지도를 펼쳐 놓고 잠들어 있다. 조용히 가져갈 수 있을까?",
                 Choices = new[]
                 {
@@ -423,17 +417,16 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_merchant_reward", Title = "상인의 보답", Illustration = "다친 상인", Followup = true,
+                Id = "evt_merchant_reward", Title = "상인의 보답", Followup = true,
                 Body = "아까 그 상인이 짐을 풀고 기다리고 있다. \"생명의 은인에게는 특별 가격이오!\"",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "보답을 받는다", Hint = "회복 물약 2개 · 이후 마을 가격 × 0.7로 거래",
-                        Success = new EventOutcome { Text = "상인이 물약 두 병을 쥐여 준다. \"필요한 게 있으면 언제든 오시오.\"", Reward = EventReward.TwoPotions, BecomeMerchant = true } },
+                    new EventChoice { Label = "보답을 받는다",                         Success = new EventOutcome { Text = "상인이 물약 두 병을 쥐여 준다. \"필요한 게 있으면 언제든 오시오.\"", Reward = EventReward.TwoPotions, BecomeMerchant = true } },
                 },
             },
             new EventDef
             {
-                Id = "evt_merchant_corpse", Title = "상인의 시체", Illustration = "다친 상인", Followup = true,
+                Id = "evt_merchant_corpse", Title = "상인의 시체", Followup = true,
                 Body = "아까 그 상인이 쓰러져 있다. 몬스터에게 당한 모양이다. 짐 꾸러미가 흩어져 있다.",
                 Choices = new[]
                 {
@@ -444,7 +437,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_captive_reward", Title = "포로의 보답", Illustration = "갇힌 포로", Followup = true,
+                Id = "evt_captive_reward", Title = "포로의 보답", Followup = true,
                 Body = "풀어 준 모험가가 기다리고 있었다. \"덕분에 살았소. 이건 내 몫이오.\"",
                 Choices = new[]
                 {
@@ -453,11 +446,11 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_goblin_chase", Title = "고블린 추격대", Illustration = "고블린의 지도", Followup = true,
+                Id = "evt_goblin_chase", Title = "고블린 추격대", Followup = true,
                 Body = "지도를 되찾으려는 고블린 추격대가 길을 막았다! 우두머리가 소리친다. \"도둑을 잡아라!\"",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "맞서 싸운다", Hint = "정예 포함 2~3마리 · 이기면 보상 ×2 · 도주하면 사라짐",
+                    new EventChoice { Label = "맞서 싸운다", Hint = "정예 포함 2~3마리와 전투",
                         Success = new EventOutcome { Text = "추격대가 달려든다!", Battle = EventBattle.GoblinChase } },
                 },
             },
@@ -465,7 +458,7 @@ namespace Adventure.Core
             // ── v1.5 욕심 부리기 ──
             new EventDef
             {
-                Id = "evt_treasure_pile", Title = "무너지는 보물 더미", Illustration = "보물 더미", Special = EventSpecial.TreasurePile,
+                Id = "evt_treasure_pile", Title = "무너지는 보물 더미", Special = EventSpecial.TreasurePile,
                 Body = "천장까지 쌓인 금화 더미가 위태롭게 흔들린다. 하나씩 집을 때마다 더미가 더 크게 흔들린다.",
                 Choices = new[]
                 {
@@ -475,7 +468,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_blood_well", Title = "피의 우물", Illustration = "피의 우물", Special = EventSpecial.BloodWell,
+                Id = "evt_blood_well", Title = "피의 우물", Special = EventSpecial.BloodWell,
                 Body = "붉은 물이 고인 우물에서 속삭임이 들린다. \"피를 바쳐라. 바칠수록 깨달음이 깊어지리라.\"",
                 Choices = new[]
                 {
@@ -487,17 +480,17 @@ namespace Adventure.Core
             // ── v1.5 지도 ──
             new EventDef
             {
-                Id = "evt_torn_map", Title = "찢어진 지도", Illustration = "찢어진 지도",
+                Id = "evt_torn_map", Title = "찢어진 지도",
                 Body = "바닥에 이 층의 지도가 떨어져 있다. 귀퉁이가 찢어졌지만 알아볼 만하다.",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "펼쳐 본다", Hint = "이 층 모든 방 공개", Success = new EventOutcome { Text = "지도를 따라 층 전체의 방이 머릿속에 그려진다.", Reveal = RevealKind.All } },
-                    new EventChoice { Label = "판다", Hint = "골드", Success = O("지도를 상인용으로 접어 두었다. 꽤 값이 나가겠다.", gold: 3) },
+                    new EventChoice { Label = "펼쳐 본다", Success = new EventOutcome { Text = "지도를 따라 층 전체의 방이 머릿속에 그려진다.", Reveal = RevealKind.All } },
+                    new EventChoice { Label = "판다", Success = O("지도를 상인용으로 접어 두었다. 꽤 값이 나가겠다.", gold: 3) },
                 },
             },
             new EventDef
             {
-                Id = "evt_signpost", Title = "갈림길 표지판", Illustration = "갈림길 표지판",
+                Id = "evt_signpost", Title = "갈림길 표지판",
                 Body = "낡은 표지판에 주변 방의 이름이 새겨져 있다. 글씨가 많이 닳았다.",
                 Choices = new[]
                 {
@@ -510,7 +503,7 @@ namespace Adventure.Core
             // ── v1.5 기타 ──
             new EventDef
             {
-                Id = "evt_sphinx", Title = "스핑크스의 수수께끼", Illustration = "스핑크스", Special = EventSpecial.Sphinx,
+                Id = "evt_sphinx", Title = "스핑크스의 수수께끼", Special = EventSpecial.Sphinx,
                 Body = "돌로 된 스핑크스가 눈을 뜬다. \"답하라, 모험가여. 맞히면 보상을, 틀리면 벌을 주리라.\"",
                 Choices = new[]
                 {
@@ -522,7 +515,7 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_fate_cards", Title = "운명의 카드", Illustration = "운명의 카드", Special = EventSpecial.FateCards,
+                Id = "evt_fate_cards", Title = "운명의 카드", Special = EventSpecial.FateCards,
                 Body = "탁자 위에 카드 세 장이 뒤집혀 있다. 대길, 길, 흉이 하나씩. 한 장만 고를 수 있다.",
                 Choices = new[]
                 {
@@ -534,47 +527,45 @@ namespace Adventure.Core
             },
             new EventDef
             {
-                Id = "evt_goddess_statue", Title = "여신상", Illustration = "여신상",
+                Id = "evt_goddess_statue", Title = "여신상",
                 Body = "자애로운 표정의 여신상 앞에 헌금함이 놓여 있다. 바친 만큼 축복이 내린다고 한다.",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "조금 기부한다", Hint = "층 × 20G · HP 30% 회복", GoldPerFloor = 20, Success = O("따뜻한 빛이 상처를 어루만진다.", hp: 0.3) },
-                    new EventChoice { Label = "넉넉히 기부한다", Hint = "층 × 50G · HP 전부 + 재생 1회", GoldPerFloor = 50,
+                    new EventChoice { Label = "조금 기부한다", Hint = "층 × 20G", GoldPerFloor = 20, Success = O("따뜻한 빛이 상처를 어루만진다.", hp: 0.3) },
+                    new EventChoice { Label = "넉넉히 기부한다", Hint = "층 × 50G", GoldPerFloor = 50,
                         Success = new EventOutcome { Text = "온몸이 빛으로 가득 찬다. (재생: 전투 1회)", HpRatio = 1.0, Effects = Fx((ExploreEffectType.Regen, 1)) } },
-                    new EventChoice { Label = "아낌없이 기부한다", Hint = "층 × 120G · 위 효과 + 고급 이상 장비", GoldPerFloor = 120,
+                    new EventChoice { Label = "아낌없이 기부한다", Hint = "층 × 120G", GoldPerFloor = 120,
                         Success = new EventOutcome { Text = "여신상의 손에서 빛나는 장비가 떨어졌다! (재생: 전투 1회)", HpRatio = 1.0, Effects = Fx((ExploreEffectType.Regen, 1)), Reward = EventReward.GoodEquipment } },
                     Pass(),
                 },
             },
             new EventDef
             {
-                Id = "evt_campfire", Title = "모닥불의 모험가", Illustration = "모닥불의 모험가",
+                Id = "evt_campfire", Title = "모닥불의 모험가",
                 Body = "모닥불 곁에 낯선 모험가가 앉아 있다. \"같이 쉬어 가겠소? 정보도 팔고 있소.\"",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "함께 쉰다", Hint = "HP 30% 회복", Success = O("모닥불 곁에서 잠시 숨을 돌렸다.", hp: 0.3) },
-                    new EventChoice { Label = "정보를 산다", Hint = "층 × 20G · 귀환 방·보스 방 위치", GoldPerFloor = 20,
+                    new EventChoice { Label = "함께 쉰다", Success = O("모닥불 곁에서 잠시 숨을 돌렸다.", hp: 0.3) },
+                    new EventChoice { Label = "정보를 산다", Hint = "층 × 20G", GoldPerFloor = 20,
                         Success = new EventOutcome { Text = "모험가가 지도에 귀환 방과 보스 방을 표시해 준다.", Reveal = RevealKind.ReturnAndBoss } },
-                    new EventChoice { Label = "약탈한다", Hint = "떠돌이 모험가(정예)와 전투 · 이기면 골드 + 장비 30%",
+                    new EventChoice { Label = "약탈한다", Hint = "떠돌이 모험가(정예)와 전투",
                         Success = new EventOutcome { Text = "모험가가 검을 뽑아 든다. \"후회하게 될 거요!\"", Battle = EventBattle.Wanderer } },
                 },
             },
             new EventDef
             {
-                Id = "evt_dog_hole", Title = "개구멍", Illustration = "개구멍", Weight = 5,
+                Id = "evt_dog_hole", Title = "개구멍", Weight = 5,
                 Body = "벽 아래에 겨우 기어 들어갈 만한 구멍이 두 개 있다. 한쪽에서는 짐승 냄새가, 다른 쪽에서는 마력의 기운이 느껴진다.",
                 Choices = new[]
                 {
-                    new EventChoice { Label = "보스 방 쪽으로 기어간다", Hint = "이 방과 보스 방이 바로 이어짐",
-                        Success = new EventOutcome { Text = "좁은 굴을 지나자 보스 방으로 이어진 길이 열렸다.", LinkBoss = true } },
-                    new EventChoice { Label = "귀환 방 쪽으로 기어간다", Hint = "귀환 방 발견 (바로 귀환 가능)",
-                        Success = new EventOutcome { Text = "굴 끝에서 귀환 마법진의 빛을 확인했다. 이제 언제든 돌아갈 수 있다.", FindReturn = true } },
+                    new EventChoice { Label = "보스 방 쪽으로 기어간다",                         Success = new EventOutcome { Text = "좁은 굴을 지나자 보스 방으로 이어진 길이 열렸다.", LinkBoss = true } },
+                    new EventChoice { Label = "귀환 방 쪽으로 기어간다",                         Success = new EventOutcome { Text = "굴 끝에서 귀환 마법진의 빛을 확인했다. 이제 언제든 돌아갈 수 있다.", FindReturn = true } },
                     Pass(),
                 },
             },
             new EventDef
             {
-                Id = "evt_trial_gate", Title = "시련의 문", Illustration = "시련의 문", Weight = 3, MinFloor = 3, Special = EventSpecial.TrialGate,
+                Id = "evt_trial_gate", Title = "시련의 문", Weight = 3, MinFloor = 3, Special = EventSpecial.TrialGate,
                 Body = "룬이 새겨진 거대한 문이 서 있다. 문 너머에서 더 깊은 층의 주인들이 기다린다. 이기면 그 층까지 단숨에 돌파할 수 있다.",
                 Choices = new[]
                 {

@@ -74,7 +74,7 @@ namespace Adventure.Core
         public static ItemInstance CreateEnhanceStone(int count = 1) => new ItemInstance
         {
             Uid = ItemInstance.NewUid(), TemplateId = EnhanceStoneId, Kind = ItemKind.EnhanceStone,
-            Name = "강화석", Grade = ItemGrade.Rare, Count = count, Price = 300,
+            Name = "강화석", Grade = ItemGrade.Rare, Count = count, Price = 120,
         };
 
         public static ItemInstance CreateSkillBook(string skillId, int count = 1)

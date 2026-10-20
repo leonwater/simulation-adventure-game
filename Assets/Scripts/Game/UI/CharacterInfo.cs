@@ -151,13 +151,17 @@ namespace Adventure.Game
             UI.Label(cell, value, 13, Theme.Text, true, TextAnchor.MiddleRight, false, false);
         }
 
+        /// <summary>
+        /// 상태 이상 안내 한 줄. 아이콘과 이름은 한 묶음으로 가운데를 맞추고(v1.9: 아이콘이 글자보다 내려가 보이던 문제),
+        /// 설명은 두 줄이 되어도 첫 줄이 이름과 같은 높이에 오게 위에 붙인다.
+        /// </summary>
         private static void Glossary(Transform parent, StatusType t, bool debuff)
         {
-            var row = UI.Row(parent, 6, null, TextAnchor.UpperLeft);
-            UI.Icon(row, UI.StatusIcon(t), 18);
-            var tag = UI.Label(row, Names.Of(t), 13, debuff ? Theme.RedLight : Theme.BlueLight, true);
-            UI.Size(tag, width: 48);
+            var row = UI.Row(parent, 8, null, TextAnchor.UpperLeft);
+            var head = UI.IconLabel(row, UI.StatusIcon(t), 18, Names.Of(t), 13, debuff ? Theme.RedLight : Theme.BlueLight, true);
+            UI.Size(head, width: 72);
             var text = UI.Label(row, Names.Explain(t), 12, Theme.TextBody);
+            text.alignment = TextAnchor.UpperLeft;
             UI.Size(text, flexW: 1);
         }
     }

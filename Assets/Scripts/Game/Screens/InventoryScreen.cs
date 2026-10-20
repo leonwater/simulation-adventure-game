@@ -45,8 +45,8 @@ namespace Adventure.Game
             UI.Size(t, flexW: 1);
             if (!_fromDungeon)
             {
-                // 가방 확장: '+' 아이콘 버튼 (상점의 가방 확장으로)
-                var expand = UI.ButtonCard(head, () => Go(new ShopScreen()), Theme.Bg, Theme.Accent, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
+                // 가방 확장: '+' 아이콘 버튼 → 확인 창에서 바로 구매 (v1.9, 상점의 가방 칸은 삭제)
+                var expand = UI.ButtonCard(head, BuyBag, Theme.Bg, Theme.Accent, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
                 UI.Size(expand, width: 40, height: 40, flexW: 0);
                 UI.CenteredIcon(expand, "plus", 20).color = Theme.Gold;
                 UI.SetEnabled(expand, ShopSystem.CanBuyBag(C));
@@ -164,6 +164,24 @@ namespace Adventure.Game
         {
             S.Save();
             Rebuild();
+        }
+
+        private void BuyBag()
+        {
+            int price = ShopSystem.BagPrice(C);
+            int after = System.Math.Min(GameBalance.InventoryMax, C.Inventory.Capacity + GameBalance.InventoryPerBag);
+            Overlay.Confirm("가방 확장", price.ToString("#,0") + "G를 소모하여 가방을 " + (after - C.Inventory.Capacity) + "칸 확장하겠습니까?\n("
+                                       + C.Inventory.Capacity + " → " + after + "칸, 쓰러져도 유지)", "확장 · " + price.ToString("#,0") + "G", () =>
+            {
+                if (!ShopSystem.BuyBag(C, out string err))
+                {
+                    Toast(err);
+                    return;
+                }
+                S.Save();
+                Toast("가방이 " + C.Inventory.Capacity + "칸이 됐다");
+                Rebuild();
+            });
         }
     }
 }

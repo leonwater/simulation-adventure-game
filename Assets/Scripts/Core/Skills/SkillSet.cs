@@ -30,7 +30,8 @@ namespace Adventure.Core
     /// <summary>스킬 습득·장착·수련 규칙.</summary>
     public static class SkillSystem
     {
-        public static double PowerMultiplier(int level) => 1.0 + GameBalance.SkillPowerPerLevel * level;
+        /// <summary>수련 배율: 등급이 높을수록 단계마다 많이 오른다 (하급 +8% ~ 최상급 +15%).</summary>
+        public static double PowerMultiplier(SkillDef def, int level) => 1.0 + GameBalance.SkillPowerPerLevel[(int)def.Tier] * level;
 
         public static bool Learn(Character c, string skillId)
         {

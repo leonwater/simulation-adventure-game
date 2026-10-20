@@ -326,7 +326,7 @@ namespace Adventure.Core
         {
             var state = Character.Skills.Get(def.Id);
             double baseMult = chainIndex >= 0 && chainIndex < def.ChainMults.Length ? def.ChainMults[chainIndex] : def.DamageMult;
-            return baseMult * SkillSystem.PowerMultiplier(state?.Level ?? 0) * (1.0 + CharacterStats.SkillDamageBonus(Character));
+            return baseMult * SkillSystem.PowerMultiplier(def, state?.Level ?? 0) * (1.0 + CharacterStats.SkillDamageBonus(Character));
         }
 
         private bool SureCrit(SkillDef def) => NextSkillCrit || def.GuaranteedCrit || (def.FirstTurnCrit && Turn == 1);
@@ -342,7 +342,7 @@ namespace Adventure.Core
         {
             if (def.Target == SkillTarget.Self)
             {
-                if (def.HealRatio > 0) return "HP 약 " + (int)Math.Round(Player.MaxHp * def.HealRatio * SkillSystem.PowerMultiplier(Character.Skills.Get(def.Id)?.Level ?? 0)) + " 회복";
+                if (def.HealRatio > 0) return "HP 약 " + (int)Math.Round(Player.MaxHp * def.HealRatio * SkillSystem.PowerMultiplier(def, Character.Skills.Get(def.Id)?.Level ?? 0)) + " 회복";
                 return def.Statuses.Length > 0 ? Names.Of(def.Statuses[0].Type) + " " + def.Statuses[0].Turns + "턴" : "";
             }
             if (!def.IsAttack || target == null) return "";
@@ -547,7 +547,7 @@ namespace Adventure.Core
         {
             var def = SkillDb.Get(choice.SkillId);
             var state = Character.Skills.Get(choice.SkillId);
-            double power = SkillSystem.PowerMultiplier(state?.Level ?? 0);
+            double power = SkillSystem.PowerMultiplier(def, state?.Level ?? 0);
             _cooldowns[def.Id] = def.Cooldown;
             Add(def.Name + "!");
 
@@ -811,6 +811,7 @@ namespace Adventure.Core
             if (_rng.Chance(Math.Min(1, equip * drop))) report.Items.Add(LootSystem.RandomEquipment(Floor, Character, _rng, Math.Max(role, e.GuaranteedEquipment ? 1 : 0)));
             double book = role == 2 ? GameBalance.SkillBookDropBoss : role == 1 ? GameBalance.SkillBookDropElite : GameBalance.SkillBookDropNormal;
             if (_rng.Chance(book * drop)) report.Items.Add(LootSystem.HighSkillBook(Character, _rng));
+            if (!GameBalance.StonesDropOn(Floor)) return; // 강화석은 10층부터
             if (role == 2) report.Items.Add(ItemDb.CreateEnhanceStone(GameBalance.StoneDropBoss));
             else if (_rng.Chance((role == 1 ? GameBalance.StoneDropElite : GameBalance.StoneDropNormal) * drop))
                 report.Items.Add(ItemDb.CreateEnhanceStone());

@@ -98,7 +98,7 @@ namespace Adventure.Core
             var r = new LootReport { Gold = GameBalance.EnemyGold(floor) * rng.RangeInclusive(5, 8) };
             if (rng.Chance(0.6)) r.Items.Add(RandomEquipment(floor, c, rng, 1));
             if (rng.Chance(0.35)) r.Items.Add(ItemDb.CreateConsumable(rng.Chance(0.7) ? "potion" : "potion_hi", rng.RangeInclusive(1, 2)));
-            if (rng.Chance(0.15)) r.Items.Add(ItemDb.CreateEnhanceStone());
+            if (GameBalance.StonesDropOn(floor) && rng.Chance(0.15)) r.Items.Add(ItemDb.CreateEnhanceStone());
             if (rng.Chance(0.05)) r.Items.Add(HighSkillBook(c, rng));
             return r;
         }

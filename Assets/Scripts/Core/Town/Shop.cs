@@ -161,6 +161,11 @@ namespace Adventure.Core
                 error = "이미 팔린 물건입니다";
                 return false;
             }
+            if (good.Item.Kind == ItemKind.SkillBook && c.Skills.Knows(good.Item.SkillId))
+            {
+                error = "이미 배운 스킬입니다";
+                return false;
+            }
             count = Math.Max(1, Math.Min(count, good.MaxBuy));
             var item = good.Item.CloneWithCount(count);
             int price = (int)Math.Round(good.Item.Price * priceMultiplier) * count;

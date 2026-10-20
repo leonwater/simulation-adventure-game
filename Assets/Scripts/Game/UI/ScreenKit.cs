@@ -125,20 +125,20 @@ namespace Adventure.Game
             BottomLine(bar);
         }
 
-        private static readonly string[] NavLabels = { "마을", "캐릭터", "가방", "스킬" };
+        private static readonly string[] NavIcons = { "nav_town", "nav_character", "nav_bag", "nav_skill" };
 
-        /// <summary>마을 계열 하단 메뉴. 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 (설정은 마을 오른쪽 위 버튼)</summary>
+        /// <summary>마을 계열 하단 메뉴 (v1.9: 글자 대신 아이콘). 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 (설정은 마을 오른쪽 위 버튼)</summary>
         public static void BottomNav(Transform parent, int active)
         {
             var nav = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, TextAnchor.MiddleCenter, "nav");
             UI.Size(nav, height: 60);
             nav.GetComponent<HorizontalLayoutGroup>().childForceExpandWidth = true;
-            for (int i = 0; i < NavLabels.Length; i++)
+            for (int i = 0; i < NavIcons.Length; i++)
             {
                 int idx = i;
                 var item = UI.ButtonCard(nav, () => Navigate(idx), Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0), false, 0, 60, TextAnchor.MiddleCenter);
                 UI.Size(item, width: 0, flexW: 1); // 메뉴 칸을 같은 폭으로
-                UI.Label(item, NavLabels[i], 13, i == active ? Theme.Gold : Theme.TextSub, i == active, TextAnchor.MiddleCenter);
+                UI.Icon(item, NavIcons[i], 28).color = i == active ? Theme.Gold : Theme.TextSub;
                 if (i != active && Alerts.Nav(i)) UI.Dot(item, 9, 12);
             }
             TopLine(nav);

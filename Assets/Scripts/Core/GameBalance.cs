@@ -56,7 +56,7 @@ namespace Adventure.Core
         public static readonly int[] SkillSlots = { 3, 3, 4, 4, 5, 5, 6, 6 };
         public const int StorageBase = 20;
         public const int StoragePerRank = 5;
-        /// <summary>창고 보관·출고 수수료 (1회, 한 칸 기준) = 10 + 돌파 층 × 5.</summary>
+        /// <summary>창고 보관 수수료 (1회, 한 칸 기준) = 10 + 돌파 층 × 5. 찾을 때는 무료.</summary>
         public static int StorageFee(int highestFloor) => 10 + highestFloor * 5;
 
         /// <summary>승급 조건 (1차 30층): [다음 등급 인덱스] = (돌파 층, 레벨, 퀘스트). 인덱스 0(F)은 사용 안 함.</summary>
@@ -87,20 +87,43 @@ namespace Adventure.Core
         public static readonly int[] GradeFirstFloor = { 1, 1, 5, 12, 20 };
         public const double SellRatio = 0.5;
 
-        public const int MaxEnhance = 10;
+        public const int MaxEnhance = 15;
         /// <summary>강화 1단계마다 기본 수치 + 등급별 비율 (v1.8: 높은 등급일수록 많이 오른다).</summary>
         public static readonly double[] EnhanceValuePerLevel = { 0.05, 0.06, 0.07, 0.08, 0.10 };
         /// <summary>강화한 장비를 팔면 들어간 강화 골드의 이 비율을 판매가에 더한다.</summary>
         public const double EnhanceSellRefund = 0.5;
-        /// <summary>목표 강화 단계별 성공률. 인덱스 = 목표 단계(1~10).</summary>
-        public static readonly double[] EnhanceSuccess = { 0, 1, 1, 1, 1, 1, 0.70, 0.60, 0.50, 0.30, 0.15 };
-        /// <summary>목표 강화 단계별 필요 강화석.</summary>
-        public static readonly int[] EnhanceStones = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2 };
-        public const int EnhanceGoldPerLevel = 100; // 비용 = 100 × 목표 단계 × (등급 + 1)
+        /// <summary>목표 강화 단계별 성공률. 인덱스 = 목표 단계(1~15, v1.9: 최대 +15, 단계마다 고르게 낮아진다).</summary>
+        public static readonly double[] EnhanceSuccess = { 0, 1, 1, 1, 0.95, 0.90, 0.80, 0.70, 0.60, 0.50, 0.40, 0.30, 0.25, 0.20, 0.15, 0.10 };
+        /// <summary>목표 강화 단계별 필요 강화석 (+6부터).</summary>
+        public static readonly int[] EnhanceStones = { 0, 0, 0, 0, 0, 0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3 };
+
+        /// <summary>
+        /// 층에 맞는 적정 강화 단계 = 층 ÷ 2 (30층 +15). 강화석은 적정 단계가 강화석이 필요한 단계(+6)가 되는 층(12층)보다
+        /// 2층 앞(10층)부터 나온다 (v1.9: 초반 강화석 판매로 돈을 벌지 못하게).
+        /// </summary>
+        public static int RecommendedEnhance(int floor) => Math.Min(MaxEnhance, Math.Max(0, floor) / 2);
+
+        public static readonly int StoneFirstFloor = FirstFloorNeedingStones() - 2;
+
+        private static int FirstFloorNeedingStones()
+        {
+            int first = Array.FindIndex(EnhanceStones, n => n > 0);
+            for (int f = 1; f <= MaxFloor; f++)
+                if (RecommendedEnhance(f) >= first) return f;
+            return MaxFloor;
+        }
+
+        public static bool StonesDropOn(int floor) => floor >= StoneFirstFloor;
+        /// <summary>실패하면 한 단계 내려갈 확률 (목표 단계 기준): +7~10 30%, +11~15 50%, 그 아래는 0.</summary>
+        public static double EnhanceDowngradeChance(int target) => target >= 11 ? 0.5 : target >= 7 ? 0.3 : 0;
+        /// <summary>강화 비용 = 30 × 목표 단계 × (1 + 착용 레벨 ÷ 10) × 등급 배율 (v1.9: 장비 레벨도 반영).</summary>
+        public const int EnhanceGoldBase = 30;
+        public static readonly double[] EnhanceGradeCost = { 1.0, 1.3, 1.7, 2.2, 3.0 };
 
         // ── 스킬 ───────────────────────────────────────────────
         public const int MaxSkillLevel = 5;
-        public const double SkillPowerPerLevel = 0.10;
+        /// <summary>수련 1단계마다 스킬 위력 + 등급별 비율 (하급·중급·상급·최상급, v1.9).</summary>
+        public static readonly double[] SkillPowerPerLevel = { 0.08, 0.10, 0.12, 0.15 };
         public const int TrainingGoldPerLevel = 200; // 수련 비용 = 200G × 다음 강화 단계
         /// <summary>스킬서로 얻을 수 있는 스킬의 장착 레벨 한도 = 지금 레벨 + 이 값.</summary>
         public const int SkillBookLevelWindow = 5;
@@ -161,9 +184,9 @@ namespace Adventure.Core
 
         public static double EarlyBoostScale(Difficulty d) => d == Difficulty.Easy ? 0 : d == Difficulty.Normal ? 1.0 : 0.4;
 
-        /// <summary>적 HP (v1.8: 성공률 +7%p에 맞춰 ×1.1).</summary>
-        public static double EnemyHp(int f, double early = 1.0) => 66 + f * 26.4 + f * f * 0.66 + EarlyBoostHp * EarlyBoost(f) * early;
-        public static double EnemyAttack(int f, double early = 1.0) => 5 + f * 2.5 + f * f * 0.08 + EarlyBoostAttack * EarlyBoost(f) * early;
+        /// <summary>적 HP (v1.8: 성공률 +7%p에 맞춰 ×1.1, v1.9: 장비 수치 상향에 맞춰 층이 깊을수록 더).</summary>
+        public static double EnemyHp(int f, double early = 1.0) => 66 + f * 29 + f * f * 0.75 + EarlyBoostHp * EarlyBoost(f) * early;
+        public static double EnemyAttack(int f, double early = 1.0) => 5 + f * 2.8 + f * f * 0.09 + EarlyBoostAttack * EarlyBoost(f) * early;
         public static double EnemyDefense(int f) => 2 + f * 1.5;
         /// <summary>플레이어 공격 성공률 계산에 쓰는 적 요구치.</summary>
         public static double EnemyRequirement(int f) => 10 + f * 2.4;

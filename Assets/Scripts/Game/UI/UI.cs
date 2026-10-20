@@ -296,6 +296,19 @@ namespace Adventure.Game
             return raw;
         }
 
+        /// <summary>
+        /// 아이콘 + 한 줄 글자 (v1.9 정렬 기준): 묶음의 높이를 아이콘과 글자 한 줄 중 큰 쪽으로 고정하고 둘 다 세로 가운데에 둔다.
+        /// 여러 줄 글자 옆에 놓을 때는 이 묶음을 줄의 맨 위에 두어 첫 줄과 높이를 맞춘다.
+        /// </summary>
+        public static RectTransform IconLabel(Transform parent, string icon, float iconSize, string text, float size, Color color, bool bold = false)
+        {
+            var row = Row(parent, 4, null, TextAnchor.MiddleLeft, "icon-label");
+            Size(row, height: Mathf.Max(iconSize, Mathf.Round(size * GameSettings.TextScale * 1.5f)));
+            Icon(row, icon, iconSize);
+            Label(row, text, size, color, bold, TextAnchor.MiddleLeft, false, false);
+            return row;
+        }
+
         /// <summary>세로 배치 안에서 늘어나지 않도록 가운데 줄에 넣은 아이콘.</summary>
         public static RawImage CenteredIcon(Transform parent, string name, float size, TextAnchor align = TextAnchor.MiddleCenter)
         {

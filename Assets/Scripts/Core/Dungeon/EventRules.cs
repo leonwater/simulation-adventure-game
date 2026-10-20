@@ -91,6 +91,9 @@ namespace Adventure.Core
             return def.Body;
         }
 
+        /// <summary>
+        /// 특별한 이벤트 선택지의 작은 안내. 보상·남은 횟수는 보여 주지 않고(v1.9) 대가와 지금 상태만 알린다.
+        /// </summary>
         public static string SpecialHint(EventDef def, int index, DungeonRun run, Character c)
         {
             var room = run?.Current;
@@ -98,19 +101,11 @@ namespace Adventure.Core
             switch (def.Special)
             {
                 case EventSpecial.TreasurePile:
-                    if (index == 0) return "골드 +" + GoldAmount(2, run.Floor).ToString("#,0") + " · 함정 " + Math.Round(TrapChance(room.EventStep, c) * 100) + "% · 모은 골드 " + room.EventBank.ToString("#,0") + "G";
-                    return room.EventBank.ToString("#,0") + "G 챙기기";
+                    return index == 0 ? "함정이 있을지도 모른다" : "모은 골드 " + room.EventBank.ToString("#,0") + "G 챙기기";
                 case EventSpecial.BloodWell:
-                    if (index == 0)
-                        return room.EventStep >= BloodRewards.Length ? "더 바칠 수 없다"
-                            : "최대 HP 10% 소모 · 경험치 +" + ((long)Math.Round(GameBalance.EnemyExp(run.Floor) * BloodRewards[room.EventStep])).ToString("#,0") + " · " + (room.EventStep + 1) + "/" + BloodRewards.Length + "번째";
-                    return "지금까지 " + room.EventStep + "번 바침";
+                    return index == 0 ? (room.EventStep >= BloodRewards.Length ? "더 바칠 수 없다" : "최대 HP 10% 소모") : null;
                 case EventSpecial.Sphinx when index < 3:
-                    return "정답: 경험치 + 장비 · 오답: HP −15%";
-                case EventSpecial.FateCards when index < 3:
-                    return "대길 · 길 · 흉 중 하나";
-                case EventSpecial.TrialGate when index < 3:
-                    return "이기면 " + (run.Floor + index) + "층까지 클리어 · 바로 귀환 · 도주 가능";
+                    return "틀리면 HP를 잃는다";
             }
             return null;
         }

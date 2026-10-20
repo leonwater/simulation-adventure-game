@@ -178,9 +178,8 @@ namespace Adventure.Core
             run.CurrentRoomId = roomId;
             var room = run.Current;
             room.Visited = true;
-            if (room.Cleared)
-                return room.Type == RoomType.Merchant ? RoomEnterResult.Merchant
-                    : room.Type == RoomType.Return ? RoomEnterResult.Return : RoomEnterResult.Nothing;
+            // 다시 온 방: 상인은 거래 창을 바로 열지 않는다 (v1.9, '상인과 거래한다'로 연다)
+            if (room.Cleared) return room.Type == RoomType.Return ? RoomEnterResult.Return : RoomEnterResult.Nothing;
             switch (room.Type)
             {
                 case RoomType.Battle: return RoomEnterResult.Battle;

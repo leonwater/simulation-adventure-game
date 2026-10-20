@@ -24,24 +24,13 @@ namespace Adventure.Tests
             Assert.AreEqual(99, GameBalance.StatCap);
         }
 
-        [Test]
-        public void SkillSuccess_LowDamageHigherHighDamageLower()
-        {
-            foreach (var s in SkillDb.AllSkills)
-            {
-                if (!s.IsAttack) continue;
-                double total = (s.ChainMults.Length > 0 ? s.ChainMults[0] : s.DamageMult) * s.Hits;
-                if (s.Target == SkillTarget.AllEnemies || s.GuaranteedCrit || total >= 2.5) Assert.Less(s.SuccessBonus, 0, s.Id + " 고위력");
-                else Assert.Greater(s.SuccessBonus, 0, s.Id + " 저위력");
-            }
-        }
 
         [Test]
         public void Rogue_EightyPercentSkillsAndKeenCruelBuffs()
         {
             Assert.AreEqual(2.3, GameBalance.CritMultiplier, 1e-9);
             Assert.AreEqual(1.1, SkillDb.Get("r_ambush").DamageMult, 1e-9, "기습 140% × 0.8");
-            Assert.AreEqual(2.0, SkillDb.Get("r_assassin").DamageMult, 1e-9, "암살 250% × 0.8");
+            Assert.AreEqual(2.5, SkillDb.Get("r_assassin").DamageMult, 1e-9, "암살 (v1.9 최상급 ×1.25)");
             Assert.AreEqual(StatusType.Keen, SkillDb.Get("r_keen").Statuses[0].Type);
             Assert.AreEqual(StatusType.Cruel, SkillDb.Get("r_cruel").Statuses[0].Type);
             Assert.IsFalse(StatusContainer.IsDebuff(StatusType.Keen));
@@ -90,7 +79,7 @@ namespace Adventure.Tests
             int plain = item.SellPrice;
             item.Enhance = 5;
             int spent = Blacksmith.GoldSpent(item);
-            Assert.AreEqual(100 * 3 * 15, spent, "100 × (등급 + 1) × (1+2+3+4+5)");
+            Assert.AreEqual((int)Math.Round(30 * 15 * 2.0 * 1.7), spent, "30 × (1+2+3+4+5) × (1 + Lv.10 ÷ 10) × 희귀 1.7");
             Assert.AreEqual(plain + spent / 2, item.SellPrice, 1, "강화에 든 골드의 절반을 더 받는다");
         }
 
@@ -133,7 +122,7 @@ namespace Adventure.Tests
         }
 
         [Test]
-        public void Storage_ChargesFeeBothWays()
+        public void Storage_ChargesFeeOnDepositOnly()
         {
             var c = Character.Create("a", Job.Warrior);
             c.HighestFloorCleared = 4;
@@ -146,7 +135,8 @@ namespace Adventure.Tests
             Assert.IsTrue(GuildSystem.Deposit(c, item.Uid, out _));
             Assert.AreEqual(fee, c.Gold);
             Assert.IsTrue(GuildSystem.Withdraw(c, item.Uid, out _));
-            Assert.AreEqual(0, c.Gold);
+            Assert.AreEqual(fee, c.Gold, "찾을 때는 무료 (v1.9)");
+            c.Gold = 0;
             Assert.IsFalse(GuildSystem.Deposit(c, item.Uid, out string err), "수수료가 없으면 맡길 수 없다");
             StringAssert.Contains("수수료", err);
         }

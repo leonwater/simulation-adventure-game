@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Adventure.Game
 {
-    /// <summary>수련장: 골드를 내고 보유 스킬을 강화 (+5까지, 단계당 위력 +10%).</summary>
+    /// <summary>수련장: 골드를 내고 보유 스킬을 강화 (+5까지, 단계당 위력 하급 +8% ~ 최상급 +15%).</summary>
     public class TrainingScreen : ScreenBase
     {
         private string _line = "기술은 반복으로 다듬어지는 법. 어떤 기술을 갈고닦겠나?";
@@ -21,7 +21,7 @@ namespace Adventure.Game
             ScreenKit.NpcIllustration(page, "수련 교관", _line, 260);
             var body = UI.Scroll(page, out _, 0, UI.Pad(16, 16, 16, 16), "training");
             Anchors.Set("train.list", body);
-            UI.Sub(body, "강화 단계마다 스킬 위력 +" + Mathf.RoundToInt((float)GameBalance.SkillPowerPerLevel * 100) + "% · 최대 +" + GameBalance.MaxSkillLevel);
+            UI.Sub(body, "수련 단계마다 스킬 위력 하급 +8% · 중급 +10% · 상급 +12% · 최상급 +15% · 최대 +" + GameBalance.MaxSkillLevel);
             UI.Spacer(body, 0, 6);
             foreach (var st in C.Skills.Learned)
             {
@@ -31,7 +31,8 @@ namespace Adventure.Game
                 UI.Size(row, minH: 64);
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
-                UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + " · +" + st.Level, Theme.SubHex), 15, Theme.Text);
+                int per = Mathf.RoundToInt((float)GameBalance.SkillPowerPerLevel[(int)def.Tier] * 100);
+                UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + " · +" + st.Level + " (단계당 +" + per + "%)", Theme.SubHex), 15, Theme.Text);
                 UI.Sub(col, def.Description + (C.Skills.IsEquipped(def.Id) ? " · 장착 중" : ""));
                 int cost = SkillSystem.TrainingCost(st);
                 var state = st;
