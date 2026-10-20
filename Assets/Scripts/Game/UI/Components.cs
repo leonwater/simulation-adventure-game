@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Adventure.Game
 {
-    /// <summary>깜빡임 (미니맵의 "갈 수 있는 방").</summary>
+    /// <summary>깜빡임 (미니맵의 "갈 수 있는 방", 1턴 남은 상태 이상 아이콘).</summary>
     public class Blink : MonoBehaviour
     {
         public float Period = 1.2f;

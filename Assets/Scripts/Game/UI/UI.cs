@@ -270,14 +270,6 @@ namespace Adventure.Game
             if (btn != null) btn.interactable = enabled;
         }
 
-        /// <summary>둥근 테두리 알약 (예: "D 등급", 상태 이상 태그).</summary>
-        public static Text Pill(Transform parent, string text, Color border, Color textColor, float size = 12, float radius = 999)
-        {
-            var card = Card(parent, Theme.Bg, border, Mathf.Min(radius, 10), Pad(8, 3), false, 0, TextAnchor.MiddleCenter, "pill");
-            // 가로 배치(Row) 안에 넣으면 글자 폭만큼만 차지한다.
-            return Label(card, text, size, textColor, false, TextAnchor.MiddleCenter, false, false);
-        }
-
         /// <summary>오른쪽 위 빨간 알림 점 (레이아웃 무시).</summary>
         public static Image Dot(Transform parent, float size = 10, float inset = 6)
         {
@@ -316,6 +308,9 @@ namespace Adventure.Game
         public static string JobIcon(Adventure.Core.Job j) => "job_" + j.ToString().ToLowerInvariant();
 
         public static string StatIcon(Adventure.Core.Stat s) => "stat_" + s.ToString().ToLowerInvariant();
+
+        /// <summary>상태 이상 아이콘 (테두리: 푸른색 이로운 효과 · 붉은색 해로운 효과).</summary>
+        public static string StatusIcon(Adventure.Core.StatusType s) => "status_" + s.ToString().ToLowerInvariant();
 
         /// <summary>장비 등급을 색과 글자로 함께 보여 준다 (예: "[희귀] 강철 장검").</summary>
         public static string GradeTag(Adventure.Core.ItemGrade g) => Color("[" + Adventure.Core.Names.Of(g) + "]", Theme.GradeColor(g));
@@ -421,7 +416,12 @@ namespace Adventure.Game
 
         public static void Clear(Transform t)
         {
-            for (int i = t.childCount - 1; i >= 0; i--) UnityEngine.Object.Destroy(t.GetChild(i).gameObject);
+            for (int i = t.childCount - 1; i >= 0; i--)
+            {
+                var child = t.GetChild(i);
+                child.SetParent(null, false); // 이번 프레임 배치에서 바로 빠지게
+                UnityEngine.Object.Destroy(child.gameObject);
+            }
         }
     }
 }

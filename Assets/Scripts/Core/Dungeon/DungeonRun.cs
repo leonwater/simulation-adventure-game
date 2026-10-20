@@ -104,17 +104,23 @@ namespace Adventure.Core
                     Known = known,
                 });
             }
-            // 새 방을 먼저 보여 준다.
-            list.Sort((a, b) => a.Room.Visited.CompareTo(b.Room.Visited));
+            // 방향마다 자리를 고정한다: 위 → 왼쪽 → 오른쪽 → 아래 (v1.8)
+            list.Sort((a, b) => DirectionOrder(cur, a.Room).CompareTo(DirectionOrder(cur, b.Room)));
             return list;
         }
 
+        private static int DirectionOrder(Room from, Room to) =>
+            to.Y < from.Y ? 0 : to.X < from.X ? 1 : to.X > from.X ? 2 : 3;
+
         private static string DirectionText(Room from, Room to)
         {
-            if (to.X > from.X) return "오른쪽 통로";
-            if (to.X < from.X) return "왼쪽 통로";
-            if (to.Y > from.Y) return "아래 통로";
-            return "위 통로";
+            switch (DirectionOrder(from, to))
+            {
+                case 0: return "위 통로";
+                case 1: return "왼쪽 통로";
+                case 2: return "오른쪽 통로";
+                default: return "아래 통로";
+            }
         }
 
         /// <summary>지금 방의 상황 설명 (던전 화면 텍스트 상자).</summary>

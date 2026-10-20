@@ -511,15 +511,25 @@ namespace Adventure.Game
             }
         }
 
+        /// <summary>던전 상인: 물건마다 살 수 있는 수량이 정해져 있고, 사면 보유 개수·남은 수량·골드가 바로 바뀐다.</summary>
         private void Merchant()
         {
             var body = Overlay.Modal(S.Run.Current.MerchantDiscount ? "구해 준 상인" : "떠돌이 상인", true);
+            FillMerchant(body);
+        }
+
+        private void FillMerchant(RectTransform body)
+        {
+            UI.Clear(body);
             UI.Sub(body, "보유 골드 " + Names.Gold(C.Gold) + " · 가방 " + C.Inventory.UsedCells + "/" + C.Inventory.Capacity);
-            foreach (var g in S.Run.Current.MerchantGoods)
+            var goods = S.Run.Current.MerchantGoods;
+            if (goods.Count == 0) UI.Sub(body, "물건이 모두 팔렸습니다.");
+            foreach (var g in goods)
             {
                 var good = g;
                 int price = S.MerchantPrice(g.Item);
-                ScreenKit.ChoiceButton(body, g.Item.Name, ItemDb.Consumable(g.Item.TemplateId)?.Description + " · 보유 " + C.Inventory.CountOf(g.Item.TemplateId),
+                ScreenKit.ChoiceButton(body, g.Item.Name,
+                    ItemDb.Consumable(g.Item.TemplateId)?.Description + " · 보유 " + C.Inventory.CountOf(g.Item.TemplateId) + " · 남은 수량 " + g.Stock,
                     price + "G", true, () =>
                     {
                         if (!S.BuyFromMerchant(good.Item.Uid, 1, out string err))
@@ -528,6 +538,7 @@ namespace Adventure.Game
                             return;
                         }
                         Toast(good.Item.Name + " 구매 · 남은 골드 " + Names.Gold(C.Gold));
+                        FillMerchant(body);
                     }, C.Gold >= price, 56);
             }
         }
