@@ -17,7 +17,8 @@ namespace Adventure.Game
     }
 
     /// <summary>
-    /// 가방·창고 4열 격자. 칸마다 종류 색 원 + 종류, 이름(장비는 등급 색), 장비는 착용 레벨과 지금 장비 대비 수치.
+    /// 가방·창고 4열 격자 (v1.9 배치). 칸마다 위에서부터 종류 색 원 + 종류 · 이름(두 줄까지, 장비는 등급 색) ·
+    /// 아래 줄(왼쪽: 장비는 착용 레벨과 지금 장비 대비 수치, 스킬서는 등급 / 오른쪽: 개수). 아래 줄은 칸 바닥에서 조금 띄운다.
     /// 상점 카드도 같은 종류 줄·이름 색·레벨/비교 줄을 쓴다.
     /// </summary>
     public static class ItemGrid
@@ -41,21 +42,18 @@ namespace Adventure.Game
                 var it = item;
                 bool sel = item.Uid == selectedUid;
                 var cell = UI.ButtonCard(grid, () => onTap?.Invoke(it), Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 8,
-                    UI.Pad(6, 6), true, 2, CellHeight, TextAnchor.UpperLeft);
+                    UI.Pad(6, 6, 8, 10), true, 3, CellHeight, TextAnchor.UpperLeft);
                 if (sel)
                 {
                     // 선택 칸은 테두리를 2px로
                     var fill = cell.Find("fill") as RectTransform;
                     if (fill != null) UI.Stretch(fill, 2, 2, 2, 2);
                 }
-                // 칸(약 85×96)에 맞춰: 종류 12 · 이름 13(두 줄까지) · 레벨/비교 12
+                // 칸(약 85×96)에 맞춰: 종류 12 · 이름 13(두 줄까지, 넘치면 자름) · 아래 줄 12
                 KindLine(cell, item, 12);
-                string name = Short(item.Kind == ItemKind.SkillBook ? item.DisplayName.Replace("스킬서: ", "") : item.DisplayName, 10)
-                              + (item.Count > 1 ? " ×" + item.Count : "");
-                var n = UI.Label(cell, name, 13, NameColor(item), item.Kind == ItemKind.Equipment);
-                n.horizontalOverflow = HorizontalWrapMode.Wrap;
+                NameLabel(cell, item, 13);
                 UI.Spacer(cell);
-                if (item.Kind == ItemKind.Equipment && owner != null) UI.Label(cell, LevelCompare(owner, item, false), 12, Theme.TextSub);
+                BottomLine(cell, item, owner);
             }
             if (!showEmpty) return;
             for (int i = container.Items.Count; i < container.Capacity; i++)
@@ -119,15 +117,44 @@ namespace Adventure.Game
         /// <summary>장비는 등급 색, 그 외는 기본 글자색.</summary>
         public static Color NameColor(ItemInstance item) => item.Kind == ItemKind.Equipment ? Theme.GradeColor(item.Grade) : Theme.Text;
 
-        /// <summary>종류 줄: 색 원 + 종류 (장비는 무기·방어구·장신구, 스킬서는 등급).</summary>
+        /// <summary>종류 줄: 색 원 + 종류 (무기·방어구·장신구·소모품·재료·스킬서·강화석). 원과 글자는 가운데를 맞춘다.</summary>
         public static void KindLine(Transform parent, ItemInstance item, float size)
         {
             var cat = Category(item);
             var row = UI.Row(parent, 4, null, TextAnchor.MiddleLeft, "kind");
+            UI.Size(row, height: Mathf.Round(size * 1.4f));
             Circle(row, CategoryColor(cat), size * 0.8f);
-            string text = item.Kind == ItemKind.SkillBook && SkillDb.Get(item.SkillId) != null ? "스킬서 · " + Names.Of(SkillDb.Get(item.SkillId).Tier)
-                : CategoryName(cat);
-            UI.Label(row, text, size, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
+            UI.Label(row, CategoryName(cat), size, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
+        }
+
+        /// <summary>이름 (스킬서는 스킬 이름만, 두 줄까지 · 넘치면 자름). 개수는 아래 줄 오른쪽에 따로.</summary>
+        public static Text NameLabel(Transform parent, ItemInstance item, float size)
+        {
+            string name = item.Kind == ItemKind.SkillBook && SkillDb.Get(item.SkillId) != null ? SkillDb.Get(item.SkillId).Name : item.DisplayName;
+            var n = UI.Label(parent, name, size, NameColor(item), item.Kind == ItemKind.Equipment);
+            n.horizontalOverflow = HorizontalWrapMode.Wrap;
+            n.verticalOverflow = VerticalWrapMode.Truncate;
+            n.lineSpacing = 1.05f;
+            UI.Size(n, height: Mathf.Round(size * GameSettings.TextScale * 2.5f)); // 두 줄 높이
+            return n;
+        }
+
+        /// <summary>
+        /// 아래 줄: 왼쪽은 장비 착용 레벨·지금 장비 대비(또는 스킬서 등급), 오른쪽은 개수(2개 이상일 때 ×N).
+        /// </summary>
+        public static void BottomLine(Transform parent, ItemInstance item, Character owner, string left = null)
+        {
+            var row = UI.Row(parent, 4, null, TextAnchor.MiddleLeft, "bottom");
+            UI.Size(row, height: 16);
+            if (left == null)
+            {
+                if (item.Kind == ItemKind.Equipment && owner != null) left = LevelCompare(owner, item, false);
+                else if (item.Kind == ItemKind.SkillBook && SkillDb.Get(item.SkillId) != null) left = Names.Of(SkillDb.Get(item.SkillId).Tier);
+                else left = "";
+            }
+            var l = UI.Label(row, left, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
+            UI.Size(l, flexW: 1);
+            if (item.Count > 1) UI.Label(row, "×" + item.Count, 12, Theme.Text, true, TextAnchor.MiddleRight, false, false);
         }
 
         /// <summary>장비: "Lv.12 · +5" (레벨이 모자라면 빨강, 비교는 +초록 / −빨강).</summary>
@@ -162,8 +189,5 @@ namespace Adventure.Game
             dot.sprite = Sprites.Circle;
             UI.Size(dot, height: size, width: size);
         }
-
-        /// <summary>칸에 들어가도록 이름을 줄인다.</summary>
-        public static string Short(string name, int max = 9) => name.Length > max ? name.Substring(0, max - 1) + "…" : name;
     }
 }

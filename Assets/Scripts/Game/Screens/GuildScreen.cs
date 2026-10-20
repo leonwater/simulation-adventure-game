@@ -22,7 +22,9 @@ namespace Adventure.Game
         {
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), C);
-            ScreenKit.NpcIllustration(page, "길드 접수원", _line, 260);
+            // 창고 탭에서는 접수원이 수수료를 알려 준다 (v1.9: 창고 탭의 설명 문구 대신)
+            string line = _tab == 2 ? "창고에 맡기실 때마다 수수료 " + GuildSystem.StorageFee(C) + "G를 받아요. 찾아가실 때는 무료예요. 맡긴 물건은 던전에서 쓰러져도 안전하답니다." : _line;
+            ScreenKit.NpcIllustration(page, "길드 접수원", line, 260);
             UI.Spacer(page, 0, 6);
             ScreenKit.Tabs(page, new[] { "퀘스트", "등급", "창고" }, _tab, i =>
             {
@@ -226,7 +228,7 @@ namespace Adventure.Game
             UI.Label(row, Mathf.Min(cur, req) + " / " + req, 14, met ? Theme.Green : Theme.TextSub, met, TextAnchor.MiddleRight, false, false);
         }
 
-        // ── 창고: 보관(가방 → 창고) / 출고(창고 → 가방), 한 번 옮길 때마다 수수료 (v1.8) ──
+        // ── 창고: 보관(가방 → 창고, 수수료) / 출고(창고 → 가방, 무료) ──
 
         private void StorageTab(Transform body)
         {
@@ -243,14 +245,12 @@ namespace Adventure.Game
                 }, (idx == 1) == _withdraw ? ButtonKind.Primary : ButtonKind.Ghost, 40, 14);
                 UI.Size(b, width: 0, flexW: 1);
             }
-            int fee = GuildSystem.StorageFee(C);
-            UI.Sub(box, "창고에 맡긴 아이템은 던전에서 쓰러져도 잃지 않습니다. 맡기거나 찾을 때마다 수수료 " + UI.Color(fee + "G", Theme.GoldHex) + "가 듭니다.");
+            int fee = _withdraw ? 0 : GuildSystem.StorageFee(C);
             ItemGrid.Legend(box);
             UI.Label(box, "창고 " + C.Storage.UsedCells + " / " + C.Storage.Capacity + " · 가방 " + C.Inventory.UsedCells + " / " + C.Inventory.Capacity, 14, Theme.Text, true);
             var from = _withdraw ? C.Storage : C.Inventory;
-            if (from.Items.Count == 0) UI.Sub(box, _withdraw ? "창고가 비어 있습니다." : "가방이 비어 있습니다.");
-            string verb = _withdraw ? "찾기" : "맡기기";
-            ItemGrid.Build(box, from, null, item => Overlay.Confirm(item.DisplayName, item.StatLine() + "\n\n수수료 " + fee + "G", verb + " · " + fee + "G", () =>
+            string verb = _withdraw ? "찾기" : "맡기기 · " + fee + "G";
+            ItemGrid.Build(box, from, null, item => Overlay.Confirm(item.DisplayName, item.StatLine(), verb, () =>
             {
                 string err;
                 bool ok = _withdraw ? GuildSystem.Withdraw(C, item.Uid, out err) : GuildSystem.Deposit(C, item.Uid, out err);
@@ -260,7 +260,7 @@ namespace Adventure.Game
                     return;
                 }
                 S.Save();
-                Toast(item.DisplayName + (_withdraw ? " 찾음" : " 맡김") + " · 수수료 " + fee + "G");
+                Toast(item.DisplayName + (_withdraw ? " 찾음" : " 맡김 · 수수료 " + fee + "G"));
                 Rebuild();
             }, "닫기"), false);
         }

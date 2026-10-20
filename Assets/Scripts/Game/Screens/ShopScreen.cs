@@ -8,7 +8,7 @@ namespace Adventure.Game
 {
     /// <summary>
     /// 상점: 상점 주인 일러스트·대사, 구매 탭(갱신·장비·소모품) / 판매 탭(가방 물건을 구매와 같은 카드로).
-    /// 판매 탭은 카드를 길게 누르거나 '여러 개 선택'을 누르면 선택 모드가 되어 여러 칸을 한 번에 판다 (v1.8).
+    /// 판매 탭은 카드를 길게 누르거나 '선택 판매'를 누르면 선택 모드가 되어 여러 칸을 한 번에 판다 (v1.8). 가방 확장은 가방 화면에서 (v1.9).
     /// </summary>
     public class ShopScreen : ScreenBase
     {
@@ -86,13 +86,12 @@ namespace Adventure.Game
             var grid = UI.Grid(eqBox, 3, ScreenKit.ContentWidth, 104, 8);
             foreach (var item in shop.Equipment) EquipCell(grid, item);
 
-            // 소모품 · 스킬 · 가방
+            // 소모품 · 스킬
             var goods = UI.Column(inner, 8);
             Anchors.Set("shop.goods", goods);
-            UI.Label(goods, "소모품 · 스킬 · 가방", 14, Theme.Text, true);
+            UI.Label(goods, "소모품 · 스킬", 14, Theme.Text, true);
             var ggrid = UI.Grid(goods, 3, ScreenKit.ContentWidth, 104, 8);
             foreach (var g in shop.Goods) GoodCell(ggrid, g);
-            BagCell(ggrid);
         }
 
         /// <summary>판매: 가방의 물건을 구매 카드와 같은 모양으로 (종류 · 이름 · 판매 가격).</summary>
@@ -104,11 +103,11 @@ namespace Adventure.Game
             bool any = C.Inventory.Items.Count > 0;
             if (_selected == null)
             {
-                var multi = UI.TextButton(head, "여러 개 선택", () => SetSelecting(true), ButtonKind.Outline, 40, 13);
+                var multi = UI.TextButton(head, "선택 판매", () => SetSelecting(true), ButtonKind.Outline, 40, 13);
                 UI.SetEnabled(multi, any);
-                var junk = UI.TextButton(head, "재료 모두 팔기", SellMaterials, ButtonKind.Ghost, 40, 13);
+                var junk = UI.TextButton(head, "일괄 판매", SellMaterials, ButtonKind.Ghost, 40, 13);
                 UI.SetEnabled(junk, C.Inventory.Items.Exists(i => i.Kind == ItemKind.Material));
-                UI.Sub(inner, "카드를 누르면 팔 수 있고, 길게 누르면 여러 개를 골라 한 번에 팝니다. 장착 중인 장비는 팔리지 않습니다.");
+                UI.Sub(inner, "카드를 누르면 팔 수 있고, 길게 누르면 선택 판매가 됩니다. 일괄 판매는 퀘스트에 쓰지 않는 재료를 모두 팝니다.");
             }
             else
             {
@@ -157,10 +156,9 @@ namespace Adventure.Game
                 Rebuild();
             });
             ItemGrid.KindLine(cell, item, 12);
-            UI.Label(cell, ItemGrid.Short(item.DisplayName, 6) + (item.Count > 1 ? " ×" + item.Count : ""), 13, ItemGrid.NameColor(item), true, TextAnchor.MiddleLeft, false, false);
-            if (item.Kind == ItemKind.Equipment) UI.Label(cell, ItemGrid.LevelCompare(C, item, false), 12, Theme.TextSub);
+            ItemGrid.NameLabel(cell, item, 13);
             UI.Spacer(cell);
-            UI.Label(cell, (item.SellPrice * item.Count).ToString("#,0") + " G", 14, Theme.Gold, true);
+            ItemGrid.BottomLine(cell, item, C, UI.Color((item.SellPrice * item.Count).ToString("#,0") + " G", Theme.GoldHex));
             if (sel) Check(cell);
         }
 
@@ -270,6 +268,7 @@ namespace Adventure.Game
             if (item.Kind == ItemKind.Consumable) UI.Label(cell, "보유 " + C.Inventory.CountOf(item.TemplateId), 12, Theme.TextSub);
             else if (C.Skills.Knows(item.SkillId)) UI.Label(cell, "이미 배움", 12, Theme.RedLight);
             else SkillBookJob(cell, item, 12);
+            if (item.Kind == ItemKind.SkillBook && C.Skills.Knows(item.SkillId)) UI.SetEnabled(cell, false, 0.5f);
             UI.Spacer(cell);
             UI.Label(cell, item.Price.ToString("#,0") + " G", 14, Theme.Gold, true);
         }
@@ -337,35 +336,7 @@ namespace Adventure.Game
                 return;
             }
             var job = (Job)def.JobRestriction;
-            ScreenKit.JobLine(parent, job, Names.Of(job) + " 전용", size, job == C.Job ? Theme.TextSub : Theme.RedLight);
-        }
-
-        private void BagCell(Transform grid)
-        {
-            bool can = ShopSystem.CanBuyBag(C);
-            var cell = UI.ButtonCard(grid, BuyBag, Theme.Card, Theme.CardBorder, 10, UI.Pad(10, 10), true, 5, 104, TextAnchor.UpperLeft);
-            UI.Label(cell, "확장", 12, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
-            UI.Label(cell, "가방", 14, Theme.Text, true);
-            UI.Label(cell, C.Inventory.Capacity + "칸", 12, Theme.TextSub);
-            UI.Spacer(cell);
-            UI.Label(cell, can ? ShopSystem.BagPrice(C).ToString("#,0") + " G" : "최대", 14, Theme.Gold, true);
-            if (!can) UI.SetEnabled(cell, false);
-        }
-
-        private void BuyBag()
-        {
-            Overlay.Confirm("가방 구매", "가방 칸을 " + C.Inventory.Capacity + " → " + Math.Min(GameBalance.InventoryMax, C.Inventory.Capacity + GameBalance.InventoryPerBag) + "칸으로 늘립니다. 가방 확장은 쓰러져도 유지됩니다.",
-                "구매 · " + ShopSystem.BagPrice(C).ToString("#,0") + "G", () =>
-                {
-                    if (!ShopSystem.BuyBag(C, out string err))
-                    {
-                        Toast(err);
-                        return;
-                    }
-                    S.Save();
-                    Toast("가방이 " + C.Inventory.Capacity + "칸이 됐다");
-                    Rebuild();
-                });
+            ScreenKit.JobLine(parent, job, Names.Of(def.Tier) + " · " + Names.Of(job) + " 전용", size, job == C.Job ? Theme.TextSub : Theme.RedLight);
         }
 
         private void Reroll()
@@ -417,7 +388,7 @@ namespace Adventure.Game
             foreach (var i in C.Inventory.Items)
                 if (i.Kind == ItemKind.Material && !S.Data.Guild.Active.Exists(q => q.MaterialId == i.TemplateId))
                     total += (long)i.SellPrice * i.Count;
-            Overlay.Confirm("재료 판매", "진행 중인 퀘스트에 필요한 재료를 빼고 모두 팝니다. (" + total.ToString("#,0") + "G)", "판매", () =>
+            Overlay.Confirm("일괄 판매", "진행 중인 퀘스트에 필요한 재료를 빼고 재료를 모두 팝니다. (" + total.ToString("#,0") + "G)", "판매", () =>
             {
                 foreach (var i in C.Inventory.Items.ToArray())
                     if (i.Kind == ItemKind.Material && !S.Data.Guild.Active.Exists(q => q.MaterialId == i.TemplateId))

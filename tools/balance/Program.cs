@@ -11,14 +11,16 @@ using Adventure.Tests;
 public static class Program
 {
     private static readonly int[] Milestones = { 1, 3, 5, 10, 15, 20, 25, 30 };
-    private static readonly string[] Bands = { "1~10층", "11~20층", "21~30층" };
+    // 사망률은 5층 단위로 센다 (1~5층 · 6~10층 · … · 26~30층)
+    private const int BandSize = 5, BandCount = 6;
+    private static readonly string[] Bands = Enumerable.Range(0, BandCount).Select(i => (i * BandSize + 1) + "~" + (i + 1) * BandSize + "층").ToArray();
 
     private class Stats
     {
         public readonly Dictionary<int, List<int>> Reach = Milestones.ToDictionary(m => m, m => new List<int>());
         public readonly Dictionary<int, List<int>> Level = Milestones.ToDictionary(m => m, m => new List<int>());
-        public readonly int[] Runs = new int[3], Deaths = new int[3], BossFights = new int[3], BossLosses = new int[3];
-        public readonly List<double>[] BossHp = { new List<double>(), new List<double>(), new List<double>() };
+        public readonly int[] Runs = new int[BandCount], Deaths = new int[BandCount], BossFights = new int[BandCount], BossLosses = new int[BandCount];
+        public readonly List<double>[] BossHp = Enumerable.Range(0, BandCount).Select(_ => new List<double>()).ToArray();
         public int Players, Conquered, Wiped;
     }
 
@@ -116,7 +118,7 @@ public static class Program
         if (boss != null && boss.Outcome == BattleOutcome.Defeat) st.BossLosses[Band(boss.Floor)]++;
     }
 
-    private static int Band(int floor) => Math.Min(2, Math.Max(0, floor - 1) / 10);
+    private static int Band(int floor) => Math.Min(BandCount - 1, Math.Max(0, floor - 1) / BandSize);
 
     private static void Print(Difficulty diff, int runs, Stats st)
     {
@@ -127,7 +129,7 @@ public static class Program
             string when = r.Count == 0 ? "-" : "평균 " + r.Average().ToString("0.0") + "회째 (" + r.Min() + "~" + r.Max() + ") · Lv." + st.Level[m].Average().ToString("0.0");
             Console.WriteLine("  " + m.ToString().PadLeft(2) + "층 돌파 " + r.Count + "/" + st.Players + " · " + when);
         }
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < BandCount; i++)
         {
             double rate = st.Runs[i] == 0 ? 0 : 100.0 * st.Deaths[i] / st.Runs[i];
             string hp = st.BossHp[i].Count == 0 ? "-" : (st.BossHp[i].Average() * 100).ToString("0") + "%";
