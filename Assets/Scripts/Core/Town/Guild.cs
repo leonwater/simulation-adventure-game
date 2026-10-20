@@ -247,7 +247,9 @@ namespace Adventure.Core
             return true;
         }
 
-        // ── 창고 ──
+        // ── 창고 (v1.8: 보관·출고할 때마다 수수료) ──
+
+        public static int StorageFee(Character c) => GameBalance.StorageFee(c.HighestFloorCleared);
 
         public static bool Deposit(Character c, string uid, out string error)
         {
@@ -262,8 +264,8 @@ namespace Adventure.Core
                 error = "창고가 가득 찼습니다";
                 return false;
             }
+            if (!PayFee(c, out error)) return false;
             c.Storage.Add(c.Inventory.Take(uid));
-            error = null;
             return true;
         }
 
@@ -280,7 +282,20 @@ namespace Adventure.Core
                 error = "가방이 가득 찼습니다";
                 return false;
             }
+            if (!PayFee(c, out error)) return false;
             c.Inventory.Add(c.Storage.Take(uid));
+            return true;
+        }
+
+        private static bool PayFee(Character c, out string error)
+        {
+            int fee = StorageFee(c);
+            if (c.Gold < fee)
+            {
+                error = "수수료 " + fee + "G가 부족합니다";
+                return false;
+            }
+            c.Gold -= fee;
             error = null;
             return true;
         }

@@ -127,6 +127,8 @@ namespace Adventure.Core
                 foreach (var s in c.Skills.Learned) d.SeenSkills.Add(s.SkillId);
             }
             if (d.Shop == null) d.Shop = new ShopState();
+            // v1.7 이전 저장: 스킬서는 1권만
+            foreach (var g in d.Shop.Goods) if (g.Item?.Kind == ItemKind.SkillBook) g.Stock = 1;
             if (d.Guild == null) d.Guild = new GuildState();
             if (d.Run != null && (d.Run.Map == null || d.Run.Map.Rooms.Count == 0 || d.Run.Current == null)) d.Run = null;
             d.SelectedFloor = GameBalance.Clamp(d.SelectedFloor, 1, c.MaxChallengeFloor);

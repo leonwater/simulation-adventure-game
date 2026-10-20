@@ -7,8 +7,13 @@ namespace Adventure.Core
     public class ShopGood
     {
         public ItemInstance Item;
-        /// <summary>소모품은 재고 제한 없음, 스킬서는 한 번 사면 사라진다.</summary>
-        public bool Unlimited;
+        /// <summary>남은 수량 (−1 = 제한 없음). 마을 소모품은 제한 없음, 스킬서는 1권, 던전 상인 물건은 2~5개.</summary>
+        public int Stock = -1;
+
+        public bool Unlimited => Stock < 0;
+
+        /// <summary>한 번에 살 수 있는 최대 개수.</summary>
+        public int MaxBuy => Unlimited ? GameBalance.MaxStack : Stock;
     }
 
     [Serializable]
@@ -89,29 +94,25 @@ namespace Adventure.Core
             {
                 var grade = rng.Chance(0.3) ? ItemGrade.Uncommon : ItemGrade.Common;
                 int lv = EquipmentFactory.ItemLevelForFloor(floor, rng);
-                s.Equipment.Add(EquipmentFactory.CreateRandom(rng, grade, lv, c.Job, 0.6));
+                s.Equipment.Add(EquipmentFactory.CreateRandom(rng, grade, lv, c.Job));
             }
 
             s.Goods.Clear();
-            s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable("potion"), Unlimited = true });
-            s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable("antidote"), Unlimited = true });
+            s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable("potion") });
+            s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable("antidote") });
             var optional = new List<string>(OptionalConsumables);
             rng.Shuffle(optional);
-            s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable(optional[0]), Unlimited = true });
+            s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable(optional[0]) });
 
-            // 하급·중급 스킬서 (아직 배우지 않은 것 우선)
-            var books = SkillDb.Obtainable(c, SkillTier.Low, SkillTier.Mid);
-            books.RemoveAll(b => c.Skills.Knows(b.Id));
-            rng.Shuffle(books);
-            int bookCount = 0;
-            foreach (var b in books)
+            // 하급·중급 스킬서 2권: 권마다 지금 직업 70%·다른 직업 각 10%, 아직 배우지 않은 것 · 같은 책은 한 권만
+            for (int i = 0; i < 2; i++)
             {
-                if (bookCount >= 2) break;
-                s.Goods.Add(new ShopGood { Item = ItemDb.CreateSkillBook(b.Id) });
-                bookCount++;
+                var books = SkillDb.Obtainable(c, JobData.RollItemJob(c.Job, rng), SkillTier.Low, SkillTier.Mid);
+                books.RemoveAll(b => c.Skills.Knows(b.Id) || s.Goods.Exists(g => g.Item.SkillId == b.Id));
+                if (books.Count > 0) s.Goods.Add(new ShopGood { Item = ItemDb.CreateSkillBook(rng.Pick(books).Id), Stock = 1 });
             }
             for (int i = 1; s.Goods.Count < GameBalance.ShopGoodsSlots && i < optional.Count; i++)
-                s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable(optional[i]), Unlimited = true });
+                s.Goods.Add(new ShopGood { Item = ItemDb.CreateConsumable(optional[i]) });
         }
 
         public static int BagPrice(Character c) => GameBalance.BagBasePrice << Math.Min(20, c.BagsBought);
@@ -160,13 +161,16 @@ namespace Adventure.Core
                 error = "이미 팔린 물건입니다";
                 return false;
             }
-            if (!good.Unlimited) count = 1;
-            count = Math.Max(1, count);
+            count = Math.Max(1, Math.Min(count, good.MaxBuy));
             var item = good.Item.CloneWithCount(count);
             int price = (int)Math.Round(good.Item.Price * priceMultiplier) * count;
             if (!Pay(c, price, item, out error)) return false;
             c.Inventory.Add(item);
-            if (!good.Unlimited) s.Goods.Remove(good);
+            if (!good.Unlimited)
+            {
+                good.Stock -= count;
+                if (good.Stock <= 0) s.Goods.Remove(good);
+            }
             return true;
         }
 

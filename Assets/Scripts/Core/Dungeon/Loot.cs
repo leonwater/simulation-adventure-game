@@ -75,16 +75,16 @@ namespace Adventure.Core
         {
             var grade = EquipmentFactory.RollDropGrade(rng, floor, bossLevel);
             int lv = EquipmentFactory.ItemLevelForFloor(floor, rng);
-            return EquipmentFactory.CreateRandom(rng, grade, lv, c.Job, 0.7);
+            return EquipmentFactory.CreateRandom(rng, grade, lv, c.Job);
         }
 
         /// <summary>
-        /// 스킬서 드롭: 자기 직업 스킬 중 장착 레벨이 지금 레벨 + 5 이하인 것만 (기획서 v1.4).
+        /// 스킬서 드롭: 지금 직업 70%·다른 직업 각 10% (v1.8), 장착 레벨이 지금 레벨 + 5 이하인 것만 (v1.4).
         /// 그중 가장 높은 단계를 우선하고(최상급은 25% 확률로만), 아직 배우지 않은 스킬을 먼저 고른다.
         /// </summary>
         public static ItemInstance HighSkillBook(Character c, Rng rng)
         {
-            var list = SkillDb.Obtainable(c);
+            var list = SkillDb.Obtainable(c, JobData.RollItemJob(c.Job, rng));
             var best = SkillTier.Low;
             foreach (var s in list)
                 if (s.Tier > best && (s.Tier != SkillTier.Top || rng.Chance(0.25))) best = s.Tier;

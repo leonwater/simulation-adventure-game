@@ -124,10 +124,19 @@ namespace Adventure.Core
             return true;
         }
 
+        /// <summary>
+        /// 저장할 때마다 승급 조건을 확인해 채웠으면 바로 승급한다 (v1.8 자동 승급). 레벨 업·층 돌파·퀘스트 보고처럼
+        /// 조건이 바뀌는 일은 모두 저장으로 끝나므로 여기 한 곳에서 본다. 화면은 Promotions를 보고 알림을 띄운다.
+        /// </summary>
         public void Save()
         {
-            if (Data != null) SaveSystem.Save(_store, Data, Now);
+            if (Data == null) return;
+            while (RankSystem.TryPromote(C)) Promotions.Add(C.Rank);
+            SaveSystem.Save(_store, Data, Now);
         }
+
+        /// <summary>아직 알림을 보여 주지 않은 승급 (오른 등급 순서대로).</summary>
+        public readonly List<Rank> Promotions = new List<Rank>();
 
         public void DeleteSave()
         {
@@ -138,6 +147,7 @@ namespace Adventure.Core
 
         private void ClearTransient()
         {
+            Promotions.Clear();
             Battle = null;
             LastEvent = null;
             LastLoot = null;

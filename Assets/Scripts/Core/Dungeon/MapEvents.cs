@@ -94,11 +94,11 @@ namespace Adventure.Core
         }
 
         /// <summary>지금 방이 상인의 가게가 된다 (마을 가격 × 0.7).</summary>
-        public static void BecomeMerchant(DungeonRun run)
+        public static void BecomeMerchant(DungeonRun run, Rng rng)
         {
             var room = run.Current;
             room.Type = RoomType.Merchant;
-            room.MerchantGoods = DungeonGenerator.MerchantGoods();
+            room.MerchantGoods = DungeonGenerator.MerchantGoods(rng);
             room.MerchantDiscount = true;
             room.Cleared = true;
         }

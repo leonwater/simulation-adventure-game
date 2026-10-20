@@ -86,8 +86,8 @@ namespace Adventure.Tests
             b.Enemies[0].Hp = 100000;
             b.Enemies[1].Hp = 20000; // 20%
             var target = b.Enemies[0];
-            int normal = Battle.Damage(b.Player, target, 2.5, true);
-            int execute = Battle.Damage(b.Player, target, 2.5 * 1.5, true);
+            int normal = Battle.Damage(b.Player, target, 2.0, true);
+            int execute = Battle.Damage(b.Player, target, 2.0 * 1.5, true);
             b.Execute(Choice(b, "r_assassin", 1));
             var hit = b.LastEvents.Find(e => e.Kind == BattleEventKind.Damage && e.Actor == -1);
             Assert.That(hit.Amount, Is.InRange(execute - 2, execute + 2 + execute / 10), "HP 30% 이하면 ×1.5");

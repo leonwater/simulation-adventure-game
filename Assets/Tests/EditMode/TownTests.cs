@@ -89,16 +89,18 @@ namespace Adventure.Tests
                 var c = Character.Create("a", Job.Mage);
                 c.Level = level;
                 bool sawHigh = false, sawTop = false;
+                int own = 0;
                 for (int i = 0; i < 300; i++)
                 {
                     var def = SkillDb.Get(LootSystem.HighSkillBook(c, rng).SkillId);
-                    Assert.AreEqual((int)Job.Mage, def.JobRestriction);
+                    if (def.JobRestriction == (int)Job.Mage) own++;
                     Assert.LessOrEqual(def.ReqLevel, level + 5, "Lv." + level + "에 " + def.Name);
                     sawHigh |= def.Tier == SkillTier.High;
                     sawTop |= def.Tier == SkillTier.Top;
                 }
                 Assert.AreEqual(level >= 13, sawHigh || sawTop, "Lv.13부터 상급 스킬서");
                 Assert.AreEqual(level >= 25, sawTop, "Lv.25부터 최상급 스킬서");
+                Assert.That(own / 300.0, Is.InRange(0.6, 0.8), "지금 직업 스킬서 70%");
             }
         }
 

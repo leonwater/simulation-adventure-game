@@ -11,7 +11,6 @@ namespace Adventure.Tests
         {
             var c = s.C;
             Leveling.AutoAllocate(c);
-            RankSystem.TryPromote(c);
             // 완료한 퀘스트 보고, 새 퀘스트 수주
             foreach (var q in new List<Quest>(s.Data.Guild.Active))
                 if (GuildSystem.IsComplete(q, c)) GuildSystem.TurnIn(s.Data.Guild, c, q.Id, out _, out _);
@@ -89,7 +88,7 @@ namespace Adventure.Tests
             if (s.Run.Current.Type == RoomType.Merchant)
             {
                 var potion = s.Run.Current.MerchantGoods.Find(g => g.Item.TemplateId == "potion");
-                if (c.Inventory.CountOf("potion") < 2 && c.Gold > 200) s.BuyFromMerchant(potion.Item.Uid, 2, out _);
+                if (potion != null && c.Inventory.CountOf("potion") < 2 && c.Gold > 200) s.BuyFromMerchant(potion.Item.Uid, 2, out _);
             }
             // HP가 낮으면 물약을 마시거나 돌아간다
             int max = CharacterStats.MaxHp(c);

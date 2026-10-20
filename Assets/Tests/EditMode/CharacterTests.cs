@@ -246,16 +246,16 @@ namespace Adventure.Tests
         [Test]
         public void HitChance_StartsHighAndClamps()
         {
-            Assert.AreEqual(0.74, GameBalance.HitChance(10, 10), 1e-9);
-            Assert.AreEqual(0.85, GameBalance.HitChance(100, 0), 1e-9);
-            Assert.AreEqual(0.55, GameBalance.HitChance(0, 100), 1e-9);
-            // 시작 시 기본 공격은 70~80%대 (1층 요구치 12.4)
+            Assert.AreEqual(0.81, GameBalance.HitChance(10, 10), 1e-9);
+            Assert.AreEqual(0.92, GameBalance.HitChance(100, 0), 1e-9);
+            Assert.AreEqual(0.62, GameBalance.HitChance(0, 100), 1e-9);
+            // 시작 시 기본 공격은 77~87%대 (1층 요구치 12.4, v1.8 +7%p)
             double req = GameBalance.EnemyRequirement(1);
             foreach (var job in new[] { Job.Warrior, Job.Archer, Job.Rogue, Job.Mage })
             {
                 var c = Character.Create("a", job);
                 double hit = GameBalance.HitChance(CharacterStats.Total(c, c.JobData.AttackStat), req, CharacterStats.PrecisionBonus(c));
-                Assert.That(hit, Is.InRange(0.70, 0.80), job.ToString());
+                Assert.That(hit, Is.InRange(0.77, 0.87), job.ToString());
             }
         }
 

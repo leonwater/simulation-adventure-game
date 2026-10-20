@@ -161,7 +161,8 @@ namespace Adventure.Core
 
         public static double EarlyBoostScale(Difficulty d) => d == Difficulty.Easy ? 0 : d == Difficulty.Normal ? 1.0 : 0.4;
 
-        public static double EnemyHp(int f, double early = 1.0) => 60 + f * 24 + f * f * 0.6 + EarlyBoostHp * EarlyBoost(f) * early;
+        /// <summary>적 HP (v1.8: 성공률 +7%p에 맞춰 ×1.1).</summary>
+        public static double EnemyHp(int f, double early = 1.0) => 66 + f * 26.4 + f * f * 0.66 + EarlyBoostHp * EarlyBoost(f) * early;
         public static double EnemyAttack(int f, double early = 1.0) => 5 + f * 2.5 + f * f * 0.08 + EarlyBoostAttack * EarlyBoost(f) * early;
         public static double EnemyDefense(int f) => 2 + f * 1.5;
         /// <summary>플레이어 공격 성공률 계산에 쓰는 적 요구치.</summary>

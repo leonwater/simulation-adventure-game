@@ -125,7 +125,7 @@ namespace Adventure.Game
             Line(body, "회피", CharacterStats.Percent(CharacterStats.Evasion(C)));
             Line(body, "받는 피해 감소", CharacterStats.Percent(CharacterStats.DamageReduction(C)));
             Line(body, "디버프 저항", CharacterStats.Percent(CharacterStats.Resist(C)));
-            Line(body, "치명타", "스킬 전용 · 피해 ×1.8");
+            if (C.Job == Job.Rogue) Line(body, "치명타", "도적 스킬 전용 · 피해 ×" + GameBalance.CritMultiplier);
             Line(body, "드롭률", "+" + CharacterStats.Percent(CharacterStats.DropBonus(C) - 1));
             Line(body, "이벤트 판정 (행운)", "+" + CharacterStats.Percent(CharacterStats.EventLuckBonus(C)));
             UI.Divider(body);
