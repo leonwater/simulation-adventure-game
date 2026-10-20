@@ -6,7 +6,9 @@
 #     UNITY_EMAIL    : Unity 계정 이메일
 #     UNITY_PASSWORD : Unity 계정 비밀번호
 #   선택: ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASS, ANDROID_KEYALIAS_NAME, ANDROID_KEYALIAS_PASS
-#     (넣으면 고정 키로 서명되어 기존 앱을 지우지 않고 업데이트 설치할 수 있다)
+#     (넣으면 고정 키로 서명되어 기존 앱을 지우지 않고 업데이트 설치할 수 있다. 없으면 빌드마다 디버그 키가 달라
+#      새 APK를 덮어 설치할 수 없다)
+# - 버전 코드는 실행 번호로 매번 커진다 (낮아지면 안드로이드가 업데이트 설치를 거부한다).
 name: Android APK 빌드
 
 on:
@@ -83,6 +85,9 @@ jobs:
           androidExportType: androidPackage
           buildMethod: Adventure.EditorTools.CIBuild.BuildAndroid
           customParameters: -stackTraceLogType Full
+          versioning: Custom
+          version: 1.8.${{ github.run_number }}
+          androidVersionCode: ${{ github.run_number }}0
           # 선택: 고정 서명 키 (비어 있으면 디버그 키)
           androidKeystoreName: adventurer.keystore
           androidKeystoreBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}

@@ -73,6 +73,7 @@ namespace Adventure.Game
         public const string BlueHex = "#9EC0E8";
 
         public const float ScreenWidth = 390f;
+        /// <summary>기준 세로 길이 (시안). 실제 높이는 기기마다 다르다 (ScreenFit.Height, 최소 700).</summary>
         public const float ScreenHeight = 844f;
         public const float MinTouch = 44f;
 

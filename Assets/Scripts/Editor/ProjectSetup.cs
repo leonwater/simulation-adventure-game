@@ -50,6 +50,18 @@ namespace Adventure.EditorTools
             PlayerSettings.allowedAutorotateToLandscapeLeft = false;
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
             PlayerSettings.runInBackground = false;
+            // 모든 화면 비율 (v1.8): 20:9·21:9 같은 긴 휴대폰과 폴더블 바깥 화면(약 23:9)도 위아래 검은 띠 없이 채우고,
+            // 노치 영역까지 그린 뒤 게임 안(ScreenFit)에서 안전 영역을 피한다. 폴더블·멀티 윈도로 크기가 바뀌어도 다시 맞춘다.
+            PlayerSettings.Android.maxAspectRatio = 2.8f;
+            PlayerSettings.Android.renderOutsideSafeArea = true;
+            // Unity 버전마다 이름이 달라 있으면 켠다 (Android "resizeableActivity")
+            foreach (var name in new[] { "resizeableActivity", "resizableWindow" })
+            {
+                var prop = typeof(PlayerSettings.Android).GetProperty(name, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                if (prop == null || !prop.CanWrite || prop.PropertyType != typeof(bool)) continue;
+                prop.SetValue(null, true);
+                break;
+            }
             AssetDatabase.SaveAssets();
             Debug.Log("[모험가 키우기] 프로젝트 설정 완료: " + ScenePath + " · 세로 화면 · " + BundleId);
         }

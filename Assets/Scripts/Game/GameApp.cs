@@ -84,11 +84,9 @@ namespace Adventure.Game
             var canvas = go.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.pixelPerfect = false;
+            // 배율은 ScreenFit이 화면 비율에 맞춰 정한다 (폭 390 기둥, 최소 높이 700)
             var scaler = go.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(Theme.ScreenWidth, Theme.ScreenHeight);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-            scaler.matchWidthOrHeight = 0f; // 폭 390 고정, 세로는 기기에 따라 늘어난다
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ConstantPixelSize;
             scaler.referencePixelsPerUnit = 100f;
 
             var page = UI.Image(go.transform, Theme.Page, 0, "page");
@@ -96,13 +94,17 @@ namespace Adventure.Game
 
             var safe = UI.Rect(go.transform, "safe-area");
             UI.Stretch(safe);
-            safe.gameObject.AddComponent<SafeArea>();
+            var column = UI.Rect(safe, "column");
+            var fit = safe.gameObject.AddComponent<ScreenFit>();
+            fit.Scaler = scaler;
+            fit.Column = column;
+            fit.Apply();
 
-            screens = UI.Rect(safe, "screens");
+            screens = UI.Rect(column, "screens");
             UI.Stretch(screens);
-            overlay = UI.Rect(safe, "overlay");
+            overlay = UI.Rect(column, "overlay");
             UI.Stretch(overlay);
-            var coach = UI.Rect(safe, "coach"); // 튜토리얼 강조 표시는 팝업보다 위
+            var coach = UI.Rect(column, "coach"); // 튜토리얼 강조 표시는 팝업보다 위
             UI.Stretch(coach);
             Coach.Init(coach);
         }

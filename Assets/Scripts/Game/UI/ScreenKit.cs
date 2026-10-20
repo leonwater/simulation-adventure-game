@@ -308,6 +308,8 @@ namespace Adventure.Game
         /// </summary>
         public static Text NpcIllustration(Transform parent, string illustration, string line, float height)
         {
+            // 세로가 짧은 화면(16:9 등)에서는 아래 목록이 넉넉하도록 일러스트를 줄인다
+            height = Mathf.Min(height, Mathf.Round(ScreenFit.Height * 0.345f));
             var holder = UI.Rect(parent, "npc");
             UI.Size(holder, height: height);
             var ill = UI.Illustration(holder, illustration, height);
