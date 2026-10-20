@@ -166,9 +166,13 @@ namespace Adventure.Game
         {
             Heading(body, "던전 정복", Theme.Gold, GameBalance.MaxFloor + "층 · 드래곤 처치");
             var card = Panel(body, "기록", Theme.Gold, Theme.AccentBg, Theme.Accent);
-            UI.Label(card, Names.Josa(C.Name, "은/는") + " 마침내 던전 최하층의 주인을 쓰러뜨렸다. 등불 마을의 사람들은 오래도록 그 이름을 이야기할 것이다.", 15, Theme.Text);
+            UI.Label(card, Names.Josa(C.Name, "은/는") + " 마침내 던전 최하층의 주인을 쓰러뜨렸다. 라브 마을의 사람들은 오래도록 그 이름을 이야기할 것이다.", 15, Theme.Text);
             UI.Spacer(card, 0, 6);
-            Row(card, "직업 · 레벨", C.JobData.Name + " Lv." + C.Level);
+            var job = UI.Row(card, 8);
+            UI.Size(job, minH: 44);
+            UI.Size(UI.Label(job, "직업 · 레벨", 14, Theme.Text), flexW: 1);
+            ScreenKit.JobLine(job, C.Job, C.JobData.Name + " Lv." + C.Level, 14, Theme.Text);
+            ScreenKit.BottomLine(job, Theme.LineSoft);
             Row(card, "모험가 등급", C.Rank + " 등급");
             Row(card, "완료한 퀘스트", C.QuestsCompleted + "개");
             long sec = S.Data.PlaySeconds;

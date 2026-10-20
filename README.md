@@ -41,7 +41,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 | `Assets/Scripts/Core/GameBalance.cs` | **모든 밸런스 수치(임시값)를 모아 둔 파일** |
 | `Assets/Scripts/Game` | Unity 실행부: 부트스트랩(`GameApp`), UI 도구(`UI/`), 화면(`Screens/`), 파일 저장 |
 | `Assets/Scripts/Editor` | 프로젝트 자동 설정 |
-| `Assets/Tests/EditMode` | NUnit 테스트 130개 (Unity Test Runner와 `dotnet test` 양쪽에서 실행) |
+| `Assets/Tests/EditMode` | NUnit 테스트 134개 (Unity Test Runner와 `dotnet test` 양쪽에서 실행) |
 | `Assets/Resources/Fonts` | 나눔고딕·고운바탕 (SIL OFL 1.1) |
 | `tools/verify` | Unity 없이 검증하는 스크립트 |
 | `tools/balance` | 밸런스 시뮬레이션 (자동 플레이 봇 진행 속도·사망률, 층별 전투 소모, 보스 특성 켬/끔 비교) |
@@ -59,7 +59,8 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 - 던전: 미니맵 방 아이콘, 미니맵 오른쪽 아래 지도 버튼(전체 지도·순간이동), 이벤트로 공개된 방은 흐리게·연쇄 이벤트 방은 "!", 탐험 효과 태그.
   방 결과(보물·휴식·전투·이벤트)는 카드로 먼저 크게. 하단은 가방 · 캐릭터 정보(상태 이상 1턴 피해 등) · 귀환(귀환 방 미발견 시 붉은 회색).
   이동은 금색·푸른색, 귀환은 초록, 방 안 행동은 보라색. 튜토리얼 던전은 보스를 잡아도 아래층으로 못 내려가고 귀환.
-- 가방·창고: 4열 격자, 종류별 색 원(무기·방어구·장신구·소모품·재료·스킬서·강화석), 장비는 등급 색 이름·착용 레벨·지금 장비 대비 수치.
+- 가방·창고: 4열 격자, 종류별 색 원(무기·방어구·장신구·소모품·재료·스킬서·강화석), 장비는 등급 색 이름·착용 레벨·지금 장비 대비 수치. 칸을 누르면 화면 가운데 팝업(정보·착용/교체·사용·판매).
+- 능력치 최대값: 체력·힘·민첩·지능·주문력 99, 강인함·기교 80, 정신 75, 정밀·행운 60 (최대 레벨 60).
 - 던전 밖 모든 화면의 머리줄 오른쪽은 골드 + 설정 버튼.
 - 특수 이벤트 34개 (기획서 v1.5: 연쇄·지도 공개·보물 더미·피의 우물·스핑크스·운명의 카드·시련의 문 등).
 - 설정: 마을 오른쪽 위 톱니바퀴 → 설정 창. 기기 설정(PlayerPrefs): 전투 속도 1×/2×, 대사 한 글자씩, 진동, 글자 크기 3단계.
@@ -68,7 +69,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
   그림은 원본 비율을 유지한 채 잘라 채웁니다 (`Assets/Scripts/Editor/AssetImportRules.cs`가 2의 거듭제곱 늘림을 끄고 압축).
   대사는 일러스트 아래쪽 안에 반투명 상자로 겹쳐 보입니다.
 - 새 일러스트 추가: 그림을 `Assets/Resources/Illustrations/`에 넣고 `Assets/Scripts/Game/UI/IllustrationArt.cs` 표에 한 줄 추가합니다.
-- 아이콘: `Assets/Resources/Icons/` — 시설 4종, 등급 배지 8종(rank_f~rank_ss), 능력치 10종(stat_*), 강화석, 가방, 귀환, 지도, 캐릭터, 설정, 미니맵 방 8종(room_*).
+- 아이콘: `Assets/Resources/Icons/` — 시설 4종, 등급 배지 8종(rank_f~rank_ss), 능력치 10종(stat_*), 강화석, 가방, 귀환, 지도, 캐릭터, 설정, 골드, 더하기, 직업 4종(job_*), 미니맵 방 8종(room_*).
 - 앱 크기: 제목 글꼴(고운바탕)은 완성형 한글 2,350자 + 게임 문구만 남겨 8.2MB → 1.4MB. 이름 등 입력 글자는 전체 글꼴(나눔고딕)로 표시. IL2CPP 코드 제거(Medium)·엔진 코드 제거·ASTC 압축.
 
 ## 검증 (Unity 없이)
@@ -77,7 +78,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 tools/verify/verify.sh
 ```
 
-1. Core 단위 테스트 130개 (전투 400판·자동 플레이 봇 240회 던전 탐험·보스 특성·저장 왕복 포함)
+1. Core 단위 테스트 134개 (전투 400판·자동 플레이 봇 240회 던전 탐험·보스 특성·저장 왕복 포함)
 2. Core를 Unity와 같은 .NET Standard 2.1 / C# 9로 컴파일
 3. 전체 스크립트를 Unity 참조 어셈블리로 컴파일 (기기 빌드 조건 / 에디터 조건)
 

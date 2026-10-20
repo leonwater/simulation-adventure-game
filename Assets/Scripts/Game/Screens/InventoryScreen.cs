@@ -3,12 +3,13 @@ using UnityEngine;
 
 namespace Adventure.Game
 {
-    /// <summary>가방·장비: 장비 8칸, 4열 가방(종류 색 원·등급 색 이름·착용 레벨·비교), 선택 아이템 정보(착용·판매·사용), 사망 손실 안내.</summary>
+    /// <summary>
+    /// 가방·장비: 장비 8칸, 4열 가방(종류 색 원·등급 색 이름·착용 레벨·비교). 칸을 누르면 화면 가운데 팝업에
+    /// 정보와 착용·해제·사용·판매(던전에서는 버리기)가 뜬다. 사망 손실 안내.
+    /// </summary>
     public class InventoryScreen : ScreenBase
     {
         private readonly bool _fromDungeon;
-        private string _selected;
-        private EquipSlot? _selectedSlot;
 
         public InventoryScreen(bool fromDungeon = false)
         {
@@ -44,18 +45,14 @@ namespace Adventure.Game
             UI.Size(t, flexW: 1);
             if (!_fromDungeon)
             {
-                var expand = UI.TextButton(head, "가방 확장", () => Go(new ShopScreen()), ButtonKind.Ghost, 40, 13);
+                // 가방 확장: '+' 아이콘 버튼 (상점의 가방 확장으로)
+                var expand = UI.ButtonCard(head, () => Go(new ShopScreen()), Theme.Bg, Theme.Accent, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
+                UI.Size(expand, width: 40, height: 40, flexW: 0);
+                UI.CenteredIcon(expand, "plus", 20).color = Theme.Gold;
                 UI.SetEnabled(expand, ShopSystem.CanBuyBag(C));
             }
             ItemGrid.Legend(body);
-            ItemGrid.Build(body, C.Inventory, _selected, item =>
-            {
-                _selected = item.Uid;
-                _selectedSlot = null;
-                Rebuild();
-            });
-
-            Detail(body);
+            ItemGrid.Build(body, C.Inventory, null, item => ShowItem(item, null));
             UI.Sub(body, "사망하면 장착하지 않은 아이템을 모두 잃습니다. 길드 창고에 맡겨 두세요.");
 
             if (!_fromDungeon) ScreenKit.BottomNav(page, 2);
@@ -64,13 +61,10 @@ namespace Adventure.Game
         private void SlotCell(Transform grid, EquipSlot slot)
         {
             var item = C.Equipment[slot];
-            bool sel = _selectedSlot == slot;
-            var border = sel ? Theme.Accent : item != null && item.IsWeapon ? Theme.Blue : Theme.CardBorder;
+            var border = item != null && item.IsWeapon ? Theme.Blue : Theme.CardBorder;
             var cell = UI.ButtonCard(grid, () =>
             {
-                _selectedSlot = slot;
-                _selected = null;
-                Rebuild();
+                if (item != null) ShowItem(item, slot);
             }, item == null ? Theme.Bg : Theme.Card, border, 10, UI.Pad(8, 6), true, 0, 66, TextAnchor.UpperLeft);
             UI.Sub(cell, Names.Of(slot));
             UI.Spacer(cell);
@@ -78,35 +72,33 @@ namespace Adventure.Game
             else UI.Label(cell, item.DisplayName, 12, Theme.GradeColor(item.Grade));
         }
 
-        private void Detail(Transform parent)
+        /// <summary>아이템 팝업 (화면 가운데): 이름·종류·수치·지금 장비와 비교, 착용·해제·사용·읽기·판매/버리기.</summary>
+        private void ShowItem(ItemInstance item, EquipSlot? equippedSlot)
         {
-            ItemInstance item = null;
-            bool equipped = false;
-            if (_selectedSlot != null)
+            bool equipped = equippedSlot != null;
+            var card = Overlay.Modal(item.Count > 1 ? item.DisplayName + " ×" + item.Count : item.DisplayName);
+            var modal = Overlay.Top;
+            System.Action done = () =>
             {
-                item = C.Equipment[_selectedSlot.Value];
-                equipped = true;
-            }
-            else if (_selected != null) item = C.Inventory.Find(_selected);
-            if (item == null) return;
-
-            var card = UI.Card(parent, Theme.Button, Theme.ButtonBorder, 12, UI.Pad(12, 10), true, 6);
-            var head = UI.Row(card);
-            var n = UI.Label(head, item.Count > 1 ? item.DisplayName + " ×" + item.Count : item.DisplayName, 15, Theme.ItemColor(item), true);
-            UI.Size(n, flexW: 1);
-            string kind = item.Kind == ItemKind.Equipment ? UI.GradeTag(item.Grade) + " " + UI.Color(Names.Of(item.Gear), Theme.SubHex) : UI.Color(KindName(item.Kind), Theme.SubHex);
-            UI.Label(head, kind, 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            UI.Label(card, item.StatLine(), 13, Theme.Text);
-            if (!equipped) ScreenKit.CompareLine(card, C, item);
+                Overlay.Close(modal);
+                Save();
+            };
+            var head = UI.Row(card, 6, null, TextAnchor.MiddleLeft);
+            ItemGrid.KindLine(head, item, 13);
+            if (item.Kind == ItemKind.Equipment) UI.Label(head, UI.GradeTag(item.Grade), 13, Theme.Text, false, TextAnchor.MiddleLeft, false, false);
+            UI.Label(card, item.StatLine(), 14, Theme.Text);
+            if (item.Kind == ItemKind.Equipment && !equipped) ScreenKit.CompareLine(card, C, item);
+            var book = item.Kind == ItemKind.SkillBook ? SkillDb.Get(item.SkillId) : null;
+            if (book != null && book.JobRestriction >= 0)
+                ScreenKit.JobLine(card, (Job)book.JobRestriction, Names.Of((Job)book.JobRestriction) + " 전용", 13, book.JobRestriction == (int)C.Job ? Theme.TextSub : Theme.RedLight);
 
             var row = UI.Row(card, 8);
             if (equipped)
             {
                 Action(row, "해제", ButtonKind.Secondary, () =>
                 {
-                    if (!EquipmentSystem.Unequip(C, _selectedSlot.Value, out string err)) Toast(err);
-                    else _selectedSlot = null;
-                    Save();
+                    if (!EquipmentSystem.Unequip(C, equippedSlot.Value, out string err)) Toast(err);
+                    done();
                 });
                 return;
             }
@@ -114,16 +106,13 @@ namespace Adventure.Game
             {
                 case ItemKind.Equipment:
                     string reason = EquipmentSystem.CannotEquipReason(C, item);
-                    if (reason != null) UI.Label(card, reason, 12, Theme.RedLight);
-                    var eq = Action(row, "착용", ButtonKind.Primary, () =>
+                    if (reason != null) UI.Label(card, reason, 13, Theme.RedLight);
+                    var cur = EquipmentSystem.ReplacedBy(C, item);
+                    var eq = Action(row, cur != null ? "교체" : "착용", ButtonKind.Primary, () =>
                     {
                         if (!EquipmentSystem.Equip(C, item.Uid, out string err)) Toast(err);
-                        else
-                        {
-                            Toast(item.DisplayName + " 착용");
-                            _selected = null;
-                        }
-                        Save();
+                        else Toast(item.DisplayName + " 착용");
+                        done();
                     });
                     UI.SetEnabled(eq, reason == null);
                     break;
@@ -133,8 +122,7 @@ namespace Adventure.Game
                     {
                         S.UseConsumable(item.Uid, out string msg);
                         Toast(msg);
-                        if (C.Inventory.Find(item.Uid) == null) _selected = null;
-                        Rebuild();
+                        done();
                     });
                     UI.SetEnabled(use, _fromDungeon && def != null && def.HealRatio > 0 && C.CurrentHp < CharacterStats.MaxHp(C));
                     break;
@@ -142,12 +130,8 @@ namespace Adventure.Game
                     Action(row, "읽기", ButtonKind.Primary, () =>
                     {
                         if (!SkillSystem.UseSkillBook(C, item.Uid, out string err)) Toast(err);
-                        else
-                        {
-                            Toast(SkillDb.Get(item.SkillId).Name + " 스킬을 배웠다! 스킬 화면에서 장착하세요");
-                            if (C.Inventory.Find(item.Uid) == null) _selected = null;
-                        }
-                        Save();
+                        else Toast(SkillDb.Get(item.SkillId).Name + " 스킬을 배웠다! 스킬 화면에서 장착하세요");
+                        done();
                     });
                     break;
             }
@@ -156,8 +140,7 @@ namespace Adventure.Game
                 Action(row, "버리기", ButtonKind.Ghost, () => Overlay.Confirm("버리기", Names.Josa(item.DisplayName, "을/를") + " 버릴까요? 되찾을 수 없습니다.", "버리기", () =>
                 {
                     C.Inventory.Take(item.Uid);
-                    _selected = null;
-                    Save();
+                    done();
                 }, "취소", ButtonKind.Secondary));
             }
             else
@@ -165,20 +148,8 @@ namespace Adventure.Game
                 Action(row, "판매 · " + (item.SellPrice * item.Count).ToString("#,0") + "G", ButtonKind.Ghost, () =>
                 {
                     ShopSystem.Sell(C, item.Uid, item.Count, out _);
-                    _selected = null;
-                    Save();
+                    done();
                 });
-            }
-        }
-
-        private static string KindName(ItemKind k)
-        {
-            switch (k)
-            {
-                case ItemKind.Consumable: return "소모품";
-                case ItemKind.SkillBook: return "스킬서";
-                case ItemKind.EnhanceStone: return "강화 재료";
-                default: return "재료";
             }
         }
 

@@ -23,7 +23,7 @@ namespace Adventure.Game
     public static class ItemGrid
     {
         public const int Columns = 4;
-        public const float CellHeight = 84;
+        public const float CellHeight = 96;
 
         private static readonly ItemCategory[] LegendOrder =
         {
@@ -48,13 +48,14 @@ namespace Adventure.Game
                     var fill = cell.Find("fill") as RectTransform;
                     if (fill != null) UI.Stretch(fill, 2, 2, 2, 2);
                 }
-                KindLine(cell, item, 10);
-                string name = Short(item.Kind == ItemKind.SkillBook ? item.DisplayName.Replace("스킬서: ", "") : item.DisplayName, 7)
+                // 칸(약 85×96)에 맞춰: 종류 12 · 이름 13(두 줄까지) · 레벨/비교 12
+                KindLine(cell, item, 12);
+                string name = Short(item.Kind == ItemKind.SkillBook ? item.DisplayName.Replace("스킬서: ", "") : item.DisplayName, 10)
                               + (item.Count > 1 ? " ×" + item.Count : "");
-                var n = UI.Label(cell, name, 11, NameColor(item), item.Kind == ItemKind.Equipment);
+                var n = UI.Label(cell, name, 13, NameColor(item), item.Kind == ItemKind.Equipment);
                 n.horizontalOverflow = HorizontalWrapMode.Wrap;
                 UI.Spacer(cell);
-                if (item.Kind == ItemKind.Equipment && owner != null) UI.Label(cell, LevelCompare(owner, item, false), 10, Theme.TextSub);
+                if (item.Kind == ItemKind.Equipment && owner != null) UI.Label(cell, LevelCompare(owner, item, false), 12, Theme.TextSub);
             }
             if (!showEmpty) return;
             for (int i = container.Items.Count; i < container.Capacity; i++)

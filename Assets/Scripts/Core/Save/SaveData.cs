@@ -24,6 +24,8 @@ namespace Adventure.Core
         public long PlaySeconds;
         /// <summary>튜토리얼 단계 (0 = 끝남 또는 예전 저장).</summary>
         public TutorialStage Tutorial = TutorialStage.Done;
+        /// <summary>설정에서 튜토리얼을 다시 보는 중 (처음 튜토리얼에는 건너뛰기 버튼이 없다).</summary>
+        public bool TutorialReplay;
         /// <summary>이미 보여 준 안내 (다시 켜도 반복하지 않게).</summary>
         public List<string> TipsShown = new List<string>();
         /// <summary>마지막으로 확인한 상점 갱신 시각 (알림 점용).</summary>
@@ -107,6 +109,14 @@ namespace Adventure.Core
             c.Skills.Equipped.RemoveAll(id => !c.Skills.Knows(id));
             c.Inventory.Items.RemoveAll(i => i == null);
             c.Storage.Items.RemoveAll(i => i == null);
+            // 능력치 최대값을 넘는 예전 저장: 넘친 만큼 포인트로 돌려준다
+            foreach (Stat s in Enum.GetValues(typeof(Stat)))
+            {
+                int over = c.BaseStats[s] - GameBalance.MaxStat(s);
+                if (over <= 0) continue;
+                c.BaseStats[s] -= over;
+                c.UnspentPoints += over;
+            }
             c.RecalculateCapacities();
             c.CurrentHp = GameBalance.Clamp(c.CurrentHp, 0, CharacterStats.MaxHp(c));
             if (d.TipsShown == null) d.TipsShown = new List<string>();

@@ -169,6 +169,7 @@ namespace Adventure.Game
             UI.Label(cell, name, 14, Theme.Text, true, TextAnchor.MiddleLeft, false, false);
             if (item.Kind == ItemKind.Consumable) UI.Label(cell, "보유 " + C.Inventory.CountOf(item.TemplateId), 12, Theme.TextSub);
             else if (C.Skills.Knows(item.SkillId)) UI.Label(cell, "이미 배움", 12, Theme.RedLight);
+            else SkillBookJob(cell, item, 12);
             UI.Spacer(cell);
             UI.Label(cell, item.Price.ToString("#,0") + " G", 14, Theme.Gold, true);
         }
@@ -182,6 +183,7 @@ namespace Adventure.Game
             if (item.Kind == ItemKind.SkillBook)
             {
                 var def = SkillDb.Get(item.SkillId);
+                SkillBookJob(body, item, 13);
                 UI.Sub(body, "장착 조건 Lv." + def.ReqLevel + " · " + def.ReqRank + " 등급");
                 if (C.Skills.Knows(def.Id)) UI.Label(body, "이미 배운 스킬입니다.", 13, Theme.RedLight);
             }
@@ -222,6 +224,20 @@ namespace Adventure.Game
                 if (countLabel != null) countLabel.text = count + "개";
                 buyLabel.text = "구매 · " + (item.Price * count).ToString("#,0") + "G";
             }
+        }
+
+        /// <summary>스킬서를 쓸 수 있는 직업 (아이콘 + "전사 전용", 내 직업이 아니면 빨강).</summary>
+        private void SkillBookJob(Transform parent, ItemInstance item, float size)
+        {
+            var def = SkillDb.Get(item.SkillId);
+            if (def == null) return;
+            if (def.JobRestriction < 0)
+            {
+                UI.Label(parent, "모든 직업", size, Theme.TextSub);
+                return;
+            }
+            var job = (Job)def.JobRestriction;
+            ScreenKit.JobLine(parent, job, Names.Of(job) + " 전용", size, job == C.Job ? Theme.TextSub : Theme.RedLight);
         }
 
         private void BagCell(Transform grid)

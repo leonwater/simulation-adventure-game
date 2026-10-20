@@ -106,8 +106,8 @@ namespace Adventure.Game
             UI.Icon(head, UI.RankIcon(q.Rank), 36);
             var hl = UI.Label(head, q.Rank + " 등급 의뢰 · 목표 " + q.TargetFloor + "층", 14, Theme.Text, true);
             UI.Size(hl, flexW: 1);
-            UI.Label(body, "보수 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · 경험치 " + q.RewardExp.ToString("#,0")
-                + UI.Color(" (보상 ×" + q.RewardMultiplier.ToString("0.0#") + ")", Theme.SubHex), 14, Theme.Text);
+            UI.Label(body, "보수 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · 경험치 " + q.RewardExp.ToString("#,0"), 14, Theme.Text);
+            UI.Sub(body, "등급은 목표 층과 토벌 난이도(보스 > 토벌 > 채집)로 정해지고, 보수는 그 등급 범위에서 정해집니다.");
             UI.Label(body, active ? GuildSystem.ProgressText(q, C) : "목표 " + GuildSystem.GoalText(q), 14, Theme.TextBody);
             if (active)
             {

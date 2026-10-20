@@ -116,18 +116,8 @@ namespace Adventure.Game
             for (int i = 0; i < stats.Length; i++)
             {
                 var st = stats[i];
-                var row = UI.Row(body, 8);
-                UI.Size(row, height: 56);
-                UI.Icon(row, UI.StatIcon(st), 24);
-                var col = UI.Column(row, 1);
-                UI.Size(col, flexW: 1);
-                UI.Label(col, Names.Of(st), 14, Theme.Text, true);
-                UI.Label(col, CharacterStats.EffectLabel(C, st), 12, Theme.TextSub);
-                int pending = draft.Pending(st);
-                ScreenKit.Stepper(row, CharacterStats.Total(C, st) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
-                    () => Redraw(modal, draft, () => draft.Remove(st)), pending > 0,
-                    () => Redraw(modal, draft, () => draft.Add(st)), draft.Remaining > 0);
-                if (i < stats.Length - 1) ScreenKit.BottomLine(row, Theme.LineSoft);
+                ScreenKit.StatRow(body, C, st, draft, () => Redraw(modal, draft, () => draft.Remove(st)),
+                    () => Redraw(modal, draft, () => draft.Add(st)), i < stats.Length - 1);
             }
             var buttons = UI.Row(body, 8);
             var later = UI.TextButton(buttons, "나중에", () =>
@@ -205,13 +195,13 @@ namespace Adventure.Game
             Locked
         }
 
-        /// <summary>아래 고정 줄 아이콘 버튼 (폭 48).</summary>
+        /// <summary>아래 고정 줄 아이콘 버튼 (폭 96).</summary>
         private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, BottomStyle style)
         {
             Color fill = style == BottomStyle.Return ? Theme.ReturnBg : style == BottomStyle.Locked ? Theme.Hex("221A1B") : Theme.Button;
             Color border = style == BottomStyle.Return ? Theme.ReturnBorder : style == BottomStyle.Locked ? Theme.Hex("4E3838") : Theme.ButtonBorder;
             var b = UI.ButtonCard(parent, onClick, fill, border, 12, UI.Pad(4, 6), true, 2, 60, TextAnchor.MiddleCenter);
-            UI.Size(b, width: 48, minH: 60, flexW: 0);
+            UI.Size(b, width: 96, minH: 60, flexW: 0);
             var img = UI.CenteredIcon(b, icon, 26);
             Color text = style == BottomStyle.Locked ? Theme.Hex("8A6E6C") : Theme.Text;
             if (style == BottomStyle.Locked) img.color = text;

@@ -10,6 +10,27 @@ namespace Adventure.Core
         // ── 캐릭터 (기획서 v1.2) ──────────────────────────────────
         public const int MaxLevel = 60;
         public const int PointsPerLevel = 3;
+
+        /// <summary>
+        /// 능력치별 최대값 (캐릭터 자체 능력치, 장비 보너스 제외). 최대 레벨까지 받는 포인트(59 × 3 = 177)를 한 능력치에
+        /// 몰아도 넘지 않게 막고, 효과 상한(회피·감소 40%, 저항 75%, 성공률 85%)에 맞춰 그 이상은 의미 없는 능력치를 묶는다.
+        /// </summary>
+        public static int MaxStat(Stat s)
+        {
+            switch (s)
+            {
+                case Stat.Toughness:   // 감소율 0.5%/점, 최대 40%
+                case Stat.Finesse:     // 회피 0.5%/점, 최대 40%
+                    return 80;
+                case Stat.Spirit:      // 저항 1%/점, 최대 75%
+                    return 75;
+                case Stat.Precision:   // 성공률 0.5%/점 (성공률은 최대 85%)
+                case Stat.Luck:        // 드롭률·이벤트 0.5%/점
+                    return 60;
+                default:               // 체력·힘·민첩·지능·주문력
+                    return 99;
+            }
+        }
         /// <summary>직업이 배분할 수 없는 능력치의 고정값 (이벤트 판정에만 쓰임).</summary>
         public const int FixedStatValue = 5;
         public const int StartGold = 300;
@@ -106,7 +127,6 @@ namespace Adventure.Core
         // ── 길드 · 퀘스트 ────────────────────────────────────────
         public const int MaxActiveQuests = 3;
         public const int QuestBoardSize = 5;
-        public static readonly double[] QuestRewardMultiplier = { 0.5, 1.0, 1.5 }; // 등급 −1, 동일, +1
 
         // ── 던전 ───────────────────────────────────────────────
         public const int MaxFloor = 30;

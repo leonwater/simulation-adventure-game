@@ -17,8 +17,6 @@ namespace Adventure.Core
         public int Progress;
         public long RewardGold;
         public long RewardExp;
-        /// <summary>보상 배율 (등급 −1 = 0.5, 동일 = 1.0, +1 = 1.5).</summary>
-        public double RewardMultiplier = 1.0;
     }
 
     [Serializable]
@@ -38,26 +36,47 @@ namespace Adventure.Core
 
         public static Rank MaxQuestRank(Rank own) => own == Rank.SS ? Rank.SS : own + 1;
 
-        public static double RewardMultiplier(Rank own, Rank quest)
-        {
-            int diff = GameBalance.Clamp((int)quest - (int)own, -1, 1);
-            return GameBalance.QuestRewardMultiplier[diff + 1];
-        }
-
         public static bool InRange(Rank own, Rank quest) => quest >= MinQuestRank(own) && quest <= MaxQuestRank(own);
 
-        /// <summary>게시판을 새로 채운다. 같은 대상(몬스터·재료·보스 층)의 퀘스트는 게시판과 진행 중 목록을 통틀어 하나만.</summary>
+        /// <summary>다음에 도전할 층(최고 도전 가능 층)을 목표로 하는 퀘스트는 게시판에 최소 이만큼.</summary>
+        public const int NextFloorQuests = 2;
+
+        /// <summary>
+        /// 게시판을 새로 채운다 (마을로 돌아올 때마다, 보스를 잡은 뒤에는 새 층 의뢰가 붙는다).
+        /// 1) 다음에 도전할 층의 퀘스트 2개 (수락할 수 있는 등급을 먼저 고른다) 2) 나머지는 수락할 수 있는 등급만.
+        /// 같은 대상(몬스터·재료·보스 층)의 퀘스트는 게시판과 진행 중 목록을 통틀어 하나만.
+        /// </summary>
         public static void RefreshBoard(GuildState g, Character c, Rng rng)
         {
             g.Board.Clear();
             var used = new HashSet<string>();
             foreach (var q in g.Active) used.Add(Key(q));
-            for (int tries = 0; g.Board.Count < GameBalance.QuestBoardSize && tries < 60; tries++)
+            int next = Math.Max(1, c.MaxChallengeFloor);
+            int nextCount = g.Active.FindAll(q => q.TargetFloor == next).Count;
+            var kinds = new List<QuestKind> { QuestKind.Conquer, QuestKind.Hunt, QuestKind.Collect };
+            rng.Shuffle(kinds);
+            // 수락 가능한 것부터, 모자라면 등급이 맞지 않아도 붙인다 (승급하면 받을 수 있다)
+            for (int pass = 0; pass < 2 && nextCount < NextFloorQuests; pass++)
+            {
+                foreach (var kind in kinds)
+                {
+                    if (nextCount >= NextFloorQuests) break;
+                    for (int tries = 0; tries < 6; tries++)
+                    {
+                        var q = Create(c, rng, next, kind);
+                        if ((pass == 0 && !InRange(c.Rank, q.Rank)) || !used.Add(Key(q))) continue;
+                        g.Board.Add(q);
+                        nextCount++;
+                        break;
+                    }
+                }
+            }
+            for (int tries = 0; g.Board.Count < GameBalance.QuestBoardSize && tries < 80; tries++)
             {
                 var q = Generate(c, rng);
-                if (used.Add(Key(q))) g.Board.Add(q);
+                if (InRange(c.Rank, q.Rank) && used.Add(Key(q))) g.Board.Add(q);
             }
-            g.Board.Sort((a, b) => b.Rank.CompareTo(a.Rank));
+            g.Board.Sort((a, b) => b.Rank != a.Rank ? b.Rank.CompareTo(a.Rank) : b.TargetFloor.CompareTo(a.TargetFloor));
         }
 
         /// <summary>같은 퀘스트인지 가르는 열쇠: 종류 + 대상 (토벌은 몬스터, 채집은 재료, 정복은 층).</summary>
@@ -72,58 +91,74 @@ namespace Adventure.Core
         }
 
         /// <summary>
-        /// 퀘스트 하나. 먼저 난이도 단계(쉬움·보통·어려움)를 정하고, 그에 맞춰 목표 층·수량·보상을 정한 뒤
-        /// 등급은 그 난이도로 매긴다 (자기 등급 −1 · 같음 · +1). 첫 등급(F)·마지막 등급(SS)은 넘치는 단계를 뽑지 않는다.
+        /// 퀘스트 난이도 = 목표 층 + 종류 보정. 보스 토벌 +2, 몬스터 토벌 (마릿수 − 3) × 0.5, 재료 채집 (개수 − 2) × 0.5 − 1.
+        /// 같은 층이면 보스 토벌 ≥ 몬스터 토벌 ≥ 재료 채집 순으로 어렵다.
         /// </summary>
+        public static double Difficulty(Quest q)
+        {
+            switch (q.Kind)
+            {
+                case QuestKind.Conquer: return q.TargetFloor + 2;
+                case QuestKind.Hunt: return q.TargetFloor + (q.Required - 3) * 0.5;
+                default: return q.TargetFloor + (q.Required - 2) * 0.5 - 1;
+            }
+        }
+
+        /// <summary>난이도 → 등급. 경계는 승급 조건의 돌파 층과 같다 (F 1~2 · E 3~5 · D 6~9 · C 10~14 · B 15~19 · A 20~24 · S 25~27 · SS 28~).</summary>
+        public static Rank RankFor(double difficulty)
+        {
+            var r = Rank.F;
+            for (int i = 1; i <= (int)Rank.SS; i++)
+                if (difficulty >= GameBalance.PromotionRequirements[i, 0]) r = (Rank)i;
+            return r;
+        }
+
+        // 등급별 보상 기준 층 (등급 구간의 가운데)
+        private static readonly int[] RewardFloor = { 1, 4, 8, 12, 17, 22, 26, 29 };
+
+        /// <summary>등급 보상 범위: 골드 (60 + 기준 층 × 40) × 1.5, 경험치 적 1마리 × 4, 각각 ±15% 무작위.</summary>
+        public static void RollReward(Quest q, Rng rng)
+        {
+            int f = RewardFloor[(int)q.Rank];
+            q.RewardGold = (long)Math.Round((60 + f * 40) * 1.5 * (0.85 + rng.NextDouble() * 0.3));
+            q.RewardExp = (long)Math.Round(GameBalance.EnemyExp(f) * 4 * (0.85 + rng.NextDouble() * 0.3));
+        }
+
+        /// <summary>무작위 퀘스트 하나: 도전 가능 층에서 4층 아래까지, 종류는 보스 2 · 토벌 4 · 채집 4 비율.</summary>
         public static Quest Generate(Character c, Rng rng)
         {
-            int lo = c.Rank == Rank.F ? 0 : -1, hi = c.Rank == Rank.SS ? 0 : 1;
-            int rel = rng.RangeInclusive(lo, hi);
-            var rank = (Rank)((int)c.Rank + rel);
             int top = Math.Max(1, c.MaxChallengeFloor);
-            int floor;
-            if (rel < 0) floor = top - rng.RangeInclusive(2, 4);
-            else if (rel == 0) floor = top - rng.RangeInclusive(0, 2);
-            else floor = top - rng.RangeInclusive(0, 1);
-            floor = GameBalance.Clamp(floor, 1, top);
+            int floor = Math.Max(1, top - rng.RangeInclusive(0, 4));
+            int roll = rng.Range(0, 10);
+            var kind = roll < 2 ? QuestKind.Conquer : roll < 6 ? QuestKind.Hunt : QuestKind.Collect;
+            return Create(c, rng, floor, kind);
+        }
 
-            var q = new Quest
+        /// <summary>정한 층·종류의 퀘스트. 등급은 난이도로 정하고, 보상은 그 등급 범위에서 무작위.</summary>
+        public static Quest Create(Character c, Rng rng, int floor, QuestKind kind)
+        {
+            var q = new Quest { Id = ItemInstance.NewUid(), Kind = kind, TargetFloor = floor };
+            var species = MonsterDb.Get(rng.Pick(MonsterDb.ThemeFor(floor).SpeciesIds));
+            switch (kind)
             {
-                Id = ItemInstance.NewUid(),
-                Rank = rank,
-                TargetFloor = floor,
-                RewardMultiplier = RewardMultiplier(c.Rank, rank),
-            };
-
-            // 보스 정복은 이미 클리어했거나 지금 도전 가능한 층에서만. 어려움일수록 많이 잡거나 모아야 한다
-            int kindRoll = rng.Range(0, 10);
-            var theme = MonsterDb.ThemeFor(floor);
-            var species = MonsterDb.Get(rng.Pick(theme.SpeciesIds));
-            if (kindRoll < 2)
-            {
-                q.Kind = QuestKind.Conquer;
-                q.Required = 1;
-                q.Title = floor + "층 보스 토벌";
+                case QuestKind.Conquer:
+                    q.Required = 1;
+                    q.Title = floor + "층 보스 토벌";
+                    break;
+                case QuestKind.Hunt:
+                    q.SpeciesId = species.Id;
+                    q.Required = rng.RangeInclusive(3, 6);
+                    q.Title = species.Name + " 토벌";
+                    break;
+                default:
+                    q.SpeciesId = species.Id;
+                    q.MaterialId = species.MaterialId;
+                    q.Required = rng.RangeInclusive(2, 5);
+                    q.Title = species.MaterialName + " 채집";
+                    break;
             }
-            else if (kindRoll < 6)
-            {
-                q.Kind = QuestKind.Hunt;
-                q.SpeciesId = species.Id;
-                q.Required = 3 + (rel + 1) + rng.RangeInclusive(0, 1);   // 쉬움 3~4 · 보통 4~5 · 어려움 5~6
-                q.Title = species.Name + " 토벌";
-            }
-            else
-            {
-                q.Kind = QuestKind.Collect;
-                q.SpeciesId = species.Id;
-                q.MaterialId = species.MaterialId;
-                q.Required = 2 + (rel + 1) + rng.RangeInclusive(0, 1);   // 쉬움 2~3 · 보통 3~4 · 어려움 4~5
-                q.Title = species.MaterialName + " 채집";
-            }
-
-            double kindWeight = q.Kind == QuestKind.Conquer ? 2.0 : 1.0 + q.Required * 0.15;
-            q.RewardGold = (long)Math.Round((60 + floor * 40) * kindWeight * q.RewardMultiplier);
-            q.RewardExp = (long)Math.Round(GameBalance.EnemyExp(floor) * 3 * kindWeight * q.RewardMultiplier);
+            q.Rank = RankFor(Difficulty(q));
+            RollReward(q, rng);
             return q;
         }
 

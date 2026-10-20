@@ -56,7 +56,7 @@ namespace Adventure.Game
 
             var card = UI.Card(body, Theme.Bg, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
             UI.Label(card, c.Name, 20, Theme.Text, true);
-            UI.Sub(card, c.JobData.Name + " · Lv." + c.Level);
+            ScreenKit.JobLine(card, c.Job, c.JobData.Name + " · Lv." + c.Level, 13, Theme.TextSub);
             UI.Divider(card);
             Pair(card, "등급", c.Rank + " 등급", "난이도", Names.Of(data.Difficulty));
             string floor = data.Run != null ? data.Run.Floor + "층 탐험 중" : "돌파 " + c.HighestFloorCleared + "층";

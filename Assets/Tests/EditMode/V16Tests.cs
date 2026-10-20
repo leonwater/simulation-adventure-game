@@ -71,36 +71,35 @@ namespace Adventure.Tests
                 Assert.Greater(g.Board.Count, 0);
                 var keys = new HashSet<string>();
                 var titles = new HashSet<string>();
+                int next = c.MaxChallengeFloor;
                 foreach (var q in g.Board)
                 {
                     Assert.IsTrue(keys.Add(GuildSystem.Key(q)), "같은 대상의 퀘스트가 둘: " + q.Title);
                     Assert.IsTrue(titles.Add(q.Title), "같은 이름의 퀘스트가 여러 등급: " + q.Title);
-                    Assert.IsTrue(GuildSystem.InRange(c.Rank, q.Rank));
+                    if (q.TargetFloor != next) Assert.IsTrue(GuildSystem.InRange(c.Rank, q.Rank), "다음 층 의뢰 외에는 수락할 수 있는 등급만");
                 }
+                Assert.GreaterOrEqual(g.Board.FindAll(q => q.TargetFloor == next).Count, GuildSystem.NextFloorQuests, "다음에 도전할 층 의뢰는 최소 2개");
                 // 진행 중인 퀘스트와도 겹치지 않는다
                 GuildSystem.Accept(g, c, g.Board[0].Id, out _);
+                if (g.Active.Count == 0) continue;
                 var active = g.Active[0];
                 GuildSystem.RefreshBoard(g, c, rng);
                 Assert.IsFalse(g.Board.Exists(q => GuildSystem.Key(q) == GuildSystem.Key(active)));
             }
+        }
 
-            // 등급이 높을수록 같은 종류에서 요구량·보상이 크다
-            var hero = Character.Create("b", Job.Mage);
-            hero.Rank = Rank.D;
-            hero.HighestFloorCleared = 12;
-            double easy = 0, hard = 0;
-            int ne = 0, nh = 0;
-            for (int i = 0; i < 400; i++)
-            {
-                var q = GuildSystem.Generate(hero, rng);
-                if (q.Kind != QuestKind.Hunt) continue;
-                if (q.Rank < hero.Rank) { easy += q.Required; ne++; }
-                if (q.Rank > hero.Rank) { hard += q.Required; nh++; }
-            }
-            Assert.Less(easy / ne, hard / nh);
-            // 첫 등급(F)은 쉬움 단계가 없어 F·E만 나온다
-            var rookie = Character.Create("c", Job.Archer);
-            for (int i = 0; i < 50; i++) Assert.IsTrue(GuildSystem.Generate(rookie, rng).Rank <= Rank.E);
+        [Test]
+        public void Quests_BossClearPostsNextFloorQuests()
+        {
+            var s = NewSession(8);
+            s.NewGame("a", Job.Warrior, Difficulty.Normal);
+            s.SetTutorial(TutorialStage.Done);
+            s.EnterDungeon();
+            s.Run.BossDefeated = true;
+            s.C.HighestFloorCleared = 1;
+            s.ReturnToTown();
+            Assert.AreEqual(2, s.C.MaxChallengeFloor);
+            Assert.GreaterOrEqual(s.Data.Guild.Board.FindAll(q => q.TargetFloor == 2).Count, GuildSystem.NextFloorQuests, "보스를 잡고 돌아오면 새 층 의뢰가 붙는다");
         }
 
         [Test]

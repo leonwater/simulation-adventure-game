@@ -8,8 +8,8 @@ namespace Adventure.Game
     /// - 마을: 상점 → 길드 → 대장간 → 수련장 순으로 직접 들어가, 화면의 각 부분을 차례로 설명한 뒤 마을로 돌아온다. 마지막에 던전 입장.
     /// - 첫 1층: 미니맵 → 순간이동 → 캐릭터 정보 → 길 고르기 → 전투(대상·확률·공격) → 레벨 업 배분 → 보스를 잡으면 귀환 (아래층으로는 못 감).
     /// - 귀환 후: 정산 → 길드 창고 → 끝.
-    /// 본 설명은 TipsShown에 남아 다시 켜도 이어서 진행한다. 첫 튜토리얼(마을 소개·상점 둘러보기)이 끝나면
-    /// 화면 오른쪽 위 "건너뛰기"로 언제든 끝낼 수 있다. 말풍선의 중요한 말은 금색, 좋고 나쁨은 초록·빨강으로 칠한다.
+    /// 본 설명은 TipsShown에 남아 다시 켜도 이어서 진행한다. 처음 튜토리얼에는 건너뛰기가 없고,
+    /// 설정에서 다시 볼 때만 화면 오른쪽 위 "건너뛰기"로 끝낼 수 있다. 말풍선의 중요한 말은 금색, 좋고 나쁨은 초록·빨강으로 칠한다.
     /// </summary>
     public static class Tutorial
     {
@@ -17,10 +17,8 @@ namespace Adventure.Game
 
         private static TutorialStage Stage => S.HasGame ? S.Data.Tutorial : TutorialStage.Done;
 
-        /// <summary>첫 튜토리얼(마을 소개와 상점 둘러보기) 동안에는 건너뛰기 버튼을 두지 않는다.</summary>
-        private static bool FirstTour => Stage == TutorialStage.TownGuide && !S.TipShown("shop.done");
-
-        private static Action SkipButton => FirstTour ? null : (Action)Skip;
+        /// <summary>건너뛰기 버튼은 설정에서 튜토리얼을 다시 볼 때만 (처음 튜토리얼은 끝까지 진행).</summary>
+        private static Action SkipButton => S.HasGame && S.Data.TutorialReplay ? (Action)Skip : null;
 
         // 말풍선 강조: 중요한 말은 금색, 좋음 초록, 나쁨 빨강
         private static string H(string t) => UI.Color(t, Theme.GoldHex);
@@ -77,7 +75,7 @@ namespace Adventure.Game
             {
                 Run(new[]
                 {
-                    Info("town.intro", null, "등불 마을", "던전 입구에 세워진 " + H("등불 마을") + "이에요. 등록을 마쳤으니, 이제 마을 시설을 직접 하나씩 둘러보며 안내해 드릴게요."),
+                    Info("town.intro", null, "라브 마을", "던전 입구에 세워진 " + H("라브 마을") + "이에요. 등록을 마쳤으니, 이제 마을 시설을 직접 하나씩 둘러보며 안내해 드릴게요."),
                 }, () =>
                 {
                     for (int i = 0; i < Facilities.Length; i++)
@@ -204,6 +202,7 @@ namespace Adventure.Game
             Run(new[]
             {
                 Info("bat.1", "battle.enemy0", "전투 · 대상", "적의 도형을 누르면 공격할 " + H("대상") + "을 바꿀 수 있어요. 금색으로 깜빡이는 적이 지금 대상이에요."),
+                Info("bat.status", "battle.player", "전투 · 상태 이상", "도형 아래 작은 태그가 " + Bad("상태 이상") + "이에요. " + H("내 원") + "이나 " + H("대상인 적을 한 번 더") + " 누르면(길게 눌러도 돼요) 상태 이상이 1턴에 주는 피해와 남은 턴을 자세히 볼 수 있어요."),
                 Info("bat.2", "battle.choices", "전투 · 선택지", "오른쪽 숫자는 " + H("성공 확률") + ", 아래 줄은 " + H("예상 피해") + "예요. 선택지를 " + H("길게 누르면") + " 피해 계산식과 부가 효과를 볼 수 있어요."),
             }, () =>
             {

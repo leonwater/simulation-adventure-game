@@ -147,13 +147,13 @@ namespace Adventure.Game
                     Rebuild();
                 }, on ? Theme.AccentBg : Theme.Card, on ? Theme.Accent : Theme.ButtonBorder, 12, UI.Pad(14, 10), true, 3, 76);
                 var top = UI.Row(card, 8);
-                var n = UI.Label(top, data.Name, 16, on ? Theme.Gold : Theme.Text, true);
+                UI.Icon(top, UI.JobIcon(j), 26).color = on ? Theme.Gold : Theme.Text;
+                var n = UI.Label(top, data.Name, 17, on ? Theme.Gold : Theme.Text, true);
                 UI.Size(n, flexW: 1);
                 UI.Label(top, data.WeaponName, 12, Theme.TextSub, false, TextAnchor.MiddleRight, false, false);
+                // 직업 설명은 크고 진하게, 그 아래 주요 능력치
+                if (!string.IsNullOrEmpty(data.Concept)) UI.Label(card, data.Concept, 15, Theme.Text, true);
                 UI.Label(card, "주요 능력치 " + UI.Color(string.Join(" · ", Array.ConvertAll(data.MainStats, s => Names.Of(s))), Theme.GoldHex), 13, Theme.TextBody);
-                var skill = SkillDb.Get(SkillDb.StartingSkill(j));
-                UI.Label(card, "시작 스킬 " + UI.Color(skill.Name, Theme.BlueHex) + UI.Color(" — " + skill.Effect, Theme.SubHex), 13, Theme.TextBody);
-                if (!string.IsNullOrEmpty(data.Concept)) UI.Sub(card, data.Concept);
             }
             Nav(body, "다음");
         }
@@ -188,8 +188,9 @@ namespace Adventure.Game
             var data = JobData.Get(_job);
             var card = UI.Card(body, Theme.Card, Theme.Accent, 12, UI.Pad(16, 14), true, 8);
             UI.Label(card, _name, 22, Theme.Text, true);
-            Row(card, "직업", data.Name + " · " + string.Join(" · ", Array.ConvertAll(data.MainStats, s => Names.Of(s))));
-            Row(card, "시작 스킬", SkillDb.Get(SkillDb.StartingSkill(_job)).Name);
+            var job = UI.Row(card, 8);
+            UI.Size(UI.Sub(job, "직업"), width: 72);
+            ScreenKit.JobLine(job, _job, data.Name + " · " + string.Join(" · ", Array.ConvertAll(data.MainStats, s => Names.Of(s))), 14, Theme.Text);
             Row(card, "난이도", Names.Of(_difficulty));
             UI.Sub(card, "직업과 난이도는 등록 후 바꿀 수 없습니다.");
             var row = UI.Row(body, 8);

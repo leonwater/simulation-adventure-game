@@ -313,6 +313,8 @@ namespace Adventure.Game
 
         public static string RankIcon(Adventure.Core.Rank r) => "rank_" + r.ToString().ToLowerInvariant();
 
+        public static string JobIcon(Adventure.Core.Job j) => "job_" + j.ToString().ToLowerInvariant();
+
         public static string StatIcon(Adventure.Core.Stat s) => "stat_" + s.ToString().ToLowerInvariant();
 
         /// <summary>장비 등급을 색과 글자로 함께 보여 준다 (예: "[희귀] 강철 장검").</summary>

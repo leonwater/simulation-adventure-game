@@ -169,7 +169,7 @@ namespace Adventure.Game
             for (int i = 0; i < _b.Enemies.Count; i++)
             {
                 var e = _b.Enemies[i];
-                bool many = _b.Enemies.Count > 2;
+                bool many = _b.Enemies.Count > 1;
                 Shape shape = e.Role == 2 ? Shape.Hexagon : Shape.Square;
                 float size = e.Role == 2 ? (_b.Enemies.Count > 1 ? 72 : 96) : e.Role == 1 ? 62 : 56;
                 Color border = e.Role == 2 ? Theme.Hex("E0873A") : e.Role == 1 ? Theme.Gold : Theme.Hex("8A5A56");
@@ -180,14 +180,18 @@ namespace Adventure.Game
             }
         }
 
+        /// <summary>
+        /// 적 자리. 2마리는 나란히(위아래로 두면 위 적의 상태 태그가 아래 적의 HP와 겹친다),
+        /// 3~4마리는 두 줄로 두되 줄 사이를 넓혀 위 줄 상태 태그가 아래 줄 이름·HP에 닿지 않게 한다.
+        /// </summary>
         private static Vector2[] EnemyCenters(int n)
         {
             switch (n)
             {
                 case 1: return new[] { new Vector2(286, 150) };
-                case 2: return new[] { new Vector2(286, 92), new Vector2(286, 220) };
-                case 3: return new[] { new Vector2(242, 92), new Vector2(338, 92), new Vector2(290, 220) };
-                default: return new[] { new Vector2(242, 92), new Vector2(338, 92), new Vector2(242, 220), new Vector2(338, 220) };
+                case 2: return new[] { new Vector2(242, 150), new Vector2(338, 150) };
+                case 3: return new[] { new Vector2(242, 86), new Vector2(338, 86), new Vector2(290, 230) };
+                default: return new[] { new Vector2(242, 86), new Vector2(338, 86), new Vector2(242, 230), new Vector2(338, 230) };
             }
         }
 
@@ -247,18 +251,19 @@ namespace Adventure.Game
 
             if (alive)
             {
-                // 적: 눌러 대상 선택 · 나: 눌러 캐릭터 정보
+                // 적: 누르면 대상 선택, 대상을 한 번 더 누르면 상세 · 나: 누르면 캐릭터 정보. 길게 누르면 언제나 상세
                 var hit = root.gameObject.AddComponent<Image>();
                 hit.color = new Color(0, 0, 0, 0);
                 var btn = root.gameObject.AddComponent<Button>();
                 btn.transition = Selectable.Transition.None;
                 int idx = index;
-                if (enemy) btn.onClick.AddListener(() => SelectTarget(idx));
-                else btn.onClick.AddListener(() =>
+                LongPress.Add(btn, () => ShowUnit(idx), () =>
                 {
-                    if (!_playing && !_leaving) CharacterInfo.Show(Overlay, S, _b);
+                    if (idx >= 0 && idx != _target) SelectTarget(idx);
+                    else ShowUnit(idx);
                 });
             }
+            if (!enemy) Anchors.Set("battle.player", root);
 
             // 상태 이상 (도형 아래)
             if (c.Alive && c.Statuses.Visible().Count > 0)
@@ -273,7 +278,7 @@ namespace Adventure.Game
                 int n = 0;
                 foreach (var s in c.Statuses.Visible())
                 {
-                    if (n++ >= (enemy && _b.Enemies.Count > 2 ? 2 : 3)) break; // 칸이 좁아 3개까지 (적이 3마리 이상이면 2개)
+                    if (n++ >= (enemy && _b.Enemies.Count > 1 ? 2 : 3)) break; // 칸이 좁아 3개까지 (적이 2마리 이상이면 2개)
                     bool debuff = StatusContainer.IsDebuff(s.Type);
                     UI.Pill(tags, Names.Of(s.Type) + (s.Turns >= 99 ? "" : s.Turns.ToString()), debuff ? Theme.Red : Theme.Blue, debuff ? Theme.RedLight : Theme.BlueLight, 10, 6);
                 }
@@ -324,6 +329,19 @@ namespace Adventure.Game
             rt.pivot = new Vector2(0, 1);
             rt.sizeDelta = size;
             rt.anchoredPosition = new Vector2(topLeft.x, -topLeft.y);
+        }
+
+        /// <summary>도형의 상세 정보: 나는 캐릭터 정보 창, 적은 HP·공격력·방어력·보호막·상태 이상(1턴 피해).</summary>
+        private void ShowUnit(int index)
+        {
+            if (_playing || _leaving) return;
+            if (index < 0)
+            {
+                CharacterInfo.Show(Overlay, S, _b);
+                return;
+            }
+            if (index >= _b.Enemies.Count || !_b.Enemies[index].Alive) return;
+            CharacterInfo.ShowEnemy(Overlay, _b.Enemies[index], index == _target, () => SelectTarget(index));
         }
 
         private void SelectTarget(int index)

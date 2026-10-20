@@ -97,6 +97,7 @@ namespace Adventure.Core
         {
             if (Data == null) return;
             Data.Tutorial = stage;
+            if (stage == TutorialStage.Done) Data.TutorialReplay = false;
             Save();
         }
 
@@ -105,6 +106,7 @@ namespace Adventure.Core
         {
             if (Data == null || InDungeon) return;
             Data.Tutorial = TutorialStage.TownGuide;
+            Data.TutorialReplay = true;
             Data.TipsShown.Clear();
             Save();
         }

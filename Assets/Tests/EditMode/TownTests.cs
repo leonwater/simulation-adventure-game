@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using Adventure.Core;
 using NUnit.Framework;
@@ -150,25 +151,45 @@ namespace Adventure.Tests
         }
 
         [Test]
-        public void Guild_QuestRanksStayWithinOneStep()
+        public void Guild_RankFollowsFloorAndKindRewardFollowsRank()
         {
             var rng = new Rng(9);
             var c = Character.Create("a", Job.Archer);
             c.Rank = Rank.D;
             c.HighestFloorCleared = 6;
-            for (int i = 0; i < 500; i++)
+            var gold = new Dictionary<Rank, List<long>>();
+            for (int i = 0; i < 600; i++)
             {
                 var q = GuildSystem.Generate(c, rng);
-                Assert.IsTrue(q.Rank >= Rank.E && q.Rank <= Rank.C, q.Rank.ToString());
                 Assert.IsTrue(q.TargetFloor >= 1 && q.TargetFloor <= 7);
-                Assert.AreEqual(GuildSystem.RewardMultiplier(c.Rank, q.Rank), q.RewardMultiplier);
+                Assert.AreEqual(GuildSystem.RankFor(GuildSystem.Difficulty(q)), q.Rank, "등급은 난이도(층·종류·수량)로 정해진다");
                 Assert.Greater(q.RewardGold, 0);
+                Assert.Greater(q.RewardExp, 0);
+                if (!gold.ContainsKey(q.Rank)) gold[q.Rank] = new List<long>();
+                gold[q.Rank].Add(q.RewardGold);
             }
-            Assert.AreEqual(0.5, GuildSystem.RewardMultiplier(Rank.D, Rank.E));
-            Assert.AreEqual(1.0, GuildSystem.RewardMultiplier(Rank.D, Rank.D));
-            Assert.AreEqual(1.5, GuildSystem.RewardMultiplier(Rank.D, Rank.C));
+            // 같은 층이면 보스 토벌이 재료 채집보다 등급이 낮지 않다 (1층 보스 F · 고블린 귀 E 같은 일이 없게)
+            for (int floor = 1; floor <= 30; floor++)
+            {
+                var boss = GuildSystem.Create(c, rng, floor, QuestKind.Conquer);
+                var hunt = GuildSystem.Create(c, rng, floor, QuestKind.Hunt);
+                var collect = GuildSystem.Create(c, rng, floor, QuestKind.Collect);
+                Assert.GreaterOrEqual(boss.Rank, hunt.Rank, floor + "층");
+                Assert.GreaterOrEqual(boss.Rank, collect.Rank, floor + "층");
+            }
+            Assert.AreEqual(Rank.F, GuildSystem.RankFor(1));
+            Assert.AreEqual(Rank.E, GuildSystem.RankFor(3));
+            Assert.AreEqual(Rank.SS, GuildSystem.RankFor(32));
+            // 보상은 등급 범위 안 무작위: 등급이 높으면 더 많다
+            Rank lo = Rank.SS, hi = Rank.F;
+            foreach (var r in gold.Keys) { if (r < lo) lo = r; if (r > hi) hi = r; }
+            Assert.Less(Max(gold[lo]), Min(gold[hi]));
             Assert.AreEqual(Rank.F, GuildSystem.MinQuestRank(Rank.F));
         }
+
+        private static long Max(List<long> l) { long m = long.MinValue; foreach (var x in l) m = Math.Max(m, x); return m; }
+
+        private static long Min(List<long> l) { long m = long.MaxValue; foreach (var x in l) m = Math.Min(m, x); return m; }
 
         [Test]
         public void Guild_AcceptLimitAndHuntTurnIn()

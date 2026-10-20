@@ -44,6 +44,7 @@ namespace Adventure.Core
         public static bool Allocate(Character c, Stat stat, int points = 1)
         {
             if (points <= 0 || c.UnspentPoints < points || !c.JobData.CanAllocate(stat)) return false;
+            if (c.BaseStats[stat] + points > GameBalance.MaxStat(stat)) return false;
             c.BaseStats[stat] += points;
             c.UnspentPoints -= points;
             return true;
@@ -51,7 +52,7 @@ namespace Adventure.Core
 
         /// <summary>
         /// 직업별 비율로 포인트를 나눈다. 지금까지 배분한 총량을 기준으로 목표 비율에서 가장 모자란 능력치부터 채운다.
-        /// 결과는 능력치별 배분량 (AllocatableStats 순서).
+        /// 결과는 능력치별 배분량 (AllocatableStats 순서). 최대값에 닿은 능력치는 건너뛰고, 모두 닿으면 남긴다.
         /// </summary>
         public static int[] PlanAutoAllocation(Character c, int points)
         {
@@ -73,6 +74,8 @@ namespace Adventure.Core
                 for (int i = 0; i < n; i++)
                 {
                     if (job.AutoRatio[i] <= 0) continue;
+                    var st = job.AllocatableStats[i];
+                    if (c.BaseStats[st] + plan[i] >= GameBalance.MaxStat(st)) continue;
                     double deficit = job.AutoRatio[i] / 100.0 * total - assigned[i];
                     if (deficit > bestDeficit)
                     {
@@ -80,6 +83,7 @@ namespace Adventure.Core
                         best = i;
                     }
                 }
+                if (best < 0) break;
                 assigned[best]++;
                 plan[best]++;
             }
@@ -128,10 +132,14 @@ namespace Adventure.Core
 
         public bool Add(Stat stat)
         {
-            if (Remaining <= 0 || !_character.JobData.CanAllocate(stat)) return false;
+            if (!CanAdd(stat)) return false;
             _pending[(int)stat]++;
             return true;
         }
+
+        /// <summary>남은 포인트가 있고 최대값에 닿지 않았으면 더할 수 있다.</summary>
+        public bool CanAdd(Stat stat) =>
+            Remaining > 0 && _character.JobData.CanAllocate(stat) && _character.BaseStats[stat] + _pending[(int)stat] < GameBalance.MaxStat(stat);
 
         public bool Remove(Stat stat)
         {

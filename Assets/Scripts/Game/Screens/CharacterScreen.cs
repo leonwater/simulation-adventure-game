@@ -26,7 +26,7 @@ namespace Adventure.Game
             var nameCol = UI.Column(head, 2);
             UI.Size(nameCol, flexW: 1);
             UI.Label(nameCol, C.Name, 24, Theme.Text, true); // 이름은 어떤 글자든 나오도록 전체 글꼴(고딕)로
-            UI.Sub(nameCol, C.JobData.Name + " · Lv." + C.Level + " / " + GameBalance.MaxLevel);
+            ScreenKit.JobLine(nameCol, C.Job, C.JobData.Name + " · Lv." + C.Level + " / " + GameBalance.MaxLevel, 13, Theme.TextSub);
             int pct = Mathf.FloorToInt((float)Leveling.ExpProgress(C) * 100);
             UI.Sub(head, C.Level >= GameBalance.MaxLevel ? "최대 레벨" : "경험치 " + pct + "%", TextAnchor.LowerRight);
             UI.ProgressBar(body, (float)Leveling.ExpProgress(C), Theme.Blue, 8);
@@ -68,7 +68,7 @@ namespace Adventure.Game
             UI.Sub(panel, st.Next + " 등급 승급 조건");
             var grid = UI.Row(panel, 8);
             grid.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>().childForceExpandWidth = true;
-            Cond(grid, "층", st.FloorCurrent, st.FloorRequired);
+            Cond(grid, "던전 층", st.FloorCurrent, st.FloorRequired);
             Cond(grid, "레벨", st.LevelCurrent, st.LevelRequired);
             Cond(grid, "퀘스트", st.QuestsCurrent, st.QuestsRequired);
         }
@@ -93,26 +93,15 @@ namespace Adventure.Game
             for (int i = 0; i < stats.Length; i++)
             {
                 var stat = stats[i];
-                var row = UI.Row(panel, 8);
-                UI.Size(row, height: 56);
-                UI.Icon(row, UI.StatIcon(stat), 24);
-                var col = UI.Column(row, 1);
-                UI.Size(col, flexW: 1);
-                UI.Label(col, Names.Of(stat), 14, Theme.Text, true);
-                UI.Label(col, CharacterStats.EffectLabel(C, stat), 12, Theme.TextSub);
-                int pending = _draft.Pending(stat);
-                ScreenKit.Stepper(row, CharacterStats.Total(C, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
-                    () =>
-                    {
-                        _draft.Remove(stat);
-                        Rebuild();
-                    }, pending > 0,
-                    () =>
-                    {
-                        _draft.Add(stat);
-                        Rebuild();
-                    }, _draft.Remaining > 0);
-                if (i < stats.Length - 1) ScreenKit.BottomLine(row, Theme.LineSoft);
+                ScreenKit.StatRow(panel, C, stat, _draft, () =>
+                {
+                    _draft.Remove(stat);
+                    Rebuild();
+                }, () =>
+                {
+                    _draft.Add(stat);
+                    Rebuild();
+                }, i < stats.Length - 1);
             }
         }
 
@@ -144,13 +133,14 @@ namespace Adventure.Game
             foreach (Stat s in Enum.GetValues(typeof(Stat)))
             {
                 bool mine = System.Array.IndexOf(C.JobData.AllocatableStats, s) >= 0;
-                int own = CharacterStats.OwnStat(C, s), eq = CharacterStats.EquipmentBonus(C, s);
+                int eq = CharacterStats.EquipmentBonus(C, s);
                 var row = UI.Row(body, 10, UI.Pad(0, 0, 4, 4));
                 UI.Size(row, minH: 48);
                 UI.Icon(row, UI.StatIcon(s), 28);
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
-                UI.Label(col, Names.Of(s) + " " + UI.Color(CharacterStats.Total(C, s) + (eq > 0 ? " (장비 +" + eq + ")" : ""), Theme.GoldHex), 14, Theme.Text, true);
+                UI.Label(col, Names.Of(s) + " " + UI.Color(CharacterStats.Total(C, s) + (eq > 0 ? " (장비 +" + eq + ")" : ""), Theme.GoldHex)
+                              + UI.Color(" · 최대 " + GameBalance.MaxStat(s), Theme.SubHex), 14, Theme.Text, true);
                 UI.Label(col, StatEffect(s) + (mine ? "" : " · 이 직업은 배분 불가"), 12, Theme.TextSub);
                 if (!mine) row.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
             }

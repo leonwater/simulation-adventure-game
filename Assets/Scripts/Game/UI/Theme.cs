@@ -100,13 +100,6 @@ namespace Adventure.Game
             }
         }
 
-        public static Color ItemColor(ItemInstance item)
-        {
-            if (item.Kind == ItemKind.Equipment || item.Kind == ItemKind.SkillBook || item.Kind == ItemKind.EnhanceStone)
-                return GradeColor(item.Grade);
-            return GradeColor(ItemGrade.Common);
-        }
-
         public static string ToHex(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c);
 
         public static Color Hex(string hex)

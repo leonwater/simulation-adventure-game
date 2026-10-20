@@ -30,6 +30,7 @@ namespace Adventure.Game
             // 기본 정보
             var head = UI.Row(body, 8, null, TextAnchor.MiddleLeft);
             UI.Icon(head, UI.RankIcon(c.Rank), 26);
+            UI.Icon(head, UI.JobIcon(c.Job), 22);
             var name = UI.Label(head, c.Name + " · " + c.JobData.Name + " Lv." + c.Level, 16, Theme.Text, true);
             UI.Size(name, flexW: 1);
             UI.Label(body, "HP " + hp + "/" + maxHp, 13, Theme.Text);
@@ -49,15 +50,7 @@ namespace Adventure.Game
             var active = me?.Statuses.Visible();
             if (active == null || active.Count == 0)
                 UI.Sub(body, battle == null ? "전투 밖에서는 상태 이상이 남지 않습니다. 전투가 끝나면 모두 풀립니다." : "걸린 상태 이상이 없습니다.");
-            else
-                foreach (var s in active)
-                {
-                    bool debuff = StatusContainer.IsDebuff(s.Type);
-                    var card = UI.Card(body, debuff ? Theme.RedBg : Theme.BlueBg, debuff ? Theme.RedBorder : Theme.BlueBorder, 10, UI.Pad(12, 8), true, 2);
-                    string turns = s.Turns >= 99 ? "전투 내내" : s.Turns + "턴 남음";
-                    UI.Label(card, Names.Of(s.Type) + " · " + turns, 14, debuff ? Theme.RedLight : Theme.BlueLight, true);
-                    UI.Label(card, Names.DescribeActive(s, maxHp), 13, Theme.TextBody);
-                }
+            else StatusCards(body, active, maxHp);
 
             // 탐험 효과 (이벤트로 얻은 버프·디버프)
             if (run != null)
@@ -87,6 +80,51 @@ namespace Adventure.Game
             Section(body, "상태 이상 안내");
             foreach (var t in Debuffs) Glossary(body, t, true);
             foreach (var t in Buffs) Glossary(body, t, false);
+        }
+
+        /// <summary>
+        /// 적 상세 (전투에서 대상을 한 번 더 누르거나 길게 누름): HP·보호막·방어막, 공격력·방어력, 다음 턴 예고, 상태 이상(1턴 피해).
+        /// 대상이 아니면 "대상으로 정하기" 버튼.
+        /// </summary>
+        public static void ShowEnemy(Overlay overlay, Combatant e, bool isTarget, System.Action makeTarget)
+        {
+            string role = e.Role == 2 ? "보스" : e.Role == 1 ? "정예" : "일반";
+            var body = overlay.Modal(e.Name);
+            var modal = overlay.Top;
+            UI.Label(body, role + " 몬스터", 13, e.Role == 2 ? Theme.Hex("E0873A") : e.Role == 1 ? Theme.Gold : Theme.TextSub, true);
+            string hp = "HP " + e.Hp + "/" + e.MaxHp;
+            if (e.Kit != null && e.Kit.Shield > 0) hp += " · " + UI.Color("보호막 " + e.Kit.Shield, "#8FC7FF");
+            if (e.Kit != null && e.Kit.Barrier > 0) hp += " · " + UI.Color("방어막 " + e.Kit.Barrier + "회", "#C9B8FF");
+            UI.Label(body, hp, 14, Theme.Text);
+            UI.ProgressBar(body, (float)e.Hp / Mathf.Max(1, e.MaxHp), Theme.Red, 8);
+            var grid = UI.Column(body, 4);
+            Pair(grid, "공격력", e.Attack.ToString(), "방어력", e.Defense.ToString());
+            if (e.Kit != null && !string.IsNullOrEmpty(e.Kit.Intent))
+                UI.Label(body, "다음 턴 " + UI.Color(e.Kit.Intent, "#FF9A4A"), 13, Theme.Text, true);
+
+            Section(body, "상태 이상");
+            var list = e.Statuses.Visible();
+            if (list.Count == 0) UI.Sub(body, "걸린 상태 이상이 없습니다.");
+            else StatusCards(body, list, e.MaxHp);
+            if (!isTarget)
+                UI.TextButton(body, "대상으로 정하기", () =>
+                {
+                    overlay.Close(modal);
+                    makeTarget();
+                }, ButtonKind.Primary);
+        }
+
+        /// <summary>걸린 상태 이상 카드: 이름 · 남은 턴 / 1턴에 얼마인지.</summary>
+        private static void StatusCards(Transform body, System.Collections.Generic.List<StatusInstance> list, int maxHp)
+        {
+            foreach (var s in list)
+            {
+                bool debuff = StatusContainer.IsDebuff(s.Type);
+                var card = UI.Card(body, debuff ? Theme.RedBg : Theme.BlueBg, debuff ? Theme.RedBorder : Theme.BlueBorder, 10, UI.Pad(12, 8), true, 2);
+                string turns = s.Turns >= 99 ? "전투 내내" : s.Turns + "턴 남음";
+                UI.Label(card, Names.Of(s.Type) + " · " + turns, 14, debuff ? Theme.RedLight : Theme.BlueLight, true);
+                UI.Label(card, Names.DescribeActive(s, maxHp), 13, Theme.TextBody);
+            }
         }
 
         private static void Section(Transform parent, string title)

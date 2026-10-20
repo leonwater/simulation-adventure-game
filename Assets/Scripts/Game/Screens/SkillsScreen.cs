@@ -33,7 +33,6 @@ namespace Adventure.Game
             var head = UI.Row(body);
             var t = UI.Label(head, "장착 슬롯 " + C.Skills.Equipped.Count + " / " + slots, 14, Theme.Text, true);
             UI.Size(t, flexW: 1);
-            UI.Sub(head, NextSlotText(slots), TextAnchor.MiddleRight);
 
             var grid = UI.Grid(body, 3, ScreenKit.ContentWidth, 84, 8);
             for (int i = 0; i < slots; i++)
@@ -53,8 +52,6 @@ namespace Adventure.Game
                 {
                     var cell = UI.Card(grid, Theme.Bg, Theme.PlaceholderLine, 10, UI.Pad(8, 8), true, 0, TextAnchor.UpperLeft, "empty");
                     UI.Sub(cell, "빈 슬롯");
-                    UI.Spacer(cell);
-                    UI.Sub(cell, "아래에서 선택");
                 }
             }
 
@@ -62,7 +59,6 @@ namespace Adventure.Game
             UI.Size(head2, height: 30);
             var t2 = UI.Label(head2, "보유 스킬", 14, Theme.Text, true);
             UI.Size(t2, flexW: 1);
-            UI.Sub(head2, "강화는 마을 수련장에서", TextAnchor.MiddleRight);
 
             var list = UI.Column(body, 0);
             foreach (var st in C.Skills.Learned)
@@ -103,13 +99,6 @@ namespace Adventure.Game
                 case SkillTarget.Self: return "자신";
                 default: return "단일";
             }
-        }
-
-        private string NextSlotText(int slots)
-        {
-            for (var r = C.Rank + 1; r <= Rank.SS; r++)
-                if (RankSystem.SkillSlots(r) > slots) return r + " 등급에서 " + RankSystem.SkillSlots(r) + "칸";
-            return "최대 슬롯";
         }
 
         private void Equip(string id)

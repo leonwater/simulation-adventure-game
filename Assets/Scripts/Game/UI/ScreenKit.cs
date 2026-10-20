@@ -61,12 +61,22 @@ namespace Adventure.Game
         {
             var right = UI.Row(bar, 6, null, TextAnchor.MiddleRight, "gold-settings");
             if (width > 0) UI.Size(right, width: width, flexW: 0); // 왼쪽 칸(120)과 같은 폭이라 제목이 가운데
-            var gold = UI.Label(right, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
-            if (width > 0) UI.Size(gold, flexW: 1);
+            if (width > 0) UI.HSpacer(right);
+            UI.Icon(right, "gold", 18);
+            UI.Label(right, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             var gear = UI.ButtonCard(right, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
             UI.Size(gear, width: 40, height: 40);
             UI.Icon(gear, "settings", 22);
             Anchors.Set("topbar.settings", gear);
+        }
+
+        /// <summary>직업 아이콘 + 글자 (직업이 나오는 곳마다).</summary>
+        public static RectTransform JobLine(Transform parent, Job job, string text, float size, Color color, bool bold = false)
+        {
+            var row = UI.Row(parent, 4, null, TextAnchor.MiddleLeft, "job");
+            UI.Icon(row, UI.JobIcon(job), Mathf.Round(size * 1.3f)).color = color;
+            UI.Label(row, text, size, color, bold, TextAnchor.MiddleLeft, false, false);
+            return row;
         }
 
         public static void BottomLine(RectTransform rt, Color? color = null)
@@ -106,7 +116,7 @@ namespace Adventure.Game
             UI.Icon(nameRow, UI.RankIcon(c.Rank), 22);
             var barRow = UI.Row(left, 8);
             UI.ProgressBar(barRow, (float)Leveling.ExpProgress(c), Theme.Blue, 6, 100);
-            UI.Label(barRow, c.JobData.Name + " Lv." + c.Level, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
+            JobLine(barRow, c.Job, c.JobData.Name + " Lv." + c.Level, 12, Theme.TextSub);
             // 오른쪽 위: 골드 + 설정 버튼 → 설정 창 (다른 마을 화면 머리줄과 같다)
             GoldAndSettings(bar, c);
             BottomLine(bar);
@@ -200,6 +210,28 @@ namespace Adventure.Game
             rt.pivot = new Vector2(0, 0.5f);
             rt.sizeDelta = new Vector2(width, 0);
             rt.anchoredPosition = new Vector2(x, 0);
+        }
+
+        /// <summary>
+        /// 능력치 배분 한 줄 (캐릭터 화면·던전 레벨 업 창 공통): 아이콘 · 이름과 배분 현황(45/99, 최대면 금색 '최대') ·
+        /// 효과(두 줄까지) · 고정 폭 − 값 + . 값 칸은 최대 능력치(세 자리)와 대기 중 +N이 들어가는 폭.
+        /// </summary>
+        public static void StatRow(Transform parent, Character c, Stat stat, AllocationDraft draft, Action onMinus, Action onPlus, bool line)
+        {
+            int pending = draft.Pending(stat);
+            int own = c.BaseStats[stat] + pending, cap = GameBalance.MaxStat(stat);
+            var row = UI.Row(parent, 8);
+            UI.Size(row, height: 60);
+            UI.Icon(row, UI.StatIcon(stat), 24);
+            var col = UI.Column(row, 1);
+            UI.Size(col, flexW: 1);
+            string progress = own >= cap ? UI.Color(" 최대", Theme.GoldHex) : UI.Color(" " + own + "/" + cap, Theme.SubHex);
+            UI.Label(col, Names.Of(stat) + "<size=12>" + progress + "</size>", 14, Theme.Text, true);
+            var effect = UI.Label(col, CharacterStats.EffectLabel(c, stat), 11, Theme.TextSub);
+            effect.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Stepper(row, CharacterStats.Total(c, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
+                onMinus, pending > 0, onPlus, draft.CanAdd(stat));
+            if (line) BottomLine(row, Theme.LineSoft);
         }
 
         /// <summary>방 안에서 하는 행동 (거래·이벤트 선택 등): 이동(금색·푸른색)·귀환(초록)과 구분되는 보라색.</summary>
