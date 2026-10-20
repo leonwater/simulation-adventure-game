@@ -53,6 +53,12 @@ namespace Adventure.Game
         public static readonly Color Green = Hex("6FB37A");
         public static readonly Color Orange = Hex("E8954A");
 
+        // 아래층으로 내려가기 (진홍)
+        public static readonly Color DescendBg = Hex("2A1418");
+        public static readonly Color DescendBorder = Hex("B0384A");
+        public static readonly Color DescendText = Hex("F2A8B2");
+        public static readonly Color DescendSub = Hex("C98A93");
+
         /// <summary>난이도 글자색: 쉬움 파랑 · 보통 초록 · 어려움 주황 · 하드코어 빨강.</summary>
         public static Color DifficultyColor(Adventure.Core.Difficulty d)
         {

@@ -160,7 +160,7 @@ namespace Adventure.Game
             if (room.Type == RoomType.Boss && run.BossDefeated)
             {
                 if (S.CanDescend)
-                    ScreenKit.GoButton(parent, "아래층으로 내려간다", (run.Floor + 1) + "층 · " + MonsterDb.ThemeFor(run.Floor + 1).Name + " · 현재 HP 유지", Descend);
+                    DescendButton(parent, "아래층으로 내려간다", (run.Floor + 1) + "층 · " + MonsterDb.ThemeFor(run.Floor + 1).Name + " · 현재 HP 유지", Descend);
                 var home = ReturnButton(parent, "마을로 귀환한다", S.InTutorialRun ? "첫 모험은 여기까지 · 획득한 것은 모두 유지"
                     : run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
                 Anchors.Set("dungeon.home", home);
@@ -179,6 +179,15 @@ namespace Adventure.Game
                 if (first && !o.Room.Visited) Anchors.Set("dungeon.choice0", b);
                 first = false;
             }
+        }
+
+        /// <summary>아래층으로: 이동(금색·푸른색)·귀환(초록)·행동(보라)과 겹치지 않는 진홍색 (v1.9, 무심코 누르지 않게).</summary>
+        private static RectTransform DescendButton(Transform parent, string title, string sub, System.Action onClick)
+        {
+            var b = UI.ButtonCard(parent, onClick, Theme.DescendBg, Theme.DescendBorder, 12, UI.Pad(14, 8), true, 2, 60, TextAnchor.MiddleLeft);
+            UI.Label(b, title, 15, Theme.DescendText, true);
+            UI.Label(b, sub, 12, Theme.DescendSub);
+            return b;
         }
 
         /// <summary>귀환 관련 선택지: 이동 선택지(금색·푸른색)와 다른 초록 계열.</summary>
@@ -213,10 +222,11 @@ namespace Adventure.Game
         }
 
         /// <summary>방 결과 카드: 제목 크게, 설명과 얻은 것은 한 줄씩.</summary>
+        /// <summary>방 결과 카드: 이동 선택지(금색)와 헷갈리지 않게 중립색 (v1.9).</summary>
         private static void NoticeCard(Transform parent, RoomNotice n)
         {
-            var card = UI.Card(parent, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 12), true, 4);
-            UI.Label(card, n.Title, 17, Theme.Gold, true);
+            var card = UI.Card(parent, Theme.Card, Theme.ButtonBorder, 12, UI.Pad(14, 12), true, 4);
+            UI.Label(card, n.Title, 17, Theme.Text, true);
             foreach (var line in n.Lines)
             {
                 var t = UI.Label(card, line, 15, Theme.Text);
