@@ -205,6 +205,14 @@ namespace Adventure.Core
 
         public static string Gold(long g) => g.ToString("#,0") + " G";
 
+        /// <summary>머리줄 골드 (좁은 칸에서 잘리지 않게): 99,999까지 그대로, 10만부터 "12.3만", 1억부터 "1.2억".</summary>
+        public static string GoldCompact(long g)
+        {
+            if (g < 100000) return g.ToString("#,0");
+            if (g < 100000000) return (g / 10000.0).ToString(g < 1000000 ? "0.#" : "0") + "만";
+            return (g / 100000000.0).ToString("0.#") + "억";
+        }
+
         /// <summary>마지막 글자에 받침이 있는지 (한글이 아니면 읽는 소리 기준으로 대략 판단).</summary>
         public static bool HasBatchim(string word, out bool rieul)
         {

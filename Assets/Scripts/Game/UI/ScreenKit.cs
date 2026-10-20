@@ -43,7 +43,7 @@ namespace Adventure.Game
             var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(12, 12, 6, 6), false, 0, TextAnchor.MiddleCenter, "topbar");
             UI.Size(bar, height: 57);
             var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
-            UI.Size(left, width: 120);
+            UI.Size(left, width: 130);
             if (onBack != null)
             {
                 var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
@@ -52,7 +52,7 @@ namespace Adventure.Game
             }
             var t = UI.Label(bar, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
             UI.Size(t, flexW: 1);
-            GoldAndSettings(bar, c, 120);
+            GoldAndSettings(bar, c, 130);
             BottomLine(bar);
         }
 
@@ -60,10 +60,12 @@ namespace Adventure.Game
         public static void GoldAndSettings(Transform bar, Character c, float width = -1)
         {
             var right = UI.Row(bar, 6, null, TextAnchor.MiddleRight, "gold-settings");
-            if (width > 0) UI.Size(right, width: width, flexW: 0); // 왼쪽 칸(120)과 같은 폭이라 제목이 가운데
+            if (width > 0) UI.Size(right, width: width, flexW: 0); // 왼쪽 칸과 같은 폭이라 제목이 가운데
             if (width > 0) UI.HSpacer(right);
             UI.Icon(right, "gold", 18);
-            UI.Label(right, Names.Gold(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            // 큰 금액도 잘리지 않게 줄여 쓰고(12.3만), 글자 폭만큼은 꼭 차지한다
+            var gold = UI.Label(right, Names.GoldCompact(c.Gold), 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            UI.Size(gold, flexW: 0).minWidth = gold.preferredWidth;
             var gear = UI.ButtonCard(right, () => SettingsPanel.Open(), Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 40, TextAnchor.MiddleCenter);
             UI.Size(gear, width: 40, height: 40);
             UI.Icon(gear, "settings", 22);

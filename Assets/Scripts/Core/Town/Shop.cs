@@ -191,6 +191,18 @@ namespace Adventure.Core
             return true;
         }
 
+        /// <summary>여러 칸을 한 번에 판다 (칸마다 전부). 받은 골드 합계를 돌려준다.</summary>
+        public static long SellMany(Character c, IEnumerable<string> uids)
+        {
+            long before = c.Gold;
+            foreach (var uid in uids)
+            {
+                var item = c.Inventory.Find(uid);
+                if (item != null) Sell(c, uid, item.Count, out _);
+            }
+            return c.Gold - before;
+        }
+
         /// <summary>가방의 아이템을 판다 (장착 중인 장비는 팔 수 없음).</summary>
         public static bool Sell(Character c, string uid, int count, out string error)
         {

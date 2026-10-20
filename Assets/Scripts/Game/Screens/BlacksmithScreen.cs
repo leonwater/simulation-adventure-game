@@ -53,7 +53,7 @@ namespace Adventure.Game
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
                 UI.Label(col, UI.GradeTag(item.Grade) + " " + item.DisplayName, 14, Theme.GradeColor(item.Grade), true);
-                UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + Names.Of(item.Gear) + " · " + item.StatLine());
+                UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + ItemGrid.GearText(item) + " · " + item.StatLine());
                 UI.Label(row, "+" + item.Enhance, 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             }
             if (gear.Count == 0) UI.Sub(list, "강화할 장비가 없습니다.");
@@ -67,7 +67,7 @@ namespace Adventure.Game
             var head = UI.Row(card);
             var n = UI.Label(head, item.DisplayName, 16, Theme.GradeColor(item.Grade), true);
             UI.Size(n, flexW: 1);
-            UI.Label(head, UI.GradeTag(item.Grade) + " " + UI.Color(Names.Of(item.Gear), Theme.SubHex), 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            UI.Label(head, UI.GradeTag(item.Grade) + " " + UI.Color(ItemGrid.GearText(item), Theme.SubHex), 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             ScreenKit.CompareLine(card, C, item);
             if (item.Enhance >= GameBalance.MaxEnhance)
             {

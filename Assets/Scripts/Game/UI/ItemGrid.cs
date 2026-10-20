@@ -109,17 +109,23 @@ namespace Adventure.Game
             }
         }
 
+        /// <summary>장비 상세에 쓰는 종류: "방어구 · 투구", "장신구 · 반지", "무기".</summary>
+        public static string GearText(ItemInstance item)
+        {
+            var cat = Category(item);
+            return cat == ItemCategory.Weapon ? CategoryName(cat) : CategoryName(cat) + " · " + Names.Of(item.Gear);
+        }
+
         /// <summary>장비는 등급 색, 그 외는 기본 글자색.</summary>
         public static Color NameColor(ItemInstance item) => item.Kind == ItemKind.Equipment ? Theme.GradeColor(item.Grade) : Theme.Text;
 
-        /// <summary>종류 줄: 색 원 + 종류 (장비는 부위, 스킬서는 등급).</summary>
+        /// <summary>종류 줄: 색 원 + 종류 (장비는 무기·방어구·장신구, 스킬서는 등급).</summary>
         public static void KindLine(Transform parent, ItemInstance item, float size)
         {
             var cat = Category(item);
             var row = UI.Row(parent, 4, null, TextAnchor.MiddleLeft, "kind");
             Circle(row, CategoryColor(cat), size * 0.8f);
-            string text = item.Kind == ItemKind.Equipment ? Names.Of(item.Gear)
-                : item.Kind == ItemKind.SkillBook && SkillDb.Get(item.SkillId) != null ? "스킬서 · " + Names.Of(SkillDb.Get(item.SkillId).Tier)
+            string text = item.Kind == ItemKind.SkillBook && SkillDb.Get(item.SkillId) != null ? "스킬서 · " + Names.Of(SkillDb.Get(item.SkillId).Tier)
                 : CategoryName(cat);
             UI.Label(row, text, size, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
         }

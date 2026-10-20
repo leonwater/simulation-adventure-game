@@ -1,19 +1,30 @@
 using System;
+using System.Collections.Generic;
 using Adventure.Core;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Adventure.Game
 {
-    /// <summary>상점: 상점 주인 일러스트·대사, 구매 탭(갱신·장비·소모품) / 판매 탭(가방 물건을 구매와 같은 카드로).</summary>
+    /// <summary>
+    /// 상점: 상점 주인 일러스트·대사, 구매 탭(갱신·장비·소모품) / 판매 탭(가방 물건을 구매와 같은 카드로).
+    /// 판매 탭은 카드를 길게 누르거나 '여러 개 선택'을 누르면 선택 모드가 되어 여러 칸을 한 번에 판다 (v1.8).
+    /// </summary>
     public class ShopScreen : ScreenBase
     {
         private Text _timer;
         private int _tab;
+        /// <summary>판매 선택 모드에서 고른 칸 (null = 선택 모드가 아님).</summary>
+        private HashSet<string> _selected;
         private string _line = "어서 오시게, 손님. 좋은 물건이 많다네. 골드만 있다면야 뭐든지!";
 
         public override bool OnBack()
         {
+            if (_selected != null)
+            {
+                SetSelecting(false);
+                return true;
+            }
             Go(new TownScreen());
             return true;
         }
@@ -30,12 +41,14 @@ namespace Adventure.Game
             ScreenKit.Tabs(page, new[] { "구매", "판매" }, _tab, i =>
             {
                 _tab = i;
+                _selected = null;
                 Rebuild();
             });
             Anchors.Set("shop.sell", Anchors.Get("tab.1"));
             var inner = UI.Scroll(page, out _, 14, UI.Pad(16, 16, 12, 16), "shop" + _tab);
             if (_tab == 0) BuyTab(inner, shop);
             else SellTab(inner);
+            if (_selected != null) SellBar(page);
 
             var ticker = root.gameObject.AddComponent<Ticker>();
             ticker.Interval = 1f;
@@ -88,10 +101,33 @@ namespace Adventure.Game
             var head = UI.Row(inner, 8);
             var t = UI.Label(head, "가방 " + UI.Color(C.Inventory.UsedCells + " / " + C.Inventory.Capacity, Theme.SubHex), 14, Theme.Text, true);
             UI.Size(t, flexW: 1);
-            var junk = UI.TextButton(head, "재료 모두 팔기", SellMaterials, ButtonKind.Ghost, 40, 13);
-            UI.SetEnabled(junk, C.Inventory.Items.Exists(i => i.Kind == ItemKind.Material));
-            UI.Sub(inner, "카드를 누르면 팔 수 있습니다. 장착 중인 장비는 가방에 없으므로 팔리지 않습니다.");
-            if (C.Inventory.Items.Count == 0)
+            bool any = C.Inventory.Items.Count > 0;
+            if (_selected == null)
+            {
+                var multi = UI.TextButton(head, "여러 개 선택", () => SetSelecting(true), ButtonKind.Outline, 40, 13);
+                UI.SetEnabled(multi, any);
+                var junk = UI.TextButton(head, "재료 모두 팔기", SellMaterials, ButtonKind.Ghost, 40, 13);
+                UI.SetEnabled(junk, C.Inventory.Items.Exists(i => i.Kind == ItemKind.Material));
+                UI.Sub(inner, "카드를 누르면 팔 수 있고, 길게 누르면 여러 개를 골라 한 번에 팝니다. 장착 중인 장비는 팔리지 않습니다.");
+            }
+            else
+            {
+                bool all = _selected.Count == C.Inventory.Items.Count;
+                UI.TextButton(head, all ? "모두 해제" : "모두 선택", () =>
+                {
+                    if (all) _selected.Clear();
+                    else foreach (var i in C.Inventory.Items) _selected.Add(i.Uid);
+                    Rebuild();
+                }, ButtonKind.Ghost, 40, 13);
+                UI.TextButton(head, "장비만 선택", () =>
+                {
+                    _selected.Clear();
+                    foreach (var i in C.Inventory.Items) if (i.Kind == ItemKind.Equipment) _selected.Add(i.Uid);
+                    Rebuild();
+                }, ButtonKind.Ghost, 40, 13);
+                UI.Sub(inner, "팔 물건을 누르세요. 여러 개 쌓인 칸은 전부 팝니다.");
+            }
+            if (!any)
             {
                 UI.Sub(inner, "가방이 비어 있습니다.");
                 return;
@@ -103,12 +139,76 @@ namespace Adventure.Game
         private void SellCell(Transform grid, ItemInstance item)
         {
             var it = item;
-            var cell = UI.ButtonCard(grid, () => SellDialog(it), Theme.Card, Theme.CardBorder, 10, UI.Pad(10, 10), true, 5, 104, TextAnchor.UpperLeft);
+            bool sel = _selected != null && _selected.Contains(item.Uid);
+            var cell = UI.ButtonCard(grid, null, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(10, 10), true, 5, 104, TextAnchor.UpperLeft);
+            LongPress.Add(cell, () =>
+            {
+                if (_selected == null) _selected = new HashSet<string>();
+                _selected.Add(it.Uid);
+                Rebuild();
+            }, () =>
+            {
+                if (_selected == null)
+                {
+                    SellDialog(it);
+                    return;
+                }
+                if (!_selected.Remove(it.Uid)) _selected.Add(it.Uid);
+                Rebuild();
+            });
             ItemGrid.KindLine(cell, item, 12);
             UI.Label(cell, ItemGrid.Short(item.DisplayName, 6) + (item.Count > 1 ? " ×" + item.Count : ""), 13, ItemGrid.NameColor(item), true, TextAnchor.MiddleLeft, false, false);
             if (item.Kind == ItemKind.Equipment) UI.Label(cell, ItemGrid.LevelCompare(C, item, false), 12, Theme.TextSub);
             UI.Spacer(cell);
             UI.Label(cell, (item.SellPrice * item.Count).ToString("#,0") + " G", 14, Theme.Gold, true);
+            if (sel) Check(cell);
+        }
+
+        /// <summary>선택된 칸 오른쪽 위 체크 표시 (배치 무시).</summary>
+        private static void Check(RectTransform cell)
+        {
+            var mark = UI.Label(cell, "✓", 16, Theme.OnAccent, true, TextAnchor.MiddleCenter, false, false);
+            var bg = UI.Image(cell, Theme.Accent, 0, "check");
+            bg.sprite = Sprites.Circle;
+            foreach (var rt in new[] { bg.rectTransform, mark.rectTransform })
+            {
+                rt.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+                rt.anchorMin = rt.anchorMax = new Vector2(1, 1);
+                rt.pivot = new Vector2(1, 1);
+                rt.sizeDelta = new Vector2(22, 22);
+                rt.anchoredPosition = new Vector2(-6, -6);
+            }
+            mark.transform.SetAsLastSibling();
+        }
+
+        private void SetSelecting(bool on)
+        {
+            _selected = on ? new HashSet<string>() : null;
+            Rebuild();
+        }
+
+        /// <summary>선택 모드 아래 고정 줄: "N개 선택 · 합계" + 취소 · 판매.</summary>
+        private void SellBar(Transform page)
+        {
+            long total = 0;
+            foreach (var i in C.Inventory.Items) if (_selected.Contains(i.Uid)) total += (long)i.SellPrice * i.Count;
+            var bar = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 10, 10), false, 8, TextAnchor.MiddleLeft, "sell-bar");
+            ScreenKit.TopLine(bar);
+            var info = UI.Column(bar, 2);
+            UI.Size(info, flexW: 1);
+            UI.Label(info, _selected.Count + "칸 선택", 14, Theme.Text, true);
+            UI.Label(info, "합계 " + total.ToString("#,0") + " G", 13, Theme.Gold, true);
+            UI.TextButton(bar, "취소", () => SetSelecting(false), ButtonKind.Ghost, 44, 14, 64);
+            var sell = UI.TextButton(bar, "판매", () => Overlay.Confirm("한 번에 판매", _selected.Count + "칸을 " + total.ToString("#,0") + "G에 팝니다.", "판매", () =>
+            {
+                long got = ShopSystem.SellMany(C, _selected);
+                _selected = null;
+                _line = "흠, 이 정도면 값을 쳐 주지. 거래 고맙네.";
+                S.Save();
+                Toast(got.ToString("#,0") + "G를 받았다");
+                Rebuild();
+            }), ButtonKind.Primary, 44, 14, 84);
+            UI.SetEnabled(sell, _selected.Count > 0);
         }
 
         private void ConfirmReroll()
@@ -140,7 +240,7 @@ namespace Adventure.Game
         {
             var body = Overlay.Modal(item.Name);
             var modal = Overlay.Top;
-            UI.Label(body, UI.GradeTag(item.Grade) + " " + Names.Of(item.Gear), 13, Theme.Text);
+            UI.Label(body, UI.GradeTag(item.Grade) + " " + ItemGrid.GearText(item), 13, Theme.Text);
             UI.Label(body, item.StatLine(), 14, Theme.Text);
             ScreenKit.CompareLine(body, C, item);
             string reason = EquipmentSystem.CannotEquipReason(C, item);
@@ -284,7 +384,7 @@ namespace Adventure.Game
         {
             var body = Overlay.Modal(item.DisplayName);
             var modal = Overlay.Top;
-            if (item.Kind == ItemKind.Equipment) UI.Label(body, UI.GradeTag(item.Grade) + " " + Names.Of(item.Gear), 13, Theme.Text);
+            if (item.Kind == ItemKind.Equipment) UI.Label(body, UI.GradeTag(item.Grade) + " " + ItemGrid.GearText(item), 13, Theme.Text);
             UI.Label(body, item.StatLine(), 14, Theme.Text);
             if (S.Data.Guild.Active.Exists(q => q.MaterialId == item.TemplateId))
                 UI.Label(body, "진행 중인 채집 퀘스트에 필요한 재료입니다.", 13, Theme.Gold);
