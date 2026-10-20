@@ -24,13 +24,11 @@ namespace Adventure.Core
         public readonly int HpPerVitality;
         /// <summary>기본 공격 피해 배율 (마법사 60%).</summary>
         public readonly double BasicAttackMultiplier;
-        public readonly string WeaponName;
-        public readonly string Concept;
         /// <summary>Lv.1 능력치: 체력, 공격, 특화, 정신, 행운.</summary>
         private readonly int[] _start;
 
         private JobData(Job job, string name, Stat attack, Stat special, int[] start, int[] ratio, int hpCoef,
-            double basicMult, string weapon, string concept)
+            double basicMult)
         {
             Job = job;
             Name = name;
@@ -42,20 +40,18 @@ namespace Adventure.Core
             AutoRatio = ratio;
             HpPerVitality = hpCoef;
             BasicAttackMultiplier = basicMult;
-            WeaponName = weapon;
-            Concept = concept;
         }
 
         private static readonly JobData[] All =
         {
             new JobData(Job.Warrior, "전사", Stat.Strength, Stat.Toughness, new[] { 16, 12, 10, 5, 5 },
-                new[] { 30, 40, 20, 0, 10 }, 12, 1.0, "검", "높은 HP, 한 방이 큰 스킬"),
+                new[] { 30, 40, 20, 0, 10 }, 12, 1.0),
             new JobData(Job.Archer, "궁수", Stat.Agility, Stat.Precision, new[] { 10, 13, 10, 6, 8 },
-                new[] { 30, 40, 20, 0, 10 }, 10, 1.0, "활", "짧은 재사용, 여러 번 때리기"),
+                new[] { 30, 40, 20, 0, 10 }, 10, 1.0),
             new JobData(Job.Rogue, "도적", Stat.Agility, Stat.Finesse, new[] { 10, 12, 12, 5, 9 },
-                new[] { 25, 40, 25, 0, 10 }, 9, 1.0, "단검", "스킬로 치명타 내기"),
+                new[] { 25, 40, 25, 0, 10 }, 9, 1.0),
             new JobData(Job.Mage, "마법사", Stat.Intelligence, Stat.SpellPower, new[] { 8, 14, 10, 9, 6 },
-                new[] { 30, 40, 20, 10, 0 }, 8, GameBalance.MageBasicAttack, "지팡이", "낮은 HP, 강한 화력과 다양한 범위 공격"),
+                new[] { 30, 40, 20, 10, 0 }, 8, GameBalance.MageBasicAttack),
         };
 
         public static JobData Get(Job job) => All[(int)job];

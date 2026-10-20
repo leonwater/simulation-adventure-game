@@ -145,15 +145,10 @@ namespace Adventure.Game
                 {
                     _job = jj;
                     Rebuild();
-                }, on ? Theme.AccentBg : Theme.Card, on ? Theme.Accent : Theme.ButtonBorder, 12, UI.Pad(14, 10), true, 3, 76);
-                var top = UI.Row(card, 8);
-                UI.Icon(top, UI.JobIcon(j), 26).color = on ? Theme.Gold : Theme.Text;
-                var n = UI.Label(top, data.Name, 17, on ? Theme.Gold : Theme.Text, true);
-                UI.Size(n, flexW: 1);
-                UI.Label(top, data.WeaponName, 12, Theme.TextSub, false, TextAnchor.MiddleRight, false, false);
-                // 직업 설명은 크고 진하게, 그 아래 주요 능력치
-                if (!string.IsNullOrEmpty(data.Concept)) UI.Label(card, data.Concept, 15, Theme.Text, true);
-                UI.Label(card, "주요 능력치 " + UI.Color(string.Join(" · ", Array.ConvertAll(data.MainStats, s => Names.Of(s))), Theme.GoldHex), 13, Theme.TextBody);
+                }, on ? Theme.AccentBg : Theme.Card, on ? Theme.Accent : Theme.ButtonBorder, 12, UI.Pad(14, 0), false, 10, 60, TextAnchor.MiddleLeft);
+                // 직업 칸은 아이콘과 이름만 (v1.9)
+                UI.Icon(card, UI.JobIcon(j), 28).color = on ? Theme.Gold : Theme.Text;
+                UI.Label(card, data.Name, 17, on ? Theme.Gold : Theme.Text, true, TextAnchor.MiddleLeft, false, false);
             }
             Nav(body, "다음");
         }

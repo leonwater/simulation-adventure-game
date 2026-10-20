@@ -54,7 +54,8 @@ namespace Adventure.Game
             var modal = Overlay.Top;
             Overlay.SetBack(() => Overlay.Close(modal));
 
-            var card = UI.Card(body, Theme.Bg, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
+            // 줄 사이를 넉넉히 (v1.9: 위아래로 늘림)
+            var card = UI.Card(body, Theme.Bg, Theme.CardBorder, 12, UI.Pad(16, 18), true, 14);
             UI.Label(card, c.Name, 20, Theme.Text, true);
             ScreenKit.JobLine(card, c.Job, c.JobData.Name + " · Lv." + c.Level, 13, Theme.TextSub);
             UI.Divider(card);
@@ -78,14 +79,14 @@ namespace Adventure.Game
 
         private static void Pair(Transform parent, string k1, string v1, string k2, string v2)
         {
-            var row = UI.Row(parent, 8);
+            var row = UI.Row(parent, 8, UI.Pad(0, 0, 4, 4));
             Cell(row, k1, v1);
             Cell(row, k2, v2);
         }
 
         private static void Cell(Transform row, string key, string value)
         {
-            var col = UI.Column(row, 2);
+            var col = UI.Column(row, 4);
             UI.Size(col, width: 0, flexW: 1); // 두 칸을 같은 폭으로
             UI.Sub(col, key);
             UI.Label(col, value, 14, Theme.Text, true);
