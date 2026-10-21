@@ -11,7 +11,7 @@ namespace Adventure.Tests
         public void RoomTypes_FollowMinMaxRules()
         {
             var rng = new Rng(100);
-            int merchants = 0;
+            int merchants = 0, treasures = 0;
             const int runs = 5000;
             for (int i = 0; i < runs; i++)
             {
@@ -19,13 +19,15 @@ namespace Adventure.Tests
                 Assert.That(t.Count, Is.InRange(8, 13));
                 Assert.GreaterOrEqual(Count(t, RoomType.Battle), 4);
                 Assert.GreaterOrEqual(Count(t, RoomType.Event), 1);
-                Assert.That(Count(t, RoomType.Treasure), Is.InRange(1, 2));
+                Assert.That(Count(t, RoomType.Treasure), Is.InRange(0, 2));
                 Assert.That(Count(t, RoomType.Rest), Is.InRange(1, 3));
                 Assert.AreEqual(1, Count(t, RoomType.Return));
                 Assert.LessOrEqual(Count(t, RoomType.Merchant), 1);
                 Assert.AreEqual(0, Count(t, RoomType.Boss));
                 merchants += Count(t, RoomType.Merchant);
+                treasures += Count(t, RoomType.Treasure);
             }
+            Assert.That(treasures / (double)runs, Is.InRange(0.65, 0.90), "보물 방은 층당 평균 약 0.75개 (v2.3)");
             Assert.That(merchants / (double)runs, Is.InRange(0.56, 0.64), "상인 등장 확률 60%");
         }
 
@@ -256,8 +258,8 @@ namespace Adventure.Tests
             var ceiling = EventDb.Get("ceiling");
             var warrior = Character.Create("a", Job.Warrior);
             var mage = Character.Create("a", Job.Mage);
-            Assert.AreEqual(3, EventRules.VisibleChoices(ceiling, warrior).Count);
-            Assert.AreEqual(2, EventRules.VisibleChoices(ceiling, mage).Count);
+            Assert.AreEqual(4, EventRules.VisibleChoices(ceiling, warrior).Count);
+            Assert.AreEqual(3, EventRules.VisibleChoices(ceiling, mage).Count);
             Assert.AreEqual(4, EventRules.VisibleChoices(EventDb.Get("chest"), Character.Create("a", Job.Archer)).Count);
             Assert.AreEqual(3, EventRules.VisibleChoices(EventDb.Get("gamble"), Character.Create("a", Job.Rogue)).Count);
             Assert.AreEqual(4, EventRules.VisibleChoices(EventDb.Get("tablet"), mage).Count);

@@ -29,6 +29,8 @@ namespace Adventure.Core
         public List<string> TipsShown = new List<string>();
         /// <summary>마지막으로 확인한 상점 갱신 시각 (알림 점용).</summary>
         public long ShopSeenTicks;
+        /// <summary>보스를 잡고 돌아와 길드에 새 층 의뢰가 붙었는데 아직 길드에 가 보지 않은 층 (0 = 없음, v2.3).</summary>
+        public int GuildNewFloor;
         /// <summary>스킬 화면에서 확인한 스킬 (새 스킬 알림 점용).</summary>
         public List<string> SeenSkills;
     }

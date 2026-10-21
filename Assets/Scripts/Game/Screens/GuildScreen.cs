@@ -20,6 +20,13 @@ namespace Adventure.Game
 
         public override void Build(RectTransform root)
         {
+            // 보스를 잡아 새 층 의뢰가 붙었으면 접수원이 알려 주고 마을의 빨간 점이 꺼진다 (v2.3)
+            if (S.GuildNewQuests)
+            {
+                _line = S.Data.GuildNewFloor + "층 의뢰가 새로 들어왔어요! 게시판을 확인해 보세요.";
+                _tab = 0;
+                S.MarkGuildSeen();
+            }
             var page = ScreenKit.Page(root);
             ScreenKit.TopBar(page, "길드", "마을", () => Go(new TownScreen()), C);
             // 창고 탭에서는 접수원이 수수료를 알려 준다 (v1.9: 창고 탭의 설명 문구 대신)
@@ -73,7 +80,7 @@ namespace Adventure.Game
             var col = UI.Column(card, 1);
             UI.Size(col, flexW: 1);
             UI.Label(col, q.Title, 14, Theme.Text, true);
-            UI.Label(col, (active ? "진행 중 · " + GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + GuildSystem.GoalText(q)),
+            UI.Label(col, (active ? "목표 " + q.TargetFloor + "층 · 진행 중 " + GuildSystem.ProgressText(q, C) : "목표 " + q.TargetFloor + "층 · " + GuildSystem.GoalText(q)),
                 12, done ? Theme.Gold : Theme.TextSub);
             // 보상은 카드에 바로 (골드 · 경험치)
             UI.Label(col, "보상 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · " + UI.Color("경험치 " + q.RewardExp.ToString("#,0"), "#8FC7FF"), 12, Theme.TextBody);

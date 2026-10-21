@@ -55,8 +55,9 @@ namespace Adventure.Core
         public static readonly double[] BadgeBonus = { 0.00, 0.02, 0.04, 0.06, 0.09, 0.12, 0.16, 0.20 };
         /// <summary>등급별 스킬 장착 슬롯 (2단계마다 +1).</summary>
         public static readonly int[] SkillSlots = { 3, 3, 4, 4, 5, 5, 6, 6 };
-        public const int StorageBase = 20;
-        public const int StoragePerRank = 5;
+        /// <summary>창고: 시작 4칸, 등급마다 +2칸 (v2.3, 이미 넘게 맡긴 물건은 그대로 두고 새로 맡기는 것만 막는다).</summary>
+        public const int StorageBase = 4;
+        public const int StoragePerRank = 2;
         /// <summary>창고 보관 수수료 (1회, 한 칸 기준) = 10 + 돌파 층 × 5. 찾을 때는 무료.</summary>
         public static int StorageFee(int highestFloor) => 10 + highestFloor * 5;
 
@@ -154,7 +155,7 @@ namespace Adventure.Core
         public const int ShopGoodsSlots = 6;
         public static readonly TimeSpan ShopRefreshInterval = TimeSpan.FromMinutes(30);
         public const int ShopRerollBaseCost = 100; // 즉시 갱신 비용, 갱신할 때마다 2배, 자동 갱신 시 초기화
-        public const double MerchantPriceMultiplier = 1.2;
+        public const double MerchantPriceMultiplier = 1.5;
         /// <summary>상인의 보답 (구해 준 상인의 가게).</summary>
         public const double MerchantDiscountMultiplier = 0.7;
         /// <summary>던전 상인 물건마다 살 수 있는 최대 개수.</summary>
@@ -182,9 +183,11 @@ namespace Adventure.Core
         public const double RestHealRatio = 0.40;
 
         // 방 최소/최대 개수 (보스·시작 제외). 최대 -1 = 제한 없음.
-        public const int MinBattle = 4, MinEvent = 1, MinTreasure = 1, MaxTreasure = 2, MinRest = 1, MaxRest = 3;
+        public const int MinBattle = 4, MinEvent = 1, MaxTreasure = 2, MinRest = 1, MaxRest = 3;
+        /// <summary>보물 방은 필수가 아니다: 첫 보물 방은 이 확률로만 넣고, 나머지는 가중치로 (v2.3, 층당 평균 약 0.75개).</summary>
+        public const double FirstTreasureChance = 0.65;
         // 남은 칸 가중치
-        public const int WeightBattle = 50, WeightEvent = 30, WeightTreasure = 10, WeightRest = 10;
+        public const int WeightBattle = 50, WeightEvent = 30, WeightTreasure = 5, WeightRest = 10;
 
         public const double EliteChance = 0.12;
 
@@ -229,7 +232,7 @@ namespace Adventure.Core
 
         // ── 드롭 ───────────────────────────────────────────────
         public const double SkillBookDropNormal = 0.01, SkillBookDropElite = 0.05, SkillBookDropBoss = 0.20;
-        public const double EquipDropNormal = 0.08, EquipDropElite = 0.30, EquipDropBoss = 1.0;
+        public const double EquipDropNormal = 0.04, EquipDropElite = 0.25, EquipDropBoss = 1.0;
         public const double StoneDropNormal = 0.05, StoneDropElite = 0.20;
         public const int StoneDropBoss = 2;
         public const double MaterialDrop = 0.55;
@@ -251,10 +254,10 @@ namespace Adventure.Core
         public const double MageBasicAttack = 0.60;
 
         /// <summary>이벤트 판정 = 72% + (능력치 − 요구치) × 1% + 행운 × 0.5%, 40~85% (대부분 70~80%).</summary>
-        public const double EventBase = 0.72;
+        public const double EventBase = 0.62;
         public const double EventPerStatPoint = 0.01;
-        public const double EventMin = 0.40;
-        public const double EventMax = 0.85;
+        public const double EventMin = 0.30;
+        public const double EventMax = 0.75;
 
         public static double HitChance(double stat, double requirement, double bonus = 0) =>
             Clamp(BaseHit + (stat - requirement) * HitPerStatPoint + bonus, MinHit, MaxHit);

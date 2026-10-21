@@ -27,14 +27,6 @@ namespace Adventure.Game
                 var nl = UI.Label(notice, "남은 능력치 포인트 " + C.UnspentPoints + " — 캐릭터 화면에서 배분하세요", 13, Theme.Gold);
                 UI.Size(nl, flexW: 1);
             }
-            // 보스를 잡고 돌아오면 다음 층 의뢰가 게시판에 붙는다
-            int next = C.MaxChallengeFloor;
-            if (S.LastReturn != null && S.LastReturn.BossCleared && S.Data.Guild.Board.Exists(q => q.TargetFloor == next))
-            {
-                var notice = UI.ButtonCard(body, () => Go(new GuildScreen()), Theme.AccentBg, Theme.Accent, 10, UI.Pad(14, 8), false, 8, 44);
-                var nl = UI.Label(notice, S.LastReturn.Floor + "층 돌파! 길드에 " + next + "층 의뢰가 새로 붙었습니다", 13, Theme.Gold);
-                UI.Size(nl, flexW: 1);
-            }
 
             // 시설 2×2 카드 (아이콘 · 이름 · 알림 점)
             var grid = UI.Grid(body, 2, ScreenKit.ContentWidth, 112, 10);

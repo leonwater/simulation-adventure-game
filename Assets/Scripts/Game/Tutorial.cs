@@ -211,7 +211,7 @@ namespace Adventure.Game
                 if (!S.TipShown("dun.go") && Anchors.Get("dungeon.choice0") != null)
                 {
                     S.MarkTip("dun.go");
-                    Do("dungeon.choice0", "갈 길을 직접 골라 보세요. " + H("금색") + "은 새 방, 푸른색은 탐험한 방, " + Good("초록") + "은 귀환, 보라색은 방 안에서 하는 행동이에요.");
+                    Do("dungeon.choice0", "아래 " + H("방향키") + "로 갈 길을 직접 골라 보세요. " + H("금색") + "은 새 방, 푸른색은 탐험한 방, " + Good("초록") + "은 귀환 방, 붉은색은 보스 방, 점선은 막힌 길이에요.");
                 }
             });
         }

@@ -48,19 +48,19 @@ namespace Adventure.Game
             var list = UI.Column(body, 8);
             Anchors.Set("smith.list", list);
             var slots = UI.Grid(list, 4, ScreenKit.ContentWidth, 66, 6);
-            foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot))) GearCell(slots, C.Equipment[slot], Names.Of(slot));
+            foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot))) GearCell(slots, C.Equipment[slot], Names.Of(slot), true);
             UI.Label(list, "가방 장비", 14, Theme.Text, true);
             if (bag.Count > 0)
             {
                 var grid = UI.Grid(list, 4, ScreenKit.ContentWidth, 66, 6);
-                foreach (var i in bag) GearCell(grid, i, Names.Of(i.Gear));
+                foreach (var i in bag) GearCell(grid, i, Names.Of(i.Gear), false);
             }
             else UI.Sub(list, "가방에 장비가 없습니다.");
             Tutorial.OnFacility("blacksmith");
         }
 
-        /// <summary>장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). 고른 칸은 금색, 비어 있으면 '비어 있음'.</summary>
-        private void GearCell(Transform grid, ItemInstance item, string part)
+        /// <summary>장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). 장착한 칸은 등급 색 테두리, 고른 칸은 금색 배경, 비어 있으면 '비어 있음' (v2.3).</summary>
+        private void GearCell(Transform grid, ItemInstance item, string part, bool equipped)
         {
             if (item == null)
             {
@@ -75,7 +75,7 @@ namespace Adventure.Game
             {
                 _selected = item.Uid;
                 Rebuild();
-            }, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(8, 6), true, 0, 66, TextAnchor.UpperLeft);
+            }, sel ? Theme.AccentBg : Theme.Card, equipped ? Theme.GradeColor(item.Grade) : sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(8, 6), true, 0, 66, TextAnchor.UpperLeft);
             UI.Sub(cell, part);
             UI.Spacer(cell);
             var n = UI.Label(cell, item.DisplayName, 12, Theme.GradeColor(item.Grade));
@@ -108,8 +108,6 @@ namespace Adventure.Game
             UI.Label(right, Blacksmith.GoldCost(item).ToString("#,0") + " G", 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
             double down = Blacksmith.DowngradeChance(item);
             if (down > 0) UI.Label(card, "실패하면 " + ScreenKit.Percent(down) + " 확률로 +" + (item.Enhance - 1) + "로 내려갑니다.", 13, Theme.RedLight);
-            else if (Blacksmith.SuccessRate(item) < 1)
-                UI.Sub(card, "실패해도 장비는 그대로이고 " + (Blacksmith.StoneCost(item) > 0 ? "골드·강화석" : "골드") + "만 소모됩니다.");
             int stones = Blacksmith.StoneCost(item);
             int have = C.Inventory.CountOf(ItemDb.EnhanceStoneId);
             if (stones > 0)
@@ -130,15 +128,15 @@ namespace Adventure.Game
             {
                 case EnhanceResult.Success:
                     _line = "좋아, 잘 붙었군! " + item.DisplayName + " 완성이다.";
-                    Toast("강화 성공! " + item.DisplayName);
+                    Overlay.Flash("강화 성공", Theme.Green);
                     break;
                 case EnhanceResult.Failed:
                     _line = "쯧, 이번엔 안 됐네. 장비는 멀쩡하니 다시 해 보게.";
-                    Toast("강화 실패… 장비는 그대로입니다");
+                    Overlay.Flash("강화 실패", Theme.TextSub);
                     break;
                 case EnhanceResult.Downgraded:
                     _line = "이런, 손이 미끄러졌군. 한 단계 깎였지만 부서지진 않았네.";
-                    Toast("강화 실패… " + item.DisplayName + "(으)로 내려갔습니다");
+                    Overlay.Flash("등급 하락", Theme.RedLight);
                     break;
                 default:
                     Toast(err);

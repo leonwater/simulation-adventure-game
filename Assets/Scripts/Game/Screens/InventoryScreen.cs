@@ -31,7 +31,7 @@ namespace Adventure.Game
         public override void Build(RectTransform root)
         {
             var page = ScreenKit.Page(root);
-            if (_fromDungeon) ScreenKit.TopBar(page, "가방", "던전", Back, "HP " + C.CurrentHp + "/" + CharacterStats.MaxHp(C));
+            if (_fromDungeon) ScreenKit.DungeonSubBar(page, "가방", "던전", Back, C, ScreenKit.DungeonPauseMenu);
             else ScreenKit.TopBar(page, "가방", "마을", Back, C);
             var body = UI.Scroll(page, out _, 10, UI.Pad(16, 14), "inventory");
 
@@ -61,7 +61,8 @@ namespace Adventure.Game
         private void SlotCell(Transform grid, EquipSlot slot)
         {
             var item = C.Equipment[slot];
-            var border = item != null && item.IsWeapon ? Theme.Blue : Theme.CardBorder;
+            // 장착한 칸의 테두리는 장비 등급 색 (v2.3)
+            var border = item != null ? Theme.GradeColor(item.Grade) : Theme.CardBorder;
             var cell = UI.ButtonCard(grid, () =>
             {
                 if (item != null) ShowItem(item, slot);
@@ -72,7 +73,7 @@ namespace Adventure.Game
             else UI.Label(cell, item.DisplayName, 12, Theme.GradeColor(item.Grade));
         }
 
-        /// <summary>아이템 팝업 (화면 가운데): 이름·종류·수치·지금 장비와 비교, 착용·해제·사용·읽기·판매/버리기.</summary>
+        /// <summary>아이템 팝업 (화면 가운데): 이름·종류·수치·지금 장비와 비교, 착용·해제·사용·습득·판매/버리기.</summary>
         private void ShowItem(ItemInstance item, EquipSlot? equippedSlot)
         {
             bool equipped = equippedSlot != null;
@@ -127,7 +128,7 @@ namespace Adventure.Game
                     UI.SetEnabled(use, _fromDungeon && def != null && def.HealRatio > 0 && C.CurrentHp < CharacterStats.MaxHp(C));
                     break;
                 case ItemKind.SkillBook:
-                    Action(row, "읽기", ButtonKind.Primary, () =>
+                    Action(row, "습득", ButtonKind.Primary, () =>
                     {
                         if (!SkillSystem.UseSkillBook(C, item.Uid, out string err)) Toast(err);
                         else Toast(SkillDb.Get(item.SkillId).Name + " 스킬을 배웠다! 스킬 화면에서 장착하세요");

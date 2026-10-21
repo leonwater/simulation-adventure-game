@@ -22,7 +22,7 @@ namespace Adventure.Core
             var types = new List<RoomType>();
             for (int i = 0; i < GameBalance.MinBattle; i++) types.Add(RoomType.Battle);
             for (int i = 0; i < GameBalance.MinEvent; i++) types.Add(RoomType.Event);
-            for (int i = 0; i < GameBalance.MinTreasure; i++) types.Add(RoomType.Treasure);
+            if (rng.Chance(GameBalance.FirstTreasureChance)) types.Add(RoomType.Treasure);
             for (int i = 0; i < GameBalance.MinRest; i++) types.Add(RoomType.Rest);
             types.Add(RoomType.Return);
             if (rng.Chance(GameBalance.MerchantChance))

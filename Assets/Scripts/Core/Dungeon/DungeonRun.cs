@@ -56,6 +56,43 @@ namespace Adventure.Core
         public bool Known;       // 방 종류를 알고 있는지 (방문했거나 쉬움 난이도)
     }
 
+    /// <summary>이동 패드의 방향 (v2.3, '던전 이동 UI 시안서'의 십자 4칸). 번호는 칸 순서.</summary>
+    public enum PadDir
+    {
+        Up = 0,
+        Left = 1,
+        Right = 2,
+        Down = 3
+    }
+
+    /// <summary>이동 패드 한 칸. Room이 null이면 길이 없는 '막힘'.</summary>
+    public class PadSlot
+    {
+        public PadDir Dir;
+        public Room Room;
+        /// <summary>방금 들어온 방 ('↩ 온 곳').</summary>
+        public bool IsPrevious;
+        /// <summary>방 종류를 알고 있는지 (방문했거나 쉬움 난이도 · 이벤트로 공개).</summary>
+        public bool Known;
+    }
+
+    /// <summary>
+    /// 지금 방에서 갈 수 있는 길을 위·왼쪽·오른쪽·아래 네 칸에 놓은 것. 격자 대각선(개구멍 지름길)처럼
+    /// 네 방향에 자리가 없는 길은 Extra에 남긴다.
+    /// </summary>
+    public class MovePad
+    {
+        public readonly PadSlot[] Slots = new PadSlot[4];
+        public readonly List<Room> Extra = new List<Room>();
+
+        public MovePad()
+        {
+            for (int i = 0; i < Slots.Length; i++) Slots[i] = new PadSlot { Dir = (PadDir)i };
+        }
+
+        public PadSlot this[PadDir dir] => Slots[(int)dir];
+    }
+
     public enum RoomEnterResult
     {
         Nothing,
@@ -109,6 +146,48 @@ namespace Adventure.Core
             return list;
         }
 
+        /// <summary>
+        /// 이동 패드: 같은 줄·같은 칸에 있는 이웃 방은 그 방향 칸에 놓고, 대각선 지름길은 더 먼 축 방향 칸(자리가 없으면
+        /// 다른 축 칸)에 놓는다. 자리가 없으면 Extra.
+        /// </summary>
+        public static MovePad Pad(DungeonRun run, Difficulty difficulty)
+        {
+            var pad = new MovePad();
+            var cur = run.Current;
+            var diagonal = new List<Room>();
+            foreach (int id in cur.Links)
+            {
+                var r = run.Map.Get(id);
+                int dx = r.X - cur.X, dy = r.Y - cur.Y;
+                if ((dx == 0) == (dy == 0)) { diagonal.Add(r); continue; }
+                var dir = dy < 0 ? PadDir.Up : dy > 0 ? PadDir.Down : dx < 0 ? PadDir.Left : PadDir.Right;
+                if (pad[dir].Room == null) Place(pad, r, dir, run, difficulty);
+                else diagonal.Add(r); // 같은 줄의 먼 방 (자리가 겹침)
+            }
+            foreach (var r in diagonal)
+            {
+                int dx = r.X - cur.X, dy = r.Y - cur.Y;
+                var vertical = dy < 0 ? PadDir.Up : PadDir.Down;
+                var horizontal = dx < 0 ? PadDir.Left : PadDir.Right;
+                bool verticalFirst = Math.Abs(dy) >= Math.Abs(dx);
+                var first = verticalFirst ? vertical : horizontal;
+                var second = verticalFirst ? horizontal : vertical;
+                if (dx == 0 || dy == 0) { pad.Extra.Add(r); continue; }
+                if (pad[first].Room == null) Place(pad, r, first, run, difficulty);
+                else if (pad[second].Room == null) Place(pad, r, second, run, difficulty);
+                else pad.Extra.Add(r);
+            }
+            return pad;
+        }
+
+        private static void Place(MovePad pad, Room r, PadDir dir, DungeonRun run, Difficulty difficulty)
+        {
+            var slot = pad[dir];
+            slot.Room = r;
+            slot.IsPrevious = r.Id == run.PreviousRoomId && r.Id != run.CurrentRoomId;
+            slot.Known = r.Visited || difficulty == Difficulty.Easy || r.Revealed;
+        }
+
         private static int DirectionOrder(Room from, Room to) =>
             to.Y < from.Y ? 0 : to.X < from.X ? 1 : to.X > from.X ? 2 : 3;
 
@@ -139,7 +218,7 @@ namespace Adventure.Core
             if (cur.Type == RoomType.Return)
             {
                 title = "귀환 방";
-                return "바닥에 새겨진 마법진이 은은하게 빛난다. 이곳에서 마을로 돌아갈 수 있다.";
+                return "바닥에 새겨진 마법진이 은은하게 빛난다. 아래 '귀환' 버튼으로 언제든 마을로 돌아갈 수 있다.";
             }
             if (cur.Type == RoomType.Merchant)
             {

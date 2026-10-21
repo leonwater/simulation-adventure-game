@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace Adventure.Game
 {
     /// <summary>
-    /// 던전 탐험: 층·HP, 테마 색 미니맵(누르면 전체 지도 + 순간이동), 상황 텍스트, 경로 선택(새 방 강조 · 탐험한 방 흐리게),
-    /// 층 진입 제목, 전투 뒤 레벨 업 배분, 텔레포트·가방·귀환.
+    /// 던전 탐험: 층·HP, 테마 색 미니맵(누르면 전체 지도 + 순간이동), 상황 텍스트, 아래 고정 이동 방향키(새 방 강조 · 탐험한 방 푸른색),
+    /// 층 진입 제목, 전투 뒤 레벨 업 배분, 가방·귀환. 전투·이벤트·상인은 별도 화면에서 끝낸 뒤 이 화면으로 돌아온다 (v2.3).
     /// </summary>
     public class DungeonScreen : ScreenBase
     {
@@ -50,8 +50,9 @@ namespace Adventure.Game
             UI.Label(box, title, 12, Theme.TextSub, true);
             UI.Label(box, text, 14, Theme.TextBody);
 
-            var choices = UI.Column(body, 8);
-            Choices(choices, run);
+            // 아래 고정 칸: 보스 처치 뒤 선택 · 방 안 행동 · 이동 패드 (스크롤하지 않아 손이 늘 같은 자리에 닿는다, v2.3)
+            var dock = UI.Column(page, 8, UI.Pad(16, 16, 8, 8), TextAnchor.UpperLeft, "dock");
+            Choices(dock, run);
 
             // 아래 고정 줄: 왼쪽 가방 · 가운데 캐릭터 정보 · 오른쪽 귀환 (아이콘 버튼). 순간이동은 미니맵에서.
             var bottom = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 8, 8), false, 8, TextAnchor.MiddleCenter, "bottom");
@@ -165,20 +166,115 @@ namespace Adventure.Game
                     : run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
                 Anchors.Set("dungeon.home", home);
             }
-            // 방 안에서 하는 행동은 보라색 (이동은 금색·푸른색, 귀환은 초록)
+            // 방 안에서 하는 행동은 보라색. 귀환 방은 선택지 없이 글자만 보여 주고, 귀환은 아래 귀환 버튼으로 한다.
             if (room.Type == RoomType.Merchant)
-                ScreenKit.ActionButton(parent, "상인과 거래한다", room.MerchantDiscount ? "소모품 (은인 할인: 마을보다 30% 쌈)" : "소모품 (마을보다 20% 비쌈)", "›", false, Merchant);
-            if (room.Type == RoomType.Return) ReturnButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
+                ScreenKit.ActionButton(parent, "상인과 거래한다", room.MerchantDiscount ? "소모품 (은인 할인: 마을보다 30% 쌈)" : "소모품 (마을보다 50% 비쌈)", "›", false, () => Go(new MerchantScreen()), true, 52);
+
+            var pad = DungeonSystem.Pad(run, S.Difficulty);
+            MovePadView(parent, run, pad);
+            foreach (var r in pad.Extra)
+            {
+                var target = r;
+                string hint = target.Visited ? Names.Of(target.Type) + " · 탐험함" : target.Chain ? "무언가 기다리고 있다 (!)" : "지름길";
+                if (target.Visited) VisitedButton(parent, "지름길로 돌아간다", hint, () => Move(target.Id));
+                else NewRoomButton(parent, "지름길로 간다", hint, () => Move(target.Id));
+            }
+        }
+
+        // ── 이동 패드 (던전 이동 UI 시안서): 위 · 왼쪽 · 오른쪽 · 아래 칸은 늘 같은 자리·같은 크기, 상태는 색과 글자로만 ──
+
+        private const float PadH = 204, CellW = 104, CellH = 56;
+        private static readonly Vector2[] PadPos = { new Vector2(126, 7), new Vector2(10, 73), new Vector2(242, 73), new Vector2(126, 139) };
+        private static readonly string[] PadArrow = { "↑", "←", "→", "↓" };
+        private static readonly string[] PadName = { "위", "왼쪽", "오른쪽", "아래" };
+
+        private void MovePadView(Transform parent, DungeonRun run, MovePad pad)
+        {
+            bool open = DungeonSystem.CanLeave(run);
+            var frame = UI.Card(parent, Theme.MapBg, Theme.CardBorder, 16, UI.Pad(0), true, 0, TextAnchor.UpperLeft, "pad");
+            UI.Size(frame, height: PadH);
+            var area = UI.Rect(frame, "pad-area");
+            area.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            UI.Stretch(area);
 
             bool first = true;
-            foreach (var opt in DungeonSystem.MoveOptions(run, S.Difficulty))
+            for (int i = 0; i < 4; i++)
             {
-                var o = opt;
-                RectTransform b = o.Room.Visited ? VisitedButton(parent, o.Direction, o.Hint, () => Move(o.Room.Id))
-                    : NewRoomButton(parent, o.Direction, o.Hint, () => Move(o.Room.Id));
-                if (first && !o.Room.Visited) Anchors.Set("dungeon.choice0", b);
-                first = false;
+                var slot = pad.Slots[i];
+                var room = slot.Room;
+                string title = PadArrow[i] + " " + PadName[i];
+                Color fill, border, text, sub;
+                string tag;
+                bool glow = false;
+                if (room == null || !open)
+                {
+                    fill = Theme.Hex("1B1813");
+                    border = Theme.Hex("3A3326");
+                    text = sub = Theme.Hex("9C937F");
+                    tag = room == null ? "막힘" : "선택 후 이동";
+                }
+                else
+                {
+                    var shown = room.DisplayType;
+                    bool special = slot.Known && (shown == RoomType.Return || shown == RoomType.Boss);
+                    if (special && shown == RoomType.Return)
+                    {
+                        fill = Theme.ReturnBg; border = Theme.ReturnBorder; text = Theme.ReturnText; sub = Theme.ReturnSub;
+                        tag = "귀환 방";
+                    }
+                    else if (special)
+                    {
+                        fill = Theme.RedBg; border = Theme.Red; text = Theme.RedLight; sub = Theme.RedLight;
+                        tag = "보스 방";
+                    }
+                    else if (room.Visited)
+                    {
+                        fill = Theme.BlueBg; border = Theme.BlueBorder; text = Theme.BlueLight; sub = Theme.BlueText;
+                        tag = slot.IsPrevious ? "방금 온 곳" : "탐험함";
+                    }
+                    else
+                    {
+                        fill = Theme.AccentBg; border = Theme.Accent; text = Theme.Text; sub = Theme.Gold;
+                        tag = room.Chain ? "새 방 (!)" : slot.Known ? "새 방 · " + Names.Of(shown) : "새 방";
+                        glow = true;
+                    }
+                }
+                RectTransform cell;
+                if (room != null && open)
+                {
+                    var target = room;
+                    cell = UI.ButtonCard(area, () => Move(target.Id), fill, border, 12, UI.Pad(4, 4), true, 2, CellH, TextAnchor.MiddleCenter);
+                    if (glow && first) Anchors.Set("dungeon.choice0", cell);
+                    if (glow) first = false;
+                }
+                else cell = UI.Card(area, fill, border, 12, UI.Pad(4, 4), true, 2, TextAnchor.MiddleCenter, "pad-cell");
+                Place(cell, PadPos[i], new Vector2(CellW, CellH));
+                UI.Label(cell, title, 16, text, true, TextAnchor.MiddleCenter, false, false);
+                UI.Label(cell, tag, 12, sub, false, TextAnchor.MiddleCenter, false, false);
+                if (glow) AddGlow(cell);
             }
+
+            // 가운데: 현재 방 표시 (누를 수 없다)
+            var center = UI.Card(area, Theme.MapBg, Theme.ButtonBorder, 12, UI.Pad(4, 4), true, 1, TextAnchor.MiddleCenter, "pad-center");
+            Place(center, new Vector2(126, 73), new Vector2(CellW, CellH));
+            UI.Label(center, "현재 방", 11, Theme.TextSub, false, TextAnchor.MiddleCenter, false, false);
+            UI.Label(center, run.Current.Type == RoomType.Start ? "시작 방" : Names.Of(run.Current.Type) + " 방", 14, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
+        }
+
+        /// <summary>새 방 칸 위쪽에서 빛나는 줄.</summary>
+        private static void AddGlow(RectTransform cell)
+        {
+            var glow = UI.Image(cell, Theme.Gold, 0, "glow");
+            glow.sprite = Sprites.GradientUp;
+            glow.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
+            var rt = glow.rectTransform;
+            rt.anchorMin = new Vector2(0, 1);
+            rt.anchorMax = new Vector2(1, 1);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.localScale = new Vector3(1, -1, 1);
+            rt.sizeDelta = new Vector2(-12, 10);
+            rt.anchoredPosition = new Vector2(0, -6);
+            glow.gameObject.AddComponent<Blink>().Period = 1.6f;
         }
 
         /// <summary>아래층으로: 이동(금색·푸른색)·귀환(초록)·행동(보라)과 겹치지 않는 진홍색 (v1.9, 무심코 누르지 않게).</summary>
@@ -239,17 +335,7 @@ namespace Adventure.Game
         private static RectTransform NewRoomButton(Transform parent, string title, string sub, System.Action onClick)
         {
             var b = ScreenKit.GoButton(parent, title, sub, onClick);
-            var glow = UI.Image(b, Theme.Gold, 0, "glow");
-            glow.sprite = Sprites.GradientUp;
-            glow.gameObject.AddComponent<LayoutElement>().ignoreLayout = true;
-            var rt = glow.rectTransform;
-            rt.anchorMin = new Vector2(0, 1);
-            rt.anchorMax = new Vector2(1, 1);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.localScale = new Vector3(1, -1, 1); // 위가 진하고 아래로 옅어지게
-            rt.sizeDelta = new Vector2(-16, 12);
-            rt.anchoredPosition = new Vector2(0, -7);
-            glow.gameObject.AddComponent<Blink>().Period = 1.6f;
+            AddGlow(b);
             return b;
         }
 
@@ -514,45 +600,12 @@ namespace Adventure.Game
                     Go(new EventScreen());
                     break;
                 case RoomEnterResult.Merchant:
-                    Rebuild();
-                    Merchant();
+                    Go(new MerchantScreen());
                     break;
                 default:
                     if (S.LastLoot != null && S.LastLoot.LevelsGained > 0) _levelUp = true;
                     Rebuild();
                     break;
-            }
-        }
-
-        /// <summary>던전 상인: 물건마다 재고가 정해져 있고, 사면 보유 개수·재고·골드가 바로 바뀐다.</summary>
-        private void Merchant()
-        {
-            var body = Overlay.Modal(S.Run.Current.MerchantDiscount ? "구해 준 상인" : "떠돌이 상인", true);
-            FillMerchant(body);
-        }
-
-        private void FillMerchant(RectTransform body)
-        {
-            UI.Clear(body);
-            UI.Sub(body, "보유 골드 " + Names.Gold(C.Gold) + " · 가방 " + C.Inventory.UsedCells + "/" + C.Inventory.Capacity);
-            var goods = S.Run.Current.MerchantGoods;
-            if (goods.Count == 0) UI.Sub(body, "물건이 모두 팔렸습니다.");
-            foreach (var g in goods)
-            {
-                var good = g;
-                int price = S.MerchantPrice(g.Item);
-                ScreenKit.ChoiceButton(body, g.Item.Name,
-                    ItemDb.Consumable(g.Item.TemplateId)?.Description + " · 보유 " + C.Inventory.CountOf(g.Item.TemplateId) + " · 재고 " + g.Stock,
-                    price + "G", true, () =>
-                    {
-                        if (!S.BuyFromMerchant(good.Item.Uid, 1, out string err))
-                        {
-                            Toast(err);
-                            return;
-                        }
-                        Toast(good.Item.Name + " 구매 · 남은 골드 " + Names.Gold(C.Gold));
-                        FillMerchant(body);
-                    }, C.Gold >= price, 56);
             }
         }
 
@@ -577,18 +630,6 @@ namespace Adventure.Game
             Rebuild(); // 층 진입 제목이 뜬다
         }
 
-        private void Pause()
-        {
-            var body = Overlay.Modal("일시정지");
-            var modal = Overlay.Top;
-            UI.Sub(body, "진행 상황은 방을 하나 끝낼 때마다 자동으로 저장됩니다.");
-            UI.TextButton(body, "계속하기", () => Overlay.Close(modal), ButtonKind.Primary);
-            UI.TextButton(body, "저장하고 타이틀로", () =>
-            {
-                if (Tutorial.Blocks("타이틀로 가기")) return;
-                S.Save();
-                Go(new TitleScreen());
-            }, ButtonKind.Ghost);
-        }
+        private static void Pause() => ScreenKit.DungeonPauseMenu();
     }
 }

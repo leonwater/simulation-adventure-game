@@ -168,13 +168,59 @@ namespace Adventure.Game
             UI.Size(left, flexW: 1);
             UI.Label(left, title, 15, Theme.Text, true);
             if (!string.IsNullOrEmpty(sub)) UI.Sub(left, sub);
+            HpBlock(bar, c, showHpBar);
+            if (onPause != null) PauseButton(bar, onPause);
+            BottomLine(bar);
+        }
+
+        /// <summary>머리줄 오른쪽 HP 칸: 하트 아이콘 + 'HP 현재/최대' 글자, 아래에 막대 (v2.3: 던전 화면과 던전 가방이 같이 쓴다).</summary>
+        public static void HpBlock(Transform bar, Character c, bool showHpBar = true)
+        {
             int max = CharacterStats.MaxHp(c);
             var hp = UI.Column(bar, 3, null, TextAnchor.MiddleRight);
             UI.Size(hp, width: 110, flexW: 0);
-            UI.Label(hp, "HP " + c.CurrentHp + "/" + max, 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+            var line = UI.Row(hp, 4, null, TextAnchor.MiddleRight);
+            UI.Size(line, height: 16);
+            UI.Icon(line, "stat_vitality", 14);
+            UI.Label(line, "HP " + c.CurrentHp + "/" + max, 12, Theme.Text, false, TextAnchor.MiddleRight, false, false);
             if (showHpBar) UI.ProgressBar(hp, (float)c.CurrentHp / max, Theme.Red, 8, 110);
-            if (onPause != null) PauseButton(bar, onPause);
+        }
+
+        /// <summary>던전 안 가방 머리줄: 왼쪽 뒤로 · 가운데 제목 · 오른쪽은 던전 화면과 같은 HP + 일시정지 (v2.3).</summary>
+        public static void DungeonSubBar(Transform parent, string title, string backLabel, Action onBack, Character c, Action onPause)
+        {
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 12, 6, 6), false, 10, TextAnchor.MiddleCenter, "topbar");
+            UI.Size(bar, height: BarHeight);
+            var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
+            UI.Size(left, width: 70);
+            if (onBack != null)
+            {
+                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0, 0), false, 0, 44);
+                Anchors.Set("topbar.back", back);
+                UI.Label(back, "‹ " + backLabel, 14, Theme.Gold, false, TextAnchor.MiddleLeft, false, false);
+            }
+            var t = UI.Label(bar, title, 16, Theme.Text, true, TextAnchor.MiddleCenter);
+            UI.Size(t, flexW: 1);
+            HpBlock(bar, c);
+            PauseButton(bar, onPause);
             BottomLine(bar);
+        }
+
+        /// <summary>던전 일시정지 창 (던전 화면과 던전 안 가방 공통).</summary>
+        public static void DungeonPauseMenu()
+        {
+            var app = GameApp.Instance;
+            var overlay = app.Overlay;
+            var body = overlay.Modal("일시정지");
+            var modal = overlay.Top;
+            UI.Sub(body, "진행 상황은 방을 하나 끝낼 때마다 자동으로 저장됩니다.");
+            UI.TextButton(body, "계속하기", () => overlay.Close(modal), ButtonKind.Primary);
+            UI.TextButton(body, "저장하고 타이틀로", () =>
+            {
+                if (Tutorial.Blocks("타이틀로 가기")) return;
+                app.Session.Save();
+                app.Router.Show(new TitleScreen());
+            }, ButtonKind.Ghost);
         }
 
         public static void PauseButton(Transform parent, Action onPause)
@@ -219,23 +265,25 @@ namespace Adventure.Game
         }
 
         /// <summary>
-        /// 능력치 배분 한 줄 (캐릭터 화면·던전 레벨 업 창 공통): 아이콘 · 이름과 장비·등급 효과로 얻은 추가분((+8), 최대면 금색 '최대') ·
+        /// 능력치 배분 한 줄 (캐릭터 화면·던전 레벨 업 창 공통): 아이콘 · 이름(최대면 금색 '최대') ·
         /// 효과(두 줄까지) · 고정 폭 − 값 + . 값은 배분한 자체 능력치이고, 대기 중 +N이 함께 들어가는 폭 (v2.0: 45/99 표시 삭제).
         /// </summary>
         public static void StatRow(Transform parent, Character c, Stat stat, AllocationDraft draft, Action onMinus, Action onPlus, bool line)
         {
             int pending = draft.Pending(stat);
-            int own = c.BaseStats[stat] + pending, extra = CharacterStats.Total(c, stat) - c.BaseStats[stat];
+            int own = c.BaseStats[stat] + pending, extra = CharacterStats.EquipmentBonus(c, stat);
             var row = UI.Row(parent, 8);
             UI.Size(row, height: 60);
             UI.Icon(row, UI.StatIcon(stat), 24);
             var col = UI.Column(row, 1);
             UI.Size(col, flexW: 1);
-            string tail = (extra > 0 ? UI.Color(" (+" + extra + ")", Theme.GreenHex) : "") + (own >= GameBalance.StatCap ? UI.Color(" 최대", Theme.GoldHex) : "");
+            string tail = own >= GameBalance.StatCap ? UI.Color(" 최대", Theme.GoldHex) : "";
             UI.Label(col, Names.Of(stat) + "<size=12>" + tail + "</size>", 14, Theme.Text, true);
             var effect = UI.Label(col, CharacterStats.EffectLabel(c, stat), 11, Theme.TextSub);
             effect.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Stepper(row, c.BaseStats[stat] + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
+            // 숫자 옆에 장비로 오른 만큼을 붙인다: 자체 능력치 15 + 장비 3 → 15(+3) (v2.3)
+            Stepper(row, CharacterStats.OwnStat(c, stat) + (extra > 0 ? "<size=11>" + UI.Color("(+" + extra + ")", Theme.GreenHex) + "</size>" : "")
+                         + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
                 onMinus, pending > 0, onPlus, draft.CanAdd(stat));
             if (line) BottomLine(row, Theme.LineSoft);
         }

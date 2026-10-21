@@ -33,7 +33,7 @@ namespace Adventure.Core
         };
     }
 
-    /// <summary>특수 이벤트 선택지 처리. 성공률 = 72% + (능력치 − 요구치) × 1% + 행운 × 0.5% (40~85%).</summary>
+    /// <summary>특수 이벤트 선택지 처리. 성공률 = 62% + (능력치 − 요구치) × 1% + 행운 × 0.5% (30~75%).</summary>
     public static class EventRules
     {
         public static Stat? CheckStat(EventChoice choice, Character c) =>

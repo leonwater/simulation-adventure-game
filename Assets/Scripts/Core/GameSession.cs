@@ -88,6 +88,18 @@ namespace Adventure.Core
         /// <summary>상점 물건이 바뀐 뒤 아직 상점에 들어가 보지 않았는지.</summary>
         public bool ShopUnseen => Data != null && Data.Shop.LastRefreshTicks > Data.ShopSeenTicks;
 
+        /// <summary>길드에 새 층 의뢰가 붙었는데 아직 길드에 들어가 보지 않았는지 (마을 길드 카드의 빨간 점).</summary>
+        public bool GuildNewQuests => Data != null && Data.GuildNewFloor > 0;
+
+        public void MarkGuildSeen()
+        {
+            if (Data != null && Data.GuildNewFloor != 0)
+            {
+                Data.GuildNewFloor = 0;
+                Save();
+            }
+        }
+
         public void MarkShopSeen()
         {
             if (Data != null) Data.ShopSeenTicks = Data.Shop.LastRefreshTicks;
@@ -478,7 +490,7 @@ namespace Adventure.Core
             return ok;
         }
 
-        /// <summary>떠돌이 상인은 마을 가격 × 1.2, 구해 준 상인은 × 0.7.</summary>
+        /// <summary>떠돌이 상인은 마을 가격 × 1.5, 구해 준 상인은 × 0.7.</summary>
         public double MerchantMultiplier => Run?.Current != null && Run.Current.MerchantDiscount
             ? GameBalance.MerchantDiscountMultiplier : GameBalance.MerchantPriceMultiplier;
 
@@ -494,6 +506,13 @@ namespace Adventure.Core
             Data.Run = null;
             if (Data.Tutorial == TutorialStage.FirstDungeon) Data.Tutorial = TutorialStage.AfterReturn;
             EnterTown();
+            // 보스를 잡아 새 층이 열렸고 그 층 의뢰가 게시판에 붙었으면 길드 알림
+            int next = C.MaxChallengeFloor;
+            if (LastReturn != null && LastReturn.BossCleared && Data.Guild.Board.Exists(q => q.TargetFloor == next))
+            {
+                Data.GuildNewFloor = next;
+                Save();
+            }
         }
 
         /// <summary>튜토리얼 던전(첫 1층 또는 튜토리얼을 다시 보는 중)인지. 보스를 잡아도 아래층으로 내려갈 수 없고 귀환해야 한다.</summary>

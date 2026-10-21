@@ -239,8 +239,8 @@ namespace Adventure.Tests
             Assert.AreEqual(4, RankSystem.SkillSlots(Rank.D));
             Assert.AreEqual(5, RankSystem.SkillSlots(Rank.B));
             Assert.AreEqual(6, RankSystem.SkillSlots(Rank.SS));
-            Assert.AreEqual(20, RankSystem.StorageCapacity(Rank.F));
-            Assert.AreEqual(55, RankSystem.StorageCapacity(Rank.SS));
+            Assert.AreEqual(4, RankSystem.StorageCapacity(Rank.F));
+            Assert.AreEqual(18, RankSystem.StorageCapacity(Rank.SS));
         }
 
         [Test]
@@ -262,13 +262,13 @@ namespace Adventure.Tests
         [Test]
         public void EventChance_UsesLuckAndClamps()
         {
-            Assert.AreEqual(0.72 + 0.01 + 0.025, GameBalance.EventChance(11, 10, 5), 1e-9);
-            Assert.AreEqual(0.85, GameBalance.EventChance(100, 0, 0), 1e-9);
-            Assert.AreEqual(0.40, GameBalance.EventChance(0, 100, 0), 1e-9);
-            // 1층에서 주력 능력치 판정은 70~85%
+            Assert.AreEqual(0.62 + 0.01 + 0.025, GameBalance.EventChance(11, 10, 5), 1e-9);
+            Assert.AreEqual(0.75, GameBalance.EventChance(100, 0, 0), 1e-9);
+            Assert.AreEqual(0.30, GameBalance.EventChance(0, 100, 0), 1e-9);
+            // 1층에서 주력 능력치 판정은 60~75% (v2.3)
             var w = Character.Create("a", Job.Warrior);
             double main = GameBalance.EventChance(CharacterStats.Total(w, Stat.Strength), GameBalance.EventRequirement(1), CharacterStats.Total(w, Stat.Luck));
-            Assert.That(main, Is.InRange(0.70, 0.85));
+            Assert.That(main, Is.InRange(0.60, 0.75));
         }
     }
 }

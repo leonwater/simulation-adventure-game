@@ -289,6 +289,7 @@ namespace Adventure.Core
                         Failure = O("버티지 못하고 쓰러졌다.", hp: -0.15) },
                     new EventChoice { Label = "몸으로 받아낸다", Hint = "전사 전용 · HP 8% 소모", JobOnly = (int)Job.Warrior,
                         Success = O("어깨로 돌덩이를 받아 내고 그대로 걸어 나왔다.", hp: -0.08) },
+                    Pass("서둘러 물러난다"),
                 },
             },
             new EventDef
@@ -366,6 +367,7 @@ namespace Adventure.Core
                     new EventChoice { Label = "받아들인다",                         Success = new EventOutcome { Text = "검은 힘이 팔을 타고 흐른다. (악마의 계약)", Effects = Fx((ExploreEffectType.DemonPact, -1)) } },
                     Choice("거절한다", "정신 판정", O("목소리를 떨쳐 내자 머리가 맑아졌다.", exp: 3), Stat.Spirit,
                         new EventOutcome { Text = "목소리가 귓가에 남아 떠나지 않는다. (공포: 전투 1회)", Effects = Fx((ExploreEffectType.Fear, 1)) }),
+                    Pass("귀를 막고 지나간다"),
                 },
             },
             new EventDef
@@ -452,6 +454,7 @@ namespace Adventure.Core
                 {
                     new EventChoice { Label = "맞서 싸운다", Hint = "정예 포함 2~3마리와 전투",
                         Success = new EventOutcome { Text = "추격대가 달려든다!", Battle = EventBattle.GoblinChase } },
+                    Pass("도망친다"),
                 },
             },
 

@@ -13,7 +13,8 @@ namespace Adventure.Game
 
         public static bool QuestDone => S.HasGame && S.Data.Guild.Active.Exists(q => GuildSystem.IsComplete(q, S.C));
 
-        public static bool Guild => QuestDone;
+        /// <summary>보고할 퀘스트가 있거나, 보스를 잡아 새 층 의뢰가 붙었는데 아직 길드에 가 보지 않았을 때 (v2.3).</summary>
+        public static bool Guild => QuestDone || (S.HasGame && S.GuildNewQuests);
 
         public static bool Shop => S.HasGame && S.ShopUnseen;
 

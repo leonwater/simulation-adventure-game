@@ -257,12 +257,12 @@ namespace Adventure.Tests
             Assert.IsTrue(GuildSystem.Withdraw(c, c.Storage.Items[0].Uid, out _));
             Assert.AreEqual(3, c.Inventory.CountOf("potion"));
 
-            Assert.AreEqual(20, c.Storage.Capacity);
+            Assert.AreEqual(4, c.Storage.Capacity);
             c.HighestFloorCleared = 3;
             c.Level = 5;
             c.QuestsCompleted = 3;
             Assert.IsTrue(RankSystem.TryPromote(c));
-            Assert.AreEqual(25, c.Storage.Capacity);
+            Assert.AreEqual(6, c.Storage.Capacity);
         }
     }
 }

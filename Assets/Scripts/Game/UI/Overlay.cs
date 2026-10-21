@@ -18,10 +18,37 @@ namespace Adventure.Game
         private readonly RectTransform _root;
         private readonly List<Entry> _modals = new List<Entry>();
         private GameObject _toast;
+        private GameObject _flash;
 
         public Overlay(RectTransform root)
         {
             _root = root;
+        }
+
+        /// <summary>화면 가운데에 큰 글씨를 잠깐 띄웠다 사라지게 한다 (터치를 막지 않는다, 강화 결과 등 · v2.3).</summary>
+        public void Flash(string message, Color color, float life = 1.2f)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+            if (_flash != null) UnityEngine.Object.Destroy(_flash);
+            var holder = UI.Rect(_root, "flash");
+            holder.anchorMin = new Vector2(0, 0.5f);
+            holder.anchorMax = new Vector2(1, 0.5f);
+            holder.pivot = new Vector2(0.5f, 0.5f);
+            holder.anchoredPosition = Vector2.zero;
+            holder.sizeDelta = new Vector2(-48, 0);
+            var v = holder.gameObject.AddComponent<VerticalLayoutGroup>();
+            v.childAlignment = TextAnchor.MiddleCenter;
+            v.childControlHeight = true;
+            v.childControlWidth = true;
+            v.childForceExpandWidth = false;
+            v.childForceExpandHeight = false;
+            holder.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            var card = UI.Card(holder, new Color(0.04f, 0.04f, 0.06f, 0.92f), color, 14, UI.Pad(28, 16), true, 0, TextAnchor.MiddleCenter);
+            foreach (var g in card.GetComponentsInChildren<Graphic>(true)) g.raycastTarget = false;
+            var label = UI.Label(card, message, 24, color, true, TextAnchor.MiddleCenter, false, false);
+            label.raycastTarget = false;
+            holder.gameObject.AddComponent<FadeTitle>().Life = life;
+            _flash = holder.gameObject;
         }
 
         public void Toast(string message)
