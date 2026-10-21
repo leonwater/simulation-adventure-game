@@ -38,7 +38,7 @@ namespace Adventure.Core
         /// <summary>HP = 50 + 체력 × 직업 계수 (전사 12 · 궁수 10 · 도적 9 · 마법사 8).</summary>
         public static int MaxHp(Character c) => GameBalance.BaseHp + Total(c, Stat.Vitality) * c.JobData.HpPerVitality;
 
-        /// <summary>공격력 = 주 공격 능력치 × 2 + 무기</summary>
+        /// <summary>공격력 = 주 공격 능력치 × 5 + 무기 (v2.0)</summary>
         public static int Attack(Character c) => Total(c, c.JobData.AttackStat) * GameBalance.AttackPerMainStat + WeaponAttack(c);
 
         public static int Defense(Character c) => ArmorDefense(c);

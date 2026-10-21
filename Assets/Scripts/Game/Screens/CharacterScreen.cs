@@ -121,7 +121,7 @@ namespace Adventure.Game
         {
             var body = Overlay.Modal("상세 능력치", true);
             Line(body, "최대 HP", CharacterStats.MaxHp(C).ToString());
-            Line(body, "공격력", CharacterStats.Attack(C) + UI.Color(" (" + Names.Of(C.JobData.AttackStat) + " × 2 + 무기 " + CharacterStats.WeaponAttack(C) + ")", Theme.SubHex));
+            Line(body, "공격력", CharacterStats.Attack(C) + UI.Color(" (" + Names.Of(C.JobData.AttackStat) + " × " + GameBalance.AttackPerMainStat + " + 무기 " + CharacterStats.WeaponAttack(C) + ")", Theme.SubHex));
             Line(body, "방어력", CharacterStats.Defense(C).ToString());
             Line(body, "회피", CharacterStats.Percent(CharacterStats.Evasion(C)));
             Line(body, "받는 피해 감소", CharacterStats.Percent(CharacterStats.DamageReduction(C)));
@@ -156,9 +156,9 @@ namespace Adventure.Game
                 case Stat.Vitality: return "최대 HP 증가 (직업마다 1점당 HP가 다름)";
                 case Stat.Spirit: return "독·기절 같은 디버프에 걸리지 않을 확률";
                 case Stat.Luck: return "아이템 드롭률과 이벤트 판정 성공률";
-                case Stat.Strength: return "전사의 공격력 (1점당 +2)";
+                case Stat.Strength: return "전사의 공격력 (1점당 +" + GameBalance.AttackPerMainStat + ")";
                 case Stat.Agility: return "궁수·도적의 공격력, 적 공격 회피";
-                case Stat.Intelligence: return "마법사의 공격력 (1점당 +2)";
+                case Stat.Intelligence: return "마법사의 공격력 (1점당 +" + GameBalance.AttackPerMainStat + ")";
                 case Stat.Toughness: return "받는 피해 감소 (최대 40%)";
                 case Stat.Precision: return "공격·스킬 성공률 증가";
                 case Stat.Finesse: return "도적의 회피 증가 (최대 40%)";

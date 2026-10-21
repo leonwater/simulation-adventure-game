@@ -30,10 +30,14 @@ namespace Adventure.Core
 
         public static bool IsDebuff(StatusType t) => t >= StatusType.Poison;
 
-        public void Apply(StatusType type, int value, int turns)
+        /// <summary>
+        /// 효과를 건다. 지속 턴은 걸린 쪽(주인)의 차례 수다 (v2.1: 독 3턴 = 피해 3번, 기절 1턴 = 한 번 못 움직임).
+        /// fresh = 주인이 자기 차례에 스스로 건 효과 (같은 차례 끝에는 줄지 않아 다음 N차례를 채운다).
+        /// </summary>
+        public void Apply(StatusType type, int value, int turns, bool fresh = false)
         {
             if (turns <= 0) return;
-            var incoming = new StatusInstance { Type = type, Value = value, Turns = turns, Order = ++_order, Fresh = true };
+            var incoming = new StatusInstance { Type = type, Value = value, Turns = turns, Order = ++_order, Fresh = fresh };
             int idx = _list.FindIndex(s => s.Type == type && s.Value == value);
             if (idx < 0)
             {

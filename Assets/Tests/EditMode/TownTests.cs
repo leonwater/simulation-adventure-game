@@ -24,7 +24,7 @@ namespace Adventure.Tests
             Assert.AreEqual(TimeSpan.FromMinutes(1), ShopSystem.TimeUntilRefresh(s, T0.AddMinutes(29)));
             Assert.AreEqual(first, s.Equipment[0].Uid);
 
-            // 앱을 95분 동안 꺼 두었다가 켜도 한 번 갱신되고, 다음 갱신은 기존 주기(120분)에 맞춰진다.
+            // 앱을 95분 동안 꺼 두었다가 켜도 한 번 갱신되고, 다음 갱신은 기존 주기(30분)에 맞춰진다.
             Assert.IsTrue(ShopSystem.EnsureFresh(s, c, T0.AddMinutes(95), rng));
             Assert.AreNotEqual(first, s.Equipment[0].Uid);
             Assert.AreEqual(TimeSpan.FromMinutes(25), ShopSystem.TimeUntilRefresh(s, T0.AddMinutes(95)));

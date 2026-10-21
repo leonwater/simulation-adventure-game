@@ -109,7 +109,7 @@ namespace Adventure.Core
         ChainEnemies
     }
 
-    /// <summary>버프 5종 + 디버프 9종.</summary>
+    /// <summary>버프 7종(강화·철벽·재생·집중·날렵함·예리함·잔혹함) + 디버프 9종.</summary>
     public enum StatusType
     {
         Empower,    // 강화: 공격력 +

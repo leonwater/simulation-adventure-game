@@ -167,7 +167,7 @@ namespace Adventure.Game
             }
             // 방 안에서 하는 행동은 보라색 (이동은 금색·푸른색, 귀환은 초록)
             if (room.Type == RoomType.Merchant)
-                ScreenKit.ActionButton(parent, "상인과 거래한다", room.MerchantDiscount ? "물약·해독제 (은인 할인: 마을보다 30% 쌈)" : "물약·해독제 (마을보다 20% 비쌈)", "›", false, Merchant);
+                ScreenKit.ActionButton(parent, "상인과 거래한다", room.MerchantDiscount ? "소모품 (은인 할인: 마을보다 30% 쌈)" : "소모품 (마을보다 20% 비쌈)", "›", false, Merchant);
             if (room.Type == RoomType.Return) ReturnButton(parent, "마법진으로 마을에 돌아간다", "이번 층 진행은 초기화 · 획득한 것은 유지", ConfirmReturn);
 
             bool first = true;

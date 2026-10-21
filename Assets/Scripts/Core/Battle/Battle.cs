@@ -204,7 +204,7 @@ namespace Adventure.Core
             return GameBalance.HitChance(stat, target.Requirement, CharacterStats.PrecisionBonus(Character) + StatusBonus(false) + skillBonus);
         }
 
-        /// <summary>도주 = 60% + 회피 + 집중 − 실명 (공포는 영향 없음), 최대 80%. 보스전은 불가.</summary>
+        /// <summary>도주 = 67% + 회피 + 날렵함 + 집중 − 실명 (공포는 영향 없음), 최대 87%. 보스전은 불가.</summary>
         public double FleeChance()
         {
             if (!CanFlee) return GameBalance.BossFleeChance;
@@ -451,7 +451,12 @@ namespace Adventure.Core
                     Add(Names.Josa(Player.Name, "은/는") + " 기절해 움직일 수 없다.", LogTone.Bad);
                     Event(BattleEventKind.Text, -1, -1, text: "기절");
                 }
-                else PlayerAct(choice);
+                else
+                {
+                    _acting = Player;
+                    PlayerAct(choice);
+                    _acting = null;
+                }
             }
             EndOfTurn(Player);
             TickCooldowns(choice);
@@ -477,7 +482,12 @@ namespace Adventure.Core
                         Add(Names.Josa(e.Name, "은/는") + " 기절해 있다.");
                         Event(BattleEventKind.Text, IndexOf(e), -1, text: "기절");
                     }
-                    else EnemyAct(e);
+                    else
+                    {
+                        _acting = e;
+                        EnemyAct(e);
+                        _acting = null;
+                    }
                 }
                 EndOfTurn(e);
                 if (CheckEnd()) return;
@@ -703,7 +713,8 @@ namespace Adventure.Core
             int value = s.Value;
             if (s.Type == StatusType.Bleed || s.Type == StatusType.Burn)
                 value = Math.Max(1, (int)Math.Round(source.Attack * s.Value / 100.0));
-            target.Statuses.Apply(s.Type, value, s.Turns);
+            // 자기 차례에 스스로 건 효과만 그 차례 끝에 줄지 않는다 (상대가 건 효과는 걸린 쪽의 다음 차례부터 센다)
+            target.Statuses.Apply(s.Type, value, s.Turns, target == _acting);
             string who = target.IsPlayer ? "" : target.Name + ": ";
             Add(who + Names.Of(s.Type) + " " + s.Turns + "턴", debuff == target.IsPlayer ? LogTone.Bad : LogTone.Good);
             Event(BattleEventKind.Status, IndexOf(source), IndexOf(target), text: Names.Of(s.Type));
@@ -745,6 +756,9 @@ namespace Adventure.Core
             Add((c.IsPlayer ? "" : c.Name + ": ") + "HP " + (c.Hp - before) + " 회복", c.IsPlayer ? LogTone.Good : LogTone.Normal);
             Event(BattleEventKind.Heal, IndexOf(c), IndexOf(c), c.Hp - before, DamageKind.Heal, c.Hp);
         }
+
+        /// <summary>지금 행동 중인 쪽 (자기에게 거는 효과를 알아보는 데 쓴다).</summary>
+        private Combatant _acting;
 
         private void EndOfTurn(Combatant c) => c.Statuses.Tick();
 

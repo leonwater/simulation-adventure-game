@@ -46,10 +46,10 @@ namespace Adventure.Tests
         public void Stacking_HighestValueAppliesThenLowerContinues()
         {
             var s = new StatusContainer();
-            s.Apply(StatusType.Empower, 10, 4);
-            s.Apply(StatusType.Empower, 30, 1);
+            s.Apply(StatusType.Empower, 10, 4, fresh: true);
+            s.Apply(StatusType.Empower, 30, 1, fresh: true);
             Assert.AreEqual(30, s.Value(StatusType.Empower));
-            s.Tick(); // 이번 턴에 걸린 효과는 줄지 않음
+            s.Tick(); // 자기 차례에 건 효과는 그 차례 끝에 줄지 않음
             s.Tick();
             Assert.AreEqual(10, s.Value(StatusType.Empower), "높은 쪽이 끝나면 낮은 쪽이 이어서 적용");
             Assert.AreEqual(3, s.Active(StatusType.Empower).Turns);
@@ -59,7 +59,7 @@ namespace Adventure.Tests
         public void Tick_FreshEffectsLastFullDuration()
         {
             var s = new StatusContainer();
-            s.Apply(StatusType.Empower, 20, 3);
+            s.Apply(StatusType.Empower, 20, 3, fresh: true);
             s.Tick();
             Assert.AreEqual(3, s.Active(StatusType.Empower).Turns);
             s.Tick();
@@ -244,8 +244,7 @@ namespace Adventure.Tests
         {
             var b = NewBattle(Job.Warrior, 1, 8, out var c, 1);
             b.Enemies[0].Attack = 0;
-            b.Player.Statuses.Apply(StatusType.Stun, 1, 1);
-            b.Player.Statuses.Tick(); // 적 턴에 걸린 것으로 처리
+            b.Player.Statuses.Apply(StatusType.Stun, 1, 1); // 적 차례에 걸린 효과: 이번 차례부터 센다
             var choices = b.GetChoices();
             Assert.AreEqual(1, choices.Count);
             Assert.AreEqual(ActionKind.Wait, choices[0].Kind);
@@ -317,7 +316,6 @@ namespace Adventure.Tests
             b.Enemies[0].MaxHp = b.Enemies[0].Hp = 100000;
             b.Player.Statuses.Apply(StatusType.Poison, 4, 2);
             b.Player.Statuses.Apply(StatusType.Burn, 5, 2);
-            b.Player.Statuses.Tick();
             b.Enemies[0].Statuses.Apply(StatusType.Stun, 1, 1); // 적은 이번 턴 행동하지 않는다 (최소 피해 1 제외)
             int max = b.Player.MaxHp;
             int hp = b.Player.Hp;
