@@ -17,10 +17,11 @@ namespace Adventure.Tests
             {
                 if (s.Target == SkillTarget.Self) continue;
                 Assert.Less(s.SuccessBonus, 0, s.Id + ": 모든 스킬은 기본 공격보다 덜 맞는다");
+                Assert.GreaterOrEqual(s.SuccessBonus, -0.12 - 1e-9, s.Id + " 보정은 −12%까지");
                 double total = (s.ChainMults.Length > 0 ? s.ChainMults[0] : s.DamageMult) * s.Hits;
-                bool strong = s.Target == SkillTarget.AllEnemies || s.GuaranteedCrit || total >= 2.5;
-                if (strong) Assert.LessOrEqual(s.SuccessBonus, -0.08 + 1e-9, s.Id + " 고위력 −8~12%");
-                else Assert.GreaterOrEqual(s.SuccessBonus, -0.05 - 1e-9, s.Id + " 저위력 −3~5%");
+                bool strong = (s.Target == SkillTarget.AllEnemies && s.IsAttack) || s.GuaranteedCrit || total >= 2.5;
+                if (strong) Assert.LessOrEqual(s.SuccessBonus, -0.08 + 1e-9, s.Id + " 광역·고위력 −8~12%");
+                else Assert.GreaterOrEqual(s.SuccessBonus, -0.06 - 1e-9, s.Id + " 저위력 −3~6%");
             }
         }
 
@@ -30,7 +31,7 @@ namespace Adventure.Tests
             Assert.Less(SkillSystem.PowerMultiplier(SkillDb.Get("m_fireball"), 3), SkillSystem.PowerMultiplier(SkillDb.Get("m_overload"), 3));
             Assert.AreEqual(1.24, SkillSystem.PowerMultiplier(SkillDb.Get("m_fireball"), 3), 1e-9, "하급 +8%/단계");
             Assert.AreEqual(1.36, SkillSystem.PowerMultiplier(SkillDb.Get("m_meteor"), 3), 1e-9, "상급 +12%/단계");
-            Assert.Greater(SkillDb.Get("m_overload").DamageMult, 4.0, "최상급 기본 피해 상향");
+            Assert.GreaterOrEqual(SkillDb.Get("m_overload").DamageMult, 4.0, "최상급 기본 피해");
         }
 
         [Test]

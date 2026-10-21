@@ -60,7 +60,7 @@ namespace Adventure.Tests
                 double best = 1;
                 foreach (var s in SkillDb.ForJob(c.Job, (SkillTier[])Enum.GetValues(typeof(SkillTier))))
                     if (s.ReqLevel <= c.Level && s.Target == SkillTarget.SingleEnemy) best = Math.Max(best, s.DamageMult * s.Hits);
-                Assert.Greater(GameBalance.EnemyHp(f) * GameBalance.EliteHp, hit * best * 1.5, f + "층 정예");
+                Assert.Greater(GameBalance.EnemyHp(f) * GameBalance.EliteHp, hit * best, f + "층 정예는 가장 센 스킬 한 번에 쓰러지지 않음");
                 Assert.Greater(GameBalance.EnemyHp(f), hit * 2.5, f + "층 일반 몬스터는 기본 공격 세 번쯤");
             }
         }

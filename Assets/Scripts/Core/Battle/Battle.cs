@@ -345,6 +345,8 @@ namespace Adventure.Core
                 if (def.HealRatio > 0) return "HP 약 " + (int)Math.Round(Player.MaxHp * def.HealRatio * SkillSystem.PowerMultiplier(def, Character.Skills.Get(def.Id)?.Level ?? 0)) + " 회복";
                 return def.Statuses.Length > 0 ? Names.Of(def.Statuses[0].Type) + " " + def.Statuses[0].Turns + "턴" : "";
             }
+            if (!def.IsAttack && def.Statuses.Length > 0)
+                return (def.Target == SkillTarget.AllEnemies ? "모든 적 " : "") + Names.Of(def.Statuses[0].Type) + " " + def.Statuses[0].Turns + "턴";
             if (!def.IsAttack || target == null) return "";
             bool crit = SureCrit(def);
             if (def.Target == SkillTarget.ChainEnemies)
@@ -574,6 +576,25 @@ namespace Adventure.Core
                 return;
             }
 
+            if (!def.IsAttack)
+            {
+                // 피해 없이 적에게 상태 이상만 거는 스킬 (위협의 포효): 적마다 성공을 따로 판정한다
+                var affected = SkillTargets(def, choice.Target);
+                Event(BattleEventKind.Act, -1, affected.Count > 0 ? IndexOf(affected[0]) : -1, text: def.Name);
+                foreach (var t in affected)
+                {
+                    if (!t.Alive) continue;
+                    if (!_rng.Chance(HitChance(t, def.SuccessBonus)))
+                    {
+                        Add(t.Name + "에게 " + def.Name + " — 빗나갔다.");
+                        Event(BattleEventKind.Miss, -1, IndexOf(t), hpAfter: t.Hp);
+                        continue;
+                    }
+                    foreach (var s in def.Statuses) ApplyStatus(Player, s.OnSelf ? Player : t, s);
+                }
+                return;
+            }
+
             bool forcedCrit = NextSkillCrit;
             NextSkillCrit = false;
             var targets = SkillTargets(def, choice.Target);
@@ -627,7 +648,7 @@ namespace Adventure.Core
                 Add(target.Name + "에게 " + (anyCrit ? "치명타 " : "") + total + " 피해" + count + guard, anyCrit ? LogTone.Good : LogTone.Normal);
             }
             if (skill != null && landed > 0 && target.Alive)
-                foreach (var s in skill.Statuses) ApplyStatus(Player, target, s);
+                foreach (var s in skill.Statuses) ApplyStatus(Player, s.OnSelf ? Player : target, s);
             if (!target.Alive) OnEnemyDown(target);
         }
 
@@ -662,6 +683,7 @@ namespace Adventure.Core
                     break;
                 }
             }
+            if (skill != null && e.Statuses.Has(StatusType.Silence)) skill = null; // 침묵: 스킬 대신 기본 공격
             if (skill != null && skill.DamageMult <= 0)
             {
                 Add(e.Name + "의 " + skill.Name + "!");

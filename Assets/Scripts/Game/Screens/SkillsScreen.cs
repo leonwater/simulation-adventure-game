@@ -45,7 +45,7 @@ namespace Adventure.Game
                     var cell = UI.ButtonCard(grid, () => Detail(id), Theme.AccentBg, Theme.Accent, 10, UI.Pad(8, 8), true, 2, 84, TextAnchor.UpperLeft);
                     UI.Label(cell, def.Name + (st.Level > 0 ? UI.Color(" +" + st.Level, Theme.GoldHex) : ""), 14, Theme.Text, true);
                     UI.Spacer(cell);
-                    UI.Sub(cell, Short(def));
+                    UI.Sub(cell, def.Role);
                     UI.Sub(cell, "재사용 " + def.Cooldown + "턴");
                 }
                 else
@@ -73,7 +73,7 @@ namespace Adventure.Game
                 var col = UI.ButtonCard(row, () => Detail(sid), Theme.Bg, Theme.Bg, 0.01f, UI.Pad(0, 0, 8, 8), true, 2, 48, TextAnchor.MiddleLeft);
                 UI.Size(col, flexW: 1);
                 UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + (st.Level > 0 ? " · +" + st.Level : ""), Theme.SubHex) + (_new.Contains(def.Id) ? " " + UI.Color("NEW", Theme.RedHex) : ""), 15, Theme.Text);
-                UI.Sub(col, meets ? def.Description : "장착 조건 Lv." + def.ReqLevel + " · " + def.ReqRank + " 등급");
+                UI.Sub(col, meets ? UI.Color(def.Role, Theme.GoldHex) + " · " + def.Description : "장착 조건 Lv." + def.ReqLevel + " · " + def.ReqRank + " 등급");
                 string id = def.Id;
                 if (equipped) UI.TextButton(row, "해제", () => Unequip(id), ButtonKind.Outline, 40, 13, 64);
                 else if (!meets)
@@ -88,20 +88,6 @@ namespace Adventure.Game
             ScreenKit.BottomNav(page, 3);
         }
 
-        private static string Short(SkillDef def)
-        {
-            if (def.Statuses.Length > 0) return Names.Of(def.Statuses[0].Type) + (def.Target == SkillTarget.Self ? " " + def.Statuses[0].Turns + "턴" : "");
-            if (def.HealRatio > 0) return "회복";
-            switch (def.Target)
-            {
-                case SkillTarget.AllEnemies: return "전체";
-                case SkillTarget.MultiEnemy: return def.TargetCount + "명";
-                case SkillTarget.ChainEnemies: return "연쇄";
-                case SkillTarget.Self: return "자신";
-                default: return "단일";
-            }
-        }
-
         /// <summary>스킬 상세: 등급·효과·피해 배율·재사용·성공률·장착 조건·수련 단계와 단계당 상승폭, 장착/해제.</summary>
         private void Detail(string id)
         {
@@ -110,7 +96,7 @@ namespace Adventure.Game
             if (def == null || st == null) return;
             var body = Overlay.Modal(def.Name);
             var modal = Overlay.Top;
-            UI.Label(body, Names.Of(def.Tier) + " 스킬 · 수련 +" + st.Level + " / " + GameBalance.MaxSkillLevel, 13, Theme.Gold, true);
+            UI.Label(body, Names.Of(def.Tier) + " 스킬 · " + def.Role + " · 수련 +" + st.Level + " / " + GameBalance.MaxSkillLevel, 13, Theme.Gold, true);
             UI.Label(body, def.Effect, 15, Theme.Text);
             UI.Divider(body);
             Line(body, "재사용", def.Cooldown + "턴");

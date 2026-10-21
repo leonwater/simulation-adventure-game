@@ -130,6 +130,22 @@ namespace Adventure.Tests
             s.Move(options[0].Room.Id);
         }
 
+        /// <summary>봇이 보는 스킬 값: 피해 배율 × 때리는 수(광역은 살아 있는 적 수 반영), 버프는 아직 안 걸려 있을 때만.</summary>
+        private static double SkillValue(Battle b, SkillDef def)
+        {
+            if (def == null) return 0;
+            int alive = b.Enemies.FindAll(e => e.Alive).Count;
+            if (def.Target == SkillTarget.Self)
+            {
+                foreach (var st in def.Statuses) if (b.Player.Statuses.Has(st.Type)) return -1;
+                return 0.6;
+            }
+            if (!def.IsAttack) return 0.4 * alive; // 광역 약화 등
+            double mult = def.ChainMults.Length > 0 ? System.Linq.Enumerable.Sum(def.ChainMults) : def.DamageMult * def.Hits;
+            int targets = def.Target == SkillTarget.AllEnemies ? alive : def.Target == SkillTarget.MultiEnemy ? System.Math.Min(def.TargetCount, alive) : 1;
+            return 0.5 + mult * targets * 0.25;
+        }
+
         public static BattleChoice PickBattleChoice(Battle b)
         {
             var all = b.GetChoices();
@@ -148,7 +164,7 @@ namespace Adventure.Tests
             {
                 if (!ch.Enabled || ch.Kind == ActionKind.Item || ch.Kind == ActionKind.Flee) continue;
                 double score = ch.Chance;
-                if (ch.Kind == ActionKind.Skill) score += 0.5;
+                if (ch.Kind == ActionKind.Skill) score += SkillValue(b, SkillDb.Get(ch.SkillId));
                 if (ch.Target >= 0) score += 1.0 - b.Enemies[ch.Target].HpRatio;
                 if (score > bestScore)
                 {

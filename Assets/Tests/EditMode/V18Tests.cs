@@ -30,7 +30,7 @@ namespace Adventure.Tests
         {
             Assert.AreEqual(2.3, GameBalance.CritMultiplier, 1e-9);
             Assert.AreEqual(1.1, SkillDb.Get("r_ambush").DamageMult, 1e-9, "기습 140% × 0.8");
-            Assert.AreEqual(2.5, SkillDb.Get("r_assassin").DamageMult, 1e-9, "암살 (v1.9 최상급 ×1.25)");
+            Assert.AreEqual(2.0, SkillDb.Get("r_assassin").DamageMult, 1e-9, "암살 200% (v2.2)");
             Assert.AreEqual(StatusType.Keen, SkillDb.Get("r_keen").Statuses[0].Type);
             Assert.AreEqual(StatusType.Cruel, SkillDb.Get("r_cruel").Statuses[0].Type);
             Assert.IsFalse(StatusContainer.IsDebuff(StatusType.Keen));

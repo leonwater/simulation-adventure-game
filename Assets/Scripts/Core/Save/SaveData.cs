@@ -7,7 +7,8 @@ namespace Adventure.Core
     [Serializable]
     public class SaveData
     {
-        public const int CurrentVersion = 1;
+        /// <summary>저장 파일 버전. v2.1까지는 1로 두고 Repair 보정만 했고, 스킬 40개 개편(v2.2)에서 5로 올렸다 (변환 4 → 5).</summary>
+        public const int CurrentVersion = 5;
 
         public int Version = CurrentVersion;
         public Difficulty Difficulty = Difficulty.Normal;
@@ -88,6 +89,25 @@ namespace Adventure.Core
             }
         }
 
+        /// <summary>
+        /// 변환 4 → 5 (스킬 40개 개편): 기존 스킬 ID·장착·수련 단계는 그대로 두고 수치는 데이터에서 다시 읽는다.
+        /// 사라진 스킬(마법사 마력 방벽)과 그 스킬서는 지우고 하급 스킬서 값(600G)만큼 골드로 돌려준다.
+        /// </summary>
+        private static void ConvertSkillOverhaul(SaveData d)
+        {
+            var c = d.Character;
+            int refund = 0;
+            if (c.Skills != null)
+                refund += c.Skills.Learned.FindAll(s => s != null && SkillDb.Get(s.SkillId) == null).Count;
+            foreach (var box in new[] { c.Inventory, c.Storage })
+            {
+                if (box == null) continue;
+                refund += box.Items.RemoveAll(i => i != null && i.Kind == ItemKind.SkillBook && SkillDb.Get(i.SkillId) == null);
+            }
+            if (d.Shop != null) d.Shop.Goods.RemoveAll(g => g?.Item != null && g.Item.Kind == ItemKind.SkillBook && SkillDb.Get(g.Item.SkillId) == null);
+            c.Gold += (long)refund * GameBalance.SkillBookPrice[0];
+        }
+
         /// <summary>예전 버전 저장이나 일부가 빠진 저장을 쓸 수 있게 고친다.</summary>
         public static void Repair(SaveData d)
         {
@@ -103,6 +123,7 @@ namespace Adventure.Core
             if (c.Inventory == null) c.Inventory = new ItemContainer();
             if (c.Storage == null) c.Storage = new ItemContainer();
             if (c.Skills == null) c.Skills = new SkillSet();
+            if (d.Version < 5) ConvertSkillOverhaul(d);
             c.Skills.Learned.RemoveAll(s => s == null || SkillDb.Get(s.SkillId) == null);
             c.Skills.Equipped.RemoveAll(id => !c.Skills.Knows(id));
             // 같은 스킬이 여러 칸에 장착된 예전 저장 정리

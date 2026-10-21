@@ -256,11 +256,11 @@ namespace Adventure.Tests
         public void SkillDescriptions_ReadNaturally()
         {
             Assert.AreEqual("단일 250% · 재사용 4턴", SkillDb.Get("w_bash").Description);
-            Assert.AreEqual("단일 165% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
+            Assert.AreEqual("단일 150% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
             Assert.AreEqual("강화 3턴 · 재사용 6턴", SkillDb.Get("w_warcry").Description);
-            Assert.AreEqual("모든 적 215% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
-            Assert.AreEqual("성공률 −12%", SkillDb.Get("w_bash").SuccessText);
-            Assert.AreEqual("성공률 −5%", SkillDb.Get("w_shield").SuccessText);
+            Assert.AreEqual("모든 적 180% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
+            Assert.AreEqual("성공률 −10%", SkillDb.Get("w_bash").SuccessText);
+            Assert.AreEqual("성공률 −4%", SkillDb.Get("w_shield").SuccessText);
             Assert.AreEqual("성공률 −3%", SkillDb.Get("a_aim").SuccessText);
             Assert.AreEqual("성공률 100%", SkillDb.Get("w_guard").SuccessText);
         }
@@ -268,7 +268,7 @@ namespace Adventure.Tests
         [Test]
         public void EverySkillAndMaterial_IsValid()
         {
-            Assert.AreEqual(26, SkillDb.AllSkills.Length, "직업 6개씩 + 도적 치명 버프 2개, 공용 스킬 없음");
+            Assert.AreEqual(40, SkillDb.AllSkills.Length, "직업마다 10개씩, 공용 스킬 없음 (v2.2)");
             foreach (var s in SkillDb.AllSkills)
             {
                 Assert.IsNotEmpty(s.Name);
@@ -276,6 +276,7 @@ namespace Adventure.Tests
                 Assert.GreaterOrEqual(s.JobRestriction, 0, s.Id);
                 Assert.Greater(s.Cooldown, 0, s.Id);
                 Assert.IsTrue(s.IsAttack || s.Statuses.Length > 0, s.Id);
+                Assert.IsNotEmpty(s.Role, s.Id + " 역할 태그");
                 Assert.IsNotNull(ItemDb.CreateSkillBook(s.Id));
             }
             foreach (var m in MonsterDb.AllSpecies)
@@ -283,8 +284,11 @@ namespace Adventure.Tests
             foreach (Job j in System.Enum.GetValues(typeof(Job)))
             {
                 bool rogue = j == Job.Rogue;
-                Assert.AreEqual(rogue ? 5 : 4, SkillDb.ForJob(j, SkillTier.Low, SkillTier.Mid).Count);
-                Assert.AreEqual(rogue ? 3 : 2, SkillDb.ForJob(j, SkillTier.High, SkillTier.Top).Count);
+                Assert.AreEqual(10, SkillDb.ForJob(j, (SkillTier[])System.Enum.GetValues(typeof(SkillTier))).Count, j + " 스킬 10개");
+                Assert.AreEqual(rogue ? 4 : 3, SkillDb.ForJob(j, SkillTier.Low).Count, j + " 하급");
+                Assert.AreEqual(rogue ? 2 : 3, SkillDb.ForJob(j, SkillTier.Mid).Count, j + " 중급");
+                Assert.AreEqual(2, SkillDb.ForJob(j, SkillTier.High).Count, j + " 상급");
+                Assert.AreEqual(2, SkillDb.ForJob(j, SkillTier.Top).Count, j + " 최상급");
             }
         }
     }
