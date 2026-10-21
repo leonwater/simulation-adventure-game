@@ -60,11 +60,13 @@ jobs:
       - name: 웹 폴더 정리·압축
         id: web
         run: |
+          # GameCI는 도커 안에서 root로 빌드해 파일 주인이 root다 → 고치고 압축할 수 있게 주인을 바꾼다
+          sudo chown -R "$(id -u):$(id -g)" build
           INDEX=$(find build -name index.html | head -1)
           if [ -z "$INDEX" ]; then echo "::error::index.html이 만들어지지 않았습니다. 위 Unity 빌드 로그를 확인하세요."; exit 1; fi
           DIR=$(dirname "$INDEX")
           # 세로 화면(390:844)을 브라우저 높이에 맞춰 보여 준다
-          python3 - "$INDEX" <<'PY'
+          python3 - "$INDEX" <<'PY' || echo "::warning::캔버스 크기 조정을 건너뜀"
           import re, sys
           p = sys.argv[1]
           s = open(p, encoding='utf-8').read()
@@ -74,7 +76,7 @@ jobs:
           print('canvas style patched' if s2 != s else 'canvas style unchanged')
           PY
           (cd "$DIR" && zip -qr "$GITHUB_WORKSPACE/adventurer-web.zip" .)
-          ls -la adventurer-web.zip
+          echo "::notice::웹 빌드 폴더 $DIR · zip $(du -h adventurer-web.zip | cut -f1)"
           echo "dir=$DIR" >> "$GITHUB_OUTPUT"
 
       - name: 실행 결과에 첨부
