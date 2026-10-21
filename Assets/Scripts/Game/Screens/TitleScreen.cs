@@ -25,7 +25,9 @@ namespace Adventure.Game
             var cont = UI.TextButton(buttons, "이어하기", ShowSummary, ButtonKind.Outline, 50);
             UI.SetEnabled(cont, hasSave, 0.4f);
             UI.TextButton(buttons, "설정", () => SettingsPanel.Open(true), ButtonKind.Ghost, 50);
+#if !UNITY_WEBGL
             UI.TextButton(buttons, "게임 종료", () => Overlay.Confirm("게임 종료", "게임을 종료할까요?", "종료", App.Quit), ButtonKind.Ghost, 50);
+#endif
             if (!hasSave) UI.Sub(buttons, "저장된 모험가가 없습니다", TextAnchor.MiddleCenter);
         }
 

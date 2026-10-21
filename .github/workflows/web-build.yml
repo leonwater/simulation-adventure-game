@@ -1,0 +1,96 @@
+# 웹(WebGL) 빌드 (GameCI) - Actions 탭에서 "Run workflow"를 누르면 실행된다 (푸시마다 돌지 않는다).
+# 결과: Releases의 "web-latest"에 adventurer-web.zip (압축을 풀고 index.html을 로컬 서버로 열면 된다) + Actions 실행 결과.
+# 필요한 비밀값은 안드로이드 빌드와 같다 (UNITY_LICENSE · UNITY_EMAIL · UNITY_PASSWORD).
+name: 웹 빌드
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-build
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: WebGL 빌드
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: 디스크 공간 확보
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: false
+
+      - name: 저장소 받기
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Library 캐시
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+
+      - name: Unity 빌드
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          buildName: adventurer-web
+          buildMethod: Adventure.EditorTools.CIBuild.BuildWebGL
+          customParameters: -stackTraceLogType Full
+          versioning: Custom
+          version: 2.3.${{ github.run_number }}
+
+      - name: 웹 폴더 정리·압축
+        id: web
+        run: |
+          INDEX=$(find build -name index.html | head -1)
+          if [ -z "$INDEX" ]; then echo "::error::index.html이 만들어지지 않았습니다. 위 Unity 빌드 로그를 확인하세요."; exit 1; fi
+          DIR=$(dirname "$INDEX")
+          # 세로 화면(390:844)을 브라우저 높이에 맞춰 보여 준다
+          python3 - "$INDEX" <<'PY'
+          import re, sys
+          p = sys.argv[1]
+          s = open(p, encoding='utf-8').read()
+          style = 'height:100vh;max-width:100vw;aspect-ratio:390/844;display:block;margin:0 auto;background:#14161C'
+          s2 = re.sub(r'(<canvas id="unity-canvas"[^>]*?)style="[^"]*"', lambda m: m.group(1) + 'style="' + style + '"', s, count=1)
+          open(p, 'w', encoding='utf-8').write(s2)
+          print('canvas style patched' if s2 != s else 'canvas style unchanged')
+          PY
+          (cd "$DIR" && zip -qr "$GITHUB_WORKSPACE/adventurer-web.zip" .)
+          ls -la adventurer-web.zip
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+
+      - name: 실행 결과에 첨부
+        uses: actions/upload-artifact@v4
+        with:
+          name: adventurer-web-${{ github.run_number }}
+          path: adventurer-web.zip
+          retention-days: 14
+
+      - name: 최신 웹 빌드 릴리스 갱신
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete web-latest --yes --cleanup-tag || true
+          gh release create web-latest adventurer-web.zip \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "최신 웹 빌드 (빌드 #${{ github.run_number }})" \
+            --notes "커밋 ${{ github.sha }} 에서 자동 빌드한 웹(WebGL) 빌드입니다. 압축을 풀고 폴더에서 'python3 -m http.server'로 연 뒤 브라우저에서 localhost:8000을 여세요."

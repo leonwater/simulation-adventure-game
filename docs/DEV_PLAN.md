@@ -285,3 +285,9 @@
 - UI: 장착 칸 등급 색 테두리(가방·대장간), 던전 가방 머리줄(`ScreenKit.DungeonSubBar` HP·일시정지, 하트=`stat_vitality`), 스킬서 '습득', 능력치 '15(+3)'(`ScreenKit.StatRow`, 상세 창은 '합계'), 진행 중 퀘스트 목표 층, 대장간 회색 문구 삭제, 강화 결과 `Overlay.Flash`
 - 앱 버전 2.3.x. 보통 사망률 1~5층 21% · 6~10층 41% · 11~15층 39% · 16~20층 47% · 21~25층 49% · 26~30층 62%, 30층 정복 6/12 (어려움 1/12)
 - 테스트 173 → 182개 (`V23Tests`)
+
+## 20. 업데이트 (웹 빌드, 2026-10-21)
+
+- `CIBuild.BuildWebGL` + `.github/workflows/web-build.yml` (수동 실행): 압축 끔·예외 지원 끔·Minimal 템플릿 390×844, 빌드 뒤 캔버스를 화면 높이에 맞추고 zip으로 `web-latest` 릴리스에 올림
+- 저장: `FileSaveStore.Flush`가 웹에서만 `AdventureSyncFs`(jslib → `FS.syncfs`)를 불러 IndexedDB에 바로 반영
+- 저장소가 비공개라 GitHub Pages로는 열 수 없어 zip을 받아 로컬 서버로 연다

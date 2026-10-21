@@ -53,6 +53,44 @@ namespace Adventure.EditorTools
             if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
         }
 
+        /// <summary>웹(WebGL) 빌드: 폴더 하나(index.html + Build/)를 만든다. 압축은 끄고 어느 정적 서버에서도 열리게 한다.</summary>
+        public static void BuildWebGL()
+        {
+            string output = Arg("-customBuildPath") ?? "build/WebGL/adventurer-web";
+            string version = Arg("-buildVersion");
+            if (string.IsNullOrEmpty(version) || version == "none") version = "0.1.0";
+
+            ProjectSetup.Apply();
+
+            PlayerSettings.bundleVersion = version;
+#if UNITY_2021_2_OR_NEWER
+            PlayerSettings.SetManagedStrippingLevel(UnityEditor.Build.NamedBuildTarget.WebGL, ManagedStrippingLevel.Medium);
+#else
+            PlayerSettings.SetManagedStrippingLevel(BuildTargetGroup.WebGL, ManagedStrippingLevel.Medium);
+#endif
+            PlayerSettings.stripEngineCode = true;
+            PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled; // .br/.gz 헤더가 없는 서버에서도 열린다
+            PlayerSettings.WebGL.exceptionSupport = WebGLExceptionSupport.None;
+            PlayerSettings.WebGL.dataCaching = true;
+            PlayerSettings.WebGL.template = "APPLICATION:Minimal";
+            PlayerSettings.defaultWebScreenWidth = 390;
+            PlayerSettings.defaultWebScreenHeight = 844;
+
+            Directory.CreateDirectory(Path.GetFullPath(output));
+            var options = new BuildPlayerOptions
+            {
+                scenes = new[] { "Assets/Scenes/Main.unity" },
+                locationPathName = output,
+                target = BuildTarget.WebGL,
+                options = BuildOptions.None,
+            };
+            Debug.Log("[CIBuild] WebGL 빌드 시작: " + output + " (버전 " + version + ")");
+            BuildReport report = BuildPipeline.BuildPlayer(options);
+            var summary = report.summary;
+            Debug.Log("[CIBuild] 결과: " + summary.result + ", 크기 " + summary.totalSize / (1024 * 1024) + "MB, 오류 " + summary.totalErrors);
+            if (summary.result != BuildResult.Succeeded) EditorApplication.Exit(1);
+        }
+
         /// <summary>
         /// 선택 사항: 워크플로에 키스토어 비밀값이 있으면 GameCI가 키스토어 파일을 프로젝트에 쓰고
         /// -androidKeystoreName 등 인자를 넘겨 준다. 없으면 빌드마다 새 디버그 키로 서명되어,

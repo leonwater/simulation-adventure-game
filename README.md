@@ -133,3 +133,10 @@ Unity 에디터에서는 Window → General → Test Runner → EditMode에서 �
 - 플레이 테스트 후 밸런스 조정 (`tools/balance`로 측정)
 - 30층 이후 확장(50층·100층, 아이템 등급 유물·고대)
 - 이벤트 추가
+
+## 웹(WebGL) 빌드
+
+- GitHub Actions "웹 빌드"(`.github/workflows/web-build.yml`)를 Actions 탭에서 Run workflow로 실행하면 Releases의 `web-latest`에 `adventurer-web.zip`이 올라온다 (푸시마다 돌지 않는다).
+- 압축을 풀고 그 폴더에서 `python3 -m http.server`를 실행한 뒤 브라우저에서 `localhost:8000`을 연다 (압축 끔, 어느 정적 서버에서도 열림).
+- 저장은 브라우저 저장소(IndexedDB)에 남고(`Assets/Plugins/WebGL/AdventureFs.jslib`로 쓸 때마다 동기화), 브라우저 데이터를 지우면 사라진다. 타이틀의 '게임 종료'는 웹에서 숨긴다.
+- 알려진 한계: 휴대폰 브라우저에서는 이름 입력창에서 키보드가 안 뜰 수 있다 (안드로이드 앱은 정상).

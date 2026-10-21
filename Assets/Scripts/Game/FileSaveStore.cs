@@ -18,6 +18,26 @@ namespace Adventure.Game
             _path = Path.Combine(Application.persistentDataPath, fileName);
         }
 
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")]
+        private static extern void AdventureSyncFs();
+#endif
+
+        /// <summary>웹 빌드에서는 쓴 파일을 브라우저 저장소에 바로 올린다 (다른 플랫폼에서는 아무 일도 하지 않는다).</summary>
+        private static void Flush()
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            try
+            {
+                AdventureSyncFs();
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("저장 동기화 실패: " + e.Message);
+            }
+#endif
+        }
+
         private string Backup => _path + ".bak";
         private string Temp => _path + ".tmp";
 
@@ -31,6 +51,7 @@ namespace Adventure.Game
                 if (File.Exists(_path)) File.Copy(_path, Backup, true);
                 if (File.Exists(_path)) File.Delete(_path);
                 File.Move(Temp, _path);
+                Flush();
             }
             catch (Exception e)
             {
@@ -69,6 +90,7 @@ namespace Adventure.Game
                     Debug.LogError("삭제 실패: " + e.Message);
                 }
             }
+            Flush();
         }
     }
 }
