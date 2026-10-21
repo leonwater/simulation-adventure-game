@@ -146,7 +146,7 @@ namespace Adventure.Game
             }
             else
             {
-                Action(row, "판매 · " + (item.SellPrice * item.Count).ToString("#,0") + "G", ButtonKind.Ghost, () =>
+                Action(row, (item.Count > 1 ? "판매 · 개당 " : "판매 · ") + item.SellPrice.ToString("#,0") + "G", ButtonKind.Ghost, () =>
                 {
                     ShopSystem.Sell(C, item.Uid, item.Count, out _);
                     done();

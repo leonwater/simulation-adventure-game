@@ -17,11 +17,11 @@ namespace Adventure.Tests
             {
                 if (s.Target == SkillTarget.Self) continue;
                 Assert.Less(s.SuccessBonus, 0, s.Id + ": 모든 스킬은 기본 공격보다 덜 맞는다");
-                Assert.GreaterOrEqual(s.SuccessBonus, -0.12 - 1e-9, s.Id + " 보정은 −12%까지");
+                Assert.GreaterOrEqual(s.SuccessBonus, -0.12 - 1e-9, s.Id + " 보정은 -12%까지");
                 double total = (s.ChainMults.Length > 0 ? s.ChainMults[0] : s.DamageMult) * s.Hits;
                 bool strong = (s.Target == SkillTarget.AllEnemies && s.IsAttack) || s.GuaranteedCrit || total >= 2.5;
-                if (strong) Assert.LessOrEqual(s.SuccessBonus, -0.08 + 1e-9, s.Id + " 광역·고위력 −8~12%");
-                else Assert.GreaterOrEqual(s.SuccessBonus, -0.06 - 1e-9, s.Id + " 저위력 −3~6%");
+                if (strong) Assert.LessOrEqual(s.SuccessBonus, -0.08 + 1e-9, s.Id + " 광역·고위력 -8~12%");
+                else Assert.GreaterOrEqual(s.SuccessBonus, -0.06 - 1e-9, s.Id + " 저위력 -3~6%");
             }
         }
 

@@ -145,7 +145,7 @@ namespace Adventure.Tests
         }
 
         /// <summary>
-        /// 기획서 '밸런스 확인' 표와 비교하기 위한 시뮬레이션: 적 2마리, 레벨 = 층 × 2 − 1, 자동 배분, 층 등급 장비.
+        /// 기획서 '밸런스 확인' 표와 비교하기 위한 시뮬레이션: 적 2마리, 레벨 = 층 × 2 - 1, 자동 배분, 층 등급 장비.
         /// 결과는 테스트 출력으로 남기고, 전투가 지나치게 길거나 짧지 않은지만 확인한다.
         /// </summary>
         [Test]
@@ -194,7 +194,7 @@ namespace Adventure.Tests
                         if (b.Outcome == BattleOutcome.Victory) wins++;
                         n++;
                     }
-                    line += " " + Names.Of(job) + " " + (turns / n) + "턴·HP −" + (lost / n) + "% (승 " + wins + "/" + n + ")";
+                    line += " " + Names.Of(job) + " " + (turns / n) + "턴·HP -" + (lost / n) + "% (승 " + wins + "/" + n + ")";
                     Assert.That(turns / n, Is.InRange(2, 15), job + " " + floor + "층 전투 턴 수");
                 }
                 TestContext.WriteLine(line);

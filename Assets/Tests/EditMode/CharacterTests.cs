@@ -161,7 +161,7 @@ namespace Adventure.Tests
 
             var w = Character.Create("a", Job.Warrior);
             w.BaseStats[Stat.Toughness] = 200;
-            Assert.AreEqual(0.40, CharacterStats.DamageReduction(w), 1e-9, "강인함 감소율 최대 40%");
+            Assert.AreEqual(0.30, CharacterStats.DamageReduction(w), 1e-9, "강인함 감소율 최대 30% (v2.4)");
             w.BaseStats[Stat.Finesse] = 100;
             Assert.AreEqual(0.025, CharacterStats.Evasion(w), 1e-9, "기교는 도적만 회피에 반영");
 

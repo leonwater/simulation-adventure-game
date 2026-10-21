@@ -1,9 +1,16 @@
-# 웹(WebGL) 빌드 (GameCI) - Actions 탭에서 "Run workflow"를 누르면 실행된다 (푸시마다 돌지 않는다).
+# 웹(WebGL) 빌드 (GameCI) - main에 게임 파일이 바뀌어 올라오면 안드로이드와 함께 자동으로 돈다 (v2.4). Actions 탭 "Run workflow"로도 실행.
 # 결과: Releases의 "web-latest"에 adventurer-web.zip (압축을 풀고 index.html을 로컬 서버로 열면 된다) + Actions 실행 결과.
 # 필요한 비밀값은 안드로이드 빌드와 같다 (UNITY_LICENSE · UNITY_EMAIL · UNITY_PASSWORD).
 name: 웹 빌드
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "Assets/**"
+      - "Packages/**"
+      - "ProjectSettings/**"
+      - ".github/workflows/web-build.yml"
   workflow_dispatch:
 
 permissions:
@@ -55,7 +62,7 @@ jobs:
           buildMethod: Adventure.EditorTools.CIBuild.BuildWebGL
           customParameters: -stackTraceLogType Full
           versioning: Custom
-          version: 2.3.${{ github.run_number }}
+          version: 2.4.${{ github.run_number }}
 
       - name: 웹 폴더 정리·압축
         id: web

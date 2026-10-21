@@ -12,6 +12,7 @@ namespace Adventure.Game
     public class DungeonScreen : ScreenBase
     {
         private const float MapW = 334, MapH = 204, Node = 36;
+        private static readonly Color ClearedRoom = Theme.Hex("2D4A3B");
         private bool _levelUp;
 
         public DungeonScreen(bool levelUp = false)
@@ -37,7 +38,9 @@ namespace Adventure.Game
             UI.Stretch(tint.rectTransform);
             var page = ScreenKit.Page(root);
             var theme = MonsterDb.ThemeFor(run.Floor);
-            ScreenKit.DungeonHeader(page, run.Floor + "층 · " + theme.Name, "탐험한 방 " + run.RoomsExplored, C, Pause);
+            // 머리줄 아래 줄: 탐험한 방 · 레벨 · 경험치 % (v2.4)
+            string exp = C.Level >= GameBalance.MaxLevel ? "최대 레벨" : "경험치 " + Mathf.FloorToInt((float)Leveling.ExpProgress(C) * 100) + "%";
+            ScreenKit.DungeonHeader(page, run.Floor + "층 · " + theme.Name, "탐험한 방 " + run.RoomsExplored + " · Lv." + C.Level + " " + exp, C, Pause);
 
             var body = UI.Scroll(page, out _, 12, UI.Pad(16, 16, 14, 16));
             if (run.Effects.Count > 0) EffectTags(body, run);
@@ -54,7 +57,7 @@ namespace Adventure.Game
             var dock = UI.Column(page, 8, UI.Pad(16, 16, 8, 8), TextAnchor.UpperLeft, "dock");
             Choices(dock, run);
 
-            // 아래 고정 줄: 왼쪽 가방 · 가운데 캐릭터 정보 · 오른쪽 귀환 (아이콘 버튼). 순간이동은 미니맵에서.
+            // 아래 고정 줄: 가방 · 캐릭터 정보 · 퀘스트 · 귀환 (아이콘 버튼, v2.4: 퀘스트 추가). 순간이동은 미니맵에서.
             var bottom = UI.Card(page, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 8, 8), false, 8, TextAnchor.MiddleCenter, "bottom");
             ScreenKit.TopLine(bottom);
             IconButton(bottom, "bag", "가방", () =>
@@ -65,6 +68,8 @@ namespace Adventure.Game
             var info = IconButton(bottom, "character", "정보", () => CharacterInfo.Show(Overlay, S), BottomStyle.Normal);
             Anchors.Set("dungeon.info", info);
             UI.HSpacer(bottom);
+            IconButton(bottom, "guild", "퀘스트", () => CharacterInfo.ShowQuests(Overlay, S), BottomStyle.Normal);
+            UI.HSpacer(bottom);
             // 귀환 방을 찾기 전에는 붉은 회색으로 잠가 둔다 (누르면 이유를 알려 준다)
             bool canReturn = S.CanReturn;
             var ret = IconButton(bottom, "return", "귀환", canReturn ? (System.Action)ConfirmReturn : () => Toast("아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요."),
@@ -73,6 +78,8 @@ namespace Adventure.Game
 
             if (run.FloorIntroPending) FloorIntro(root, run);
             else AfterIntro();
+            // 방에서 얻은 장비가 지금 장비보다 좋으면 바로 착용할지 묻는다 (v2.4, 튜토리얼 안내 중에는 묻지 않음)
+            if (S.Notice?.Loot != null && !Coach.Active && !run.FloorIntroPending) GearOffer.Offer(S.Notice.Loot.Items, Rebuild);
         }
 
         /// <summary>층에 들어오면 1초 정도 큰 제목을 보여 준다 (수정 사항 #18).</summary>
@@ -116,7 +123,7 @@ namespace Adventure.Game
             Overlay.SetBack(() => Overlay.Close(modal));
             UI.Label(body, "남은 포인트 " + UI.Color(draft.Remaining.ToString(), Theme.GoldHex), 14, Theme.Text);
             var stats = C.JobData.AllocatableStats;
-            // 캐릭터 화면과 같은 줄: 아이콘 · 이름/효과 · 고정 폭 − 값 + (줄마다 위치가 같다)
+            // 캐릭터 화면과 같은 줄: 아이콘 · 이름/효과 · 고정 폭 - 값 + (줄마다 위치가 같다)
             for (int i = 0; i < stats.Length; i++)
             {
                 var st = stats[i];
@@ -166,6 +173,7 @@ namespace Adventure.Game
                     : run.Floor >= GameBalance.MaxFloor ? "던전을 정복했다" : (run.Floor + 1) + "층이 열렸다 · 획득한 것은 모두 유지", ReturnNow);
                 Anchors.Set("dungeon.home", home);
             }
+            QuickPotions(parent);
             // 방 안에서 하는 행동은 보라색. 귀환 방은 선택지 없이 글자만 보여 주고, 귀환은 아래 귀환 버튼으로 한다.
             if (room.Type == RoomType.Merchant)
                 ScreenKit.ActionButton(parent, "상인과 거래한다", room.MerchantDiscount ? "소모품 (은인 할인: 마을보다 30% 쌈)" : "소모품 (마을보다 50% 비쌈)", "›", false, () => Go(new MerchantScreen()), true, 52);
@@ -179,6 +187,42 @@ namespace Adventure.Game
                 if (target.Visited) VisitedButton(parent, "지름길로 돌아간다", hint, () => Move(target.Id));
                 else NewRoomButton(parent, "지름길로 간다", hint, () => Move(target.Id));
             }
+        }
+
+        /// <summary>회복 물약 바로 쓰기 (v2.4): 가방에 들어가지 않고 한 번 눌러 쓴다. HP가 가득하면 잠긴다.</summary>
+        private void QuickPotions(Transform parent)
+        {
+            var seen = new HashSet<string>();
+            RectTransform row = null;
+            bool full = C.CurrentHp >= CharacterStats.MaxHp(C);
+            foreach (var item in C.Inventory.Items)
+            {
+                var def = ItemDb.Consumable(item.TemplateId);
+                if (def == null || def.HealRatio <= 0 || !seen.Add(item.TemplateId)) continue;
+                if (row == null)
+                {
+                    row = UI.Row(parent, 8, null, TextAnchor.MiddleLeft, "potions");
+                    UI.Size(row, height: 40);
+                }
+                string uid = item.Uid;
+                int count = C.Inventory.CountOf(item.TemplateId);
+                var b = UI.ButtonCard(row, () => UsePotion(uid), Theme.ReturnBg, Theme.ReturnBorder, 10, UI.Pad(10, 0), false, 6, 40, TextAnchor.MiddleCenter);
+                UI.Size(b, width: 0, flexW: 1);
+                UI.Icon(b, "stat_vitality", 16);
+                UI.Label(b, def.Name + " ×" + count + " · HP +" + Mathf.RoundToInt((float)def.HealRatio * 100) + "%", 13, Theme.ReturnText, true, TextAnchor.MiddleCenter, false, false);
+                if (full) UI.SetEnabled(b, false);
+            }
+        }
+
+        private void UsePotion(string uid)
+        {
+            if (!S.UseConsumable(uid, out string msg))
+            {
+                Toast(msg);
+                return;
+            }
+            Overlay.Flash(msg, Theme.Green, 0.9f);
+            Rebuild();
         }
 
         // ── 이동 패드 (던전 이동 UI 시안서): 위 · 왼쪽 · 오른쪽 · 아래 칸은 늘 같은 자리·같은 크기, 상태는 색과 글자로만 ──
@@ -303,13 +347,13 @@ namespace Adventure.Game
             Locked
         }
 
-        /// <summary>아래 고정 줄 아이콘 버튼 (폭 96).</summary>
+        /// <summary>아래 고정 줄 아이콘 버튼 (폭 80, 4개).</summary>
         private static RectTransform IconButton(Transform parent, string icon, string label, System.Action onClick, BottomStyle style)
         {
             Color fill = style == BottomStyle.Return ? Theme.ReturnBg : style == BottomStyle.Locked ? Theme.Hex("221A1B") : Theme.Button;
             Color border = style == BottomStyle.Return ? Theme.ReturnBorder : style == BottomStyle.Locked ? Theme.Hex("4E3838") : Theme.ButtonBorder;
             var b = UI.ButtonCard(parent, onClick, fill, border, 12, UI.Pad(4, 6), true, 2, 60, TextAnchor.MiddleCenter);
-            UI.Size(b, width: 96, minH: 60, flexW: 0);
+            UI.Size(b, width: 80, minH: 60, flexW: 0);
             var img = UI.CenteredIcon(b, icon, 26);
             Color text = style == BottomStyle.Locked ? Theme.Hex("8A6E6C") : Theme.Text;
             if (style == BottomStyle.Locked) img.color = text;
@@ -415,7 +459,7 @@ namespace Adventure.Game
             // 범례 줄 오른쪽 끝(카드 오른쪽 아래): 지도 아이콘 버튼 → 전체 지도·순간이동 (갈 곳이 있으면 깜빡인다)
             var legend = UI.Row(card, 12, null, TextAnchor.MiddleLeft);
             UI.Size(legend, height: 32);
-            UI.Sub(legend, "■ 탐험함");
+            UI.Label(legend, "■ 클리어", 12, Theme.ReturnSub);
             UI.Label(legend, "■ 현재 위치", 12, Theme.Gold);
             UI.Label(legend, "□ 갈 수 있음", 12, Theme.Gold);
             UI.HSpacer(legend);
@@ -450,7 +494,7 @@ namespace Adventure.Game
                 if (S.Teleport(room.Id)) Rebuild();
             }) : null);
             var legend = UI.Row(body, 12);
-            UI.Sub(legend, "■ 탐험함");
+            UI.Label(legend, "■ 클리어", 12, Theme.ReturnSub);
             UI.Label(legend, "■ 현재 위치", 12, Theme.Gold);
             UI.Label(legend, "□ 갈 수 있음", 12, Theme.Gold);
         }
@@ -504,7 +548,8 @@ namespace Adventure.Game
                 bool next = !r.Visited && cur.Links.Contains(r.Id) && DungeonSystem.CanLeave(run);
                 bool known = r.Visited || easy || r.Revealed;
                 bool chain = r.Chain && !r.Visited;
-                Color fill = isCur ? Theme.Accent : r.Visited ? Theme.MapNode : Theme.MapBg;
+                // 클리어한 방은 초록빛, 들어갔지만 끝내지 못한 방(도망친 전투)은 회색 (v2.4)
+                Color fill = isCur ? Theme.Accent : r.Visited && r.Cleared ? ClearedRoom : r.Visited ? Theme.MapNode : Theme.MapBg;
                 Color border = isCur ? Theme.Accent : next ? Theme.Gold : chain ? Theme.Gold * new Color(1, 1, 1, 0.7f) : r.Visited ? line : Theme.PlaceholderLine;
                 RectTransform n;
                 bool tappable = onTeleport != null && !isCur && r.Visited && r.Cleared;

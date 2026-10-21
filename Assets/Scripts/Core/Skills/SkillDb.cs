@@ -23,7 +23,7 @@ namespace Adventure.Core
         public double DamageMult;
         public int Hits = 1;
         public double HealRatio;
-        /// <summary>기본 공격 성공률에 더하는 보정 (−10% ~ +10%).</summary>
+        /// <summary>기본 공격 성공률에 더하는 보정 (-10% ~ +10%).</summary>
         public double SuccessBonus;
         /// <summary>타격마다 치명타가 날 확률.</summary>
         public double CritChance;
@@ -46,14 +46,14 @@ namespace Adventure.Core
         public bool IsAttack => DamageMult > 0 || ChainMults.Length > 0;
         public bool NeedsTarget => Target == SkillTarget.SingleEnemy || Target == SkillTarget.MultiEnemy || Target == SkillTarget.ChainEnemies;
 
-        /// <summary>"성공률 −5%" / "성공률 100%" / "" (보정 없음)</summary>
+        /// <summary>"성공률 -5%" / "성공률 100%" / "" (보정 없음)</summary>
         public string SuccessText
         {
             get
             {
                 if (Target == SkillTarget.Self) return "성공률 100%";
                 if (Math.Abs(SuccessBonus) < 1e-9) return "";
-                return "성공률 " + (SuccessBonus > 0 ? "+" : "−") + Math.Round(Math.Abs(SuccessBonus) * 100) + "%";
+                return "성공률 " + (SuccessBonus > 0 ? "+" : "-") + Math.Round(Math.Abs(SuccessBonus) * 100) + "%";
             }
         }
 
@@ -75,16 +75,16 @@ namespace Adventure.Core
         public static readonly SkillDef[] AllSkills =
         {
             // v2.2: 직업마다 10개 (하급 3 · 중급 3 · 상급 2 · 최상급 2, 도적만 하급 4 · 중급 2 · 상급 2 · 최상급 2).
-            // 성공률 보정은 기본 공격보다 낮게 (저위력 −3~4%, 광역·고위력 −8~12%), 자신에게 거는 스킬은 100%.
+            // 성공률 보정은 기본 공격보다 낮게 (저위력 -3~4%, 광역·고위력 -8~12%), 자신에게 거는 스킬은 100%.
             // 역할 태그(단일 · 광역 · 상태 · 보조 · 방어 · 회복)는 스킬을 고를 때 참고한다.
 
             // ── 전사: 높은 HP, 한 방이 큰 스킬, 재사용 3~8턴 ──
             new SkillDef { Id = "w_bash", Name = "강타", JobRestriction = W, Tier = SkillTier.Low, Target = One, DamageMult = 2.5, SuccessBonus = -0.10, Cooldown = 4, Role = "단일", Effect = "단일 250%" },
-            new SkillDef { Id = "w_warcry", Name = "전투 함성", JobRestriction = W, Tier = SkillTier.Low, Target = Self, Cooldown = 6, Role = "보조", Statuses = new[] { S(StatusType.Empower, 20, 3, true) }, Effect = "강화 3턴" },
+            new SkillDef { Id = "w_warcry", Name = "전투 함성", JobRestriction = W, Tier = SkillTier.Low, Target = Self, Cooldown = 6, Role = "보조", Statuses = new[] { S(StatusType.Empower, 20, 3, true) }, Effect = "3턴 동안 공격력 +20%" },
             new SkillDef { Id = "w_ram", Name = "몸통 박치기", JobRestriction = W, Tier = SkillTier.Low, Target = One, DamageMult = 1.3, SuccessBonus = -0.04, Cooldown = 3, Role = "상태", Statuses = new[] { S(StatusType.Weaken, 20, 2) }, Effect = "단일 130% + 약화 2턴" },
             new SkillDef { Id = "w_shield", Name = "방패 밀치기", JobRestriction = W, Tier = SkillTier.Mid, Target = One, DamageMult = 1.5, SuccessBonus = -0.04, Cooldown = 5, Role = "상태", Statuses = new[] { S(StatusType.Stun, 1, 1, false, 0.6) }, Effect = "단일 150% + 60% 확률로 기절 1턴" },
-            new SkillDef { Id = "w_guard", Name = "철벽 태세", JobRestriction = W, Tier = SkillTier.Mid, Target = Self, Cooldown = 6, Role = "방어", Statuses = new[] { S(StatusType.Fortify, 20, 3, true) }, Effect = "철벽 3턴" },
-            new SkillDef { Id = "w_will", Name = "불굴", JobRestriction = W, Tier = SkillTier.Mid, Target = Self, Cooldown = 7, Role = "회복", Statuses = new[] { S(StatusType.Regen, 5, 3, true) }, Effect = "재생 3턴" },
+            new SkillDef { Id = "w_guard", Name = "철벽 태세", JobRestriction = W, Tier = SkillTier.Mid, Target = Self, Cooldown = 6, Role = "방어", Statuses = new[] { S(StatusType.Fortify, 20, 3, true) }, Effect = "3턴 동안 받는 피해 -20%" },
+            new SkillDef { Id = "w_will", Name = "불굴", JobRestriction = W, Tier = SkillTier.Mid, Target = Self, Cooldown = 7, Role = "회복", Statuses = new[] { S(StatusType.Regen, 5, 3, true) }, Effect = "3턴 동안 턴마다 최대 HP 5% 회복" },
             new SkillDef { Id = "w_whirl", Name = "회전 베기", JobRestriction = W, Tier = SkillTier.High, Target = Every, DamageMult = 1.8, SuccessBonus = -0.08, Cooldown = 6, Role = "광역", Effect = "모든 적 180%" },
             new SkillDef { Id = "w_roar", Name = "위협의 포효", JobRestriction = W, Tier = SkillTier.High, Target = Every, SuccessBonus = -0.04, Cooldown = 7, Role = "광역 상태", Statuses = new[] { S(StatusType.Weaken, 20, 3) }, Effect = "모든 적 약화 3턴" },
             new SkillDef { Id = "w_earth", Name = "대지 가르기", JobRestriction = W, Tier = SkillTier.Top, Target = Every, DamageMult = 3.5, SuccessBonus = -0.12, Cooldown = 8, Role = "광역", Statuses = new[] { S(StatusType.Vulnerable, 20, 2) }, Effect = "모든 적 350% + 취약 2턴" },

@@ -101,7 +101,7 @@ namespace Adventure.Core
             switch (s)
             {
                 case StatusType.Empower: return "공격력 +" + value + "%";
-                case StatusType.Fortify: return "받는 피해 −" + value + "%";
+                case StatusType.Fortify: return "받는 피해 -" + value + "%";
                 case StatusType.Regen: return "턴마다 최대 HP " + value + "% 회복";
                 case StatusType.Focus: return "성공률 +" + value + "%";
                 case StatusType.Swift: return "회피 +" + value + "%";
@@ -109,13 +109,13 @@ namespace Adventure.Core
                 case StatusType.Cruel: return "치명타 피해 +" + value + "%";
                 case StatusType.Poison: return "턴마다 최대 HP " + value + "% 피해";
                 case StatusType.Bleed: return "행동할 때마다 공격력 " + value + "% 피해";
-                case StatusType.Burn: return "턴마다 공격력 " + value + "% 피해, 받는 회복 −50%";
-                case StatusType.Weaken: return "공격력 −" + value + "%";
+                case StatusType.Burn: return "턴마다 공격력 " + value + "% 피해, 받는 회복 -50%";
+                case StatusType.Weaken: return "공격력 -" + value + "%";
                 case StatusType.Vulnerable: return "받는 피해 +" + value + "%";
                 case StatusType.Stun: return "행동 불가";
                 case StatusType.Silence: return "스킬 사용 불가";
-                case StatusType.Blind: return "성공률 −" + value + "%";
-                case StatusType.Fear: return "도주 외 성공률 −" + value + "%";
+                case StatusType.Blind: return "성공률 -" + value + "%";
+                case StatusType.Fear: return "도주 외 성공률 -" + value + "%";
                 default: return "";
             }
         }
@@ -133,7 +133,7 @@ namespace Adventure.Core
                 case StatusType.Regen:
                     return "턴마다 HP " + (int)Math.Round(ownerMaxHp * s.Value / 100.0) + " 회복 (최대 HP " + s.Value + "%)";
                 case StatusType.Bleed: return "행동할 때마다 " + s.Value + " 피해";
-                case StatusType.Burn: return "턴마다 " + s.Value + " 피해 · 받는 회복 −50%";
+                case StatusType.Burn: return "턴마다 " + s.Value + " 피해 · 받는 회복 -50%";
                 default: return Describe(s.Type, s.Value);
             }
         }

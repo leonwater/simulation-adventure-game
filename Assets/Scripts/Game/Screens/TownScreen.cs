@@ -40,13 +40,6 @@ namespace Adventure.Game
 
             ScreenKit.BottomNav(page, 0);
             Tutorial.OnTown();
-
-            var ticker = root.gameObject.AddComponent<Ticker>();
-            ticker.Interval = 1f;
-            ticker.OnTick = () =>
-            {
-                if (S.TickShop()) Rebuild(); // 상점 물건이 바뀌면 알림 점을 다시 그린다
-            };
         }
 
         private static void Facility(Transform grid, string icon, string title, bool alert, Action onClick)

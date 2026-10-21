@@ -70,8 +70,8 @@ namespace Adventure.Core
     public sealed class EventOutcome
     {
         public string Text;
-        public double HpRatio;     // +회복 / −피해 (최대 HP 대비)
-        public double GoldMult;    // +획득 / −손실
+        public double HpRatio;     // +회복 / -피해 (최대 HP 대비)
+        public double GoldMult;    // +획득 / -손실
         public double ExpMult;
         public EventReward Reward;
         public bool ReturnToTown;
@@ -593,6 +593,26 @@ namespace Adventure.Core
         /// 이벤트 뽑기: 가중치(기본 10 · 개구멍 5 · 시련의 문 3), 연쇄 후속 제외, 등장 층 미만 제외,
         /// 한 층에 같은 이벤트는 한 번만 (used에 이미 고른 Id).
         /// </summary>
+        /// <summary>
+        /// 지금 남아 있는 탐험 효과를 주는 이벤트들 (v2.4): 효과가 남아 있는 동안 같은 탐험의 다음 층에 다시 나오지 않게 뺀다.
+        /// </summary>
+        public static List<string> GrantingActiveEffects(List<ExploreEffect> active)
+        {
+            var ids = new List<string>();
+            if (active == null || active.Count == 0) return ids;
+            foreach (var e in All)
+            {
+                bool hit = false;
+                foreach (var ch in e.Choices)
+                    foreach (var o in new[] { ch.Success, ch.Failure })
+                        if (o != null)
+                            foreach (var fx in o.Effects)
+                                if (active.Exists(a => a.Type == fx.Type)) hit = true;
+                if (hit) ids.Add(e.Id);
+            }
+            return ids;
+        }
+
         public static EventDef PickEvent(Rng rng, int floor = 1, ICollection<string> used = null)
         {
             var weights = new int[All.Length];

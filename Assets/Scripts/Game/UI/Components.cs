@@ -100,22 +100,6 @@ namespace Adventure.Game
             if (_t >= Life) Destroy(gameObject);
         }
     }
-
-    /// <summary>화면이 매 프레임 할 일 (타이머 갱신 등)을 연결한다.</summary>
-    public class Ticker : MonoBehaviour
-    {
-        public System.Action OnTick;
-        public float Interval = 0.5f;
-        private float _t;
-
-        private void Update()
-        {
-            _t += Time.unscaledDeltaTime;
-            if (_t < Interval) return;
-            _t = 0;
-            OnTick?.Invoke();
-        }
-    }
 }
 
 namespace Adventure.Game

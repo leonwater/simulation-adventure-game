@@ -8,7 +8,7 @@ namespace Adventure.Core
         public long Gold;
         public long Exp;
         public List<ItemInstance> Items = new List<ItemInstance>();
-        /// <summary>가방이 가득 차 줍지 못한 아이템.</summary>
+        /// <summary>가방이 가득 찼거나 소모품이 99개라 줍지 못한 아이템.</summary>
         public List<ItemInstance> Dropped = new List<ItemInstance>();
         public int LevelsGained;
 
@@ -21,7 +21,7 @@ namespace Adventure.Core
             if (Gold != 0) parts.Add("골드 " + Gold.ToString("#,0"));
             if (Exp != 0) parts.Add("경험치 " + Exp.ToString("#,0"));
             if (Items.Count > 0) parts.Add(LootSystem.Names(Items));
-            if (Dropped.Count > 0) parts.Add("가방이 가득 차 " + Names.Josa(LootSystem.Names(Dropped), "을/를") + " 두고 왔다");
+            if (Dropped.Count > 0) parts.Add("가방이 가득 차거나 99개라 " + Names.Josa(LootSystem.Names(Dropped), "을/를") + " 두고 왔다");
             return parts.Count == 0 ? "아무것도 얻지 못했다" : string.Join(" · ", parts);
         }
     }
@@ -49,7 +49,7 @@ namespace Adventure.Core
             if (Loot.Gold != 0) list.Add("골드 " + (Loot.Gold > 0 ? "+" : "") + Loot.Gold.ToString("#,0"));
             if (Loot.Exp != 0) list.Add("경험치 +" + Loot.Exp.ToString("#,0"));
             foreach (var i in Loot.Items) list.Add(i.Count > 1 ? i.DisplayName + " ×" + i.Count : i.DisplayName);
-            if (Loot.Dropped.Count > 0) list.Add("가방이 가득 차 두고 옴: " + LootSystem.Names(Loot.Dropped));
+            if (Loot.Dropped.Count > 0) list.Add("가방이 가득 차거나 99개라 두고 옴: " + LootSystem.Names(Loot.Dropped));
             if (Loot.LevelsGained > 0) list.Add("레벨 업! +" + Loot.LevelsGained);
             return list;
         }

@@ -26,16 +26,26 @@ namespace Adventure.Tests
         [Test]
         public void Container_StacksUpTo99AndSplits()
         {
+            // 재료는 칸마다 99개씩 겹치고 칸을 넘기면 나뉜다
             var inv = new ItemContainer { Capacity = 3 };
-            Assert.IsTrue(inv.Add(ItemDb.CreateConsumable("potion", 60)));
-            Assert.IsTrue(inv.Add(ItemDb.CreateConsumable("potion", 60)));
+            Assert.IsTrue(inv.Add(ItemDb.CreateMaterial("mat_goblin", 60)));
+            Assert.IsTrue(inv.Add(ItemDb.CreateMaterial("mat_goblin", 60)));
             Assert.AreEqual(2, inv.UsedCells);
-            Assert.AreEqual(120, inv.CountOf("potion"));
+            Assert.AreEqual(120, inv.CountOf("mat_goblin"));
             Assert.IsTrue(inv.Add(ItemDb.CreateConsumable("antidote", 1)));
             Assert.IsFalse(inv.Add(ItemDb.CreateConsumable("bandage", 1)), "칸이 없으면 실패");
-            Assert.IsTrue(inv.Add(ItemDb.CreateConsumable("potion", 78)), "기존 칸에 겹칠 수 있으면 성공");
-            Assert.AreEqual(198, inv.CountOf("potion"));
-            Assert.IsFalse(inv.Add(ItemDb.CreateConsumable("potion", 1)));
+            Assert.IsTrue(inv.Add(ItemDb.CreateMaterial("mat_goblin", 78)), "기존 칸에 겹칠 수 있으면 성공");
+            Assert.AreEqual(198, inv.CountOf("mat_goblin"));
+            Assert.IsFalse(inv.Add(ItemDb.CreateMaterial("mat_goblin", 1)));
+
+            // 소모품은 종류마다 최대 99개 (v2.4)
+            var bag = new ItemContainer { Capacity = 5 };
+            Assert.IsTrue(bag.Add(ItemDb.CreateConsumable("potion", 98)));
+            Assert.IsFalse(bag.Add(ItemDb.CreateConsumable("potion", 2)), "99개를 넘으면 실패");
+            Assert.IsTrue(bag.Add(ItemDb.CreateConsumable("potion", 1)));
+            Assert.AreEqual(99, bag.CountOf("potion"));
+            Assert.IsFalse(bag.Add(ItemDb.CreateConsumable("potion", 1)));
+            Assert.IsTrue(bag.Add(ItemDb.CreateConsumable("potion_hi", 5)), "다른 종류는 따로 센다");
         }
 
         [Test]
@@ -257,11 +267,11 @@ namespace Adventure.Tests
         {
             Assert.AreEqual("단일 250% · 재사용 4턴", SkillDb.Get("w_bash").Description);
             Assert.AreEqual("단일 150% + 60% 확률로 기절 1턴 · 재사용 5턴", SkillDb.Get("w_shield").Description);
-            Assert.AreEqual("강화 3턴 · 재사용 6턴", SkillDb.Get("w_warcry").Description);
+            Assert.AreEqual("3턴 동안 공격력 +20% · 재사용 6턴", SkillDb.Get("w_warcry").Description);
             Assert.AreEqual("모든 적 180% · 재사용 6턴", SkillDb.Get("w_whirl").Description);
-            Assert.AreEqual("성공률 −10%", SkillDb.Get("w_bash").SuccessText);
-            Assert.AreEqual("성공률 −4%", SkillDb.Get("w_shield").SuccessText);
-            Assert.AreEqual("성공률 −3%", SkillDb.Get("a_aim").SuccessText);
+            Assert.AreEqual("성공률 -10%", SkillDb.Get("w_bash").SuccessText);
+            Assert.AreEqual("성공률 -4%", SkillDb.Get("w_shield").SuccessText);
+            Assert.AreEqual("성공률 -3%", SkillDb.Get("a_aim").SuccessText);
             Assert.AreEqual("성공률 100%", SkillDb.Get("w_guard").SuccessText);
         }
 

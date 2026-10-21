@@ -62,7 +62,7 @@ namespace Adventure.Core
         }
 
         /// <summary>
-        /// 드롭·보상·상점 장비 (v2.0): 층 기준 레벨이 내 레벨보다 높으면 절반 확률로 내 레벨 −0~2로 다시 정하고,
+        /// 드롭·보상·상점 장비 (v2.0): 층 기준 레벨이 내 레벨보다 높으면 절반 확률로 내 레벨 -0~2로 다시 정하고,
         /// 내 레벨보다 낮은 장비는 10% 확률로 한 등급 위 (그 층 최고 등급까지).
         /// </summary>
         public static ItemInstance CreateDrop(Rng rng, ItemGrade grade, int floor, Character c)

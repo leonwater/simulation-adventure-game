@@ -86,7 +86,7 @@ jobs:
           buildMethod: Adventure.EditorTools.CIBuild.BuildAndroid
           customParameters: -stackTraceLogType Full
           versioning: Custom
-          version: 2.3.${{ github.run_number }}
+          version: 2.4.${{ github.run_number }}
           androidVersionCode: ${{ github.run_number }}0
           # 선택: 고정 서명 키 (비어 있으면 디버그 키)
           androidKeystoreName: adventurer.keystore

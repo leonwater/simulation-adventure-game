@@ -291,3 +291,18 @@
 - `CIBuild.BuildWebGL` + `.github/workflows/web-build.yml` (수동 실행): 압축 끔·예외 지원 끔·Minimal 템플릿 390×844, 빌드 뒤 캔버스를 화면 높이에 맞추고 zip으로 `web-latest` 릴리스에 올림
 - 저장: `FileSaveStore.Flush`가 웹에서만 `AdventureSyncFs`(jslib → `FS.syncfs`)를 불러 IndexedDB에 바로 반영
 - 저장소가 비공개라 GitHub Pages로는 열 수 없어 zip을 받아 로컬 서버로 연다
+
+## 21. 업데이트 (플레이 피드백 21개, 기획서 v2.4, 2026-10-21)
+
+- 방 배치 (`DungeonGenerator.AssignTypes/FixLayout/Violations`): 전투 방을 빼고 이웃한 방끼리 같은 종류 금지, 시작 방 옆 휴식 방 금지 (섞은 뒤 맞바꾸기로 고침)
+- 강인함 1당 0.35%, 최대 30% (`ReductionPerToughness`·`MaxReduction`). 소모품은 종류마다 99개 (`ItemContainer.OverConsumableLimit`)
+- 상점 자동 갱신 삭제 (`ShopSystem.EnsureStocked`), 갱신은 항상 유료이고 비용은 던전에서 돌아올 때 초기화 (`ResetRerollCost`). `Ticker` 삭제
+- 수련 불가: 피해·회복이 없는 스킬 (`SkillSystem.CanTrain`). 장착 스킬 순서 끌어서 바꾸기 (`SkillSystem.MoveEquipped`, `DragReorder`)
+- 확률 표기: 전투 선택지에 상태 이상 실제 확률 (`Battle.StatusLandChance` = 명중 1회 이상 × 효과 확률 × (1 − 저항)), 스킬 상세 창에 지금 도전 층 기준 명중률과 상태 이상 설명
+- 효과가 남은 탐험 효과 이벤트는 다음 층에 다시 나오지 않음 (`EventDb.GrantingActiveEffects`)
+- UI: 튜토리얼 간략화(창고 안내는 첫 보스를 잡았을 때만), 던전 물약 바로 쓰기·경험치 %·하단 퀘스트 버튼(`CharacterInfo.ShowQuests`)·클리어한 방 초록, 상점 장신구 능력치 이름·판매 개당 가격,
+  보스 보상 줄 단위 + 스크롤, 더 좋은 장비 착용 묻기(`GearOffer`), 자기 강화 스킬 설명 수치화
+- 글꼴(나눔고딕)에 없는 기호 교체: 빼기 '−'(U+2212) → '-', 일시정지 'Ⅱ' → '‖', 체크 '✓' → '√' ('체력 −1'이 '체력 1'로 보이던 원인)
+- 웹 빌드는 main 푸시마다 자동 (`web-build.yml`). 앱 버전 2.4.x
+- 보통 사망률 1~5층 32% · 6~10층 35% · 11~15층 44% · 16~20층 39% · 21~25층 48% · 26~30층 59%, 30층 정복 9/12 (어려움 1/12)
+- 테스트 182 → 187개 (`V24Tests`)

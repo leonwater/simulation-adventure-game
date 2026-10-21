@@ -334,7 +334,8 @@ namespace Adventure.Core
         {
             if (!CanGoDeeper(run)) throw new InvalidOperationException("아직 내려갈 수 없습니다");
             run.Floor++;
-            run.Map = DungeonGenerator.Generate(run.Floor, rng);
+            // 효과가 남아 있는 이벤트(악마의 계약·공포 등)는 다음 층에 다시 나오지 않는다 (v2.4)
+            run.Map = DungeonGenerator.Generate(run.Floor, rng, EventDb.GrantingActiveEffects(run.Effects));
             run.CurrentRoomId = run.Map.StartId;
             run.PreviousRoomId = run.Map.StartId;
             run.BossDefeated = false;

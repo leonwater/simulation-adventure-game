@@ -97,9 +97,25 @@ namespace Adventure.Core
 
         public static bool Unequip(Character c, string skillId) => c.Skills.Equipped.Remove(skillId);
 
+        /// <summary>장착 스킬 순서 바꾸기 (끌어서 놓기, v2.4): from 칸의 스킬을 to 칸으로 옮기고 사이는 한 칸씩 민다.</summary>
+        public static bool MoveEquipped(Character c, int from, int to)
+        {
+            var list = c.Skills.Equipped;
+            if (from < 0 || from >= list.Count || to < 0 || to >= list.Count || from == to) return false;
+            string id = list[from];
+            list.RemoveAt(from);
+            list.Insert(to, id);
+            return true;
+        }
+
         /// <summary>수련 비용 = 200G × 다음 강화 단계. 최대 단계면 0.</summary>
         public static int TrainingCost(SkillState state) =>
             state.Level >= GameBalance.MaxSkillLevel ? 0 : GameBalance.TrainingGoldPerLevel * (state.Level + 1);
+
+        /// <summary>
+        /// 수련(강화) 효과는 피해·회복량에만 곱해진다. 피해도 회복도 없이 상태만 거는 스킬은 수련해도 바뀌는 것이 없어 수련할 수 없다 (v2.4).
+        /// </summary>
+        public static bool CanTrain(SkillDef def) => def != null && (def.IsAttack || def.HealRatio > 0);
 
         public static bool Train(Character c, string skillId, out string error)
         {
@@ -107,6 +123,11 @@ namespace Adventure.Core
             if (state == null)
             {
                 error = "배우지 않은 스킬입니다";
+                return false;
+            }
+            if (!CanTrain(state.Def))
+            {
+                error = "수련해도 바뀌는 것이 없는 스킬입니다";
                 return false;
             }
             if (state.Level >= GameBalance.MaxSkillLevel)

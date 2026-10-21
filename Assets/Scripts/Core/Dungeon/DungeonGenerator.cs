@@ -58,9 +58,10 @@ namespace Adventure.Core
             return n;
         }
 
-        public static FloorMap Generate(int floor, Rng rng) => Generate(floor, rng, (LayoutPattern)rng.Range(0, 3));
+        public static FloorMap Generate(int floor, Rng rng, ICollection<string> excludedEvents = null) =>
+            Generate(floor, rng, (LayoutPattern)rng.Range(0, 3), excludedEvents);
 
-        public static FloorMap Generate(int floor, Rng rng, LayoutPattern pattern)
+        public static FloorMap Generate(int floor, Rng rng, LayoutPattern pattern, ICollection<string> excludedEvents = null)
         {
             var types = RollRoomTypes(rng);
             int total = types.Count + 2; // + 시작 + 보스
@@ -83,7 +84,7 @@ namespace Adventure.Core
                 }
                 if (ok) break;
             }
-            AssignTypes(best, types, floor, rng);
+            AssignTypes(best, types, floor, rng, excludedEvents);
             return best;
         }
 
@@ -182,12 +183,23 @@ namespace Adventure.Core
             map.BossId = rng.Pick(leaves.Count > 0 ? leaves : farthest);
         }
 
-        private static void AssignTypes(FloorMap map, List<RoomType> types, int floor, Rng rng)
+        /// <summary>
+        /// 방 종류 배치 (v2.4): 전투 방을 빼고 이웃한 방끼리 같은 종류가 되지 않게, 시작 방 바로 옆에는 휴식 방이 오지 않게 한다.
+        /// 무작위로 섞은 뒤 규칙을 어기는 방을 다른 방과 바꿔 가며 고친다 (못 고치면 가장 적게 어긴 배치).
+        /// </summary>
+        private static void AssignTypes(FloorMap map, List<RoomType> types, int floor, Rng rng, ICollection<string> excludedEvents = null)
         {
+            var slots = new List<Room>();
+            foreach (var r in map.Rooms)
+                if (r.Id != map.StartId && r.Id != map.BossId) slots.Add(r);
             var shuffled = new List<RoomType>(types);
             rng.Shuffle(shuffled);
-            int i = 0;
+            var assign = new Dictionary<int, RoomType>();
+            for (int k = 0; k < slots.Count; k++) assign[slots[k].Id] = shuffled[k];
+            FixLayout(map, slots, assign, rng);
+
             var usedEvents = new HashSet<string>(); // 한 층에 같은 이벤트는 한 번만
+            if (excludedEvents != null) foreach (var id in excludedEvents) usedEvents.Add(id);
             foreach (var r in map.Rooms)
             {
                 r.Seed = rng.NextSeed();
@@ -198,7 +210,7 @@ namespace Adventure.Core
                     r.Cleared = true;
                 }
                 else if (r.Id == map.BossId) r.Type = RoomType.Boss;
-                else r.Type = shuffled[i++];
+                else r.Type = assign[r.Id];
 
                 if (r.Type == RoomType.Event)
                 {
@@ -207,6 +219,56 @@ namespace Adventure.Core
                 }
                 if (r.Type == RoomType.Merchant) r.MerchantGoods = MerchantGoods(rng);
             }
+        }
+
+        private const int LayoutFixTries = 400;
+
+        private static void FixLayout(FloorMap map, List<Room> slots, Dictionary<int, RoomType> assign, Rng rng)
+        {
+            int bad = Violations(map, assign);
+            for (int t = 0; t < LayoutFixTries && bad > 0; t++)
+            {
+                var a = slots[rng.Range(0, slots.Count)];
+                var b = slots[rng.Range(0, slots.Count)];
+                if (a.Id == b.Id || assign[a.Id] == assign[b.Id]) continue;
+                Swap(assign, a.Id, b.Id);
+                int now = Violations(map, assign);
+                if (now <= bad) bad = now;
+                else Swap(assign, a.Id, b.Id);
+            }
+        }
+
+        private static void Swap(Dictionary<int, RoomType> assign, int a, int b)
+        {
+            var tmp = assign[a];
+            assign[a] = assign[b];
+            assign[b] = tmp;
+        }
+
+        /// <summary>규칙을 어긴 수: 이웃한 같은 종류(전투 제외) + 시작 방 옆 휴식 방.</summary>
+        public static int Violations(FloorMap map, Dictionary<int, RoomType> assign)
+        {
+            int n = 0;
+            foreach (var r in map.Rooms)
+            {
+                if (!assign.TryGetValue(r.Id, out var type)) continue;
+                foreach (int l in r.Links)
+                {
+                    if (l == map.StartId && type == RoomType.Rest) n++;
+                    if (l < r.Id || !assign.TryGetValue(l, out var other)) continue;
+                    if (type == other && type != RoomType.Battle) n++;
+                }
+            }
+            return n;
+        }
+
+        /// <summary>이미 만든 층의 규칙 위반 수 (테스트용).</summary>
+        public static int Violations(FloorMap map)
+        {
+            var assign = new Dictionary<int, RoomType>();
+            foreach (var r in map.Rooms)
+                if (r.Id != map.StartId && r.Id != map.BossId) assign[r.Id] = r.Type;
+            return Violations(map, assign);
         }
 
         /// <summary>

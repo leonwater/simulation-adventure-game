@@ -16,7 +16,7 @@ namespace Adventure.Core
         DemonPact,
         /// <summary>전투 첫 3턴 동안 공포.</summary>
         Fear,
-        /// <summary>저주: 드롭률 −50% (다음 휴식 방까지, 없으면 귀환까지).</summary>
+        /// <summary>저주: 드롭률 -50% (다음 휴식 방까지, 없으면 귀환까지).</summary>
         Curse
     }
 
@@ -62,8 +62,8 @@ namespace Adventure.Core
                 case ExploreEffectType.Focus: return "전투 중 선택지 성공률 +" + FocusPercent + "%";
                 case ExploreEffectType.Drum: return "다음 전투 방의 적 +1마리 (최대 4)";
                 case ExploreEffectType.DemonPact: return "공격력 +20%, 받는 피해 +15%";
-                case ExploreEffectType.Fear: return "다음 전투 첫 " + FearTurns + "턴 동안 공포 (도주 외 성공률 −" + FearPercent + "%)";
-                default: return "드롭률 −50%";
+                case ExploreEffectType.Fear: return "다음 전투 첫 " + FearTurns + "턴 동안 공포 (도주 외 성공률 -" + FearPercent + "%)";
+                default: return "드롭률 -50%";
             }
         }
 

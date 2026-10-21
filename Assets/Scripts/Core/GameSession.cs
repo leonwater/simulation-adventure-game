@@ -188,22 +188,12 @@ namespace Adventure.Core
         {
             var c = C;
             c.CurrentHp = CharacterStats.MaxHp(c);
-            ShopSystem.EnsureFresh(Data.Shop, c, Now, Rng);
+            ShopSystem.EnsureStocked(Data.Shop, c, Now, Rng);
+            if (refreshBoard) ShopSystem.ResetRerollCost(Data.Shop);
             if (refreshBoard || Data.Guild.Board.Count == 0) GuildSystem.RefreshBoard(Data.Guild, c, Rng);
             Data.SelectedFloor = c.MaxChallengeFloor;
             Save();
         }
-
-        /// <summary>마을 화면이 주기적으로 부른다. 30분이 지났으면 상점 재고를 바꾼다.</summary>
-        public bool TickShop()
-        {
-            if (Data == null || InDungeon) return false;
-            bool changed = ShopSystem.EnsureFresh(Data.Shop, C, Now, Rng);
-            if (changed) Save();
-            return changed;
-        }
-
-        public TimeSpan ShopTimeLeft => ShopSystem.TimeUntilRefresh(Data.Shop, Now);
 
         public void SelectFloor(int floor)
         {

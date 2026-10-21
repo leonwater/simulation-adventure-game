@@ -10,53 +10,38 @@ namespace Adventure.Tests
         private static readonly DateTime T0 = new DateTime(2026, 10, 17, 12, 0, 0, DateTimeKind.Utc);
 
         [Test]
-        public void Shop_AutoRefreshesEvery30MinutesIncludingOfflineTime()
+        public void Shop_StocksOnceAndNeverChangesByItself()
         {
             var c = Character.Create("a", Job.Warrior);
             var s = new ShopState();
             var rng = new Rng(3);
-            Assert.IsTrue(ShopSystem.EnsureFresh(s, c, T0, rng));
+            Assert.IsTrue(ShopSystem.EnsureStocked(s, c, T0, rng));
             Assert.AreEqual(6, s.Equipment.Count);
             Assert.AreEqual(6, s.Goods.Count);
             string first = s.Equipment[0].Uid;
-
-            Assert.IsFalse(ShopSystem.EnsureFresh(s, c, T0.AddMinutes(29), rng));
-            Assert.AreEqual(TimeSpan.FromMinutes(1), ShopSystem.TimeUntilRefresh(s, T0.AddMinutes(29)));
+            // v2.4: 시간이 아무리 지나도 저절로 바뀌지 않는다
+            Assert.IsFalse(ShopSystem.EnsureStocked(s, c, T0.AddDays(3), rng));
             Assert.AreEqual(first, s.Equipment[0].Uid);
-
-            // 앱을 95분 동안 꺼 두었다가 켜도 한 번 갱신되고, 다음 갱신은 기존 주기(30분)에 맞춰진다.
-            Assert.IsTrue(ShopSystem.EnsureFresh(s, c, T0.AddMinutes(95), rng));
-            Assert.AreNotEqual(first, s.Equipment[0].Uid);
-            Assert.AreEqual(TimeSpan.FromMinutes(25), ShopSystem.TimeUntilRefresh(s, T0.AddMinutes(95)));
         }
 
         [Test]
-        public void Shop_RerollCostDoublesAndResetsOnAutoRefresh()
+        public void Shop_RerollCostDoublesAndResetsAfterADungeonTrip()
         {
             var c = Character.Create("a", Job.Warrior);
             c.Gold = 10_000;
             var s = new ShopState();
             var rng = new Rng(3);
-            ShopSystem.EnsureFresh(s, c, T0, rng);
+            ShopSystem.EnsureStocked(s, c, T0, rng);
+            string first = s.Equipment[0].Uid;
             Assert.AreEqual(100, ShopSystem.RerollCost(s));
             Assert.IsTrue(ShopSystem.Reroll(s, c, rng, out _));
+            Assert.AreNotEqual(first, s.Equipment[0].Uid);
             Assert.AreEqual(200, ShopSystem.RerollCost(s));
             Assert.IsTrue(ShopSystem.Reroll(s, c, rng, out _));
             Assert.AreEqual(400, ShopSystem.RerollCost(s));
             Assert.AreEqual(10_000 - 300, c.Gold);
-            ShopSystem.EnsureFresh(s, c, T0.AddMinutes(30), rng);
+            ShopSystem.ResetRerollCost(s);
             Assert.AreEqual(100, ShopSystem.RerollCost(s));
-        }
-
-        [Test]
-        public void Shop_ClockGoingBackwardsDoesNotBreak()
-        {
-            var c = Character.Create("a", Job.Warrior);
-            var s = new ShopState();
-            var rng = new Rng(3);
-            ShopSystem.EnsureFresh(s, c, T0, rng);
-            Assert.IsFalse(ShopSystem.EnsureFresh(s, c, T0.AddHours(-5), rng));
-            Assert.AreEqual(GameBalance.ShopRefreshInterval, ShopSystem.TimeUntilRefresh(s, T0.AddHours(-5)));
         }
 
         [Test]
@@ -110,7 +95,7 @@ namespace Adventure.Tests
             var c = Character.Create("a", Job.Warrior);
             c.Gold = 100_000;
             var s = new ShopState();
-            ShopSystem.EnsureFresh(s, c, T0, new Rng(5));
+            ShopSystem.EnsureStocked(s, c, T0, new Rng(5));
             var potion = s.Goods.Find(g => g.Item.TemplateId == "potion");
             long before = c.Gold;
             Assert.IsTrue(ShopSystem.BuyGood(s, c, potion.Item.Uid, 5, out _));
@@ -141,7 +126,7 @@ namespace Adventure.Tests
         {
             var c = Character.Create("a", Job.Warrior);
             var s = new ShopState();
-            ShopSystem.EnsureFresh(s, c, T0, new Rng(5));
+            ShopSystem.EnsureStocked(s, c, T0, new Rng(5));
             c.Gold = 0;
             Assert.IsFalse(ShopSystem.BuyEquipment(s, c, s.Equipment[0].Uid, out string err));
             Assert.AreEqual("골드가 부족합니다", err);

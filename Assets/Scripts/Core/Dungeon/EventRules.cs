@@ -33,7 +33,7 @@ namespace Adventure.Core
         };
     }
 
-    /// <summary>특수 이벤트 선택지 처리. 성공률 = 62% + (능력치 − 요구치) × 1% + 행운 × 0.5% (30~75%).</summary>
+    /// <summary>특수 이벤트 선택지 처리. 성공률 = 62% + (능력치 - 요구치) × 1% + 행운 × 0.5% (30~75%).</summary>
     public static class EventRules
     {
         public static Stat? CheckStat(EventChoice choice, Character c) =>
@@ -183,7 +183,7 @@ namespace Adventure.Core
             double req = GameBalance.EventRequirement(floor);
             return Names.Of(stat.Value) + " 판정 (요구치 " + Math.Round(req) + ")\n"
                    + "기본 " + Math.Round(GameBalance.EventBase * 100) + "%\n"
-                   + "능력치 차이 (" + have + " − " + Math.Round(req) + ") × " + Math.Round(GameBalance.EventPerStatPoint * 100) + "%\n"
+                   + "능력치 차이 (" + have + " - " + Math.Round(req) + ") × " + Math.Round(GameBalance.EventPerStatPoint * 100) + "%\n"
                    + "행운 " + luck + " × " + (GameBalance.EventBonusPerLuck * 100).ToString("0.#") + "%\n"
                    + "= " + Math.Round(chance * 100) + "% (최소 " + Math.Round(GameBalance.EventMin * 100) + "% · 최대 " + Math.Round(GameBalance.EventMax * 100) + "%)";
         }

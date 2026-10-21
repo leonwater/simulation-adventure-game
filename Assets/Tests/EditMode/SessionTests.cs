@@ -164,14 +164,21 @@ namespace Adventure.Tests
         }
 
         [Test]
-        public void ShopTick_RefreshesAfterRealTime()
+        public void ShopRerollCost_ResetsWhenComingBackFromTheDungeon()
         {
             var store = new MemorySaveStore();
             var s = NewSession(store);
             s.NewGame("에단", Job.Rogue, Difficulty.Normal);
-            Assert.IsFalse(s.TickShop());
-            _now = _now.AddMinutes(31);
-            Assert.IsTrue(s.TickShop());
+            s.SetTutorial(TutorialStage.Done);
+            s.C.Gold = 10_000;
+            Assert.IsTrue(ShopSystem.Reroll(s.Data.Shop, s.C, s.Rng, out _));
+            Assert.AreEqual(200, ShopSystem.RerollCost(s.Data.Shop));
+            string stock = s.Data.Shop.Equipment[0].Uid;
+            _now = _now.AddHours(5);
+            s.EnterDungeon();
+            s.ReturnToTown();
+            Assert.AreEqual(100, ShopSystem.RerollCost(s.Data.Shop), "던전에서 돌아오면 갱신 비용이 처음 값");
+            Assert.AreEqual(stock, s.Data.Shop.Equipment[0].Uid, "물건은 그대로");
         }
 
         /// <summary>

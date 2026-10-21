@@ -166,7 +166,7 @@ namespace Adventure.Game
             return Names.Of(def.Tier) + " · " + (c != null && def.JobRestriction != (int)c.Job ? UI.Color(job, Theme.RedHex) : job);
         }
 
-        /// <summary>장비: "Lv.12 · +5" (레벨이 모자라면 빨강, 비교는 +초록 / −빨강).</summary>
+        /// <summary>장비: "Lv.12 · +5" (레벨이 모자라면 빨강, 비교는 +초록 / -빨강).</summary>
         public static string LevelCompare(Character c, ItemInstance item, bool withLabel)
         {
             string lv = "Lv." + item.LevelReq;
@@ -174,7 +174,7 @@ namespace Adventure.Game
             if (c.Equipment.Find(item.Uid) != null) return lv + " · 착용 중";
             if (EquipmentSystem.Compare(c, item).Count == 0) return lv;
             var d = EquipmentSystem.Summary(c, item);
-            string v = d.Delta > 0 ? "+" + d.Delta : d.Delta < 0 ? "−" + (-d.Delta) : "±0";
+            string v = d.Delta > 0 ? "+" + d.Delta : d.Delta < 0 ? "-" + (-d.Delta) : "±0";
             string hex = d.Delta > 0 ? Theme.GreenHex : d.Delta < 0 ? Theme.RedHex : Theme.SubHex;
             return lv + " · " + UI.Color((withLabel ? d.Label + " " : "") + v, hex);
         }

@@ -113,7 +113,7 @@ namespace Adventure.Core
     public enum StatusType
     {
         Empower,    // 강화: 공격력 +
-        Fortify,    // 철벽: 받는 피해 −
+        Fortify,    // 철벽: 받는 피해 -
         Regen,      // 재생: 턴마다 최대 HP % 회복
         Focus,      // 집중: 선택지 성공률 +
         Swift,      // 날렵함: 회피 +
@@ -121,13 +121,13 @@ namespace Adventure.Core
         Cruel,      // 잔혹함: 치명타 피해 +
         Poison,     // 독: 턴마다 최대 HP % 피해
         Bleed,      // 출혈: 행동할 때마다 고정 피해
-        Burn,       // 화상: 턴마다 고정 피해, 받는 회복량 −50%
-        Weaken,     // 약화: 공격력 −
+        Burn,       // 화상: 턴마다 고정 피해, 받는 회복량 -50%
+        Weaken,     // 약화: 공격력 -
         Vulnerable, // 취약: 받는 피해 +
         Stun,       // 기절: 행동 불가
         Silence,    // 침묵: 스킬 사용 불가
-        Blind,      // 실명: 성공률 −
-        Fear        // 공포: 도주 외 선택지 성공률 −
+        Blind,      // 실명: 성공률 -
+        Fear        // 공포: 도주 외 선택지 성공률 -
     }
 
     public enum RoomType

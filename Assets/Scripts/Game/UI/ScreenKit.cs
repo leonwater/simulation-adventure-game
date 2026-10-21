@@ -227,11 +227,11 @@ namespace Adventure.Game
         {
             var b = UI.ButtonCard(parent, onPause, Theme.Bar, Theme.ButtonBorder, 10, UI.Pad(0), false, 0, 44, TextAnchor.MiddleCenter);
             UI.Size(b, height: 44, width: 44);
-            UI.Label(b, "Ⅱ", 15, Theme.Text, true, TextAnchor.MiddleCenter);
+            UI.Label(b, "‖", 15, Theme.Text, true, TextAnchor.MiddleCenter);
         }
 
         /// <summary>
-        /// 능력치 배분 칸: − · 값 · + 를 고정 폭(152) 안에 절대 위치로 놓아 줄마다 간격이 똑같다
+        /// 능력치 배분 칸: - · 값 · + 를 고정 폭(152) 안에 절대 위치로 놓아 줄마다 간격이 똑같다
         /// (캐릭터 화면·던전 레벨 업 창 공통).
         /// </summary>
         public static RectTransform Stepper(Transform row, string value, Action onMinus, bool minusEnabled, Action onPlus, bool plusEnabled) =>
@@ -242,7 +242,7 @@ namespace Adventure.Game
         {
             var stepper = UI.Rect(row, "stepper");
             UI.Size(stepper, height: 44, width: 152);
-            var minus = UI.TextButton(stepper, "−", onMinus, ButtonKind.Outline, 44, 20, 44);
+            var minus = UI.TextButton(stepper, "-", onMinus, ButtonKind.Outline, 44, 20, 44);
             PlaceInStepper(minus, 0, 44);
             UI.SetEnabled(minus, minusEnabled, 0.3f);
             var label = UI.Label(stepper, value, 15, Theme.Text, true, TextAnchor.MiddleCenter, false, false);
@@ -266,7 +266,7 @@ namespace Adventure.Game
 
         /// <summary>
         /// 능력치 배분 한 줄 (캐릭터 화면·던전 레벨 업 창 공통): 아이콘 · 이름(최대면 금색 '최대') ·
-        /// 효과(두 줄까지) · 고정 폭 − 값 + . 값은 배분한 자체 능력치이고, 대기 중 +N이 함께 들어가는 폭 (v2.0: 45/99 표시 삭제).
+        /// 효과(두 줄까지) · 고정 폭 - 값 + . 값은 배분한 자체 능력치이고, 대기 중 +N이 함께 들어가는 폭 (v2.0: 45/99 표시 삭제).
         /// </summary>
         public static void StatRow(Transform parent, Character c, Stat stat, AllocationDraft draft, Action onMinus, Action onPlus, bool line)
         {
@@ -326,7 +326,7 @@ namespace Adventure.Game
             return b;
         }
 
-        /// <summary>착용 중인 장비와 비교 (+초록 / −빨강). 비교할 것이 없으면 빈 문자열.</summary>
+        /// <summary>착용 중인 장비와 비교 (+초록 / -빨강). 비교할 것이 없으면 빈 문자열.</summary>
         public static string CompareText(Character c, ItemInstance item, bool withLabel = true)
         {
             var list = EquipmentSystem.Compare(c, item);
@@ -334,7 +334,7 @@ namespace Adventure.Game
             var parts = new System.Collections.Generic.List<string>();
             foreach (var d in list)
             {
-                string v = d.Delta > 0 ? "+" + d.Delta : d.Delta < 0 ? "−" + (-d.Delta) : "±0";
+                string v = d.Delta > 0 ? "+" + d.Delta : d.Delta < 0 ? "-" + (-d.Delta) : "±0";
                 string hex = d.Delta > 0 ? Theme.GreenHex : d.Delta < 0 ? Theme.RedHex : Theme.SubHex;
                 parts.Add(UI.Color((withLabel ? d.Label + " " : "") + v, hex));
             }

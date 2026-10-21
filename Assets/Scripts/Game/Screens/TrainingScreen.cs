@@ -30,12 +30,14 @@ namespace Adventure.Game
                 var col = UI.Column(row, 2);
                 UI.Size(col, flexW: 1);
                 int per = Mathf.RoundToInt((float)GameBalance.SkillPowerPerLevel[(int)def.Tier] * 100);
-                UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + " · +" + st.Level + " (단계당 +" + per + "%)", Theme.SubHex), 15, Theme.Text);
+                UI.Label(col, def.Name + " " + UI.Color(Names.Of(def.Tier) + (SkillSystem.CanTrain(def) ? " · +" + st.Level + " (단계당 +" + per + "%)" : " · 효과만 거는 스킬"), Theme.SubHex), 15, Theme.Text);
                 UI.Sub(col, def.Description + (C.Skills.IsEquipped(def.Id) ? " · 장착 중" : ""));
                 int cost = SkillSystem.TrainingCost(st);
                 var state = st;
-                var b = UI.TextButton(row, cost == 0 ? "최대" : "수련 · " + cost.ToString("#,0") + "G", () => Train(state), ButtonKind.Outline, 40, 13, 104);
-                UI.SetEnabled(b, cost > 0 && C.Gold >= cost);
+                // 피해·회복이 없는 스킬은 수련해도 바뀌는 것이 없어 막는다 (v2.4)
+                bool trainable = SkillSystem.CanTrain(def);
+                var b = UI.TextButton(row, !trainable ? "수련 불가" : cost == 0 ? "최대" : "수련 · " + cost.ToString("#,0") + "G", () => Train(state), ButtonKind.Outline, 40, 13, 104);
+                UI.SetEnabled(b, trainable && cost > 0 && C.Gold >= cost);
                 ScreenKit.BottomLine(row, Theme.LineSoft);
             }
             Tutorial.OnFacility("training");

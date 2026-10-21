@@ -46,7 +46,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 | `Assets/Scripts/Core/GameBalance.cs` | **모든 밸런스 수치(임시값)를 모아 둔 파일** |
 | `Assets/Scripts/Game` | Unity 실행부: 부트스트랩(`GameApp`), UI 도구(`UI/`), 화면(`Screens/`), 파일 저장 |
 | `Assets/Scripts/Editor` | 프로젝트 자동 설정 |
-| `Assets/Tests/EditMode` | NUnit 테스트 182개 (Unity Test Runner와 `dotnet test` 양쪽에서 실행) |
+| `Assets/Tests/EditMode` | NUnit 테스트 187개 (Unity Test Runner와 `dotnet test` 양쪽에서 실행) |
 | `Assets/Resources/Fonts` | 나눔고딕·고운바탕 (SIL OFL 1.1) |
 | `tools/verify` | Unity 없이 검증하는 스크립트 |
 | `tools/balance` | 밸런스 시뮬레이션 (자동 플레이 봇 진행 속도·사망률, 층별 전투 소모, 보스 특성 켬/끔 비교) |
@@ -111,7 +111,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 tools/verify/verify.sh
 ```
 
-1. Core 단위 테스트 182개 (전투 400판·자동 플레이 봇 240회 던전 탐험·보스 특성·저장 왕복 포함)
+1. Core 단위 테스트 187개 (전투 400판·자동 플레이 봇 240회 던전 탐험·보스 특성·저장 왕복 포함)
 2. Core를 Unity와 같은 .NET Standard 2.1 / C# 9로 컴파일
 3. 전체 스크립트를 Unity 참조 어셈블리로 컴파일 (기기 빌드 조건 / 에디터 조건)
 
@@ -136,7 +136,7 @@ Unity 에디터에서는 Window → General → Test Runner → EditMode에서 �
 
 ## 웹(WebGL) 빌드
 
-- GitHub Actions "웹 빌드"(`.github/workflows/web-build.yml`)를 Actions 탭에서 Run workflow로 실행하면 Releases의 `web-latest`에 `adventurer-web.zip`이 올라온다 (푸시마다 돌지 않는다).
+- GitHub Actions "웹 빌드"(`.github/workflows/web-build.yml`)는 main에 게임 파일이 올라올 때마다 안드로이드와 함께 자동으로 돌아 Releases의 `web-latest`에 최신 `adventurer-web.zip`을 올린다 (Actions 탭 Run workflow로도 실행).
 - 압축을 풀고 그 폴더에서 `python3 -m http.server`를 실행한 뒤 브라우저에서 `localhost:8000`을 연다 (압축 끔, 어느 정적 서버에서도 열림).
 - 저장은 브라우저 저장소(IndexedDB)에 남고(`Assets/Plugins/WebGL/AdventureFs.jslib`로 쓸 때마다 동기화), 브라우저 데이터를 지우면 사라진다. 타이틀의 '게임 종료'는 웹에서 숨긴다.
 - 알려진 한계: 휴대폰 브라우저에서는 이름 입력창에서 키보드가 안 뜰 수 있다 (안드로이드 앱은 정상).

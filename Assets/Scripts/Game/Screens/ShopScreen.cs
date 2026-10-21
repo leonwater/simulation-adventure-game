@@ -15,7 +15,6 @@ namespace Adventure.Game
         /// <summary>판매 칸: 종류 · 이름(두 줄) · 증감/직업 · 가격.</summary>
         private const float SellCellHeight = 118;
 
-        private Text _timer;
         private int _tab;
         /// <summary>판매 선택 모드에서 고른 칸 (null = 선택 모드가 아님).</summary>
         private HashSet<string> _selected;
@@ -34,7 +33,6 @@ namespace Adventure.Game
 
         public override void Build(RectTransform root)
         {
-            S.TickShop();
             S.MarkShopSeen();
             var shop = S.Data.Shop;
             var page = ScreenKit.Page(root);
@@ -53,38 +51,26 @@ namespace Adventure.Game
             else SellTab(inner);
             if (_selected != null) SellBar(page);
 
-            var ticker = root.gameObject.AddComponent<Ticker>();
-            ticker.Interval = 1f;
-            ticker.OnTick = () =>
-            {
-                if (S.TickShop())
-                {
-                    Toast("상점 물건이 바뀌었습니다");
-                    Rebuild();
-                    return;
-                }
-                if (_timer != null) _timer.text = TimerText();
-            };
             Tutorial.OnFacility("shop");
         }
 
         private void BuyTab(Transform inner, ShopState shop)
         {
-            // 갱신
+            // 갱신 (v2.4: 자동 갱신 없음, 항상 유료. 던전에 다녀오면 비용이 처음 값으로)
             var refresh = UI.Card(inner, Theme.Card, Theme.CardBorder, 10, UI.Pad(12, 8, 8, 8), false, 8, TextAnchor.MiddleLeft);
             Anchors.Set("shop.refresh", refresh);
             var tcol = UI.Column(refresh, 0);
             UI.Size(tcol, flexW: 1);
-            UI.Sub(tcol, "자동 갱신까지");
-            _timer = UI.Label(tcol, TimerText(), 18, Theme.Text);
-            UI.Label(refresh, ShopSystem.RerollCost(shop) + "G", 13, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
+            UI.Label(tcol, "물건 갱신", 15, Theme.Text, true);
+            UI.Sub(tcol, "던전에 다녀오면 비용이 " + GameBalance.ShopRerollBaseCost + "G로 돌아와요");
+            UI.Label(refresh, ShopSystem.RerollCost(shop).ToString("#,0") + "G", 13, Theme.Gold, true, TextAnchor.MiddleRight, false, false);
             UI.TextButton(refresh, "갱신", ConfirmReroll, ButtonKind.Outline, 40, 13, 64);
 
             // 장비
             var eqBox = UI.Column(inner, 8);
             Anchors.Set("shop.equip", eqBox);
             UI.Label(eqBox, "장비", 14, Theme.Text, true);
-            if (shop.Equipment.Count == 0) UI.Sub(eqBox, "장비가 모두 팔렸습니다. 다음 갱신을 기다리세요.");
+            if (shop.Equipment.Count == 0) UI.Sub(eqBox, "장비가 모두 팔렸습니다. '갱신'으로 새 물건을 들여올 수 있어요.");
             UI.Sub(eqBox, "카드를 누르면 자세한 정보와 착용 장비 비교가 나옵니다.");
             var grid = UI.Grid(eqBox, 3, ScreenKit.ContentWidth, 104, 8);
             foreach (var item in shop.Equipment) EquipCell(grid, item);
@@ -164,14 +150,15 @@ namespace Adventure.Game
             string info = ItemGrid.InfoText(C, item);
             if (info.Length > 0) UI.Label(cell, info, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
             UI.Spacer(cell);
-            ItemGrid.BottomLine(cell, item, C, UI.Color((item.SellPrice * item.Count).ToString("#,0") + " G", Theme.GoldHex));
+            // 판매 칸에는 개당 가격 (v2.4: 총액이 아니라)
+            ItemGrid.BottomLine(cell, item, C, UI.Color((item.Count > 1 ? "개당 " : "") + item.SellPrice.ToString("#,0") + " G", Theme.GoldHex));
             if (sel) Check(cell);
         }
 
         /// <summary>선택된 칸 오른쪽 위 체크 표시 (배치 무시).</summary>
         private static void Check(RectTransform cell)
         {
-            var mark = UI.Label(cell, "✓", 16, Theme.OnAccent, true, TextAnchor.MiddleCenter, false, false);
+            var mark = UI.Label(cell, "√", 16, Theme.OnAccent, true, TextAnchor.MiddleCenter, false, false);
             var bg = UI.Image(cell, Theme.Accent, 0, "check");
             bg.sprite = Sprites.Circle;
             foreach (var rt in new[] { bg.rectTransform, mark.rectTransform })
@@ -221,12 +208,6 @@ namespace Adventure.Game
             Overlay.Confirm("상점 갱신", cost.ToString("#,0") + "G를 소모하여 즉시 갱신하겠습니까?", "갱신", Reroll);
         }
 
-        private string TimerText()
-        {
-            var left = S.ShopTimeLeft;
-            return ((int)left.TotalMinutes).ToString("00") + ":" + left.Seconds.ToString("00");
-        }
-
         /// <summary>장비 카드: 종류 색 원·부위 · 이름(등급 색) · 착용 레벨과 지금 장비 대비 · 가격. 자세한 효과는 눌렀을 때.</summary>
         private void EquipCell(Transform grid, ItemInstance item)
         {
@@ -234,7 +215,7 @@ namespace Adventure.Game
             var cell = UI.ButtonCard(grid, () => BuyEquipDialog(item), Theme.Card, Theme.CardBorder, 10, UI.Pad(10, 10), true, 5, 104, TextAnchor.UpperLeft);
             ItemGrid.KindLine(cell, item, 12);
             UI.Label(cell, item.Name, 14, ItemGrid.NameColor(item), true, TextAnchor.MiddleLeft, false, false);
-            UI.Label(cell, usable ? ItemGrid.LevelCompare(C, item, false) : UI.Color(Names.Of((Job)item.JobRestriction) + " 전용", Theme.RedHex), 12, Theme.TextSub);
+            UI.Label(cell, usable ? ItemGrid.LevelCompare(C, item, true) : UI.Color(Names.Of((Job)item.JobRestriction) + " 전용", Theme.RedHex), 12, Theme.TextSub);
             UI.Spacer(cell);
             UI.Label(cell, item.Price.ToString("#,0") + " G", 14, Theme.Gold, true);
             if (!usable) cell.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
@@ -258,9 +239,11 @@ namespace Adventure.Game
                 }
                 Overlay.Close(modal);
                 S.Save();
-                Toast(item.Name + " 구매 완료");
                 _line = "탁월한 선택이야, 손님! " + item.Name + "에 어울리는 모험이 기다리겠군.";
                 Rebuild();
+                // 지금 장비보다 좋으면 바로 착용할지 묻는다 (v2.4)
+                if (GearOffer.IsBetter(C, item)) GearOffer.Offer(new[] { item }, Rebuild);
+                else Toast(item.Name + " 구매 완료");
             }, ButtonKind.Primary);
         }
 
@@ -297,7 +280,7 @@ namespace Adventure.Game
             Text buyLabel = null;
             if (g.Unlimited)
             {
-                // 능력치 배분과 같은 고정 폭 − 값 + (값이 늘어도 버튼이 움직이지 않는다) + 10개씩
+                // 능력치 배분과 같은 고정 폭 - 값 + (값이 늘어도 버튼이 움직이지 않는다) + 10개씩
                 var row = UI.Row(body, 8, null, TextAnchor.MiddleCenter);
                 ScreenKit.Stepper(row, "1개", () => SetCount(-1), true, () => SetCount(1), true, out countLabel);
                 UI.TextButton(row, "+10", () => SetCount(10), ButtonKind.Outline, 44, 16, 64);
@@ -371,7 +354,7 @@ namespace Adventure.Game
                 var one = UI.TextButton(row, "1개 · " + item.SellPrice + "G", () => Sell(item, 1, modal), ButtonKind.Secondary);
                 UI.Size(one, width: 0, flexW: 1);
             }
-            var all = UI.TextButton(row, (item.Count > 1 ? "전부 · " : "판매 · ") + (item.SellPrice * item.Count).ToString("#,0") + "G", () => Sell(item, item.Count, modal), ButtonKind.Primary);
+            var all = UI.TextButton(row, item.Count > 1 ? "전부 " + item.Count + "개 · 개당 " + item.SellPrice.ToString("#,0") + "G" : "판매 · " + item.SellPrice.ToString("#,0") + "G", () => Sell(item, item.Count, modal), ButtonKind.Primary);
             UI.Size(all, width: 0, flexW: 1);
         }
 

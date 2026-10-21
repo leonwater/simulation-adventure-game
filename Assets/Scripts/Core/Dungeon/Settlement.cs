@@ -34,7 +34,7 @@ namespace Adventure.Core
     public static class Settlement
     {
         /// <summary>
-        /// 사망 (하드코어 제외): 도달 층 유지, 그 층 진행도 초기화, 골드 −30%, 경험치 −20% (레벨 유지),
+        /// 사망 (하드코어 제외): 도달 층 유지, 그 층 진행도 초기화, 골드 -30%, 경험치 -20% (레벨 유지),
         /// 장착하지 않은 가방 아이템 전부 손실. 창고와 가방 확장은 유지.
         /// </summary>
         public static DeathReport Die(Character c, DungeonRun run, Difficulty difficulty, string killedBy)

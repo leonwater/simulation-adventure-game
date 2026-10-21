@@ -23,10 +23,15 @@ namespace Adventure.Core
             return n;
         }
 
+        /// <summary>소모품은 종류마다 최대 99개 (v2.4).</summary>
+        public bool OverConsumableLimit(ItemInstance item) =>
+            item.Kind == ItemKind.Consumable && CountOf(item.TemplateId) + item.Count > GameBalance.MaxConsumable;
+
         /// <summary>겹치기를 포함해 아이템을 전부 넣을 수 있는지.</summary>
         public bool CanAdd(ItemInstance item)
         {
             if (!item.IsStackable) return FreeCells >= 1;
+            if (OverConsumableLimit(item)) return false;
             int remaining = item.Count;
             foreach (var i in Items)
                 if (i.TemplateId == item.TemplateId) remaining -= GameBalance.MaxStack - i.Count;

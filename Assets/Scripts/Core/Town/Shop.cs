@@ -7,7 +7,7 @@ namespace Adventure.Core
     public class ShopGood
     {
         public ItemInstance Item;
-        /// <summary>남은 수량 (−1 = 제한 없음). 마을 소모품은 제한 없음, 스킬서는 1권, 던전 상인 물건은 2~5개.</summary>
+        /// <summary>남은 수량 (-1 = 제한 없음). 마을 소모품은 제한 없음, 스킬서는 1권, 던전 상인 물건은 2~5개.</summary>
         public int Stock = -1;
 
         public bool Unlimited => Stock < 0;
@@ -30,44 +30,25 @@ namespace Adventure.Core
 
     /// <summary>
     /// 상점: 장비 6칸 + 소모품·스킬서 6칸 + 가방.
-    /// 실제 시간 30분마다 자동 갱신(앱 종료 시간 포함), 골드로 즉시 갱신 가능 (100G부터 2배, 자동 갱신 시 초기화).
+    /// 물건은 골드를 내고 갱신할 때만 바뀐다 (v2.4: 자동 갱신 없음). 갱신 비용은 100G부터 2배, 던전에서 돌아오면 초기화.
     /// </summary>
     public static class ShopSystem
     {
         private static readonly string[] OptionalConsumables = { "potion_hi", "bandage", "salve" };
 
-        public static TimeSpan TimeUntilRefresh(ShopState s, DateTime nowUtc)
+        /// <summary>처음 한 번만 물건을 채운다 (v2.4: 시간이 지나도 저절로 바뀌지 않는다). 채웠으면 true.</summary>
+        public static bool EnsureStocked(ShopState s, Character c, DateTime nowUtc, Rng rng)
         {
-            var next = new DateTime(s.LastRefreshTicks, DateTimeKind.Utc) + GameBalance.ShopRefreshInterval;
-            var left = next - nowUtc;
-            return left < TimeSpan.Zero ? TimeSpan.Zero : left;
-        }
-
-        /// <summary>자동 갱신 시각이 지났으면 재고를 바꾼다. 갱신했으면 true.</summary>
-        public static bool EnsureFresh(ShopState s, Character c, DateTime nowUtc, Rng rng)
-        {
-            if (!s.Initialized)
-            {
-                s.Initialized = true;
-                s.LastRefreshTicks = nowUtc.Ticks;
-                s.RerollCount = 0;
-                Restock(s, c, rng);
-                return true;
-            }
-            long interval = GameBalance.ShopRefreshInterval.Ticks;
-            long elapsed = nowUtc.Ticks - s.LastRefreshTicks;
-            if (elapsed < 0)
-            {
-                // 기기 시계가 뒤로 간 경우: 기준 시각만 맞춘다.
-                s.LastRefreshTicks = nowUtc.Ticks;
-                return false;
-            }
-            if (elapsed < interval) return false;
-            s.LastRefreshTicks += elapsed / interval * interval;
+            if (s.Initialized) return false;
+            s.Initialized = true;
+            s.LastRefreshTicks = nowUtc.Ticks;
             s.RerollCount = 0;
             Restock(s, c, rng);
             return true;
         }
+
+        /// <summary>던전에서 돌아오면 갱신 비용이 처음 값(100G)으로 돌아간다.</summary>
+        public static void ResetRerollCost(ShopState s) => s.RerollCount = 0;
 
         public static int RerollCost(ShopState s) => GameBalance.ShopRerollBaseCost << Math.Min(20, s.RerollCount);
 
@@ -81,6 +62,7 @@ namespace Adventure.Core
             }
             c.Gold -= cost;
             s.RerollCount++;
+            s.LastRefreshTicks++; // 알림 점: 바뀐 물건을 아직 보지 않았다
             Restock(s, c, rng);
             error = null;
             return true;
@@ -188,7 +170,7 @@ namespace Adventure.Core
             }
             if (!c.Inventory.CanAdd(item))
             {
-                error = "가방이 가득 찼습니다";
+                error = c.Inventory.OverConsumableLimit(item) ? "소모품은 종류마다 " + GameBalance.MaxConsumable + "개까지 가질 수 있습니다" : "가방이 가득 찼습니다";
                 return false;
             }
             c.Gold -= price;

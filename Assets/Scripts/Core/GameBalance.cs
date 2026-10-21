@@ -28,13 +28,13 @@ namespace Adventure.Core
         public const int AttackPerMainStat = 5;
         public const double EvasionPerAgility = 0.005;    // 회피 = 민첩 × 0.5%
         public const double EvasionPerFinesse = 0.005;    // 회피 + 기교 × 0.5% (도적)
-        public const double ReductionPerToughness = 0.005;// 감소율 = 강인함 × 0.5%
+        public const double ReductionPerToughness = 0.0035;// 감소율 = 강인함 × 0.35% (v2.4)
         public const double SuccessPerPrecision = 0.005;  // 성공률 + 정밀 × 0.5%
         public const double SkillDamagePerSpellPower = 0.005; // 스킬 피해 + 주문력 × 0.5%
         /// <summary>치명타는 도적 스킬에서만 발생하며 피해 ×2.3 (v1.8: 도적 스킬 피해를 80%로 낮춘 대신).</summary>
         public const double CritMultiplier = 2.3;
         public const double MaxEvasion = 0.40;
-        public const double MaxReduction = 0.40;
+        public const double MaxReduction = 0.30;
         public const double MaxResist = 0.75;
         /// <summary>레벨업할 때마다 최대 HP의 30% 회복 (수정 사항 #11).</summary>
         public const double LevelUpHealRatio = 0.30;
@@ -79,6 +79,8 @@ namespace Adventure.Core
         public const int InventoryPerBag = 5;
         public const int InventoryMax = 60;
         public const int MaxStack = 99;
+        /// <summary>소모품은 한 가방(창고)에 종류마다 최대 이만큼 (v2.4).</summary>
+        public const int MaxConsumable = 99;
         public const int BagBasePrice = 500; // 구매할 때마다 2배
 
         // ── 장비 ───────────────────────────────────────────────
@@ -153,8 +155,7 @@ namespace Adventure.Core
         // ── 상점 ───────────────────────────────────────────────
         public const int ShopEquipmentSlots = 6;
         public const int ShopGoodsSlots = 6;
-        public static readonly TimeSpan ShopRefreshInterval = TimeSpan.FromMinutes(30);
-        public const int ShopRerollBaseCost = 100; // 즉시 갱신 비용, 갱신할 때마다 2배, 자동 갱신 시 초기화
+        public const int ShopRerollBaseCost = 100; // 갱신 비용, 갱신할 때마다 2배, 던전에서 돌아오면 초기화 (v2.4)
         public const double MerchantPriceMultiplier = 1.5;
         /// <summary>상인의 보답 (구해 준 상인의 가게).</summary>
         public const double MerchantDiscountMultiplier = 0.7;
@@ -238,7 +239,7 @@ namespace Adventure.Core
         public const double MaterialDrop = 0.55;
 
         // ── 전투 (기획서 v1.2) ──────────────────────────────────
-        /// <summary>기본 공격 성공률 = 81% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 62~92% (v1.8: +7%p, 대부분 77~87%).</summary>
+        /// <summary>기본 공격 성공률 = 81% + (주 공격 능력치 - 적 요구치) × 1% + 보정, 62~92% (v1.8: +7%p, 대부분 77~87%).</summary>
         public const double BaseHit = 0.81;
         public const double HitPerStatPoint = 0.01;
         public const double MinHit = 0.62;
@@ -246,14 +247,14 @@ namespace Adventure.Core
         public const double MinSuccess = 0.05;
         public const double MaxSuccess = 0.95;
         public const double EnemyBaseHit = 0.90;
-        /// <summary>도주 = 67% + 회피 + 집중 − 실명, 최대 87% (v1.8: +7%p).</summary>
+        /// <summary>도주 = 67% + 회피 + 집중 - 실명, 최대 87% (v1.8: +7%p).</summary>
         public const double BaseFlee = 0.67;
         public const double MaxFlee = 0.87;
         public const double BossFleeChance = 0.0;
         /// <summary>마법사 기본 공격 피해 배율.</summary>
         public const double MageBasicAttack = 0.60;
 
-        /// <summary>이벤트 판정 = 72% + (능력치 − 요구치) × 1% + 행운 × 0.5%, 40~85% (대부분 70~80%).</summary>
+        /// <summary>이벤트 판정 = 72% + (능력치 - 요구치) × 1% + 행운 × 0.5%, 40~85% (대부분 70~80%).</summary>
         public const double EventBase = 0.62;
         public const double EventPerStatPoint = 0.01;
         public const double EventMin = 0.30;

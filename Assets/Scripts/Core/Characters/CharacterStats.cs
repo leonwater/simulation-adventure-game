@@ -86,7 +86,7 @@ namespace Adventure.Core
                     return c.JobData.AttackStat == stat
                         ? "공격력 " + Attack(c) + " · 회피 " + Percent(Evasion(c))
                         : "회피 " + Percent(Evasion(c));
-                case Stat.Toughness: return "받는 피해 −" + Percent(DamageReduction(c));
+                case Stat.Toughness: return "받는 피해 -" + Percent(DamageReduction(c));
                 case Stat.Precision: return "성공률 +" + Percent(PrecisionBonus(c));
                 case Stat.Finesse: return "회피 " + Percent(Evasion(c));
                 case Stat.SpellPower: return "스킬 피해 +" + Percent(SkillDamageBonus(c));

@@ -152,7 +152,7 @@ namespace Adventure.Tests
             Link(run, 0, 1);
             Link(run, 0, 4);
             var pad = DungeonSystem.Pad(run, Difficulty.Normal);
-            Link(run, 0, 5); // 개구멍: dx 3, dy −1 → 더 먼 축은 가로(오른쪽), 비어 있다
+            Link(run, 0, 5); // 개구멍: dx 3, dy -1 → 더 먼 축은 가로(오른쪽), 비어 있다
             pad = DungeonSystem.Pad(run, Difficulty.Normal);
             Assert.AreEqual(5, pad[PadDir.Right].Room.Id);
             Link(run, 0, 3); // 오른쪽 이웃이 생기면 그 방이 칸을 차지하고, 지름길은 다른 축(위)도 차 있으니 Extra

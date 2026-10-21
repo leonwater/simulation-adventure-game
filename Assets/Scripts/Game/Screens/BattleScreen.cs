@@ -660,12 +660,17 @@ namespace Adventure.Game
 
         private void Finished(Transform parent)
         {
-            var card = UI.ButtonCard(parent, Continue, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 12), true, 6, 60);
+            // 보스 보상은 줄이 많아 고정 높이 칸에서 잘렸다 → 스크롤 안에 한 줄씩 (v2.4)
+            var scroll = UI.Scroll(parent, out _, 0, UI.Pad(0));
+            var card = UI.ButtonCard(scroll, Continue, Theme.AccentBg, Theme.Accent, 12, UI.Pad(14, 12), true, 6, 60);
             UI.Label(card, _b.IsBoss ? "보스를 쓰러뜨렸다!" : "승리!", 20, Theme.Gold, false, TextAnchor.MiddleLeft, true);
             var loot = S.LastLoot;
             if (loot != null)
             {
-                UI.Label(card, loot.Describe(), 14, Theme.Text);
+                if (loot.Gold != 0) UI.Label(card, "· 골드 +" + loot.Gold.ToString("#,0"), 14, Theme.Text);
+                if (loot.Exp != 0) UI.Label(card, "· 경험치 +" + loot.Exp.ToString("#,0"), 14, Theme.Text);
+                foreach (var i in loot.Items) UI.Label(card, "· " + (i.Count > 1 ? i.DisplayName + " ×" + i.Count : i.DisplayName), 14, Theme.Text);
+                if (loot.Dropped.Count > 0) UI.Label(card, "· 가방이 가득 차거나 99개라 두고 옴: " + LootSystem.Names(loot.Dropped), 13, Theme.RedLight);
                 if (loot.LevelsGained > 0) UI.Label(card, "레벨 업! Lv." + _b.Character.Level + " · 능력치 포인트 +" + loot.LevelsGained * GameBalance.PointsPerLevel, 14, Theme.Gold, true);
             }
             bool trial = S.TrialWon;

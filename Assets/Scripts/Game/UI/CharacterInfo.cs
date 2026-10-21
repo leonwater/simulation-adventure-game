@@ -5,7 +5,7 @@ namespace Adventure.Game
 {
     /// <summary>
     /// 캐릭터 정보 창 (던전 하단 가운데 버튼 · 전투에서 내 도형): 기본 정보, 전투 능력치,
-    /// 지금 걸린 상태 이상(1턴에 얼마인지), 탐험 효과, 진행 중인 퀘스트, 상태 이상 안내.
+    /// 지금 걸린 상태 이상(1턴에 얼마인지), 탐험 효과, 상태 이상 안내. 퀘스트는 던전 하단 '퀘스트' 버튼(ShowQuests).
     /// </summary>
     public static class CharacterInfo
     {
@@ -66,20 +66,31 @@ namespace Adventure.Game
                 }
             }
 
-            // 진행 중인 퀘스트
-            var quests = session.Data.Guild.Active;
-            if (quests.Count > 0)
-            {
-                Section(body, "진행 중인 퀘스트");
-                foreach (var q in quests)
-                    UI.Label(body, q.Title + " · " + q.TargetFloor + "층 · " + GuildSystem.ProgressText(q, c)
-                                   + (GuildSystem.IsComplete(q, c) ? UI.Color(" · 보고 가능", Theme.GoldHex) : ""), 13, Theme.TextBody);
-            }
-
             // 상태 이상 안내
             Section(body, "상태 이상 안내");
             foreach (var t in Debuffs) Glossary(body, t, true);
             foreach (var t in Buffs) Glossary(body, t, false);
+        }
+
+        /// <summary>진행 중인 퀘스트 (던전 하단 '퀘스트' 버튼, v2.4: 정보 창에서 옮김).</summary>
+        public static void ShowQuests(Overlay overlay, GameSession session)
+        {
+            var c = session.C;
+            var body = overlay.Modal("진행 중인 퀘스트");
+            var quests = session.Data.Guild.Active;
+            if (quests.Count == 0)
+            {
+                UI.Sub(body, "받은 퀘스트가 없습니다. 마을의 길드에서 받을 수 있어요.");
+                return;
+            }
+            foreach (var q in quests)
+            {
+                bool done = GuildSystem.IsComplete(q, c);
+                var card = UI.Card(body, Theme.BlueBg, done ? Theme.Accent : Theme.BlueBorder, 10, UI.Pad(12, 8), true, 2);
+                UI.Label(card, q.Title, 14, Theme.Text, true);
+                UI.Label(card, "목표 " + q.TargetFloor + "층 · " + GuildSystem.ProgressText(q, c) + (done ? UI.Color(" · 보고 가능", Theme.GoldHex) : ""), 13, done ? Theme.Gold : Theme.TextBody);
+                UI.Label(card, "보상 " + UI.Color(q.RewardGold.ToString("#,0") + "G", Theme.GoldHex) + " · 경험치 " + q.RewardExp.ToString("#,0"), 12, Theme.TextSub);
+            }
         }
 
         /// <summary>

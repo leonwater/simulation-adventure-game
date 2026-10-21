@@ -97,7 +97,7 @@ namespace Adventure.Core
 
         /// <summary>
         /// 아이템 칸에 쓰는 한 줄 판정 (v2.0). 같은 능력치끼리는 수치 차이, 다른 능력치 장신구는 주요 능력치를 우선해
-        /// 좋아지면 새 능력치 +N, 나빠지면 잃는 능력치 −N, 둘 다 주요(또는 둘 다 아님)면 수치 차이로 본다.
+        /// 좋아지면 새 능력치 +N, 나빠지면 잃는 능력치 -N, 둘 다 주요(또는 둘 다 아님)면 수치 차이로 본다.
         /// </summary>
         public static StatDelta Summary(Character c, ItemInstance item)
         {

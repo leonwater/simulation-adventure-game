@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Adventure.Core;
 using UnityEngine;
 
@@ -34,7 +35,9 @@ namespace Adventure.Game
             var t = UI.Label(head, "장착 슬롯 " + C.Skills.Equipped.Count + " / " + slots, 14, Theme.Text, true);
             UI.Size(t, flexW: 1);
 
+            if (C.Skills.Equipped.Count > 1) UI.Sub(body, "칸을 끌어서 놓으면 순서가 바뀌어요 (전투 선택지 순서).");
             var grid = UI.Grid(body, 3, ScreenKit.ContentWidth, 84, 8);
+            var cells = new List<RectTransform>();
             for (int i = 0; i < slots; i++)
             {
                 if (i < C.Skills.Equipped.Count)
@@ -43,6 +46,17 @@ namespace Adventure.Game
                     var def = SkillDb.Get(id);
                     var st = C.Skills.Get(id);
                     var cell = UI.ButtonCard(grid, () => Detail(id), Theme.AccentBg, Theme.Accent, 10, UI.Pad(8, 8), true, 2, 84, TextAnchor.UpperLeft);
+                    cells.Add(cell);
+                    // 끌어서 순서 바꾸기 (v2.4)
+                    var drag = cell.gameObject.AddComponent<DragReorder>();
+                    drag.Index = i;
+                    drag.Cells = cells;
+                    drag.OnMove = (from, to) =>
+                    {
+                        if (!SkillSystem.MoveEquipped(C, from, to)) return;
+                        S.Save();
+                        Rebuild();
+                    };
                     UI.Label(cell, def.Name + (st.Level > 0 ? UI.Color(" +" + st.Level, Theme.GoldHex) : ""), 14, Theme.Text, true);
                     UI.Spacer(cell);
                     UI.Sub(cell, def.Role);
@@ -100,12 +114,29 @@ namespace Adventure.Game
             UI.Label(body, def.Effect, 15, Theme.Text);
             UI.Divider(body);
             Line(body, "재사용", def.Cooldown + "턴");
-            Line(body, "성공률", def.Target == SkillTarget.Self ? "100% (자신에게)" : "기본 공격 " + def.SuccessText.Replace("성공률 ", ""));
+            // 성공률 (v2.4): 보정과 함께, 지금 도전 층의 보통 몬스터 기준 실제 명중률을 보여 준다
+            if (def.Target == SkillTarget.Self) Line(body, "성공률", "100% (자신에게 거는 스킬)");
+            else
+            {
+                int floor = Mathf.Max(1, C.MaxChallengeFloor);
+                double req = GameBalance.EnemyRequirement(floor);
+                double hit = GameBalance.HitChance(CharacterStats.Total(C, C.JobData.AttackStat), req, CharacterStats.PrecisionBonus(C) + def.SuccessBonus);
+                string bonus = Mathf.Abs((float)def.SuccessBonus) < 1e-6f ? "보정 없음" : "기본 공격 대비 " + def.SuccessText.Replace("성공률 ", "");
+                Line(body, "성공률", bonus + "\n" + floor + "층 보통 몬스터에게 약 " + Mathf.RoundToInt((float)hit * 100) + "% (전투에서는 대상별 실제 확률)");
+            }
             int per = Mathf.RoundToInt((float)GameBalance.SkillPowerPerLevel[(int)def.Tier] * 100);
-            Line(body, "수련 효과", "단계마다 위력 +" + per + "% (지금 +" + Mathf.RoundToInt((float)(SkillSystem.PowerMultiplier(def, st.Level) - 1) * 100) + "%)");
+            Line(body, "수련 효과", SkillSystem.CanTrain(def)
+                ? "단계마다 위력 +" + per + "% (지금 +" + Mathf.RoundToInt((float)(SkillSystem.PowerMultiplier(def, st.Level) - 1) * 100) + "%)"
+                : "수련 불가 (피해·회복 없이 효과만 거는 스킬)");
             Line(body, "장착 조건", "Lv." + def.ReqLevel + " · " + def.ReqRank + " 등급");
+            // 상태 이상: 이름·대상·턴·효과·확률과 짧은 설명 (v2.4)
             foreach (var s in def.Statuses)
-                Line(body, Names.Of(s.Type), s.Turns + "턴 · " + Names.Describe(s.Type, s.Value) + (s.Chance < 1 ? " (" + Mathf.RoundToInt((float)s.Chance * 100) + "%)" : ""));
+            {
+                string who = s.OnSelf || def.Target == SkillTarget.Self ? "자신" : "적";
+                string chance = s.Chance < 1 ? " · 확률 " + Mathf.RoundToInt((float)s.Chance * 100) + "%" : "";
+                string resist = who == "적" && StatusContainer.IsDebuff(s.Type) ? "\n명중해야 걸리고, 적의 저항(정예 10% · 보스 30%)만큼 막힐 수 있음" : "";
+                Line(body, Names.Of(s.Type), who + " · " + s.Turns + "턴 · " + Names.Describe(s.Type, s.Value) + chance + "\n" + Names.Explain(s.Type) + resist);
+            }
             bool equipped = C.Skills.IsEquipped(id);
             string reason = equipped ? null : SkillSystem.CannotEquipReason(C, id);
             var b = UI.TextButton(body, equipped ? "해제" : reason ?? "장착", () =>

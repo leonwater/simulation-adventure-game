@@ -197,14 +197,14 @@ namespace Adventure.Core
             return bonus;
         }
 
-        /// <summary>공격 성공률 = 기본 + (주 공격 능력치 − 적 요구치) × 1% + 정밀 + 버프 + 스킬 보정 (GameBalance).</summary>
+        /// <summary>공격 성공률 = 기본 + (주 공격 능력치 - 적 요구치) × 1% + 정밀 + 버프 + 스킬 보정 (GameBalance).</summary>
         public double HitChance(Combatant target, double skillBonus = 0)
         {
             double stat = CharacterStats.Total(Character, Character.JobData.AttackStat);
             return GameBalance.HitChance(stat, target.Requirement, CharacterStats.PrecisionBonus(Character) + StatusBonus(false) + skillBonus);
         }
 
-        /// <summary>도주 = 67% + 회피 + 날렵함 + 집중 − 실명 (공포는 영향 없음), 최대 87%. 보스전은 불가.</summary>
+        /// <summary>도주 = 67% + 회피 + 날렵함 + 집중 - 실명 (공포는 영향 없음), 최대 87%. 보스전은 불가.</summary>
         public double FleeChance()
         {
             if (!CanFlee) return GameBalance.BossFleeChance;
@@ -212,7 +212,7 @@ namespace Adventure.Core
             return GameBalance.Clamp(p, GameBalance.MinSuccess, GameBalance.MaxFlee);
         }
 
-        /// <summary>적이 플레이어를 맞힐 확률 = 90% − 회피 − 날렵함 − 적의 실명.</summary>
+        /// <summary>적이 플레이어를 맞힐 확률 = 90% - 회피 - 날렵함 - 적의 실명.</summary>
         public double EnemyHitChance(Combatant enemy)
         {
             double p = GameBalance.EnemyBaseHit - Player.Evasion - Player.Statuses.Value(StatusType.Swift) / 100.0
@@ -220,7 +220,7 @@ namespace Adventure.Core
             return GameBalance.Clamp(p, GameBalance.MinSuccess, GameBalance.MaxSuccess);
         }
 
-        private static string Pct(double v) => (v >= 0 ? "+" : "−") + Math.Round(Math.Abs(v) * 100, 1) + "%";
+        private static string Pct(double v) => (v >= 0 ? "+" : "-") + Math.Round(Math.Abs(v) * 100, 1) + "%";
 
         /// <summary>성공률 계산 내역 (길게 눌러 보기).</summary>
         public string HitBreakdown(Combatant target, double skillBonus)
@@ -288,7 +288,7 @@ namespace Adventure.Core
                         list.Add(new BattleChoice
                         {
                             Kind = ActionKind.Skill, SkillId = id, Label = def.Name + " · " + e.Name, Target = Enemies.IndexOf(e),
-                            Chance = HitChance(e, def.SuccessBonus), DamageNote = SkillDamageNote(def, e) + (def.IsAttack ? GuardNote(e) : ""),
+                            Chance = HitChance(e, def.SuccessBonus), DamageNote = SkillDamageNote(def, e) + StatusNote(def, new List<Combatant> { e }) + (def.IsAttack ? GuardNote(e) : ""),
                             Detail = SkillDetail(def, e, alive),
                         });
                 }
@@ -305,7 +305,7 @@ namespace Adventure.Core
                     list.Add(new BattleChoice
                     {
                         Kind = ActionKind.Skill, SkillId = id, Label = def.Name, Chance = chance, Enabled = enabled, Note = note,
-                        DamageNote = target != null ? SkillDamageNote(def, target) : "", Detail = SkillDetail(def, target, alive),
+                        DamageNote = (target != null ? SkillDamageNote(def, target) : "") + StatusNote(def, alive), Detail = SkillDetail(def, target, alive),
                     });
                 }
             }
@@ -361,6 +361,36 @@ namespace Adventure.Core
             return crit ? text + " (치명타)" : text;
         }
 
+        /// <summary>
+        /// 상태 이상이 실제로 걸릴 확률 (v2.4): 한 번이라도 명중할 확률 × 효과 확률 × (1 - 대상의 저항).
+        /// 자신에게 거는 스킬은 효과 확률 그대로, 공격 스킬이 자신에게 거는 효과(전쟁의 일격)는 명중해야 걸린다.
+        /// </summary>
+        public double StatusLandChance(SkillDef def, StatusApply s, Combatant target)
+        {
+            if (def.Target == SkillTarget.Self) return s.Chance;
+            if (target == null) return 0;
+            double hit = HitChance(target, def.SuccessBonus);
+            double any = 1 - Math.Pow(1 - hit, Math.Max(1, def.Hits));
+            if (s.OnSelf) return any * s.Chance;
+            double resist = StatusContainer.IsDebuff(s.Type) ? target.Resist : 0;
+            return any * s.Chance * (1 - resist);
+        }
+
+        /// <summary>선택지에 붙는 '· 기절 46%' (적에게 거는 상태 이상, 여러 적이면 평균).</summary>
+        private string StatusNote(SkillDef def, List<Combatant> targets)
+        {
+            if (def.Target == SkillTarget.Self || targets == null || targets.Count == 0) return "";
+            var parts = new List<string>();
+            foreach (var s in def.Statuses)
+            {
+                if (s.OnSelf) continue;
+                double sum = 0;
+                foreach (var t in targets) sum += StatusLandChance(def, s, t);
+                parts.Add(Names.Of(s.Type) + " " + Math.Round(sum / targets.Count * 100) + "%");
+            }
+            return parts.Count == 0 ? "" : " · " + string.Join(" · ", parts);
+        }
+
         /// <summary>피해 계산식: 공격력 × 배율 → 방어력 → 피해 감소 → 치명타.</summary>
         public string DamageFormula(double mult, Combatant target, bool crit)
         {
@@ -405,8 +435,13 @@ namespace Adventure.Core
                     string who = st.OnSelf || def.Target == SkillTarget.Self ? "자신: " : "적: ";
                     string chance = st.Chance < 1 ? " (" + Math.Round(st.Chance * 100) + "% 확률)" : "";
                     lines.Add("· " + who + Names.Of(st.Type) + " " + st.Turns + "턴 — " + Names.Describe(st.Type, st.Value) + chance);
+                    if (target != null || def.Target == SkillTarget.Self)
+                    {
+                        string res = !st.OnSelf && def.Target != SkillTarget.Self && StatusContainer.IsDebuff(st.Type) && target != null && target.Resist > 0
+                            ? " (저항 " + Math.Round(target.Resist * 100) + "% 반영)" : "";
+                        lines.Add("  실제로 걸릴 확률 약 " + Math.Round(StatusLandChance(def, st, target) * 100) + "%" + res);
+                    }
                 }
-                if (def.Target != SkillTarget.Self) lines.Add("(디버프는 적의 저항 확률만큼 막힐 수 있음)");
             }
             lines.Add("");
             lines.Add("재사용 " + def.Cooldown + "턴");
@@ -708,7 +743,7 @@ namespace Adventure.Core
             else DrainLife(e, dmg);
         }
 
-        /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 − 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함)</summary>
+        /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 - 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함)</summary>
         public static int Damage(Combatant attacker, Combatant target, double mult, bool crit)
         {
             var a = attacker.Statuses;
@@ -771,7 +806,7 @@ namespace Adventure.Core
 
         private void Heal(Combatant c, int amount)
         {
-            if (c.Statuses.Has(StatusType.Burn)) amount /= 2; // 화상: 받는 회복량 −50%
+            if (c.Statuses.Has(StatusType.Burn)) amount /= 2; // 화상: 받는 회복량 -50%
             int before = c.Hp;
             c.Hp = Math.Min(c.MaxHp, c.Hp + Math.Max(0, amount));
             if (c.Hp <= before) return;

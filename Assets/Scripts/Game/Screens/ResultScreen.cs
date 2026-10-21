@@ -104,8 +104,8 @@ namespace Adventure.Game
 
         private static string Change(long delta, string unit = "")
         {
-            if (delta == 0) return UI.Color("−", Theme.SubHex);
-            return delta > 0 ? UI.Color("+" + delta.ToString("#,0") + unit, Theme.GreenHex) : UI.Color("−" + (-delta).ToString("#,0") + unit, Theme.RedHex);
+            if (delta == 0) return UI.Color("-", Theme.SubHex);
+            return delta > 0 ? UI.Color("+" + delta.ToString("#,0") + unit, Theme.GreenHex) : UI.Color("-" + (-delta).ToString("#,0") + unit, Theme.RedHex);
         }
 
         private static void TableRow(Transform parent, string a, string b, string c, string d, bool head = false, bool last = false)
