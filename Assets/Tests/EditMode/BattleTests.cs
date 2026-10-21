@@ -298,7 +298,7 @@ namespace Adventure.Tests
         public void Damage_FormulaAppliesBuffsAndDefense()
         {
             var a = new Combatant { Attack = 100, CritDamage = 1.5 };
-            var t = new Combatant { Defense = 100 };
+            var t = new Combatant { Defense = 400 }; // 피해 × 400/(400 + 400)
             Assert.AreEqual(50, Battle.Damage(a, t, 1.0, false));
             Assert.AreEqual(75, Battle.Damage(a, t, 1.0, true));
             a.Statuses.Apply(StatusType.Empower, 20, 3);

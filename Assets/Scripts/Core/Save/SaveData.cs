@@ -118,6 +118,13 @@ namespace Adventure.Core
                 c.BaseStats[s] -= over;
                 c.UnspentPoints += over;
             }
+            // 장비 기본 수치는 부위·레벨·등급으로 정해진다: 예전 공식으로 만든 장비도 지금 공식으로 (v2.0)
+            var gear = new List<ItemInstance>(c.Equipment.Slots);
+            gear.AddRange(c.Inventory.Items);
+            gear.AddRange(c.Storage.Items);
+            if (d.Shop?.Equipment != null) gear.AddRange(d.Shop.Equipment);
+            foreach (var i in gear)
+                if (i != null && i.Kind == ItemKind.Equipment) i.BaseValue = EquipmentFactory.BaseValue(i.Gear, i.LevelReq, i.Grade);
             c.RecalculateCapacities();
             c.CurrentHp = GameBalance.Clamp(c.CurrentHp, 0, CharacterStats.MaxHp(c));
             if (d.TipsShown == null) d.TipsShown = new List<string>();

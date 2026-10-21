@@ -24,9 +24,8 @@ namespace Adventure.Tests
             foreach (var item in new List<ItemInstance>(c.Inventory.Items))
             {
                 if (item.Kind != ItemKind.Equipment || EquipmentSystem.CannotEquipReason(c, item) != null) continue;
-                var slot = c.Equipment.ChooseSlot(item.Gear);
-                var cur = c.Equipment[slot];
-                if (cur == null || cur.Value < item.Value) EquipmentSystem.Equip(c, item.Uid, out _, slot);
+                if (EquipmentSystem.ReplacedBy(c, item) == null || EquipmentSystem.Summary(c, item).Delta > 0)
+                    EquipmentSystem.Equip(c, item.Uid, out _);
             }
             // 쓸모없는 장비와 재료 판매 (퀘스트 재료는 남김)
             foreach (var item in new List<ItemInstance>(c.Inventory.Items))

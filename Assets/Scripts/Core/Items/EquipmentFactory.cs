@@ -30,19 +30,26 @@ namespace Adventure.Core
             GearType.Necklace, GearType.Ring, GearType.Weapon
         };
 
-        /// <summary>장비 기본 수치 (v1.9: 장비 비중을 키우려고 1.4배).</summary>
-        public static int BaseValueFor(GearType gear, int itemLevel)
+        /// <summary>
+        /// 장비 기본 수치 (v2.0): 착용 레벨이 오를수록 커지고, 적정 장비에서도 전체의 40%를 넘지 않게 정했다.
+        /// 무기 = 공격력, 방어구 = 방어력(피해 × 400/(400 + 방어력)), 장신구 = 능력치 고정 보너스.
+        /// </summary>
+        public static double BaseValueFor(GearType gear, int itemLevel)
         {
             switch (gear)
             {
-                case GearType.Weapon: return (int)Math.Round(8.4 + itemLevel * 3.08);
-                case GearType.Helmet: return (int)Math.Round(2.8 + itemLevel * 0.84);
-                case GearType.Armor: return (int)Math.Round(5.6 + itemLevel * 1.4);
-                case GearType.Pants: return (int)Math.Round(4.2 + itemLevel * 1.12);
-                case GearType.Boots: return (int)Math.Round(2.8 + itemLevel * 0.7);
-                default: return (int)Math.Round(1.4 + itemLevel * 0.35); // 장신구: 능력치 보너스
+                case GearType.Weapon: return 6 + itemLevel * 2.0;
+                case GearType.Helmet: return 1.6 + itemLevel * 0.48;
+                case GearType.Armor: return 3.2 + itemLevel * 0.8;
+                case GearType.Pants: return 2.0 + itemLevel * 0.64;
+                case GearType.Boots: return 1.2 + itemLevel * 0.48;
+                default: return 1.0 + itemLevel * 0.12; // 장신구: 능력치 보너스
             }
         }
+
+        /// <summary>등급을 곱한 기본 수치 (강화 전).</summary>
+        public static int BaseValue(GearType gear, int itemLevel, ItemGrade grade) =>
+            Math.Max(1, (int)Math.Round(BaseValueFor(gear, itemLevel) * GameBalance.GradeValueMultiplier[(int)grade]));
 
         public static int PriceFor(int itemLevel, ItemGrade grade) =>
             (int)Math.Round((40 + itemLevel * 45) * GameBalance.GradePriceMultiplier[(int)grade]);
@@ -52,6 +59,19 @@ namespace Adventure.Core
         {
             int lv = floor * 2 - 1 + rng.RangeInclusive(-2, 2);
             return GameBalance.Clamp(lv, 1, GameBalance.MaxLevel);
+        }
+
+        /// <summary>
+        /// 드롭·보상·상점 장비 (v2.0): 층 기준 레벨이 내 레벨보다 높으면 절반 확률로 내 레벨 −0~2로 다시 정하고,
+        /// 내 레벨보다 낮은 장비는 10% 확률로 한 등급 위 (그 층 최고 등급까지).
+        /// </summary>
+        public static ItemInstance CreateDrop(Rng rng, ItemGrade grade, int floor, Character c)
+        {
+            int lv = ItemLevelForFloor(floor, rng);
+            if (lv > c.Level && rng.Chance(GameBalance.OverLevelReroll))
+                lv = GameBalance.Clamp(c.Level - rng.RangeInclusive(0, 2), 1, GameBalance.MaxLevel);
+            if (lv < c.Level && grade < MaxGradeForFloor(floor) && rng.Chance(GameBalance.UnderLevelGradeUp)) grade++;
+            return CreateRandom(rng, grade, lv, c.Job);
         }
 
         public static ItemInstance Create(GearType gear, ItemGrade grade, int itemLevel, Job weaponJob, Stat accessoryStat)
@@ -65,7 +85,7 @@ namespace Adventure.Core
                 Gear = gear,
                 Grade = grade,
                 LevelReq = itemLevel,
-                BaseValue = Math.Max(1, (int)Math.Round(BaseValueFor(gear, itemLevel) * GameBalance.GradeValueMultiplier[(int)grade])),
+                BaseValue = BaseValue(gear, itemLevel, grade),
                 Price = PriceFor(itemLevel, grade),
             };
             if (gear == GearType.Weapon)

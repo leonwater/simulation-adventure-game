@@ -469,7 +469,7 @@ namespace Adventure.Core
             new EventDef
             {
                 Id = "evt_blood_well", Title = "피의 우물", Special = EventSpecial.BloodWell,
-                Body = "붉은 물이 고인 우물에서 속삭임이 들린다. \"피를 바쳐라. 바칠수록 깨달음이 깊어지리라.\"",
+                Body = "붉은 물이 고인 우물에서 속삭임이 들린다. \"피를 바쳐라. 바칠수록 깨달음도, 대가도 깊어지리라.\"",
                 Choices = new[]
                 {
                     new EventChoice { Label = "피를 바친다", Success = O("") },

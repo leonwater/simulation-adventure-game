@@ -66,10 +66,10 @@ namespace Adventure.Tests
         {
             var common = EquipmentFactory.Create(GearType.Weapon, ItemGrade.Common, 20, Job.Warrior, Stat.Luck);
             var legend = EquipmentFactory.Create(GearType.Weapon, ItemGrade.Legendary, 20, Job.Warrior, Stat.Luck);
-            Assert.AreEqual(Math.Round(common.BaseValue * 2.7), legend.BaseValue, 1, "전설은 일반의 2.7배");
+            Assert.AreEqual(Math.Round(common.BaseValue * 1.28), legend.BaseValue, 1, "전설은 일반의 1.28배 (v2.0)");
             common.Enhance = legend.Enhance = 10;
-            Assert.AreEqual(Math.Round(common.BaseValue * 1.5), common.Value, 1, "일반 +10 = +50%");
-            Assert.AreEqual(legend.BaseValue * 2, legend.Value, 1, "전설 +10 = +100%");
+            Assert.AreEqual(common.BaseValue + 10, common.Value, "일반 +10 = +20%, 단계마다 최소 +1");
+            Assert.AreEqual(Math.Round(legend.BaseValue * 1.4), legend.Value, 1, "전설 +10 = +40%");
         }
 
         [Test]

@@ -33,10 +33,15 @@ namespace Adventure.Core
 
         public bool IsAccessory => Kind == ItemKind.Equipment && (Gear == GearType.Necklace || Gear == GearType.Ring);
 
-        /// <summary>강화가 반영된 수치. 강화 1단계마다 기본 수치 + 등급별 5~10%.</summary>
+        /// <summary>강화가 반영된 수치. 강화 1단계마다 기본 수치 + 등급별 2~4% (무기·방어구 최소 +1, 장신구 2단계마다 최소 +1).</summary>
         public int Value => ValueAt(Enhance);
 
-        public int ValueAt(int enhance) => (int)Math.Round(BaseValue * (1.0 + GameBalance.EnhanceValuePerLevel[(int)Grade] * enhance));
+        public int ValueAt(int enhance)
+        {
+            int bonus = (int)Math.Round(BaseValue * GameBalance.EnhanceValuePerLevel[(int)Grade] * enhance);
+            int min = IsAccessory ? (enhance + 1) / 2 : enhance;
+            return BaseValue + Math.Max(bonus, min);
+        }
 
         /// <summary>판매가 = 구매가의 50% + 강화에 든 골드의 50%.</summary>
         public int SellPrice => Math.Max(1, (int)Math.Round(Price * GameBalance.SellRatio + Blacksmith.GoldSpent(this) * GameBalance.EnhanceSellRefund));
@@ -75,7 +80,7 @@ namespace Adventure.Core
                 case ItemKind.EnhanceStone:
                     return "대장간 +6 이상 강화 재료";
                 default:
-                    return "재료 · 퀘스트 납품이나 판매에 쓴다";
+                    return "기타 · 퀘스트 납품이나 판매에 쓴다";
             }
         }
     }

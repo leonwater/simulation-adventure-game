@@ -140,6 +140,14 @@ namespace Adventure.Core
             return list;
         }
 
+        /// <summary>지금 레벨보다 높은 스킬은 절반 확률로 뺀다 (남는 것이 있을 때만, v2.0).</summary>
+        public static List<SkillDef> PreferOwnLevel(List<SkillDef> list, Character c, Rng rng)
+        {
+            if (!rng.Chance(GameBalance.OverLevelReroll)) return list;
+            var own = list.FindAll(s => s.ReqLevel <= c.Level);
+            return own.Count > 0 ? own : list;
+        }
+
         public static List<SkillDef> ForJob(Job job, params SkillTier[] tiers)
         {
             var list = new List<SkillDef>();

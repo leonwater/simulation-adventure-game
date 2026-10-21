@@ -244,7 +244,9 @@ namespace Adventure.Game
             float height = 48, float fontSize = 15, float width = -1)
         {
             Colors(kind, out var fill, out var border, out var textColor);
-            var card = Card(parent, fill, border, 10, Pad(14, 0), false, 0, TextAnchor.MiddleCenter, "button");
+            // 고정 폭 버튼(+10, 갱신 등)은 옆 여백을 줄이고 글자를 한 줄로 둔다 (v2.0: 큰 글자 설정에서 '+1/0'으로 깨지던 문제)
+            int side = width > 0 ? Mathf.Min(14, Mathf.RoundToInt(width * 0.1f)) : 14;
+            var card = Card(parent, fill, border, 10, Pad(side, 0), false, 0, TextAnchor.MiddleCenter, "button");
             var le = Size(card, height: height);
             // 안의 글자가 늘어나는 칸이라 버튼 전체가 줄을 채우려 하므로, 늘어나지 않게 막는다
             // (늘리려면 UI.Size(b, flexW: 1), 같은 폭으로 나누려면 UI.Size(b, width: 0, flexW: 1))
@@ -256,6 +258,7 @@ namespace Adventure.Game
             }
             var t = Label(card, label, fontSize, textColor, kind == ButtonKind.Primary || kind == ButtonKind.Outline, TextAnchor.MiddleCenter);
             Size(t, flexW: 1);
+            if (width > 0) t.horizontalOverflow = HorizontalWrapMode.Overflow;
             return MakeButton(card, onClick);
         }
 

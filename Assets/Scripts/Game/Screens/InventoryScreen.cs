@@ -171,7 +171,7 @@ namespace Adventure.Game
             int price = ShopSystem.BagPrice(C);
             int after = System.Math.Min(GameBalance.InventoryMax, C.Inventory.Capacity + GameBalance.InventoryPerBag);
             Overlay.Confirm("가방 확장", price.ToString("#,0") + "G를 소모하여 가방을 " + (after - C.Inventory.Capacity) + "칸 확장하겠습니까?\n("
-                                       + C.Inventory.Capacity + " → " + after + "칸, 쓰러져도 유지)", "확장 · " + price.ToString("#,0") + "G", () =>
+                                       + C.Inventory.Capacity + " → " + after + "칸)", "확장 · " + price.ToString("#,0") + "G", () =>
             {
                 if (!ShopSystem.BuyBag(C, out string err))
                 {

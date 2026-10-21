@@ -24,7 +24,8 @@ namespace Adventure.Core
         public const double ResistPerSpirit = 0.01;       // 저항 = 정신 × 1%
         public const double DropBonusPerLuck = 0.005;     // 드롭률 × (1 + 행운 × 0.5%)
         public const double EventBonusPerLuck = 0.005;    // 이벤트 성공률 + 행운 × 0.5%
-        public const int AttackPerMainStat = 2;           // 공격력 = 주 능력치 × 2 + 무기
+        /// <summary>공격력 = 주 능력치 × 5 + 무기 (v2.0: 장비 비중을 줄이려고 능력치 몫을 키움).</summary>
+        public const int AttackPerMainStat = 5;
         public const double EvasionPerAgility = 0.005;    // 회피 = 민첩 × 0.5%
         public const double EvasionPerFinesse = 0.005;    // 회피 + 기교 × 0.5% (도적)
         public const double ReductionPerToughness = 0.005;// 감소율 = 강인함 × 0.5%
@@ -80,16 +81,35 @@ namespace Adventure.Core
         public const int BagBasePrice = 500; // 구매할 때마다 2배
 
         // ── 장비 ───────────────────────────────────────────────
-        /// <summary>등급별 기본 수치 배율 (v1.8: 등급 차이를 키움).</summary>
-        public static readonly double[] GradeValueMultiplier = { 1.0, 1.3, 1.65, 2.1, 2.7 };
+        /// <summary>
+        /// 등급별 기본 수치 배율 (v2.0: 작게). 착용 레벨이 기본 수치를 주로 정해서, 레벨 차이가 크면 낮은 등급이라도
+        /// 높은 레벨 장비가 앞선다 (같은 부위 10레벨 차이면 희귀 ↔ 일반이 뒤집힘).
+        /// </summary>
+        public static readonly double[] GradeValueMultiplier = { 1.0, 1.07, 1.14, 1.21, 1.28 };
         public static readonly double[] GradePriceMultiplier = { 1.0, 1.6, 2.6, 4.0, 6.0 };
         /// <summary>등급별 첫 등장 층.</summary>
         public static readonly int[] GradeFirstFloor = { 1, 1, 5, 12, 20 };
         public const double SellRatio = 0.5;
 
         public const int MaxEnhance = 15;
-        /// <summary>강화 1단계마다 기본 수치 + 등급별 비율 (v1.8: 높은 등급일수록 많이 오른다).</summary>
-        public static readonly double[] EnhanceValuePerLevel = { 0.05, 0.06, 0.07, 0.08, 0.10 };
+        /// <summary>
+        /// 강화 1단계마다 기본 수치 + 등급별 비율 (높은 등급일수록 많이 오른다, v2.0: 2~4%).
+        /// 무기·방어구는 단계마다 최소 +1, 장신구는 2단계마다 최소 +1.
+        /// </summary>
+        public static readonly double[] EnhanceValuePerLevel = { 0.02, 0.025, 0.03, 0.035, 0.04 };
+
+        /// <summary>
+        /// 장비 비중 상한 (v2.0): 적정 장비(<see cref="FairGrade"/> · 적정 강화)에서 무기가 공격력의,
+        /// 방어구가 받는 피해의, 장신구 3개가 주 능력치의 이 비율을 넘지 않는다 (테스트로 고정).
+        /// </summary>
+        public const double MaxGearShare = 0.40;
+
+        /// <summary>층의 적정 장비 등급: 1~11층 고급, 12~19층 희귀, 20층부터 영웅.</summary>
+        public static ItemGrade FairGrade(int floor) =>
+            floor >= 20 ? ItemGrade.Epic : floor >= 12 ? ItemGrade.Rare : ItemGrade.Uncommon;
+
+        /// <summary>피해 = 공격 × K / (K + 방어력). v2.0: 방어구 수치를 낮추며 100 → 400.</summary>
+        public const double DefenseConstant = 400;
         /// <summary>강화한 장비를 팔면 들어간 강화 골드의 이 비율을 판매가에 더한다.</summary>
         public const double EnhanceSellRefund = 0.5;
         /// <summary>목표 강화 단계별 성공률. 인덱스 = 목표 단계(1~15, v1.9: 최대 +15, 단계마다 고르게 낮아진다).</summary>
@@ -139,6 +159,12 @@ namespace Adventure.Core
         public const double MerchantDiscountMultiplier = 0.7;
         /// <summary>던전 상인 물건마다 살 수 있는 최대 개수.</summary>
         public const int MerchantStockMin = 2, MerchantStockMax = 5;
+        /// <summary>
+        /// 드롭·상점 장비와 스킬서가 내 레벨보다 높게 나오면 이 확률로 내 레벨 이하로 다시 정한다 (v2.0).
+        /// </summary>
+        public const double OverLevelReroll = 0.5;
+        /// <summary>내 레벨보다 낮은 장비가 한 등급 높게 나올 확률 (그 층 최고 등급까지, v2.0).</summary>
+        public const double UnderLevelGradeUp = 0.10;
         /// <summary>장비·스킬서가 지금 직업용으로 나올 확률. 나머지는 다른 세 직업이 똑같이 나눈다 (각 10%).</summary>
         public const double OwnJobChance = 0.7;
 
@@ -185,9 +211,9 @@ namespace Adventure.Core
         public static double EarlyBoostScale(Difficulty d) => d == Difficulty.Easy ? 0 : d == Difficulty.Normal ? 1.0 : 0.4;
 
         /// <summary>적 HP (v1.8: 성공률 +7%p에 맞춰 ×1.1, v1.9: 장비 수치 상향에 맞춰 층이 깊을수록 더).</summary>
-        public static double EnemyHp(int f, double early = 1.0) => 66 + f * 29 + f * f * 0.75 + EarlyBoostHp * EarlyBoost(f) * early;
-        public static double EnemyAttack(int f, double early = 1.0) => 5 + f * 2.8 + f * f * 0.09 + EarlyBoostAttack * EarlyBoost(f) * early;
-        public static double EnemyDefense(int f) => 2 + f * 1.5;
+        public static double EnemyHp(int f, double early = 1.0) => 200 + f * 70 - f * f * 0.5 + EarlyBoostHp * EarlyBoost(f) * early;
+        public static double EnemyAttack(int f, double early = 1.0) => (5 + f * 2.8 + f * f * 0.05) * 0.55 + EarlyBoostAttack * EarlyBoost(f) * early;
+        public static double EnemyDefense(int f) => 8 + f * 6;
         /// <summary>플레이어 공격 성공률 계산에 쓰는 적 요구치.</summary>
         public static double EnemyRequirement(int f) => 10 + f * 2.4;
         public static long EnemyExp(int f) => (long)Math.Round(10 + 20 * Math.Pow(f, 1.5));

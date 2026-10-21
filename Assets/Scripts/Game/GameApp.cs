@@ -137,7 +137,7 @@ namespace Adventure.Game
             var modal = Overlay.Top;
             UI.CenteredIcon(body, UI.RankIcon(rank), 96);
             UI.Label(body, rank + " 등급 모험가가 되었습니다!", 18, Theme.Gold, true, TextAnchor.MiddleCenter);
-            UI.Label(body, "배지 효과 · 기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(rank) * 100) + "%\n스킬 " + RankSystem.SkillSlots(rank)
+            UI.Label(body, "등급 효과 · 기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(rank) * 100) + "%\n스킬 " + RankSystem.SkillSlots(rank)
                            + "칸 · 창고 " + RankSystem.StorageCapacity(rank) + "칸", 14, Theme.Text, false, TextAnchor.MiddleCenter);
             UI.TextButton(body, "확인", () =>
             {

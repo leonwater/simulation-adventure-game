@@ -93,8 +93,7 @@ namespace Adventure.Core
             for (int i = 0; i < GameBalance.ShopEquipmentSlots; i++)
             {
                 var grade = rng.Chance(0.3) ? ItemGrade.Uncommon : ItemGrade.Common;
-                int lv = EquipmentFactory.ItemLevelForFloor(floor, rng);
-                s.Equipment.Add(EquipmentFactory.CreateRandom(rng, grade, lv, c.Job));
+                s.Equipment.Add(EquipmentFactory.CreateDrop(rng, grade, floor, c));
             }
 
             s.Goods.Clear();
@@ -109,6 +108,7 @@ namespace Adventure.Core
             {
                 var books = SkillDb.Obtainable(c, JobData.RollItemJob(c.Job, rng), SkillTier.Low, SkillTier.Mid);
                 books.RemoveAll(b => c.Skills.Knows(b.Id) || s.Goods.Exists(g => g.Item.SkillId == b.Id));
+                books = SkillDb.PreferOwnLevel(books, c, rng);
                 if (books.Count > 0) s.Goods.Add(new ShopGood { Item = ItemDb.CreateSkillBook(rng.Pick(books).Id), Stock = 1 });
             }
             for (int i = 1; s.Goods.Count < GameBalance.ShopGoodsSlots && i < optional.Count; i++)

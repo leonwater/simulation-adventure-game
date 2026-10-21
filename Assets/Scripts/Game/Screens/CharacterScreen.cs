@@ -58,7 +58,7 @@ namespace Adventure.Game
             var panel = UI.Card(parent, Theme.Card, Theme.CardBorder, 12, UI.Pad(14, 12), true, 8);
             var row = UI.Row(panel, 8);
             UI.Icon(row, UI.RankIcon(C.Rank), 32);
-            var t = UI.Label(row, C.Rank + " 등급 배지", 15, Theme.Text, true);
+            var t = UI.Label(row, C.Rank + " 등급 모험가", 15, Theme.Text, true);
             UI.Size(t, flexW: 1);
             UI.Label(row, "기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%", 13, Theme.Gold, false, TextAnchor.MiddleRight, false, false);
             if (st.IsMaxRank)
@@ -145,7 +145,7 @@ namespace Adventure.Game
                 UI.Label(col, StatEffect(s) + (mine ? "" : " · 이 직업은 배분 불가"), 12, Theme.TextSub);
                 if (!mine) row.gameObject.AddComponent<CanvasGroup>().alpha = 0.55f;
             }
-            UI.Sub(body, "배지 효과(+" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%)는 장비·버프를 제외한 캐릭터 자체 능력치에만 곱합니다.");
+            UI.Sub(body, "등급 효과(+" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "%)는 장비·버프를 제외한 캐릭터 자체 능력치에만 곱합니다.");
         }
 
         /// <summary>능력치가 주는 효과 (상세 능력치 창의 한 줄 설명).</summary>

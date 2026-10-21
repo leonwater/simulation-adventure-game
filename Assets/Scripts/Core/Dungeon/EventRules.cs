@@ -114,6 +114,8 @@ namespace Adventure.Core
         private static readonly double[] TrapChances = { 0.15, 0.30, 0.50, 0.70 };
         // 피의 우물: 바칠 때마다 경험치 배수
         private static readonly double[] BloodRewards = { 1, 1, 3, 3, 6 };
+        /// <summary>피의 우물: 바칠 때마다 나쁜 효과(공포·저주·추가 출혈)가 붙을 확률 (v2.0, 반복할수록 오른다).</summary>
+        public static readonly double[] BloodRisk = { 0.10, 0.20, 0.35, 0.50, 0.65 };
 
         public static double TrapChance(int step, Character c) =>
             Math.Max(0, TrapChances[Math.Min(step, TrapChances.Length - 1)] - CharacterStats.Total(c, Stat.Luck) * GameBalance.EventBonusPerLuck);
@@ -212,6 +214,25 @@ namespace Adventure.Core
         }
 
         public static long GoldAmount(double mult, int floor) => (long)Math.Round(GameBalance.EnemyGold(floor) * mult);
+
+        /// <summary>피의 우물의 대가: 공포(전투 2회) · 저주(다음 휴식 방까지) · 추가 출혈(최대 HP 10%) 중 하나.</summary>
+        private static string BloodCurse(DungeonRun run, Character c, Rng rng, EventResult result)
+        {
+            switch (rng.Range(0, 3))
+            {
+                case 0:
+                    ExploreEffects.Add(run.Effects, ExploreEffectType.Fear, 2);
+                    return "\n우물 속 무언가와 눈이 마주쳤다. 등골이 서늘하다. (공포: 전투 2회)";
+                case 1:
+                    ExploreEffects.Add(run.Effects, ExploreEffectType.Curse, -1);
+                    return "\n붉은 물이 손목을 타고 올라와 검게 굳는다. (저주)";
+                default:
+                    int before = c.CurrentHp;
+                    c.CurrentHp = Math.Max(1, c.CurrentHp - BloodCost(c));
+                    result.HpChange += c.CurrentHp - before;
+                    return "\n상처가 벌어져 피가 멎지 않는다. (HP 추가 소모)";
+            }
+        }
 
         private static int BloodCost(Character c) => (int)Math.Round(CharacterStats.MaxHp(c) * 0.1);
 
@@ -317,7 +338,7 @@ namespace Adventure.Core
             {
                 case EventReward.GoodEquipment:
                     var grade = (ItemGrade)Math.Max((int)ItemGrade.Uncommon, (int)EquipmentFactory.RollDropGrade(rng, run.Floor, 1));
-                    result.Loot.Items.Add(EquipmentFactory.CreateRandom(rng, grade, EquipmentFactory.ItemLevelForFloor(run.Floor, rng), c.Job));
+                    result.Loot.Items.Add(EquipmentFactory.CreateDrop(rng, grade, run.Floor, c));
                     break;
                 case EventReward.Consumables:
                     var ids = new[] { "potion", "potion_hi", "antidote", "bandage", "salve" };
@@ -378,8 +399,9 @@ namespace Adventure.Core
                         result.HpChange = c.CurrentHp - before;
                         result.Loot.Exp = (long)Math.Round(GameBalance.EnemyExp(run.Floor) * BloodRewards[room.EventStep]);
                         LootSystem.Apply(c, run, result.Loot);
+                        string curse = rng.Chance(BloodRisk[room.EventStep]) ? BloodCurse(run, c, rng, result) : "";
                         room.EventStep++;
-                        result.Text = "피가 우물로 스며들자 깨달음이 밀려든다. (" + room.EventStep + "/" + BloodRewards.Length + ")";
+                        result.Text = "피가 우물로 스며들자 깨달음이 밀려든다. (" + room.EventStep + "/" + BloodRewards.Length + ")" + curse;
                         result.Continues = room.EventStep < BloodRewards.Length;
                         if (!result.Continues) room.Cleared = true;
                         return result;

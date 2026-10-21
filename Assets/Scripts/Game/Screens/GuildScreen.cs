@@ -182,7 +182,7 @@ namespace Adventure.Game
             UI.Icon(head, UI.RankIcon(C.Rank), 48);
             var hc = UI.Column(head, 2);
             UI.Size(hc, flexW: 1);
-            UI.Label(hc, C.Rank + " 등급 배지", 17, Theme.Text, true);
+            UI.Label(hc, C.Rank + " 등급 모험가", 17, Theme.Text, true);
             UI.Label(hc, "기본 능력치 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(C.Rank) * 100) + "% · 스킬 " + RankSystem.SkillSlots(C.Rank) + "칸 · 창고 " + RankSystem.StorageCapacity(C.Rank) + "칸", 13, Theme.Gold);
 
             if (!st.IsMaxRank)
@@ -190,7 +190,7 @@ namespace Adventure.Game
                 UI.Divider(card);
                 var nextRow = UI.Row(card, 8);
                 UI.Icon(nextRow, UI.RankIcon(st.Next), 24);
-                UI.Label(nextRow, st.Next + " 등급 승급 조건 (배지 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(st.Next) * 100) + "%)", 14, Theme.Text, true);
+                UI.Label(nextRow, st.Next + " 등급 승급 조건 (등급 효과 +" + Mathf.RoundToInt((float)RankSystem.BadgeBonus(st.Next) * 100) + "%)", 14, Theme.Text, true);
                 Condition(card, "돌파 층", st.FloorCurrent, st.FloorRequired, st.FloorMet);
                 Condition(card, "레벨", st.LevelCurrent, st.LevelRequired, st.LevelMet);
                 Condition(card, "퀘스트 완료", st.QuestsCurrent, st.QuestsRequired, st.QuestsMet);

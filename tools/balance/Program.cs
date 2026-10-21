@@ -37,6 +37,11 @@ public static class Program
                 args.Length > 2 ? (Difficulty)Enum.Parse(typeof(Difficulty), args[2]) : Difficulty.Normal);
             return;
         }
+        if (args.Length > 0 && args[0] == "gear")
+        {
+            GearShare();
+            return;
+        }
         int runs = args.Length > 0 ? int.Parse(args[0]) : 150;
         int seeds = args.Length > 1 ? int.Parse(args[1]) : 3;
         var diffs = args.Length > 2
@@ -224,6 +229,54 @@ public static class Program
                               + Pct(lost / fights) + " · " + (turns / fights).ToString("0.0") + "턴 · " + Pct(deaths / fights)
                               + "          " + Pct(bossWin / fights) + " · " + Pct(bossWin == 0 ? 0 : bossHp / bossWin) + " · " + (bossTurns / fights).ToString("0.0") + "턴");
         }
+    }
+
+    /// <summary>
+    /// 적정 장비(층 등급 · 층 ÷ 2 강화, 장신구 3개 모두 주 공격 능력치)를 낀 전사로 장비 비중과 적을 쓰러뜨리는 데 드는 횟수.
+    /// 기본 = 기본 공격, 스킬 = 그 레벨에 쓸 수 있는 가장 센 단일 스킬 (수련 0, 치명타 제외).
+    /// </summary>
+    private static void GearShare()
+    {
+        Console.WriteLine("=== 적정 장비 비중 (보통) · 한계 " + (GameBalance.MaxGearShare * 100) + "% ===");
+        Console.WriteLine("층  Lv  공격력  무기몫  받는피해  장신구몫   일반 HP  기본·스킬   정예 HP  기본·스킬");
+        foreach (int f in new[] { 1, 3, 5, 8, 10, 12, 15, 20, 25, 30 })
+        {
+            var c = FairHero(Job.Warrior, f);
+            int atk = CharacterStats.Attack(c);
+            int def = CharacterStats.Defense(c);
+            var main = c.JobData.AttackStat;
+            double taken = GameBalance.DefenseConstant / (GameBalance.DefenseConstant + def);
+            double edef = GameBalance.EnemyDefense(f);
+            double hit = atk * GameBalance.DefenseConstant / (GameBalance.DefenseConstant + edef);
+            double best = 1;
+            foreach (var s in SkillDb.ForJob(c.Job, (SkillTier[])Enum.GetValues(typeof(SkillTier))))
+                if (s.ReqLevel <= c.Level && s.Target == SkillTarget.SingleEnemy) best = Math.Max(best, s.DamageMult * s.Hits);
+            double hp = GameBalance.EnemyHp(f), ehp = hp * GameBalance.EliteHp;
+            Console.WriteLine(f.ToString().PadLeft(2) + "  " + c.Level.ToString().PadLeft(2) + "  " + atk.ToString().PadLeft(5)
+                              + "   " + Pct(CharacterStats.WeaponAttack(c) / (double)atk) + "     " + Pct(taken)
+                              + "     " + Pct(CharacterStats.EquipmentBonus(c, main) / (double)CharacterStats.Total(c, main))
+                              + "     " + hp.ToString("0").PadLeft(5) + "  " + (hp / hit).ToString("0.0").PadLeft(4) + "·" + (hp / hit / best).ToString("0.0")
+                              + "     " + ehp.ToString("0").PadLeft(5) + "  " + (ehp / hit).ToString("0.0").PadLeft(4) + "·" + (ehp / hit / best).ToString("0.0"));
+        }
+    }
+
+    /// <summary>적정 장비 캐릭터: 봇 평균 레벨, 층 등급(1~11 고급 · 12~19 희귀 · 20~ 영웅), 강화 층 ÷ 2.</summary>
+    public static Character FairHero(Job job, int floor)
+    {
+        var c = Character.Create("봇", job);
+        while (c.Level < ArrivalLevel(floor)) Leveling.AddExp(c, GameBalance.ExpToNext(c.Level));
+        Leveling.AutoAllocate(c);
+        c.Rank = (Rank)Math.Min((int)Rank.S, floor / 5);
+        int lv = Math.Min(c.Level, floor * 2 - 1);
+        foreach (var gear in new[] { GearType.Helmet, GearType.Armor, GearType.Pants, GearType.Boots, GearType.Necklace, GearType.Ring, GearType.Ring, GearType.Weapon })
+        {
+            var item = EquipmentFactory.Create(gear, GameBalance.FairGrade(floor), lv, job, c.JobData.AttackStat);
+            item.Enhance = GameBalance.RecommendedEnhance(floor);
+            c.Inventory.Add(item);
+            EquipmentSystem.Equip(c, item.Uid, out _);
+        }
+        c.CurrentHp = CharacterStats.MaxHp(c);
+        return c;
     }
 
     /// <summary>그 층에 처음 온 캐릭터: 봇 평균 레벨, 1~2층은 시작 장비, 3층부터 그 층 일반·고급 장비 섞어서, 물약 2개.</summary>

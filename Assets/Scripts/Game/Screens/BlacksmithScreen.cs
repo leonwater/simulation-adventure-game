@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Adventure.Core;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Adventure.Game
 {
@@ -8,7 +9,7 @@ namespace Adventure.Game
     public class BlacksmithScreen : ScreenBase
     {
         private string _selected;
-        private string _line = "망치는 정직하지. 실패해도 장비는 멀쩡하니 걱정 말게.";
+        private string _line = "망치는 정직하지. 실패해도 장비가 부서지진 않으니 걱정 말게.";
 
         public override bool OnBack()
         {
@@ -23,41 +24,55 @@ namespace Adventure.Game
             ScreenKit.NpcIllustration(page, "대장장이", _line, 260);
             var body = UI.Scroll(page, out _, 8, UI.Pad(16, 16, 16, 16), "smith");
 
-            var gear = new List<ItemInstance>();
-            foreach (var e in C.Equipment.Slots) if (e != null) gear.Add(e);
-            foreach (var i in C.Inventory.Items) if (i.Kind == ItemKind.Equipment) gear.Add(i);
-            if (_selected == null && gear.Count > 0) _selected = gear[0].Uid;
+            var equipped = new List<(EquipSlot slot, ItemInstance item)>();
+            foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot)))
+                if (C.Equipment[slot] != null) equipped.Add((slot, C.Equipment[slot]));
+            var bag = C.Inventory.Items.FindAll(i => i.Kind == ItemKind.Equipment);
+            if (_selected == null || Blacksmith.FindGear(C, _selected) == null)
+                _selected = equipped.Count > 0 ? equipped[0].item.Uid : bag.Count > 0 ? bag[0].Uid : null;
 
             var selected = Blacksmith.FindGear(C, _selected);
             if (selected != null) Detail(body, selected);
 
             var info = UI.Row(body, 6);
             UI.Size(info, minH: 36);
-            var l = UI.Label(info, "장비 선택", 14, Theme.Text, true);
+            var l = UI.Label(info, "장착 장비", 14, Theme.Text, true);
             UI.Size(l, flexW: 1);
             // 강화석은 주요 정보라 아이콘 + 굵은 글씨로 (수정 사항 #14)
             UI.Icon(info, "enhance_stone", 22);
             UI.Label(info, "강화석 " + UI.Color(C.Inventory.CountOf(ItemDb.EnhanceStoneId) + "개", Theme.BlueHex), 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+            // 장비 선택은 가방의 장착 장비 칸과 같은 4열 칸 (v2.0): 장착 장비(가방과 같은 부위 순서) → 가방 장비
             var list = UI.Column(body, 8);
             Anchors.Set("smith.list", list);
-            foreach (var item in gear)
+            if (equipped.Count > 0)
             {
-                var it = item;
-                bool equipped = C.Equipment.Find(item.Uid) != null;
-                bool sel = item.Uid == _selected;
-                var row = UI.ButtonCard(list, () =>
-                {
-                    _selected = it.Uid;
-                    Rebuild();
-                }, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(12, 6), false, 8, 52);
-                var col = UI.Column(row, 2);
-                UI.Size(col, flexW: 1);
-                UI.Label(col, UI.GradeTag(item.Grade) + " " + item.DisplayName, 14, Theme.GradeColor(item.Grade), true);
-                UI.Sub(col, (equipped ? "착용 중 · " : "가방 · ") + ItemGrid.GearText(item) + " · " + item.StatLine());
-                UI.Label(row, "+" + item.Enhance, 14, Theme.Text, false, TextAnchor.MiddleRight, false, false);
+                var grid = UI.Grid(list, 4, ScreenKit.ContentWidth, 66, 6);
+                foreach (var e in equipped) GearCell(grid, e.item, Names.Of(e.slot));
             }
-            if (gear.Count == 0) UI.Sub(list, "강화할 장비가 없습니다.");
+            else UI.Sub(list, "장착한 장비가 없습니다.");
+            UI.Label(list, "가방 장비", 14, Theme.Text, true);
+            if (bag.Count > 0)
+            {
+                var grid = UI.Grid(list, 4, ScreenKit.ContentWidth, 66, 6);
+                foreach (var i in bag) GearCell(grid, i, Names.Of(i.Gear));
+            }
+            else UI.Sub(list, "가방에 장비가 없습니다.");
             Tutorial.OnFacility("blacksmith");
+        }
+
+        /// <summary>장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). 고른 칸은 금색.</summary>
+        private void GearCell(Transform grid, ItemInstance item, string part)
+        {
+            bool sel = item.Uid == _selected;
+            var cell = UI.ButtonCard(grid, () =>
+            {
+                _selected = item.Uid;
+                Rebuild();
+            }, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(8, 6), true, 0, 66, TextAnchor.UpperLeft);
+            UI.Sub(cell, part);
+            UI.Spacer(cell);
+            var n = UI.Label(cell, item.DisplayName, 12, Theme.GradeColor(item.Grade));
+            n.verticalOverflow = VerticalWrapMode.Truncate;
         }
 
         private void Detail(Transform parent, ItemInstance item)
@@ -86,7 +101,8 @@ namespace Adventure.Game
             UI.Label(right, Blacksmith.GoldCost(item).ToString("#,0") + " G", 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
             double down = Blacksmith.DowngradeChance(item);
             if (down > 0) UI.Label(card, "실패하면 " + ScreenKit.Percent(down) + " 확률로 +" + (item.Enhance - 1) + "로 내려갑니다.", 13, Theme.RedLight);
-            else if (Blacksmith.SuccessRate(item) < 1) UI.Sub(card, "실패해도 장비는 그대로이고 재료·골드만 소모됩니다.");
+            else if (Blacksmith.SuccessRate(item) < 1)
+                UI.Sub(card, "실패해도 장비는 그대로이고 " + (Blacksmith.StoneCost(item) > 0 ? "골드·강화석" : "골드") + "만 소모됩니다.");
             int stones = Blacksmith.StoneCost(item);
             int have = C.Inventory.CountOf(ItemDb.EnhanceStoneId);
             if (stones > 0)

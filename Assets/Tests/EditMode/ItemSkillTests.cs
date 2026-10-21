@@ -104,7 +104,7 @@ namespace Adventure.Tests
             Assert.IsTrue(EquipmentSystem.Equip(c, sword.Uid, out err));
             Assert.AreSame(sword, c.Equipment[EquipSlot.Weapon]);
             Assert.IsNotNull(c.Inventory.Find(oldWeapon.Uid), "교체된 무기는 가방으로");
-            Assert.AreEqual(CharacterStats.Total(c, Stat.Strength) * 2 + sword.Value, CharacterStats.Attack(c));
+            Assert.AreEqual(CharacterStats.Total(c, Stat.Strength) * GameBalance.AttackPerMainStat + sword.Value, CharacterStats.Attack(c));
         }
 
         [Test]
@@ -145,9 +145,9 @@ namespace Adventure.Tests
             c.Inventory.Add(armor);
             EquipmentSystem.Equip(c, helm.Uid, out _);
             EquipmentSystem.Equip(c, armor.Uid, out _);
-            Assert.AreEqual(11, helm.Value); // 2.8 + 10 × 0.84 = 11.2
-            Assert.AreEqual(33, armor.Value); // round(5.6 + 14) = 20 × 1.65
-            Assert.AreEqual(44, CharacterStats.Defense(c));
+            Assert.AreEqual(6, helm.Value); // 1.6 + 10 × 0.48 = 6.4
+            Assert.AreEqual(13, armor.Value); // (3.2 + 10 × 0.8) × 희귀 1.14 = 12.8
+            Assert.AreEqual(19, CharacterStats.Defense(c));
         }
 
         [Test]
@@ -188,7 +188,7 @@ namespace Adventure.Tests
             }
             Assert.AreEqual(15, weapon.Enhance);
             Assert.AreEqual(EnhanceResult.NotAllowed, Blacksmith.Enhance(c, weapon.Uid, rng, out err));
-            Assert.AreEqual((int)System.Math.Round(weapon.BaseValue * 1.75), weapon.Value, "일반 +15 = +75%");
+            Assert.AreEqual(weapon.BaseValue + System.Math.Max((int)System.Math.Round(weapon.BaseValue * 0.3), 15), weapon.Value, "일반 +15 = +30% (단계마다 최소 +1)");
         }
 
         [Test]

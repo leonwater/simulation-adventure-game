@@ -24,14 +24,6 @@ namespace Adventure.Game
             "목숨 1개로 던전 격파",
         };
 
-        private static readonly string[] DifficultyDetail =
-        {
-            "적 능력치 ×0.75 · 다음 방의 종류를 미리 알 수 있음",
-            "기준 난이도 · 방 종류는 들어가야 알 수 있음",
-            "적 능력치 ×1.25 · 방 종류는 들어가야 알 수 있음",
-            "적 능력치 ×1.25 · 쓰러지면 캐릭터와 저장이 모두 사라짐",
-        };
-
         public override bool OnBack()
         {
             Prev();
@@ -166,13 +158,11 @@ namespace Adventure.Game
                 {
                     _difficulty = dd;
                     Rebuild();
-                }, on ? Theme.AccentBg : Theme.Card, on ? Theme.Accent : Theme.ButtonBorder, 12, UI.Pad(14, 10), true, 3, 60);
-                var title = UI.Row(card, 8, null, TextAnchor.MiddleLeft);
-                UI.Label(title, Names.Of(d), 16, on ? Theme.Gold : d == Difficulty.Hardcore ? Theme.RedLight : Theme.Text, true, TextAnchor.MiddleLeft, false, false);
-                UI.Label(title, DifficultyPitch[(int)d], 13, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
-                UI.Sub(card, DifficultyDetail[(int)d]);
+                }, on ? Theme.AccentBg : Theme.Card, on ? Theme.Accent : Theme.ButtonBorder, 12, UI.Pad(14, 0), false, 8, 56, TextAnchor.MiddleLeft);
+                // 난이도 이름과 추천 대상만 (v2.0)
+                UI.Label(card, Names.Of(d), 16, on ? Theme.Gold : d == Difficulty.Hardcore ? Theme.RedLight : Theme.Text, true, TextAnchor.MiddleLeft, false, false);
+                UI.Label(card, DifficultyPitch[(int)d], 13, Theme.TextBody, false, TextAnchor.MiddleLeft, false, false);
             }
-            UI.Sub(body, "공통: 쓰러지면 골드 30%·경험치 일부와 가방 속 아이템을 잃고 마을로 돌아옵니다 (하드코어 제외).");
             Nav(body, "다음");
         }
 
@@ -185,7 +175,7 @@ namespace Adventure.Game
             UI.Label(card, _name, 22, Theme.Text, true);
             var job = UI.Row(card, 8);
             UI.Size(UI.Sub(job, "직업"), width: 72);
-            ScreenKit.JobLine(job, _job, data.Name + " · " + string.Join(" · ", Array.ConvertAll(data.MainStats, s => Names.Of(s))), 14, Theme.Text);
+            ScreenKit.JobLine(job, _job, data.Name, 14, Theme.Text);
             Row(card, "난이도", Names.Of(_difficulty));
             UI.Sub(card, "직업과 난이도는 등록 후 바꿀 수 없습니다.");
             var row = UI.Row(body, 8);

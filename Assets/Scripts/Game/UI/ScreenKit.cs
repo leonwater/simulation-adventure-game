@@ -216,23 +216,23 @@ namespace Adventure.Game
         }
 
         /// <summary>
-        /// 능력치 배분 한 줄 (캐릭터 화면·던전 레벨 업 창 공통): 아이콘 · 이름과 배분 현황(45/99, 최대면 금색 '최대') ·
-        /// 효과(두 줄까지) · 고정 폭 − 값 + . 값 칸은 최대 능력치(세 자리)와 대기 중 +N이 들어가는 폭.
+        /// 능력치 배분 한 줄 (캐릭터 화면·던전 레벨 업 창 공통): 아이콘 · 이름과 장비·등급 효과로 얻은 추가분((+8), 최대면 금색 '최대') ·
+        /// 효과(두 줄까지) · 고정 폭 − 값 + . 값은 배분한 자체 능력치이고, 대기 중 +N이 함께 들어가는 폭 (v2.0: 45/99 표시 삭제).
         /// </summary>
         public static void StatRow(Transform parent, Character c, Stat stat, AllocationDraft draft, Action onMinus, Action onPlus, bool line)
         {
             int pending = draft.Pending(stat);
-            int own = c.BaseStats[stat] + pending, cap = GameBalance.StatCap;
+            int own = c.BaseStats[stat] + pending, extra = CharacterStats.Total(c, stat) - c.BaseStats[stat];
             var row = UI.Row(parent, 8);
             UI.Size(row, height: 60);
             UI.Icon(row, UI.StatIcon(stat), 24);
             var col = UI.Column(row, 1);
             UI.Size(col, flexW: 1);
-            string progress = own >= cap ? UI.Color(" 최대", Theme.GoldHex) : UI.Color(" " + own + "/" + cap, Theme.SubHex);
-            UI.Label(col, Names.Of(stat) + "<size=12>" + progress + "</size>", 14, Theme.Text, true);
+            string tail = (extra > 0 ? UI.Color(" (+" + extra + ")", Theme.GreenHex) : "") + (own >= GameBalance.StatCap ? UI.Color(" 최대", Theme.GoldHex) : "");
+            UI.Label(col, Names.Of(stat) + "<size=12>" + tail + "</size>", 14, Theme.Text, true);
             var effect = UI.Label(col, CharacterStats.EffectLabel(c, stat), 11, Theme.TextSub);
             effect.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Stepper(row, CharacterStats.Total(c, stat) + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
+            Stepper(row, c.BaseStats[stat] + (pending > 0 ? UI.Color(" +" + pending, Theme.GoldHex) : ""),
                 onMinus, pending > 0, onPlus, draft.CanAdd(stat));
             if (line) BottomLine(row, Theme.LineSoft);
         }

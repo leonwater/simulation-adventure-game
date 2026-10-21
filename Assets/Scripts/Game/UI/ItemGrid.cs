@@ -12,14 +12,14 @@ namespace Adventure.Game
         Armor,
         Accessory,
         Consumable,
-        Material,
+        Other,
         SkillBook,
         Stone
     }
 
     /// <summary>
     /// 가방·창고 4열 격자 (v1.9 배치). 칸마다 위에서부터 종류 색 원 + 종류 · 이름(두 줄까지, 장비는 등급 색) ·
-    /// 아래 줄(왼쪽: 장비는 착용 레벨과 지금 장비 대비 수치, 스킬서는 등급 / 오른쪽: 개수). 아래 줄은 칸 바닥에서 조금 띄운다.
+    /// 아래 줄(왼쪽: 장비는 착용 레벨과 지금 장비 대비 수치, 스킬서는 등급 · 직업 / 오른쪽: 개수). 아래 줄은 칸 바닥에서 조금 띄운다.
     /// 상점 카드도 같은 종류 줄·이름 색·레벨/비교 줄을 쓴다.
     /// </summary>
     public static class ItemGrid
@@ -30,7 +30,7 @@ namespace Adventure.Game
         private static readonly ItemCategory[] LegendOrder =
         {
             ItemCategory.Weapon, ItemCategory.Armor, ItemCategory.Accessory, ItemCategory.Consumable,
-            ItemCategory.Material, ItemCategory.SkillBook, ItemCategory.Stone,
+            ItemCategory.Other, ItemCategory.SkillBook, ItemCategory.Stone,
         };
 
         public static void Build(Transform parent, ItemContainer container, string selectedUid, Action<ItemInstance> onTap,
@@ -76,7 +76,7 @@ namespace Adventure.Game
                 case ItemKind.Consumable: return ItemCategory.Consumable;
                 case ItemKind.SkillBook: return ItemCategory.SkillBook;
                 case ItemKind.EnhanceStone: return ItemCategory.Stone;
-                default: return ItemCategory.Material;
+                default: return ItemCategory.Other;
             }
         }
 
@@ -104,7 +104,7 @@ namespace Adventure.Game
                 case ItemCategory.Consumable: return "소모품";
                 case ItemCategory.SkillBook: return "스킬서";
                 case ItemCategory.Stone: return "강화석";
-                default: return "재료";
+                default: return "기타";
             }
         }
 
@@ -118,7 +118,7 @@ namespace Adventure.Game
         /// <summary>장비는 등급 색, 그 외는 기본 글자색.</summary>
         public static Color NameColor(ItemInstance item) => item.Kind == ItemKind.Equipment ? Theme.GradeColor(item.Grade) : Theme.Text;
 
-        /// <summary>종류 줄: 색 원 + 종류 (무기·방어구·장신구·소모품·재료·스킬서·강화석). 원과 글자는 가운데를 맞춘다.</summary>
+        /// <summary>종류 줄: 색 원 + 종류 (무기·방어구·장신구·소모품·기타·스킬서·강화석). 원과 글자는 가운데를 맞춘다.</summary>
         public static void KindLine(Transform parent, ItemInstance item, float size)
         {
             var cat = Category(item);
@@ -147,15 +147,23 @@ namespace Adventure.Game
         {
             var row = UI.Row(parent, 4, null, TextAnchor.MiddleLeft, "bottom");
             UI.Size(row, height: 16);
-            if (left == null)
-            {
-                if (item.Kind == ItemKind.Equipment && owner != null) left = LevelCompare(owner, item, false);
-                else if (item.Kind == ItemKind.SkillBook && SkillDb.Get(item.SkillId) != null) left = Names.Of(SkillDb.Get(item.SkillId).Tier);
-                else left = "";
-            }
+            if (left == null) left = InfoText(owner, item);
             var l = UI.Label(row, left, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
             UI.Size(l, flexW: 1);
             if (item.Count > 1) UI.Label(row, "×" + item.Count, 12, Theme.Text, true, TextAnchor.MiddleRight, false, false);
+        }
+
+        /// <summary>
+        /// 칸의 정보 한 줄: 장비는 착용 레벨과 지금 장비 대비, 스킬서는 등급 · 쓸 수 있는 직업 (내 직업이 아니면 빨강, v2.0).
+        /// </summary>
+        public static string InfoText(Character c, ItemInstance item)
+        {
+            if (item.Kind == ItemKind.Equipment && c != null) return LevelCompare(c, item, false);
+            var def = item.Kind == ItemKind.SkillBook ? SkillDb.Get(item.SkillId) : null;
+            if (def == null) return "";
+            if (def.JobRestriction < 0) return Names.Of(def.Tier) + " · 공용";
+            string job = Names.Of((Job)def.JobRestriction);
+            return Names.Of(def.Tier) + " · " + (c != null && def.JobRestriction != (int)c.Job ? UI.Color(job, Theme.RedHex) : job);
         }
 
         /// <summary>장비: "Lv.12 · +5" (레벨이 모자라면 빨강, 비교는 +초록 / −빨강).</summary>
@@ -163,10 +171,9 @@ namespace Adventure.Game
         {
             string lv = "Lv." + item.LevelReq;
             if (c.Level < item.LevelReq) lv = UI.Color(lv, Theme.RedHex);
-            var list = EquipmentSystem.Compare(c, item);
             if (c.Equipment.Find(item.Uid) != null) return lv + " · 착용 중";
-            if (list.Count == 0) return lv;
-            var d = list[0];
+            if (EquipmentSystem.Compare(c, item).Count == 0) return lv;
+            var d = EquipmentSystem.Summary(c, item);
             string v = d.Delta > 0 ? "+" + d.Delta : d.Delta < 0 ? "−" + (-d.Delta) : "±0";
             string hex = d.Delta > 0 ? Theme.GreenHex : d.Delta < 0 ? Theme.RedHex : Theme.SubHex;
             return lv + " · " + UI.Color((withLabel ? d.Label + " " : "") + v, hex);

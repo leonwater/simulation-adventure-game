@@ -12,6 +12,9 @@ namespace Adventure.Game
     /// </summary>
     public class ShopScreen : ScreenBase
     {
+        /// <summary>판매 칸: 종류 · 이름(두 줄) · 증감/직업 · 가격.</summary>
+        private const float SellCellHeight = 118;
+
         private Text _timer;
         private int _tab;
         /// <summary>판매 선택 모드에서 고른 칸 (null = 선택 모드가 아님).</summary>
@@ -107,7 +110,7 @@ namespace Adventure.Game
                 UI.SetEnabled(multi, any);
                 var junk = UI.TextButton(head, "일괄 판매", SellMaterials, ButtonKind.Ghost, 40, 13);
                 UI.SetEnabled(junk, C.Inventory.Items.Exists(i => i.Kind == ItemKind.Material));
-                UI.Sub(inner, "카드를 누르면 팔 수 있고, 길게 누르면 선택 판매가 됩니다. 일괄 판매는 퀘스트에 쓰지 않는 재료를 모두 팝니다.");
+                UI.Sub(inner, "카드를 누르면 팔 수 있고, 길게 누르면 선택 판매가 됩니다. 일괄 판매는 퀘스트에 쓰지 않는 기타 아이템을 모두 팝니다.");
             }
             else
             {
@@ -131,7 +134,7 @@ namespace Adventure.Game
                 UI.Sub(inner, "가방이 비어 있습니다.");
                 return;
             }
-            var grid = UI.Grid(inner, 3, ScreenKit.ContentWidth, 104, 8);
+            var grid = UI.Grid(inner, 3, ScreenKit.ContentWidth, SellCellHeight, 8);
             foreach (var item in C.Inventory.Items) SellCell(grid, item);
         }
 
@@ -139,7 +142,7 @@ namespace Adventure.Game
         {
             var it = item;
             bool sel = _selected != null && _selected.Contains(item.Uid);
-            var cell = UI.ButtonCard(grid, null, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(10, 10), true, 5, 104, TextAnchor.UpperLeft);
+            var cell = UI.ButtonCard(grid, null, sel ? Theme.AccentBg : Theme.Card, sel ? Theme.Accent : Theme.CardBorder, 10, UI.Pad(10, 10), true, 4, SellCellHeight, TextAnchor.UpperLeft);
             LongPress.Add(cell, () =>
             {
                 if (_selected == null) _selected = new HashSet<string>();
@@ -155,8 +158,11 @@ namespace Adventure.Game
                 if (!_selected.Remove(it.Uid)) _selected.Add(it.Uid);
                 Rebuild();
             });
+            // 판매 칸도 지금 장비 대비 증감과 스킬서 직업을 보여 준다 (v2.0)
             ItemGrid.KindLine(cell, item, 12);
             ItemGrid.NameLabel(cell, item, 13);
+            string info = ItemGrid.InfoText(C, item);
+            if (info.Length > 0) UI.Label(cell, info, 12, Theme.TextSub, false, TextAnchor.MiddleLeft, false, false);
             UI.Spacer(cell);
             ItemGrid.BottomLine(cell, item, C, UI.Color((item.SellPrice * item.Count).ToString("#,0") + " G", Theme.GoldHex));
             if (sel) Check(cell);
@@ -294,7 +300,7 @@ namespace Adventure.Game
                 // 능력치 배분과 같은 고정 폭 − 값 + (값이 늘어도 버튼이 움직이지 않는다) + 10개씩
                 var row = UI.Row(body, 8, null, TextAnchor.MiddleCenter);
                 ScreenKit.Stepper(row, "1개", () => SetCount(-1), true, () => SetCount(1), true, out countLabel);
-                UI.TextButton(row, "+10", () => SetCount(10), ButtonKind.Outline, 44, 16, 56);
+                UI.TextButton(row, "+10", () => SetCount(10), ButtonKind.Outline, 44, 16, 64);
             }
             var buy = UI.TextButton(body, "", () =>
             {
@@ -358,7 +364,7 @@ namespace Adventure.Game
             if (item.Kind == ItemKind.Equipment) UI.Label(body, UI.GradeTag(item.Grade) + " " + ItemGrid.GearText(item), 13, Theme.Text);
             UI.Label(body, item.StatLine(), 14, Theme.Text);
             if (S.Data.Guild.Active.Exists(q => q.MaterialId == item.TemplateId))
-                UI.Label(body, "진행 중인 채집 퀘스트에 필요한 재료입니다.", 13, Theme.Gold);
+                UI.Label(body, "진행 중인 채집 퀘스트에 필요한 아이템입니다.", 13, Theme.Gold);
             var row = UI.Row(body, 8);
             if (item.Count > 1)
             {
@@ -388,7 +394,7 @@ namespace Adventure.Game
             foreach (var i in C.Inventory.Items)
                 if (i.Kind == ItemKind.Material && !S.Data.Guild.Active.Exists(q => q.MaterialId == i.TemplateId))
                     total += (long)i.SellPrice * i.Count;
-            Overlay.Confirm("일괄 판매", "진행 중인 퀘스트에 필요한 재료를 빼고 재료를 모두 팝니다. (" + total.ToString("#,0") + "G)", "판매", () =>
+            Overlay.Confirm("일괄 판매", "진행 중인 퀘스트에 필요한 것을 빼고 기타 아이템을 모두 팝니다. (" + total.ToString("#,0") + "G)", "판매", () =>
             {
                 foreach (var i in C.Inventory.Items.ToArray())
                     if (i.Kind == ItemKind.Material && !S.Data.Guild.Active.Exists(q => q.MaterialId == i.TemplateId))

@@ -367,7 +367,7 @@ namespace Adventure.Core
             double buff = a.Value(StatusType.Empower) / 100.0 - a.Value(StatusType.Weaken) / 100.0;
             var parts = new List<string> { "공격력 " + Player.Attack + " × " + Math.Round(mult * 100) + "%" };
             if (Math.Abs(buff) > 1e-9) parts.Add("강화/약화 " + Pct(buff));
-            parts.Add("× 방어 보정 " + (100.0 / (100.0 + Math.Max(0, target.Defense))).ToString("0.00") + " (방어력 " + target.Defense + ")");
+            parts.Add("× 방어 보정 " + (GameBalance.DefenseConstant / (GameBalance.DefenseConstant + Math.Max(0, target.Defense))).ToString("0.00") + " (방어력 " + target.Defense + ")");
             if (target.DamageReduction > 0) parts.Add("× 피해 감소 " + Pct(-target.DamageReduction));
             var t = target.Statuses;
             double taken = -t.Value(StatusType.Fortify) / 100.0 + t.Value(StatusType.Vulnerable) / 100.0;
@@ -676,13 +676,13 @@ namespace Adventure.Core
             else DrainLife(e, dmg);
         }
 
-        /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 100/(100+방어력) × (1 − 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함)</summary>
+        /// <summary>피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 − 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함)</summary>
         public static int Damage(Combatant attacker, Combatant target, double mult, bool crit)
         {
             var a = attacker.Statuses;
             var t = target.Statuses;
             double atk = attacker.Attack * mult * (1.0 + a.Value(StatusType.Empower) / 100.0 - a.Value(StatusType.Weaken) / 100.0);
-            double dmg = atk * 100.0 / (100.0 + Math.Max(0, target.Defense));
+            double dmg = atk * GameBalance.DefenseConstant / (GameBalance.DefenseConstant + Math.Max(0, target.Defense));
             dmg *= 1.0 - target.DamageReduction;
             dmg *= 1.0 - t.Value(StatusType.Fortify) / 100.0 + t.Value(StatusType.Vulnerable) / 100.0;
             if (crit) dmg *= attacker.CritDamage + a.Value(StatusType.Cruel) / 100.0;

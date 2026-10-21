@@ -227,3 +227,18 @@
 - 밸런스 도구: 사망률을 5층 단위로, 직업 필터(`run.sh 150 6 Normal Rogue`)
 - 코드 정리: `ItemGrid.Short`, 상점 가방 칸, `JobData.WeaponName/Concept`, `EventDef.Illustration` 삭제. 테스트 146 → 153개
 - 작업 규칙은 저장소 루트 `CLAUDE.md`
+
+## 15. 업데이트 (플레이 피드백 15개 + 추가 2개, 기획서 v2.0, 2026-10-21)
+
+- 피해 인플레 해결: 적정 장비에서 장비 몫 ≤ 40% (`GameBalance.MaxGearShare` · `FairGrade`, `V20Tests.FairGear_NeverExceedsFortyPercent`).
+  공격력 = 주 능력치 × 5 + 무기, 방어 상수 100 → 400(`DefenseConstant`), 장비 기본 수치 레벨 위주(`EquipmentFactory.BaseValueFor/BaseValue`),
+  등급 배율 1.0~1.28, 강화 +2~4%/단계(최소 +1). 적 HP 200 + 70f − 0.5f², 공격력 (5 + 2.8f + 0.05f²) × 0.55, 방어력 8 + 6f.
+  적정 장비 기준 일반 몬스터는 기본 공격 3번쯤, 정예는 가장 센 스킬 2번쯤 (`run.sh gear`). 보통 사망률 1~5층 29% · 6~10층 30% · 11~15층 42% · 16~20층 53% · 21~25층 61% · 26~30층 64%
+- 예전 저장 장비 수치는 불러올 때 다시 계산 (`SaveSystem.Repair`)
+- 드롭: `EquipmentFactory.CreateDrop`(내 레벨 위면 50% 재추첨, 아래면 10% 등급 상승), `SkillDb.PreferOwnLevel`
+- 반지: `EquipmentSystem.SlotFor`(덜 중요한 반지 교체) · `Summary`(칸 증감 판정). `Equipment.ChooseSlot` 삭제
+- 피의 우물 대가 `EventRules.BloodRisk` (공포 2회 · 저주 · 추가 출혈)
+- UI: 고정 폭 버튼 글자 한 줄(`UI.TextButton`), 스킬서 등급·직업(`ItemGrid.InfoText`), 판매 칸 증감, 종류 '재료' → '기타'(`ItemCategory.Other`),
+  대장간 4열 칸, 'D 등급 모험가'·'등급 효과', 능력치 (+N)·45/99 삭제, 가방 확장 '쓰러져도 유지' 삭제(규칙은 그대로 유지), 대장간 실패 문구,
+  등록 난이도 설명·공통 설명 삭제·확인 화면 주요 능력치 삭제, 튜토리얼 문구 갱신
+- 밸런스 도구 `run.sh gear`: 적정 장비 비중과 적을 쓰러뜨리는 횟수. 테스트 153 → 161개
