@@ -6,7 +6,7 @@ namespace Adventure.Game
 {
     /// <summary>
     /// 설정 창 (마을 오른쪽 위 설정 버튼, 시작 화면의 설정 버튼에서 연다).
-    /// 기기 설정(전투 속도·대사 한 글자씩·진동·글자 크기), 모험 정보, 처음 화면으로 · 저장 · 튜토리얼 · 모험 기록 삭제.
+    /// 기기 설정(전투 속도·대사 한 글자씩·진동·글자 크기), 모험 정보, 아래에 작은 버튼 2×2 (타이틀로 · 저장 · 튜토리얼 · 기록 삭제).
     /// </summary>
     public static class SettingsPanel
     {
@@ -45,27 +45,31 @@ namespace Adventure.Game
                 long sec = S.Data.PlaySeconds;
                 Line(info, "플레이 시간", (sec / 3600) + "시간 " + (sec / 60 % 60) + "분");
 
-                UI.TextButton(body, "처음 화면으로", () =>
+                // 작은 버튼 2×2: 타이틀로 · 저장 / 튜토리얼 · 기록 삭제
+                var top = UI.Row(body, 8);
+                var bottom = UI.Row(body, 8);
+                var title = UI.TextButton(top, "타이틀로", () =>
                 {
                     S.Save();
                     App.Router.Show(new TitleScreen());
-                }, ButtonKind.Ghost);
-                UI.TextButton(body, "저장", () =>
+                }, ButtonKind.Ghost, 40, 13);
+                var save = UI.TextButton(top, "저장", () =>
                 {
                     S.Save();
                     App.Overlay.Toast("저장했습니다");
-                });
-                var tut = UI.TextButton(body, "튜토리얼", () => App.Overlay.Confirm("튜토리얼", "마을 시설 안내부터 다시 보여 드립니다.", "다시 보기", () =>
+                }, ButtonKind.Secondary, 40, 13);
+                var tut = UI.TextButton(bottom, "튜토리얼", () => App.Overlay.Confirm("튜토리얼", "마을 시설 안내부터 다시 보여 드립니다.", "다시 보기", () =>
                 {
                     S.RestartTutorial();
                     App.Router.Show(new TownScreen());
-                }), ButtonKind.Ghost);
+                }), ButtonKind.Ghost, 40, 13);
                 UI.SetEnabled(tut, !S.InDungeon);
-                UI.TextButton(body, "모험 기록 삭제", () => App.Overlay.Confirm("기록 삭제", "저장된 모험가가 완전히 지워집니다. 되돌릴 수 없습니다.", "삭제", () =>
+                var wipe = UI.TextButton(bottom, "기록 삭제", () => App.Overlay.Confirm("기록 삭제", "저장된 모험가가 완전히 지워집니다. 되돌릴 수 없습니다.", "삭제", () =>
                 {
                     S.DeleteSave();
                     App.Router.Show(new TitleScreen());
-                }, "취소", ButtonKind.Secondary), ButtonKind.Ghost);
+                }, "취소", ButtonKind.Secondary), ButtonKind.Ghost, 40, 13);
+                foreach (var btn in new[] { title, save, tut, wipe }) UI.Size(btn, width: 0, flexW: 1);
             }
 
         }

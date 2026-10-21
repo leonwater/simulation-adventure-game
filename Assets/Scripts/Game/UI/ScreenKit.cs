@@ -17,16 +17,19 @@ namespace Adventure.Game
             return col;
         }
 
+        /// <summary>던전·시작 화면을 뺀 모든 화면의 머리줄 높이 (v2.1: 마을 64 · 시설 57로 달랐던 것을 통일). 좌우 여백은 16.</summary>
+        public const float BarHeight = 64;
+
         /// <summary>시설 화면 머리줄: "‹ 마을" · 제목 · 골드.</summary>
         public static void TopBar(Transform parent, string title, string backLabel, Action onBack, string right)
         {
-            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(12, 12, 6, 6), false, 0, TextAnchor.MiddleCenter, "topbar");
-            UI.Size(bar, height: 57);
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 10, 10), false, 0, TextAnchor.MiddleCenter, "topbar");
+            UI.Size(bar, height: BarHeight);
             var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
             UI.Size(left, width: 110);
             if (onBack != null)
             {
-                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
+                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0, 0), false, 0, 44);
                 Anchors.Set("topbar.back", back);
                 UI.Label(back, "‹ " + backLabel, 14, Theme.Gold, false, TextAnchor.MiddleLeft, false, false);
             }
@@ -40,13 +43,13 @@ namespace Adventure.Game
         /// <summary>마을 쪽 화면 머리줄: 왼쪽 뒤로 · 가운데 제목 · 오른쪽 골드 + 설정 버튼 (던전 밖 모든 화면 공통).</summary>
         public static void TopBar(Transform parent, string title, string backLabel, Action onBack, Character c)
         {
-            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(12, 12, 6, 6), false, 0, TextAnchor.MiddleCenter, "topbar");
-            UI.Size(bar, height: 57);
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 10, 10), false, 0, TextAnchor.MiddleCenter, "topbar");
+            UI.Size(bar, height: BarHeight);
             var left = UI.Row(bar, 0, null, TextAnchor.MiddleLeft);
             UI.Size(left, width: 130);
             if (onBack != null)
             {
-                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(6, 0), false, 0, 44);
+                var back = UI.ButtonCard(left, onBack, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(0, 0), false, 0, 44);
                 Anchors.Set("topbar.back", back);
                 UI.Label(back, "‹ " + backLabel, 14, Theme.Gold, false, TextAnchor.MiddleLeft, false, false);
             }
@@ -108,8 +111,8 @@ namespace Adventure.Game
         /// <summary>마을 머리줄: 1줄 이름 · 직업 · 등급 배지 / 2줄 Lv. · 경험치 막대 (v1.8) · 오른쪽 골드 + 설정.</summary>
         public static void TownHeader(Transform parent, Character c)
         {
-            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 12, 12), false, 8, TextAnchor.MiddleLeft, "header");
-            UI.Size(bar, height: 64);
+            var bar = UI.Card(parent, Theme.Bar, Theme.Bar, 0.01f, UI.Pad(16, 16, 10, 10), false, 8, TextAnchor.MiddleLeft, "header");
+            UI.Size(bar, height: BarHeight);
             var left = UI.Column(bar, 4);
             UI.Size(left, flexW: 1);
             var nameRow = UI.Row(left, 6);
@@ -334,7 +337,24 @@ namespace Adventure.Game
             const float margin = 12;
             float textSize = 15 * GameSettings.TextScale;
             float lineH = textSize * 1.6f;
-            float boxH = Mathf.Min(Mathf.Max(maxHeight, lineH * 2 + 24), lineH * 3 + 24);
+            // 대사가 몇 줄이든 잘리지 않게 글자 수에 맞춰 상자를 키운다 (v2.1, 최대 5줄 · 일러스트의 3/4)
+            float textW = Theme.ScreenWidth - margin * 2 - 28;
+            var gen = new TextGenerator();
+            var settings = new TextGenerationSettings
+            {
+                font = Theme.Sans,
+                fontSize = Mathf.RoundToInt(textSize),
+                lineSpacing = 1.45f,
+                scaleFactor = 1,
+                generationExtents = new Vector2(textW, 0),
+                horizontalOverflow = HorizontalWrapMode.Wrap,
+                verticalOverflow = VerticalWrapMode.Overflow,
+                textAnchor = TextAnchor.UpperLeft,
+                richText = true,
+                pivot = new Vector2(0.5f, 0.5f),
+            };
+            float needed = gen.GetPreferredHeight(line, settings) + 20;
+            float boxH = Mathf.Min(Mathf.Max(needed, maxHeight, lineH * 2 + 24), Mathf.Min(lineH * 5 + 24, maxHeight / 0.3f * 0.75f));
 
             var box = UI.Rect(holder, "dialogue");
             box.anchorMin = new Vector2(0, 0);

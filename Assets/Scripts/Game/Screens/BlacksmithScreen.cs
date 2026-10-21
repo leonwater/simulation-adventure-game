@@ -24,12 +24,14 @@ namespace Adventure.Game
             ScreenKit.NpcIllustration(page, "대장장이", _line, 260);
             var body = UI.Scroll(page, out _, 8, UI.Pad(16, 16, 16, 16), "smith");
 
-            var equipped = new List<(EquipSlot slot, ItemInstance item)>();
-            foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot)))
-                if (C.Equipment[slot] != null) equipped.Add((slot, C.Equipment[slot]));
             var bag = C.Inventory.Items.FindAll(i => i.Kind == ItemKind.Equipment);
             if (_selected == null || Blacksmith.FindGear(C, _selected) == null)
-                _selected = equipped.Count > 0 ? equipped[0].item.Uid : bag.Count > 0 ? bag[0].Uid : null;
+            {
+                ItemInstance first = null;
+                foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot)))
+                    if (first == null) first = C.Equipment[slot];
+                _selected = first != null ? first.Uid : bag.Count > 0 ? bag[0].Uid : null;
+            }
 
             var selected = Blacksmith.FindGear(C, _selected);
             if (selected != null) Detail(body, selected);
@@ -41,15 +43,12 @@ namespace Adventure.Game
             // 강화석은 주요 정보라 아이콘 + 굵은 글씨로 (수정 사항 #14)
             UI.Icon(info, "enhance_stone", 22);
             UI.Label(info, "강화석 " + UI.Color(C.Inventory.CountOf(ItemDb.EnhanceStoneId) + "개", Theme.BlueHex), 15, Theme.Text, true, TextAnchor.MiddleRight, false, false);
-            // 장비 선택은 가방의 장착 장비 칸과 같은 4열 칸 (v2.0): 장착 장비(가방과 같은 부위 순서) → 가방 장비
+            // 장비 선택은 가방의 장착 장비 칸과 같은 4열 칸 (v2.0): 장착 장비(가방과 같은 부위 순서) → 가방 장비.
+            // 장착 장비는 비어 있어도 8칸이 모두 나온다 (v2.1, 빈 칸은 누를 수 없다)
             var list = UI.Column(body, 8);
             Anchors.Set("smith.list", list);
-            if (equipped.Count > 0)
-            {
-                var grid = UI.Grid(list, 4, ScreenKit.ContentWidth, 66, 6);
-                foreach (var e in equipped) GearCell(grid, e.item, Names.Of(e.slot));
-            }
-            else UI.Sub(list, "장착한 장비가 없습니다.");
+            var slots = UI.Grid(list, 4, ScreenKit.ContentWidth, 66, 6);
+            foreach (EquipSlot slot in System.Enum.GetValues(typeof(EquipSlot))) GearCell(slots, C.Equipment[slot], Names.Of(slot));
             UI.Label(list, "가방 장비", 14, Theme.Text, true);
             if (bag.Count > 0)
             {
@@ -60,9 +59,17 @@ namespace Adventure.Game
             Tutorial.OnFacility("blacksmith");
         }
 
-        /// <summary>장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). 고른 칸은 금색.</summary>
+        /// <summary>장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). 고른 칸은 금색, 비어 있으면 '비어 있음'.</summary>
         private void GearCell(Transform grid, ItemInstance item, string part)
         {
+            if (item == null)
+            {
+                var empty = UI.Card(grid, Theme.Bg, Theme.CardBorder, 10, UI.Pad(8, 6), true, 0, TextAnchor.UpperLeft, "empty-slot");
+                UI.Sub(empty, part);
+                UI.Spacer(empty);
+                UI.Sub(empty, "비어 있음");
+                return;
+            }
             bool sel = item.Uid == _selected;
             var cell = UI.ButtonCard(grid, () =>
             {
