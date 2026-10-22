@@ -258,10 +258,10 @@ describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 �
   it('Equipment_GradeGapAndEnhanceGrowth', () => {
     const common = createGear('Weapon', 'Common', 20, 'Warrior', 'Luck');
     const legend = createGear('Weapon', 'Legendary', 20, 'Warrior', 'Luck');
-    expect(Math.abs(legend.BaseValue - Math.round(common.BaseValue * 1.28))).toBeLessThanOrEqual(1); // 전설은 일반의 1.28배 (v2.0)
+    expect(Math.abs(legend.BaseValue - Math.round(common.BaseValue * 1.9))).toBeLessThanOrEqual(1); // 전설은 일반의 1.9배 (v2.9)
     common.Enhance = legend.Enhance = 10;
-    expect(itemValue(common)).toBe(common.BaseValue + 10); // 일반 +10 = +20%, 단계마다 최소 +1
-    expect(Math.abs(itemValue(legend) - Math.round(legend.BaseValue * 1.4))).toBeLessThanOrEqual(1); // 전설 +10 = +40%
+    expect(Math.abs(itemValue(common) - Math.round(common.BaseValue * 1.3))).toBeLessThanOrEqual(1); // 일반 +10 = 보너스 단계 15 × 2% = +30%
+    expect(Math.abs(itemValue(legend) - Math.round(legend.BaseValue * 1.6))).toBeLessThanOrEqual(1); // 전설 +10 = 15 × 4% = +60%
   });
 
   it('EnhancedGear_SellsForMore', () => {

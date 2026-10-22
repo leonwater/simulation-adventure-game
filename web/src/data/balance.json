@@ -45,13 +45,7 @@
     55,
     80
   ],
-  "GradeValueMultiplier": [
-    1,
-    1.07,
-    1.14,
-    1.21,
-    1.28
-  ],
+  "GradeValueMultiplier": [1, 1.1, 1.25, 1.5, 1.9],
   "GradePriceMultiplier": [
     1,
     1.6,
@@ -163,7 +157,7 @@
   "BagBasePrice": 500,
   "SellRatio": 0.3,
   "MaxEnhance": 15,
-  "MaxGearShare": 0.4,
+  "MaxGearShare": 0.5,
   "DefenseConstant": 400,
   "EnhanceSellRefund": 0.5,
   "EnhanceGoldBase": 30,

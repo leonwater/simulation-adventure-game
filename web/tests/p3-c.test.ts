@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { B, enemyDefense, enemyHp, expToNext, roundEven } from '../src/core/balance';
+import { B, enemyDefense, enemyHp, expToNext, lateRamp, roundEven } from '../src/core/balance';
 import { Battle } from '../src/core/battle';
 import {
   addExp, attack, autoAllocate, createCharacter, damageReduction, defense, equipmentBonus, equipped, maxChallengeFloor, maxHp, setEquipped,
@@ -33,7 +33,7 @@ const session = (seed: number, clock = NOW) => new GameSession(new MemorySaveSto
 
 /** C# GameBalance.FairGrade / RecommendedEnhance. */
 const fairGrade = (floor: number): ItemGrade => (floor >= 20 ? 'Epic' : floor >= 12 ? 'Rare' : 'Uncommon');
-const recommendedEnhance = (floor: number): number => Math.min(B.MaxEnhance, Math.floor(Math.max(0, floor) / 2));
+const recommendedEnhance = (floor: number): number => Math.min(B.MaxEnhance, Math.floor(Math.max(0, floor) / 3)); // v2.9: 강화 보너스가 커져 적정 강화는 층 ÷ 3 (30층 +10)
 const levelUpTo = (c: Character, level: number) => {
   while (c.Level < level) addExp(c, expToNext(c.Level));
 };
@@ -59,7 +59,7 @@ function fairHero(job: Job, floor: number): Character {
 }
 
 describe('기획서 v2.0 (V20Tests)', () => {
-  it('적정 장비의 비중은 40%를 넘지 않는다', () => {
+  it('적정 장비의 비중은 MaxGearShare(50%)를 넘지 않는다', () => {
     for (const job of JOBS) {
       for (let f = 1; f <= B.MaxFloor; f++) {
         const c = fairHero(job, f);
@@ -81,7 +81,7 @@ describe('기획서 v2.0 (V20Tests)', () => {
       const hit = (attack(c) * B.DefenseConstant) / (B.DefenseConstant + enemyDefense(f));
       let best = 1;
       for (const s of skillsForJob(c.Job)) if (s.ReqLevel <= c.Level && s.Target === 'SingleEnemy') best = Math.max(best, s.DamageMult * s.Hits);
-      expect(enemyHp(f) * B.EliteHp, `${f}층 정예는 가장 센 스킬 한 번에 쓰러지지 않음`).toBeGreaterThan(hit * best);
+      expect(enemyHp(f) * B.EliteHp * (1 + B.LateHpBonus * lateRamp(f)), `${f}층 정예는 가장 센 스킬 한 번에 쓰러지지 않음`).toBeGreaterThan(hit * best);
       expect(enemyHp(f), `${f}층 일반 몬스터는 기본 공격 세 번쯤`).toBeGreaterThan(hit * 2.5);
     }
   });
