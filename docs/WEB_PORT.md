@@ -39,7 +39,7 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 | P1d | Core 마을·저장: 상점·길드·퀘스트·창고, 저장(C#과 **같은 JSON 필드 이름**이라 Unity 저장도 읽을 수 있게) | `TownTests` `SaveTests` — **완료** (`shop` `save` `session`, `tests/town-session.test.ts`; Unity 저장 샘플 `tests/fixtures/unity-save.json` 읽기 · TS 저장을 C#이 읽는 것도 확인) |
 | P1e | 자동 플레이 봇 + 밸런스 시뮬레이션 | C# `tools/balance` 결과와 사망률 ±3%p 이내 — **완료** (`web/src/sim` `npm run balance`, 보통 사망률 C#과 ±3%p 이내: C# 30.3/32.1/38.7/40.2/52.0/61.4 → 웹 27.8/30.8/37.4/41.8/53.0/61.5) |
 | P2 | 화면: 시작·등록 → 마을·시설 → 캐릭터·가방·스킬 → 던전 → 전투 → 이벤트·상인 → 정산·클리어 → 설정 → 튜토리얼 | 화면마다 `npm run shot`, UI 시안(Claude Design)과 비교 |
-| P3 | 패리티 확인: 테스트 187개 전부 대응, 밸런스·사망률 일치 | 체크리스트 |
+| P3 | 패리티 확인: 테스트 187개 전부 대응, 밸런스·사망률 일치 | 완료 (아래 대응표) |
 | P4 | 교체: 릴리스 태그를 `android-latest` `web-latest`로, Unity 워크플로·폴더 정리 | 새 APK 실기기 확인 |
 
 - 새 기능·수정은 **이식된 부분은 TS에만** 한다. 아직 이식 안 된 부분을 고쳐야 하면 먼저 그 부분을 이식한다 (Unity는 고치지 않는다).
@@ -51,3 +51,19 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 - Capacitor APK는 Unity APK와 서명 키가 달라 **덮어 설치되지 않는다** (지우고 설치). 저장 파일도 기기 안 위치가 달라 자동으로 이어지지 않는다 (P1d의 저장 가져오기로 해결).
 - 글꼴은 `web/public/fonts` (나눔고딕)을 쓴다. 글꼴에 없는 기호는 Unity와 같이 피한다.
 - Node 22, Vite 8, TypeScript 7, Vitest 5, Capacitor 8 (APK 빌드는 JDK 21).
+
+
+## P3 테스트 대응표 (C# 187개 → 웹)
+
+| C# 파일 | 웹 테스트 파일 |
+|---|---|
+| BattleTests · BossTests(Bosses_StayBeatable 제외) | `battle.test.ts` |
+| CharacterTests · ItemSkillTests(SkillDescriptions 제외) | `core-basics.test.ts` · `balance.test.ts` |
+| DungeonTests · SpecialEventTests 7개 · V23 일부 | `dungeon.test.ts` |
+| TownTests · SessionTests · V23 일부 | `town-session.test.ts` |
+| SkillV12 · V21 · V22 · Bosses_StayBeatable · SkillDescriptions | `p3-a.test.ts` |
+| V16 · V17 · V18 · V19 | `p3-b.test.ts` |
+| V20 · V24 · TrialGate·EventBattles · V23 일부 | `p3-c.test.ts` |
+
+- 대응하지 않은 것: `Json_ParsesNumbersAndEscapes` (C# 자체 JSON 파서 검증, TS는 `JSON.parse`)
+- 코어 이식 버그는 발견되지 않음. 밸런스·사망률은 P1e 결과(±3%p)로 확인
