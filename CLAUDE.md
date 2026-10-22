@@ -14,7 +14,7 @@ Unity 프로젝트(`Assets/`)는 `unity-v2.4` 태그로 고정된 기준용이�
 
 이식 중 규칙:
 - 이식이 끝난 부분은 TS에만 고친다. 아직 이식 안 된 부분을 바꿔야 하면 먼저 그 부분을 이식한다 (이식 순서: `docs/WEB_PORT.md`).
-- 데이터 표는 `tools/export/run.sh`가 C#에서 뽑은 `web/src/data/*.json`을 쓴다 (TS로 옮긴 표는 TS가 원본).
+- 데이터 표 `web/src/data/*.json`은 v2.6부터 웹 JSON이 원본이다 (직접 고친다). 직업·스킬 요약은 `docs/JOBS_SKILLS.md` — 표를 바꾸면 함께 고친다.
 - 서명 키·비밀번호는 저장소에 넣지 않는다.
 
 답변은 간단명료한 한국어로 한다.

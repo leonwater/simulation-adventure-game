@@ -10,7 +10,7 @@ Unity 프로젝트는 `unity-v2.4` 태그로 고정해 두고 이식이 끝날 �
 | `web/` | 새 게임 (Vite + TypeScript, 의존성 없는 DOM 도우미 `src/ui/kit.ts`) |
 | `web/src/core/` | 게임 규칙 (C# `Assets/Scripts/Core`를 옮긴 것). 화면과 무관한 순수 함수·클래스 |
 | `web/src/screens/` | 화면 (C# `Game/Screens`를 옮긴 것) |
-| `web/src/data/*.json` | C# 데이터 표(스킬·몬스터·소모품·이벤트·직업·밸런스 상수). **직접 고치지 않고** `tools/export/run.sh`로 뽑는다 |
+| `web/src/data/*.json` | 데이터 표(스킬·몬스터·소모품·이벤트·직업·밸런스 상수). v2.6부터 **웹 JSON이 원본** (C#은 고정) |
 | `web/tests/` | vitest. C#과 같은 값이 나오는지(패리티) 확인 |
 | `web/android/` | Capacitor 안드로이드 프로젝트 (웹 빌드를 감싼다) |
 | `Assets/` `tools/verify` `tools/balance` | Unity판 (고정, 기준용) |
@@ -43,7 +43,7 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 | P4 | 교체: 릴리스 태그를 `android-latest` `web-latest`로 (완료). Unity 워크플로는 지우지 않고 수동 실행 전용·`unity-android` `unity-web` 태그로 보관 | 새 APK 실기기 확인 |
 
 - 새 기능·수정은 **이식된 부분은 TS에만** 한다. 아직 이식 안 된 부분을 고쳐야 하면 먼저 그 부분을 이식한다 (Unity는 고치지 않는다).
-- 데이터 표(스킬·몬스터 등)를 바꿀 일이 생기면, 그 표가 아직 C#에만 있는 동안은 C#을 고치고 `tools/export/run.sh`로 다시 뽑는다. 표를 TS로 옮긴 뒤에는 TS가 원본이다 (그때 이 줄을 고친다).
+- 데이터 표는 v2.6부터 `web/src/data/*.json`을 직접 고친다 (`tools/export`는 C# 기준과 비교할 때만). 직업·스킬 요약 `docs/JOBS_SKILLS.md`도 함께 고친다.
 - 난수는 C#과 순서가 다르다 (mulberry32). 같은 시드 결과 비교 대신 통계(확률·평균)로 비교한다.
 
 ## 주의

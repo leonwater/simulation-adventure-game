@@ -1,9 +1,15 @@
 # 모험가 키우기
 
 한 명의 모험가를 오래 키워 던전 최하층(1차 30층)을 정복하는 **모바일 텍스트 시뮬레이션 RPG**입니다.
-Unity로 만든 앱 게임(Android·iOS, 세로 화면)이며, 기획서와 UI 시안을 바탕으로 개발했습니다.
+v2.5부터 **웹(TypeScript, `web/`)으로 개발하고 Capacitor로 안드로이드 앱을 만듭니다.** Unity 프로젝트는 `unity-v2.4` 태그로 고정된 기준용입니다.
 
-## 바로 열기
+## 웹판 (v2.5~)
+
+- 실행: `cd web && npm install && npm run dev` · 점검 `npm run check` (타입·테스트 190개·빌드) · 실제 클릭 점검 `npm run build && npm run e2e`
+- 받기: main에 푸시하면 Releases `android-latest`(APK, 고정 키 서명이라 덮어 설치됨)·`web-latest`(웹 zip)
+- 글꼴: 프리텐다드 (SIL OFL 1.1) · 직업·스킬 요약: `docs/JOBS_SKILLS.md` · 이식·작업 방법: `docs/WEB_PORT.md`
+
+## Unity판 (기준용, v2.4까지)
 
 1. **Unity 6 (6000.3 LTS, 프로젝트 버전 6000.3.8f1)** 를 설치합니다. 기기 빌드를 하려면 Android Build Support(또는 iOS Build Support) 모듈도 함께 설치합니다.
 2. Unity Hub → **Add project from disk** → 이 저장소 폴더를 선택합니다.

@@ -73,7 +73,7 @@ jobs:
           fi
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon \
-            -PappVersionName=2.5.${{ github.run_number }} -PappVersionCode=${{ github.run_number }}0
+            -PappVersionName=2.6.${{ github.run_number }} -PappVersionCode=${{ github.run_number }}0
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/adventurer-next.apk"
           ls -la "$GITHUB_WORKSPACE/adventurer-next.apk"
 
