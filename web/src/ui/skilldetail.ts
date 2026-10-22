@@ -34,7 +34,7 @@ export function showSkillDetail(id: string, actions: { equip: (id: string) => vo
     if (def.Target === 'Self') m.body.append(line('성공률', '100% (자신에게 거는 스킬)'));
     else {
       hit = clamp(B.BaseHit + (totalStat(c, jobData(c.Job).attackStat) - enemyRequirement(floor)) * B.HitPerStatPoint + precisionBonus(c) + def.SuccessBonus, B.MinHit, B.MaxHit);
-      m.body.append(line(def.Hits > 1 ? '타격당 성공률' : '성공률', `${floor}층 보통 몬스터에게 약 ${Math.round(hit * 100)}%${def.Hits > 1 ? ` (${def.Hits}회 각각)` : ''}`));
+      m.body.append(line(def.Hits > 1 ? '타격당 성공률' : '성공률', `${floor}층 보통 몬스터에게 약 ${Math.round(hit * 100)}%`));
     }
     if (def.IsAttack) {
       const mults = def.ChainMults.length > 0 ? def.ChainMults : [def.DamageMult];

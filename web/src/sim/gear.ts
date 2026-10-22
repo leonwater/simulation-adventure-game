@@ -83,7 +83,7 @@ export function clearRate(spec: HeroSpec, diff: Difficulty, n: number, tries = 8
       const hero = buildHero({ ...spec, job });
       Object.assign(s.c, hero);
       s.c.HighestFloorCleared = spec.floor - 5;
-      for (let t = 1; t <= tries; t++) {
+      for (let t = 1; t <= tries && s.hasGame; t++) { // 하드코어는 한 번 죽으면 끝
         usedTries++;
         fights++;
         const c = s.c;
@@ -95,6 +95,7 @@ export function clearRate(spec: HeroSpec, diff: Difficulty, n: number, tries = 8
         let steps = 0;
         while (s.hasGame && s.inDungeon && steps++ < 600) step(s);
         if (s.lastDeath) deaths++;
+        if (!s.hasGame) break;
         if (s.inDungeon) s.returnToTown();
         if (s.c.HighestFloorCleared >= spec.floor) { clear++; break; }
       }
