@@ -347,6 +347,8 @@ export class Battle {
   statusLandChance(def: SkillDef, s: StatusApply, target: Combatant | null): number {
     if (def.Target === 'Self') return s.Chance;
     if (!target) return 0;
+    // 방어막이 모든 타격을 막으면 상태 이상도 걸리지 않는다 (명중해도 막힌 타격은 효과 없음)
+    if (def.IsAttack && target.kit && target.kit.barrier >= Math.max(1, def.Hits)) return 0;
     const hit = this.hitChance(target, def.SuccessBonus);
     const any = 1 - Math.pow(1 - hit, Math.max(1, def.Hits));
     if (s.OnSelf) return any * s.Chance;
