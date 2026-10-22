@@ -43,7 +43,7 @@ function next(queue: ItemInstance[], after?: () => void): void {
     h('div', { style: { lineHeight: '1.6', fontSize: '15px' } },
       h('b', { style: { color: nameColor(item) } }, displayName(item)), `${josa(displayName(item), '을/를').slice(displayName(item).length)} 획득했습니다.`, h('br'),
       '바로 착용하시겠습니까?', h('br'),
-      '장착 시 능력치 변화: ', ...(changes.length === 0 ? ['없음'] : changes.flatMap((d, i) => [i > 0 ? ', ' : '', `${d.label} `, colored(delta(d.delta), deltaColor(d.delta))]))),
+      colored('능력치 변화', 'var(--gold)'), ': ', ...(changes.length === 0 ? ['없음'] : changes.flatMap((d, i) => [i > 0 ? ', ' : '', `${d.label} `, colored(delta(d.delta), deltaColor(d.delta))]))),
     row(
       button('나중에', () => {
         m.close();

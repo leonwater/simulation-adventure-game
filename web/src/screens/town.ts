@@ -29,7 +29,7 @@ export class TownScreen extends Screen {
         h('div', { class: 'illust round', style: { flex: '1 1 0', minHeight: '90px', maxHeight: '220px', backgroundImage: `url(${assetUrl('illustrations/town.jpg')})` } }),
         row(h('b', { class: 'grow', style: { fontSize: '22px' } }, '라브 마을'), h('b', { style: { color: DIFFICULTY_COLOR[S.difficulty], fontSize: '14px' } }, Names.difficulty(S.difficulty))),
         c.UnspentPoints > 0
-          ? h('button', { class: 'card-btn on', style: { minHeight: '44px', color: 'var(--gold)', fontSize: '13px' }, on: { click: () => navigate('character') } }, `남은 능력치 포인트 ${c.UnspentPoints} — 캐릭터 화면에서 배분하세요`)
+          ? h('button', { class: 'card-btn on', style: { minHeight: '44px', color: 'var(--gold)', fontSize: '13px' }, on: { click: () => navigate('character') } }, `능력치 포인트 ${c.UnspentPoints} — 캐릭터 화면에서 배분하세요`)
           : null,
         h('div', { class: 'grid2' },
           facility('guild', '길드', alerts.guild, 'guild'),

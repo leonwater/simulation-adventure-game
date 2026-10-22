@@ -52,8 +52,19 @@ export function bottomNav(active: number, go: (index: number) => void): HTMLElem
 }
 
 /** 일러스트 + 아래쪽 대사 상자. */
+// 가로로 아주 긴(2:1) 그림은 좌우가 잘리지 않게 위쪽에 통째로 놓고, 남는 아래쪽은 같은 그림을 흐리게 깐다
+const WIDE = new Set(['training', 'shop']);
+
 export function npcIllustration(name: string, npcName: string, line: string, height = 290): HTMLElement {
-  return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: `url(${assetUrl(`illustrations/${name}.jpg`)})` } },
+  const url = `url(${assetUrl(`illustrations/${name}.jpg`)})`;
+  if (WIDE.has(name)) {
+    return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: url } },
+      h('div', { class: 'blurfill', style: { backgroundImage: url } }),
+      h('div', { class: 'wide', style: { backgroundImage: url } }),
+      h('div', { class: 'shade' }),
+      line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
+  }
+  return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: url } },
     h('div', { class: 'shade' }),
     line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
 }
@@ -88,10 +99,6 @@ export function charLine(c: Character): HTMLElement {
     progress(expProgress(c), 'var(--blue)', 56));
 }
 
-/** 던전 안 화면(가방·상인)의 캐릭터 정보 줄: 던전 메인 머리줄과 같은 정보. */
-export const charStrip = (c: Character): HTMLElement =>
-  h('div', { style: { padding: '6px 16px 8px', borderBottom: '1px solid var(--line)', background: 'var(--bar)', flexShrink: '0' } }, charLine(c));
-
 export function dungeonHeader(title: string, c: Character, onPause: (() => void) | null, showHpBar = true): HTMLElement {
   return h('div', { class: 'header', style: { height: '60px', padding: '6px 12px 6px 16px' } },
     h('div', { class: 'col grow', style: { gap: '4px', minWidth: '0' } }, h('b', { style: { fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, title), charLine(c)),
@@ -99,10 +106,3 @@ export function dungeonHeader(title: string, c: Character, onPause: (() => void)
     onPause ? pauseButton(onPause) : null);
 }
 
-/** 던전 안 가방 머리줄: 왼쪽 뒤로 · 가운데 제목 · 오른쪽은 던전 화면과 같은 HP + 일시정지. */
-export function dungeonSubBar(title: string, backLabel: string, onBack: () => void, c: Character, onPause: () => void): HTMLElement {
-  return h('div', { class: 'bar', style: { padding: '6px 12px 6px 16px' } },
-    h('div', { style: { width: '70px' } }, h('button', { style: { border: '0', background: 'transparent', color: 'var(--gold)', padding: '0', textAlign: 'left', fontSize: '14px' }, on: { click: onBack } }, `‹ ${backLabel}`)),
-    h('div', { class: 'grow center title', style: { fontSize: '16px' } }, title),
-    hpBlock(c.CurrentHp, maxHp(c)), pauseButton(onPause));
-}

@@ -8,8 +8,8 @@ import { consumableDef, displayName, sellPrice, statLine, takeItem } from '../co
 import { Names, josa } from '../core/names';
 import { skillDef } from '../core/skills';
 import { bagPrice, buyBag, canBuyBag, sell } from '../core/shop';
-import { bottomNav, charStrip, dungeonSubBar, jobLine, townBar } from '../ui/chrome';
-import { openPauseMenu } from '../ui/pause';
+import { bottomNav, jobLine, townBar } from '../ui/chrome';
+import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { button, h, icon, row, sub } from '../ui/kit';
 import { compareLine, gearText, gradeTag, itemGrid, kindLine, legend } from '../ui/items';
@@ -37,9 +37,7 @@ export class InventoryScreen extends Screen {
   build(): HTMLElement {
     const c = S.c;
     // 던전에서 연 가방은 던전 머리줄(HP·일시정지) + 캐릭터 정보 줄
-    const bar = this.fromDungeon
-      ? h('div', null, dungeonSubBar('가방', '던전', () => this.back(), c, () => openPauseMenu()), charStrip(c))
-      : townBar('가방', '마을', () => this.back(), c);
+    const bar = this.fromDungeon ? dungeonTop() : townBar('가방', '마을', () => this.back(), c);
     const expand = button(icon('plus', 20, 'var(--gold)'), () => this.buyBag(), '', '');
     expand.style.cssText = 'width:40px;min-height:40px;height:40px;padding:0;border-color:var(--accent);background:var(--bg)';
     expand.disabled = !canBuyBag(c);
@@ -52,7 +50,9 @@ export class InventoryScreen extends Screen {
         legend(),
         itemGrid(c.Inventory, c, (item) => this.showItem(item, null)),
         sub('사망하면 장착하지 않은 아이템을 모두 잃습니다. 길드 창고에 맡겨 두세요.')),
-      this.fromDungeon ? null : bottomNav(2, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
+      this.fromDungeon
+        ? h('div', { style: { padding: '8px 16px', background: 'var(--bar)', borderTop: '1px solid var(--line)', flexShrink: '0' } }, button('던전으로 돌아가기', () => this.back(), 'primary', 'lg'))
+        : bottomNav(2, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
   }
 
   private slotCell(slot: EquipSlot): HTMLElement {

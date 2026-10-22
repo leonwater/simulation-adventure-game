@@ -9,7 +9,7 @@ import {
 import { displayName, statLine } from '../core/items';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { colored, itemGrid, legend } from '../ui/items';
+import { colored, itemGrid } from '../ui/items';
 import { button, divider, h, icon, row, sub, tabs } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -171,10 +171,11 @@ export class GuildScreen extends Screen {
     const table = h('div', { class: 'card', style: { gap: '0', padding: '14px 14px 6px' } }, h('b', { style: { fontSize: '16px', marginBottom: '6px' } }, '모험가 등급표'),
       ...RANKS.map((rank, r) => {
         const cur = c.Rank === rank;
-        const req = r === 0 ? '시작 등급' : `돌파 ${B.PromotionRequirements[r * 3]}층 · Lv.${B.PromotionRequirements[r * 3 + 1]} · 퀘스트 ${B.PromotionRequirements[r * 3 + 2]}`;
+        // 등급표는 승급 조건이 아니라 그 등급에서 얻는 이점 (승급 조건은 위 카드에만)
+        const req = `스킬 ${skillSlots(rank)}칸 · 창고 ${storageCapacity(rank)}칸`;
         return h('div', { class: 'row', style: { minHeight: '60px', gap: '12px', padding: '4px 0', borderBottom: r < RANKS.length - 1 ? '1px solid var(--line-soft)' : '' } },
           icon(rankIcon(rank), 40),
-          h('div', { class: 'col grow', style: { gap: '3px' } }, h('b', { style: { fontSize: '16px', color: cur ? 'var(--gold)' : 'var(--text)' } }, `${rank} 등급`, cur ? colored('  현재', 'var(--gold)') : null), h('div', { class: 'sub', style: { fontSize: '13px' } }, req)),
+          h('div', { class: 'col grow', style: { gap: '3px' } }, h('b', { style: { fontSize: '16px', color: cur ? 'var(--gold)' : 'var(--text)' } }, `${rank} 등급`), h('div', { class: 'sub', style: { fontSize: '13px' } }, req)),
           h('b', { style: { fontSize: '16px', color: cur ? 'var(--gold)' : 'var(--body)' } }, `+${Math.round(B.BadgeBonus[r] * 100)}%`));
       }));
     return [card, table];
@@ -194,7 +195,6 @@ export class GuildScreen extends Screen {
     return [
       seg,
       h('b', null, `창고 ${c.Storage.Items.length} / ${c.Storage.Capacity} · 가방 ${c.Inventory.Items.length} / ${c.Inventory.Capacity}`),
-      legend(),
       itemGrid(from, c, (item) => confirmBox(displayName(item), statLine(item), verb, () => {
         const r = this.withdrawMode ? withdraw(c, item.Uid) : deposit(c, item.Uid);
         if (!r.ok) return toast(r.error ?? '');

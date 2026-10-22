@@ -21,16 +21,17 @@ import { navigate } from './nav';
 /** 능력치가 주는 효과 (상세 능력치 창의 한 줄 설명). */
 function statEffect(s: Stat): string {
   switch (s) {
-    case 'Vitality': return '최대 HP 증가 (직업마다 1점당 HP가 다름)';
+    case 'Vitality': return '최대 HP 증가 (직업마다 1당 HP가 다름)';
     case 'Spirit': return '독·기절 같은 디버프에 걸리지 않을 확률';
     case 'Luck': return '아이템 드롭률과 이벤트 판정 성공률';
-    case 'Strength': return `전사의 공격력 (1점당 +${B.AttackPerMainStat})`;
+    case 'Strength': return `전사의 공격력 (1당 +${B.AttackPerMainStat})`;
     case 'Agility': return '궁수·도적의 공격력, 적 공격 회피';
-    case 'Intelligence': return `마법사의 공격력 (1점당 +${B.AttackPerMainStat})`;
-    case 'Toughness': return `받는 피해 감소 (1점당 ${B.ReductionPerToughness * 100}%, 최대 ${B.MaxReduction * 100}%)`;
+    case 'Intelligence': return `마법사의 공격력 (1당 +${B.AttackPerMainStat})`;
+    // 1당 0.35%는 소수점이 생기므로 100당으로 적는다
+    case 'Toughness': return `받는 피해 감소 (100당 ${Math.round(B.ReductionPerToughness * 10000)}%, 최대 ${Math.round(B.MaxReduction * 100)}%)`;
     case 'Precision': return '공격·스킬 성공률 증가';
     case 'Finesse': return '도적의 회피 증가 (최대 40%)';
-    case 'SpellPower': return '스킬 피해 증가 (1점당 +0.5%)';
+    case 'SpellPower': return `스킬 피해 증가 (100당 +${Math.round(B.SkillDamagePerSpellPower * 10000)}%)`;
   }
 }
 
@@ -59,20 +60,12 @@ export class CharacterScreen extends Screen {
         this.badgePanel(),
         this.statsPanel(draft),
         row(
-          (() => {
-            const b = button('자동 배분', () => {
-              draft.auto();
-              router.rebuild();
-            }, '', 'grow');
-            b.disabled = c.UnspentPoints <= 0;
-            return b;
-          })(),
+          button('상세 능력치', () => this.details(), 'ghost', 'grow'),
           (() => {
             const b = button('확정', () => this.commit(), 'primary', 'grow');
             b.disabled = !draft.hasChanges;
             return b;
-          })(),
-          button('상세 능력치', () => this.details(), 'ghost', 'grow'))),
+          })())),
       bottomNav(1, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
   }
 
@@ -93,7 +86,16 @@ export class CharacterScreen extends Screen {
     const c = S.c;
     const stats = jobData(c.Job).allocatable;
     return h('div', { class: 'card', style: { padding: '6px 14px', gap: '0' } },
-      row(h('b', { class: 'grow', style: { height: '40px', lineHeight: '40px' } }, '능력치'), h('span', { style: { fontSize: '13px' } }, '남은 포인트 ', colored(String(draft.remaining), 'var(--gold)'))),
+      // 제목은 '능력치(포인트 N)', 오른쪽에 자동 배분 버튼
+      row(h('b', { class: 'grow', style: { lineHeight: '40px' } }, '능력치', colored(`(포인트 ${draft.remaining})`, 'var(--gold)')),
+        (() => {
+          const b = button('자동 배분', () => {
+            draft.auto();
+            router.rebuild();
+          }, 'outline', 'sm');
+          b.disabled = S.c.UnspentPoints <= 0 || draft.remaining <= 0;
+          return b;
+        })()),
       ...stats.map((stat, i) => statRow(draft, stat, i < stats.length - 1, () => router.rebuild())));
   }
 
@@ -119,9 +121,9 @@ export class CharacterScreen extends Screen {
       line('회피', percent(evasion(c))),
       line('받는 피해 감소', percent(damageReduction(c))),
       line('상태 이상 저항', percent(resist(c))),
-      ...(c.Job === 'Rogue' ? [line('치명타', `도적 스킬 전용 · 피해 ×${B.CritMultiplier}`)] : []),
+      ...(c.Job === 'Rogue' ? [line('치명타', `도적 스킬 전용 · 치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`)] : []),
       line('드롭률', `+${percent(dropBonus(c) - 1)}`),
-      line('이벤트 판정 (행운)', `+${percent(eventLuckBonus(c))}`),
+      line('이벤트 판정', `+${percent(eventLuckBonus(c))}`),
       divider(),
       h('b', null, '능력치별 효과'),
       ...STATS.map((s) => {

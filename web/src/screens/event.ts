@@ -1,4 +1,4 @@
-import { dungeonHeader } from '../ui/chrome';
+import { dungeonTop } from '../ui/dungeonbar';
 import type { EventDef } from '../core/events';
 import { breakdown, checkStat, choiceHint, choiceLabel, eventBody, specialHint, startsBattle, successChance, unavailableReason, visibleChoices } from '../core/eventrules';
 import type { EventChoice } from '../core/events';
@@ -74,8 +74,8 @@ export class EventScreen extends Screen {
     return this.wrap(floor, inner);
   }
 
-  private wrap(floor: number, inner: HTMLElement): HTMLElement {
-    return h('div', { class: 'page' }, S.hasGame ? dungeonHeader(`${floor}층 · 특수 이벤트`, S.c, null) : null, h('div', { class: 'scroll', style: { padding: '16px' } }, inner));
+  private wrap(_floor: number, inner: HTMLElement): HTMLElement {
+    return h('div', { class: 'page' }, S.hasGame ? dungeonTop() : null, h('div', { class: 'scroll', style: { padding: '16px' } }, inner));
   }
 
   private resultBox(): HTMLElement {

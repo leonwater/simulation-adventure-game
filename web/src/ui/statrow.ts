@@ -30,7 +30,7 @@ export function statRow(draft: AllocationDraft, stat: Stat, line: boolean, onCha
     icon(statIcon(stat), 24),
     h('div', { class: 'col grow', style: { gap: '1px' } },
       h('b', null, Names.stat(stat), own >= B.StatCap ? colored(' 최대', 'var(--gold)') : null),
-      h('div', { class: 'sub', style: { fontSize: '11px' } }, effectLabel(c, stat))),
+      h('div', { class: 'sub', style: { fontSize: '11px' } }, ...effectLabel(c, stat).split(' · ').flatMap((seg, i) => [i > 0 ? ' · ' : '', h('span', { style: { whiteSpace: 'nowrap' } }, seg)]))),
     step('-', pending > 0, () => draft.remove(stat)),
     h('div', { style: { minWidth: '64px', textAlign: 'center', fontWeight: '700' } }, String(ownStat(c, stat)),
       extra > 0 ? colored(`(+${extra})`, 'var(--green)') : null, pending > 0 ? colored(` +${pending}`, 'var(--gold)') : null),

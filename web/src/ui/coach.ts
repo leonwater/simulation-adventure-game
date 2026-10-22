@@ -107,7 +107,7 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
   holder.append(bubble);
   // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 작게. 막는 판보다 위라 언제나 눌린다
   if (onSkip) {
-    holder.append(h('button', { style: { position: 'absolute', right: '12px', top: '12px', minHeight: '30px', padding: '0 10px', fontSize: '12px', background: 'var(--dialog)', pointerEvents: 'auto' }, on: { click: () => {
+    holder.append(h('button', { style: { position: 'absolute', right: '12px', top: 'calc(17px + env(safe-area-inset-top))', minHeight: '30px', padding: '0 10px', fontSize: '12px', background: 'var(--dialog)', pointerEvents: 'auto' }, on: { click: () => {
       coach.clear();
       onSkip();
     } } }, '건너뛰기'));

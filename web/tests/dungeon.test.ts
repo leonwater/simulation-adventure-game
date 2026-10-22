@@ -390,7 +390,7 @@ describe('이벤트 (DungeonTests·SpecialEventTests)', () => {
     becomeMerchant(run, rng);
     expect(room.Type).toBe('Merchant');
     expect(room.MerchantDiscount).toBe(true);
-    expect(room.MerchantGoods.length).toBe(5);
+    expect(room.MerchantGoods.length).toBe(4); // 1층: 고급 회복 물약은 아직 팔지 않는다
   });
 
   it('지도 이벤트: 공개·보스 통로·귀환 방·숨은 보물 방', () => {

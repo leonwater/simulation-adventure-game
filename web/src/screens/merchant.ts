@@ -5,13 +5,12 @@ import type { ItemInstance, ShopGood } from '../core/items';
 import { countOf, displayName, sellPrice, statLine } from '../core/items';
 import { themeIndex } from '../core/monsters';
 import { gold } from '../core/names';
-import { charStrip, dungeonSubBar } from '../ui/chrome';
+import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
-import { compareLine, infoText, itemTitle, kindLine, nameColor } from '../ui/items';
+import { colored, compareLine, infoText, itemTitle, kindLine, levelChip, nameColor } from '../ui/items';
 import { button, h, icon, row, tabs } from '../ui/kit';
 import { flash, modal, toast } from '../ui/overlay';
-import { openPauseMenu } from '../ui/pause';
 import { Screen, router } from '../ui/router';
 import { dungeonTheme } from '../ui/theme';
 import { goDungeon } from './index';
@@ -44,9 +43,8 @@ export class MerchantScreen extends Screen {
     const grid = (cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...cells);
     const body = this.tab === 0 ? grid(room.MerchantGoods.map((g) => this.goodCell(g))) : grid(c.Inventory.Items.map((i) => this.sellCell(i)));
     return h('div', { class: 'page', style: { background: th.bg } },
-      dungeonSubBar('', '던전', () => this.leave(), c, () => openPauseMenu()),
-      charStrip(c),
-      h('div', { style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', textAlign: 'center', padding: '10px 0 4px', flexShrink: '0' } }, room.MerchantDiscount ? '구해 준 상인' : '떠돌이 상인'),
+      dungeonTop(),
+      h('div', { style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', textAlign: 'center', padding: '20px 0 14px', flexShrink: '0' } }, room.MerchantDiscount ? '구해 준 상인' : '떠돌이 상인'),
       tabs(['구매', '판매'], this.tab, (i) => {
         this.tab = i;
         router.rebuild();
@@ -70,7 +68,10 @@ export class MerchantScreen extends Screen {
     const cell = this.card(() => this.buyDialog(g),
       kindLine(item, 12),
       h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item)),
-      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, item.Kind === 'Consumable' ? `보유 ${countOf(c.Inventory, item.TemplateId)} · 재고 ${g.Stock}` : infoText(c, item)),
+      // 소모품은 보유·재고를 색으로 구분해 눈에 띄게 (보유 = 파랑 · 재고 = 금색)
+      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
+        ...(item.Kind === 'Consumable' ? [colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, '#8FC7FF'), ' · ', colored(`재고 ${g.Stock}`, 'var(--gold)')] : [infoText(c, item)])),
+      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px' } }, levelChip(c, item)),
       h('span', { class: 'spacer' }),
       h('b', { style: { fontSize: '14px', color: c.Gold >= price ? 'var(--gold)' : 'var(--red-light)' } }, `${price.toLocaleString('en-US')} G`));
     if (known) cell.style.opacity = '.5';
@@ -104,6 +105,7 @@ export class MerchantScreen extends Screen {
       kindLine(item, 12),
       h('div', { style: { fontSize: '13px', lineHeight: '1.1', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item)),
       h('div', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, infoText(c, item)),
+      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px' } }, levelChip(c, item)),
       h('span', { class: 'spacer' }),
       h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null));
   }

@@ -23,6 +23,8 @@ export const newShopState = (): ShopState => ({ Equipment: [], Goods: [], LastRe
 export const toTicks = (d: Date): number => (d.getTime() + 62135596800000) * 10000;
 
 const OPTIONAL = ['potion_hi', 'bandage', 'salve'];
+/** 고급 회복 물약은 일정 층부터 상점·상인에 나온다 (그 전에는 드롭으로만). */
+export const sellsHighPotion = (floor: number): boolean => floor >= B.HighPotionFirstFloor;
 
 /** 처음 한 번만 물건을 채운다 (시간이 지나도 저절로 바뀌지 않는다). 채웠으면 true. */
 export function ensureStocked(s: ShopState, c: Character, now: Date, rng: Rng): boolean {
@@ -59,7 +61,7 @@ export function restock(s: ShopState, c: Character, rng: Rng): void {
   s.Goods = [];
   s.Goods.push({ Item: consumableAt('potion', floor), Stock: -1 });
   s.Goods.push({ Item: createConsumable('antidote'), Stock: -1 });
-  const optional = [...OPTIONAL];
+  const optional = OPTIONAL.filter((id) => id !== 'potion_hi' || sellsHighPotion(floor));
   rng.shuffle(optional);
   s.Goods.push({ Item: consumableAt(optional[0], floor), Stock: -1 });
   // 강화석은 필요해지는 층(10층)부터 상점에서 판다

@@ -1,3 +1,4 @@
+import { potionButton } from '../ui/potion';
 import { tutorial } from '../ui/tutorial';
 import { areaDiagram } from '../ui/skillinfo';
 import { B } from '../core/balance';
@@ -5,14 +6,13 @@ import type { BattleChoice, BattleEvent, DamageKind, LogTone } from '../core/bat
 import type { Battle } from '../core/battle';
 import type { Combatant } from '../core/combatant';
 import { themeIndex } from '../core/monsters';
-import { itemNames } from '../core/loot';
+import { itemNames, mergeStacks } from '../core/loot';
 import { skillDef } from '../core/skills';
 import { Names } from '../core/names';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
-import { consumableDef, countOf, findItem } from '../core/items';
 import { button, h, icon, longPress, sub } from '../ui/kit';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -260,10 +260,13 @@ export class BattleScreen extends Screen {
     const b = this.b!;
     const start = Math.max(0, b.log.length - 3);
     const el = h('div', { class: 'battlelog' });
+    const text = h('div', { class: 'grow', style: { minWidth: '0' } });
     for (let i = start; i < b.log.length; i++) {
       const line = b.log[i];
-      el.append(h('div', { style: { color: TONE_COLOR[line.tone], opacity: i === b.log.length - 1 ? '1' : '.7', minHeight: '18px' } }, line.text));
+      text.append(h('div', { style: { color: TONE_COLOR[line.tone], opacity: i === b.log.length - 1 ? '1' : '.7', minHeight: '18px' } }, line.text));
     }
+    el.append(text);
+    if (!b.isOver) el.append(this.potionIcon());
     return el;
   }
 
@@ -287,28 +290,18 @@ export class BattleScreen extends Screen {
       if (ch.kind === 'Item' || ch.kind === 'Flee') bottom.push(el);
       else list.append(el);
     }
-    const potions = this.quickPotions();
-    if (potions) list.append(potions);
     if (bottom.length > 0) list.append(h('div', { class: 'row', style: { gap: '6px', alignItems: 'stretch' } }, ...bottom.map((e) => Object.assign(e, { style: `${e.getAttribute('style')};flex:1 1 0;min-width:0` }))));
     if (this.playing) list.style.pointerEvents = 'none';
     parent.append(list);
   }
 
-  /** 회복 물약 바로 쓰기 (종류마다 한 칸, 1턴 사용). HP가 가득하면 잠긴다. */
-  private quickPotions(): HTMLElement | null {
-    const seen = new Set<string>();
-    const buttons: HTMLElement[] = [];
-    for (const ch of this.b!.getItemChoices()) {
-      const item = findItem(S.c.Inventory, ch.itemUid ?? '');
-      const def = item ? consumableDef(item.TemplateId) : null;
-      if (!item || !def || def.HealRatio <= 0 || seen.has(item.TemplateId)) continue;
-      seen.add(item.TemplateId);
-      const b = h('button', { class: 'grow', style: { minHeight: '40px', background: 'var(--return-bg)', borderColor: 'var(--return-border)', color: 'var(--return-text)', fontWeight: '700', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }, on: { click: () => this.pick(ch) } },
-        icon('stat_vitality', 16), `${def.Name} ×${countOf(S.c.Inventory, item.TemplateId)} · HP +${Math.round(def.HealRatio * 100)}%`);
-      b.disabled = !ch.enabled;
-      buttons.push(b);
-    }
-    return buttons.length ? h('div', { class: 'row', style: { gap: '6px' } }, ...buttons) : null;
+  /** 전투 로그 오른쪽 끝 물약 버튼: 마시면 한 턴을 쓴다. */
+  private potionIcon(): HTMLElement {
+    return potionButton((item) => {
+      const ch = this.b!.getItemChoices().find((x) => x.itemUid === item.Uid);
+      if (ch && ch.enabled) this.pick(ch);
+      else toast('지금은 마실 수 없습니다');
+    }, 'battle-potion');
   }
 
   private kindStyle(ch: BattleChoice): { tag: string; bar: string; fill: string; border: string } {
@@ -543,7 +536,7 @@ export class BattleScreen extends Screen {
     if (loot) {
       if (loot.Gold !== 0) card.append(h('div', null, `· 골드 +${loot.Gold.toLocaleString('en-US')}`));
       if (loot.Exp !== 0) card.append(h('div', null, `· 경험치 +${loot.Exp.toLocaleString('en-US')}`));
-      for (const i of loot.Items) card.append(h('div', null, `· ${i.Count > 1 ? `${i.Name}${i.Enhance > 0 ? ` +${i.Enhance}` : ''} ×${i.Count}` : i.Enhance > 0 ? `${i.Name} +${i.Enhance}` : i.Name}`));
+      for (const i of mergeStacks(loot.Items)) card.append(h('div', null, `· ${i.Count > 1 ? `${i.Name}${i.Enhance > 0 ? ` +${i.Enhance}` : ''} ×${i.Count}` : i.Enhance > 0 ? `${i.Name} +${i.Enhance}` : i.Name}`));
       if (loot.Dropped.length > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `· 가방이 가득 차거나 99개라 두고 옴: ${itemNames(loot.Dropped)}`));
       if (loot.LevelsGained > 0) card.append(h('b', { class: 'gold' }, `레벨 업! Lv.${b.character.Level} · 능력치 포인트 +${loot.LevelsGained * B.PointsPerLevel}`));
     }

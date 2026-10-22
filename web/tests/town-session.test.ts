@@ -113,7 +113,7 @@ describe('상점 (TownTests)', () => {
     expect(c.Gold).toBe(before + sellPrice(eq));
     expect(bagPrice(c)).toBe(500);
     expect(buyBag(c).ok).toBe(true);
-    expect(c.Inventory.Capacity).toBe(25);
+    expect(c.Inventory.Capacity).toBe(20);
     expect(bagPrice(c)).toBe(1000);
     const rest = c.Inventory.Items.map((i) => i.Uid);
     expect(sellMany(c, rest)).toBeGreaterThan(0);

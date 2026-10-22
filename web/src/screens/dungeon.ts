@@ -10,7 +10,6 @@ import type { Room } from '../core/map';
 import { displayType, getRoom } from '../core/map';
 import { jobData } from '../core/jobs';
 import { themeFor, themeIndex } from '../core/monsters';
-import { consumableDef, countOf } from '../core/items';
 import { Names } from '../core/names';
 import { dungeonHeader } from '../ui/chrome';
 import { showCharacterInfo, showQuests } from '../ui/charinfo';
@@ -20,6 +19,8 @@ import { colored } from '../ui/items';
 import { button, h, icon, row, sub } from '../ui/kit';
 import { confirmBox, flash, modal, toast } from '../ui/overlay';
 import { openPauseMenu } from '../ui/pause';
+import { potionButton } from '../ui/potion';
+import { randomTip } from '../ui/tips';
 import { Screen, router } from '../ui/router';
 import { statRow } from '../ui/statrow';
 import { dungeonTheme } from '../ui/theme';
@@ -75,9 +76,10 @@ export class DungeonScreen extends Screen {
       h('div', { class: 'scroll', style: { gap: '12px' } },
         ...(run.Effects.length > 0 ? this.effectTags(run) : []),
         this.miniMap(run),
-        S.notice ? this.noticeCard(S.notice) : null,
-        // 갈림길·통로·막다른 곳 설명은 보이지 않는다 (보스 처치·귀환 방·상인 방만)
-        showSituation(run) ? h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px' } }, h('b', { class: 'sub' }, sit.title), h('div', { class: 'body' }, sit.text)) : null),
+        // 가운데 칸: 방 결과 → 상인 방 설명 → 없으면 TIP! (칸 테두리는 늘 보인다)
+        S.notice ? this.noticeCard(S.notice) : showSituation(run)
+          ? h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px', minHeight: '76px' } }, h('b', { class: 'sub' }, sit.title), h('div', { class: 'body' }, sit.text))
+          : this.tipCard(run)),
       dock,
       h('div', { class: 'bottombar' },
         ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
@@ -130,7 +132,7 @@ export class DungeonScreen extends Screen {
       this.levelUpAllocation(draft);
     };
     const stats = jobData(c.Job).allocatable;
-    m.body.append(h('div', null, '남은 포인트 ', colored(String(draft.remaining), 'var(--gold)')),
+    m.body.append(h('div', null, '포인트 ', colored(String(draft.remaining), 'var(--gold)')),
       ...stats.map((st, i) => statRow(draft, st, i < stats.length - 1, redraw)));
     const auto = anchored(button('자동 배분', () => {
       draft.auto();
@@ -148,7 +150,7 @@ export class DungeonScreen extends Screen {
     ok.disabled = !draft.hasChanges;
     m.body.append(row(button('나중에', () => {
       m.close();
-      toast('남은 포인트는 마을 캐릭터 화면에서도 배분할 수 있습니다');
+      toast('포인트는 마을 캐릭터 화면에서도 배분할 수 있습니다');
     }, 'ghost', 'grow'), auto, ok));
   }
 
@@ -191,24 +193,14 @@ export class DungeonScreen extends Screen {
     return h('div', { class: 'pad' }, ...pad.Slots.map((slot) => this.padCell(slot, open, place[slot.Dir])), this.potionButton());
   }
 
-  /** 방향키 오른쪽 위 빈칸: 회복 물약 한 번에 마시기 (가장 약한 회복 물약부터). HP가 가득하거나 물약이 없으면 잠긴다. */
+  /** 방향키 오른쪽 위 빈칸: 물약 버튼 (종류가 여러 개면 고르는 팝업). */
   private potionButton(): HTMLElement {
-    const c = S.c;
-    const potions = c.Inventory.Items.filter((i) => (consumableDef(i.TemplateId)?.HealRatio ?? 0) > 0)
-      .sort((a, b) => consumableDef(a.TemplateId)!.HealRatio - consumableDef(b.TemplateId)!.HealRatio);
-    const first = potions[0];
-    const count = first ? countOf(c.Inventory, first.TemplateId) : 0;
-    const full = c.CurrentHp >= maxHp(c);
-    const b = h('button', { class: 'potion', style: { gridArea: '1 / 3' }, on: { click: () => {
-      if (!first) return toast('회복 물약이 없습니다');
-      if (full) return toast('HP가 가득 찼습니다');
-      const r = S.useConsumable(first.Uid);
+    return potionButton((item) => {
+      const r = S.useConsumable(item.Uid);
       if (!r.ok) return toast(r.message);
       flash(r.message, 'var(--green)');
       router.rebuild();
-    } } }, icon('potion', 30), h('span', { class: 's' }, first ? `×${count}` : '없음'));
-    if (!first || full) b.classList.add('off');
-    return b;
+    }, 'potion', { gridArea: '1 / 3' });
   }
 
   /** 방향 칸: 색으로만 상태를 보인다 (금색 새 방 · 파랑 탐험함 · 초록 귀환 · 빨강 보스 · 어두움 막힘). */
@@ -216,7 +208,6 @@ export class DungeonScreen extends Screen {
     const room = slot.Room;
     const title = `${PAD_ARROW[slot.Dir]} ${PAD_NAME[slot.Dir]}`;
     let fill: string, border: string, text: string;
-    let tag = '';
     let glow = false;
     if (!room || !open) {
       fill = '#1B1813'; border = '#3A3326'; text = '#6E675A';
@@ -224,9 +215,9 @@ export class DungeonScreen extends Screen {
       const shown = displayType(room);
       const special = slot.Known && (shown === 'Return' || shown === 'Boss');
       if (special && shown === 'Return') {
-        fill = 'var(--return-bg)'; border = 'var(--return-border)'; text = 'var(--return-text)'; tag = '귀환';
+        fill = 'var(--return-bg)'; border = 'var(--return-border)'; text = 'var(--return-text)';
       } else if (special) {
-        fill = 'var(--red-bg)'; border = 'var(--red)'; text = 'var(--red-light)'; tag = '보스';
+        fill = 'var(--red-bg)'; border = 'var(--red)'; text = 'var(--red-light)';
       } else if (room.Visited) {
         fill = 'var(--blue-bg)'; border = 'var(--blue-border)'; text = 'var(--blue-light)';
       } else {
@@ -234,7 +225,7 @@ export class DungeonScreen extends Screen {
         glow = true;
       }
     }
-    const kids = [h('span', { class: 't', style: { color: text } }, tag ? `${title} · ${tag}` : title), glow ? h('i', { class: 'glow' }) : null];
+    const kids = [h('span', { class: 't', style: { color: text } }, title), glow ? h('i', { class: 'glow' }) : null];
     const style = { gridArea: area, background: fill, border: `2px solid ${border}` };
     if (room && open) {
       const btn = h('button', { style, on: { click: () => this.move(room.Id) } }, ...kids);
@@ -245,6 +236,18 @@ export class DungeonScreen extends Screen {
   }
 
   // ── 방 결과 · 효과 태그 ──
+
+  private tip = '';
+  private tipRoom = -1;
+
+  /** 팁 칸: 방이 바뀔 때마다 새 팁 하나 (같은 방에서 다시 그려도 그대로). */
+  private tipCard(run: DungeonRun): HTMLElement {
+    if (this.tipRoom !== run.CurrentRoomId || !this.tip) {
+      this.tipRoom = run.CurrentRoomId;
+      this.tip = randomTip();
+    }
+    return h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px', minHeight: '76px', justifyContent: 'center' } }, h('b', { class: 'gold', style: { fontSize: '15px' } }, 'TIP!'), h('div', { class: 'body' }, this.tip));
+  }
 
   private noticeCard(n: RoomNotice): HTMLElement {
     return h('div', { class: 'card', style: { borderColor: 'var(--btn-border)', gap: '4px', padding: '12px 14px' } },

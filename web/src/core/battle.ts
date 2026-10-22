@@ -65,7 +65,6 @@ const choice = (p: Partial<BattleChoice> & Pick<BattleChoice, 'kind' | 'label'>)
 const MAX_ENEMY_SLOTS = 4;
 const pct = (v: number): string => (v >= 0 ? '+' : '-') + roundEven(Math.abs(v) * 1000) / 10 + '%';
 const r100 = (v: number): number => roundEven(v * 100);
-const r2 = (v: number): number => roundEven(v * 100) / 100;
 
 /** 피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 - 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함) */
 export function damage(attacker: Combatant, target: Combatant, mult: number, crit: boolean): number {
@@ -338,7 +337,7 @@ export class Battle {
     }
     if (def.IsAttack) {
       if (crit) parts.push('확정 치명타');
-      else if (this.critChance(def) > 0) parts.push(`치명타 ${r100(Math.min(1, this.critChance(def)))}%`);
+      else if (this.critChance(def) > 0) parts.push(`치명타 확률 ${r100(Math.min(1, this.critChance(def)))}%`);
       if (def.ExecuteThreshold > 0) parts.push(`HP ${r100(def.ExecuteThreshold)}% 이하 ×${def.ExecuteMult}`);
     }
     return parts.join(' · ');
@@ -367,7 +366,7 @@ export class Battle {
     const t = target.statuses;
     const taken = -t.value('Fortify') / 100 + t.value('Vulnerable') / 100;
     if (Math.abs(taken) > 1e-9) parts.push(`× 철벽/취약 ${pct(taken)}`);
-    if (crit) parts.push(`× 치명타 ${fmtNum(r2(this.critNow))}`);
+    if (crit) parts.push(`× 치명타 피해량 ${r100(this.critNow)}%`);
     return `피해 계산 (${target.name})\n${parts.join(' ')}\n= 약 ${damage(this.player, target, mult, crit)}`;
   }
 
@@ -380,8 +379,8 @@ export class Battle {
       if (areaName(def)) lines.push(`${areaName(def)}: 적마다 따로 판정 (적마다 방어력에 따라 피해가 다름)`);
       if (def.Target === 'ChainEnemies') lines.push(`연쇄 배율 ${def.ChainMults.map((m) => `${r100(m)}%`).join(' → ')}`);
       lines.push('');
-      if (this.sureCrit(def)) lines.push(`치명타 확정 (피해 ×${fmtNum(r2(this.critNow))})${this.nextSkillCrit ? ' — 연막 효과' : def.FirstTurnCrit ? ' — 첫 턴' : ''}`);
-      else if (this.critChance(def) > 0) lines.push(`치명타 확률 ${r100(Math.min(1, this.critChance(def)))}% (피해 ×${fmtNum(r2(this.critNow))})`);
+      if (this.sureCrit(def)) lines.push(`치명타 확정 (치명타 피해량 ${r100(this.critNow)}%)${this.nextSkillCrit ? ' — 연막 효과' : def.FirstTurnCrit ? ' — 첫 턴' : ''}`);
+      else if (this.critChance(def) > 0) lines.push(`치명타 확률 ${r100(Math.min(1, this.critChance(def)))}% (치명타 피해량 ${r100(this.critNow)}%)`);
       else lines.push('치명타 없음');
       if (def.ExecuteThreshold > 0) lines.push(`처형: HP ${r100(def.ExecuteThreshold)}% 이하 적에게 피해 ×${def.ExecuteMult}`);
     }
@@ -958,5 +957,4 @@ function fmtMult(v: number): string {
   const s = (Math.round(v * 100) / 100).toString();
   return s.includes('.') ? s : `${s}.0`;
 }
-/** C# 숫자 문자열 (정수는 그대로, 소수는 필요한 만큼). */
-const fmtNum = (v: number): string => String(v);
+

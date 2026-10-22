@@ -27,13 +27,25 @@ export interface LootReport {
 export const newLootReport = (): LootReport => ({ Gold: 0, Exp: 0, Items: [], Dropped: [], LevelsGained: 0 });
 export const lootIsEmpty = (r: LootReport): boolean => r.Gold === 0 && r.Exp === 0 && r.Items.length === 0;
 
+/** 같은 소모품·재료·강화석은 한 줄로 합쳐 보여 준다 (적마다 따로 떨어진 '고블린 귀'가 여러 줄로 나오지 않게). */
+export function mergeStacks(items: ItemInstance[]): ItemInstance[] {
+  const out: ItemInstance[] = [];
+  for (const i of items) {
+    const same = i.Kind === 'Equipment' || i.Kind === 'SkillBook' ? null : out.find((o) => o.Kind === i.Kind && o.TemplateId === i.TemplateId && o.Enhance === i.Enhance);
+    if (same) same.Count += i.Count;
+    else out.push({ ...i });
+  }
+  return out;
+}
+
 const withCount = (i: ItemInstance): string => (i.Count > 1 ? `${displayName(i)} ×${i.Count}` : displayName(i));
 const num = (n: number): string => n.toLocaleString('en-US');
 
 export function itemNames(items: ItemInstance[], max = 99): string {
-  const names = items.slice(0, max).map(withCount);
+  const merged = mergeStacks(items);
+  const names = merged.slice(0, max).map(withCount);
   let s = names.join(', ');
-  if (items.length > max) s += ` 외 ${items.length - max}개`;
+  if (merged.length > max) s += ` 외 ${merged.length - max}개`;
   return s;
 }
 
@@ -64,7 +76,7 @@ export function lootLines(n: RoomNotice): string[] {
   if (!l) return list;
   if (l.Gold !== 0) list.push(`골드 ${l.Gold > 0 ? '+' : ''}${num(l.Gold)}`);
   if (l.Exp !== 0) list.push(`경험치 +${num(l.Exp)}`);
-  for (const i of l.Items) list.push(withCount(i));
+  for (const i of mergeStacks(l.Items)) list.push(withCount(i));
   if (l.Dropped.length > 0) list.push(`가방이 가득 차거나 99개라 두고 옴: ${itemNames(l.Dropped)}`);
   if (l.LevelsGained > 0) list.push(`레벨 업! +${l.LevelsGained}`);
   return list;

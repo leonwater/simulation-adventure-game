@@ -1,19 +1,16 @@
-import { B } from '../core/balance';
-import { getSkillState, isSkillEquipped, maxSkillLevel, trainSkill, trainingCost, trainingEffect } from '../core/equipment';
-import { isUtility } from '../core/skills';
-import { ord, TIERS } from '../core/enums';
+import { getSkillState, isSkillEquipped, maxSkillLevel, trainSkill, trainingCost } from '../core/equipment';
 import { Names } from '../core/names';
-import { skillDef } from '../core/skills';
+import { areaName, skillDef } from '../core/skills';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { colored } from '../ui/items';
-import { button, h, sub } from '../ui/kit';
+import { button, h, longPress } from '../ui/kit';
 import { toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
+import { showSkillDetail } from '../ui/skilldetail';
 import { tutorial } from '../ui/tutorial';
 import { navigate } from './nav';
 
-/** 수련장: 골드를 내고 보유 스킬을 강화 (+5까지, 단계당 위력 하급 +8% ~ 최상급 +15%). */
+/** 수련장: 골드를 내고 보유 스킬을 강화. 한 줄에 이름, 아래 줄에 요약, 자세한 내용은 길게 눌러서. */
 export class TrainingScreen extends Screen {
   private line = '기술은 반복으로 다듬어지는 법. 어떤 기술을 갈고닦겠나?';
 
@@ -27,18 +24,17 @@ export class TrainingScreen extends Screen {
     const rows = c.Skills.Learned.map((st) => {
       const def = skillDef(st.SkillId);
       if (!def) return null;
-      const per = Math.round(B.SkillPowerPerLevel[ord(TIERS, def.Tier)] * 100);
       const cost = trainingCost(st);
       const b = button(cost === 0 ? '최대' : `수련 · ${cost.toLocaleString('en-US')}G`, () => this.train(st.SkillId), 'outline', 'sm');
       b.style.width = '104px';
       b.disabled = !(cost > 0 && c.Gold >= cost);
-      const next = st.Level < maxSkillLevel(def) ? ` → ${trainingEffect(def, st.Level + 1)}` : '';
-      return h('div', { class: 'row', style: { minHeight: '64px', padding: '8px 0', borderBottom: '1px solid var(--line-soft)', gap: '10px' } },
-        h('div', { class: 'col grow', style: { gap: '2px' } },
-          h('span', { style: { fontSize: '15px' } }, `${def.Name} `, colored(`${Names.tier(def.Tier)} · +${st.Level}/${maxSkillLevel(def)}${isUtility(def) ? '' : ` (단계당 +${per}%)`}`, 'var(--sub)')),
-          sub(def.Description + (isSkillEquipped(c, def.Id) ? ' · 장착 중' : '')),
-          isUtility(def) ? sub(`지금 ${trainingEffect(def, st.Level)}${next}`) : null),
-        b);
+      // 이름은 크게, 아래 줄에 등급 · 범위 · 수련 단계 · 장착 중 (자세한 설명은 길게 눌러서)
+      const meta = [Names.tier(def.Tier), areaName(def) ?? (def.Target === 'Self' ? '자신' : '단일'), `+${st.Level}/${maxSkillLevel(def)}`, isSkillEquipped(c, def.Id) ? '장착 중' : ''].filter(Boolean).join(' · ');
+      const info = h('div', { class: 'col grow', style: { gap: '4px', minWidth: '0' } },
+        h('b', { style: { fontSize: '18px' } }, def.Name),
+        h('span', { style: { fontSize: '14px', color: 'var(--sub)' } }, meta));
+      longPress(info, () => showSkillDetail(def.Id), () => {});
+      return h('div', { class: 'row', style: { minHeight: '72px', padding: '8px 0', borderBottom: '1px solid var(--line-soft)', gap: '10px' } }, info, b);
     });
     return h('div', { class: 'page' },
       townBar('수련장', '마을', () => navigate('town'), c),

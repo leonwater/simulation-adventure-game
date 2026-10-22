@@ -78,7 +78,7 @@ span.ic { background-color: currentColor; -webkit-mask: var(--src) center / cont
 .modal h3 { margin: 0; font-size: 17px; }
 .modal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
 .modal-x { width: 36px; height: 36px; min-height: 0; padding: 0; margin: -6px -6px -6px 0; font-size: 22px; line-height: 1; background: transparent; border: 0; color: var(--sub); }
-.toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); max-width: 86%; background: rgba(40,43,52,.96); border: 1px solid var(--btn-border); border-radius: 12px; padding: 10px 16px; font-size: 14px; z-index: 60; text-align: center; pointer-events: none; }
+.toast { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); max-width: 86%; background: rgba(40,43,52,.96); border: 1px solid var(--btn-border); border-radius: 12px; padding: 10px 16px; font-size: 14px; z-index: 60; text-align: center; pointer-events: none; }
 .flash { position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%); font-size: 22px; font-weight: 700; z-index: 60; pointer-events: none; text-shadow: 0 2px 8px #000; animation: flash .8s ease-out forwards; }
 @keyframes flash { from { opacity: 1; transform: translate(-50%,-50%); } to { opacity: 0; transform: translate(-50%,-90%); } }
 
@@ -128,7 +128,7 @@ input.text::placeholder { color: #8F8C85; }
 .stat-icons { position: absolute; display: flex; gap: 2px; transform: translateX(-50%); pointer-events: none; }
 .floatup { position: absolute; transform: translate(-50%, -50%); font-weight: 700; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; white-space: nowrap; animation: floatup .95s ease-out forwards; z-index: 5; }
 @keyframes floatup { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -190%); } }
-.battlelog { background: var(--log); border-bottom: 1px solid var(--line); padding: 8px 16px; height: 74px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; overflow: hidden; flex-shrink: 0; font-size: 13px; }
+.battlelog { background: var(--log); border-bottom: 1px solid var(--line); padding: 8px 12px 8px 16px; height: 74px; display: flex; flex-direction: row; align-items: flex-end; gap: 8px; overflow: hidden; flex-shrink: 0; font-size: 13px; }
 .lower { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 14px; }
 .bchoice { display: flex; align-items: center; gap: 10px; text-align: left; padding: 6px 12px 6px 18px; min-height: 52px; border-radius: 10px; position: relative; }
 .bchoice .kbar { position: absolute; left: 7px; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; }
@@ -159,3 +159,11 @@ input.text::placeholder { color: #8F8C85; }
 .pad .potion { background: var(--return-bg); border: 2px solid var(--return-border); flex-direction: row; gap: 6px; }
 .pad .potion .s { font-size: 14px; font-weight: 700; color: var(--return-text); }
 .pad .potion.off { opacity: .45; }
+/* 가로로 긴 NPC 그림: 위쪽에 전체를 보이고 아래는 흐린 같은 그림으로 채운다 */
+.illust .blurfill { position: absolute; inset: -12px; background: center / cover no-repeat; filter: blur(14px) brightness(.7); }
+.illust .wide { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 2 / 1; background: top center / 100% 100% no-repeat; }
+
+.battlelog > .grow { align-self: stretch; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; overflow: hidden; }
+.battle-potion { flex-shrink: 0; width: 58px; height: 58px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: var(--return-bg); border: 2px solid var(--return-border); border-radius: 12px; align-self: center; }
+.battle-potion .s { font-size: 11px; font-weight: 700; color: var(--return-text); line-height: 1; }
+.battle-potion.off { opacity: .45; }

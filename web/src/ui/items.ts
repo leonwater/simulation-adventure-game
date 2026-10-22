@@ -78,19 +78,19 @@ const replacedName = (c: Character, item: ItemInstance): string | null => {
   return cur ? displayName(cur) : null;
 };
 
-/** 장비: "Lv.12 · +5" (레벨이 모자라면 빨강, 비교는 +초록 / -빨강). */
-export function levelCompare(c: Character, item: ItemInstance, withLabel = false): HTMLElement {
-  const el = h('span');
-  el.append(c.Level < item.LevelReq ? colored(`Lv.${item.LevelReq}`, RED) : `Lv.${item.LevelReq}`);
-  if (findEquipped(c, item.Uid)) {
-    el.append(' · 착용 중');
-    return el;
-  }
-  if (compare(c, item).length === 0) return el;
+/** 장비 칸 위쪽 줄: 지금 장비와 비교한 능력치 변화 ('방어 +6' · 변화 없으면 '방어 0', 착용 중이면 '착용 중'). */
+export function compareChip(c: Character, item: ItemInstance): Child {
+  if (findEquipped(c, item.Uid)) return '착용 중';
   const d = summary(c, item);
-  // 좁은 카드에서 줄이 밀리지 않도록 '공격력·방어력'은 '공격·방어'로 줄여 쓴다
-  if (d) el.append(' · ', colored(`${withLabel ? `${d.label === '공격력' ? '공격' : d.label === '방어력' ? '방어' : d.label} ` : ''}${delta(d.delta)}`, deltaColor(d.delta)));
-  return el;
+  if (!d) return '';
+  const label = d.label === '공격력' ? '공격' : d.label === '방어력' ? '방어' : d.label;
+  return colored(`${label} ${delta(d.delta)}`, deltaColor(d.delta));
+}
+
+/** 장비 칸 아래쪽 줄의 착용 레벨 (레벨이 모자라면 빨강). 장비가 아니면 빈 글자. */
+export function levelChip(c: Character | null, item: ItemInstance): Child {
+  if (item.Kind !== 'Equipment') return '';
+  return c && c.Level < item.LevelReq ? colored(`Lv.${item.LevelReq}`, RED) : `Lv.${item.LevelReq}`;
 }
 
 /** 소모품 효과 한 줄: 'HP 30% 회복', '독 해제'. */
@@ -102,10 +102,10 @@ function shortConsumable(id: string): string {
 
 /** 칸의 정보 한 줄: 장비는 착용 레벨과 지금 장비 대비, 스킬서는 등급 · 쓸 수 있는 직업 (내 직업이 아니면 빨강). */
 export function infoText(c: Character | null, item: ItemInstance): Child {
-  if (item.Kind === 'Equipment' && c) return levelCompare(c, item, true);
+  if (item.Kind === 'Equipment') return c ? compareChip(c, item) : '';
   // 능력치 증감이 없는 물품은 짧은 설명 (소모품 효과 · 재료 · 강화석)
   if (item.Kind === 'Consumable') return shortConsumable(item.TemplateId);
-  if (item.Kind === 'Material') return '퀘스트·판매 재료';
+  if (item.Kind === 'Material') return '퀘스트 재료';
   if (item.Kind === 'EnhanceStone') return '+6 이상 강화 재료';
   const def = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
   if (!def) return '';
@@ -138,9 +138,11 @@ export function itemGrid(container: ItemContainer, owner: Character | null, onTa
     },
     kindLine(item, 12),
     h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), fontWeight: item.Kind === 'Equipment' ? '700' : '400', wordBreak: 'keep-all' } }, itemTitle(item)),
+    // 능력치 변화·설명은 개수(×N) 줄 위쪽에 따로 둔다 (아래 줄은 착용 레벨과 개수)
+    h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, infoText(owner, item)),
     h('div', { class: 'spacer' }),
     h('div', { class: 'row', style: { gap: '4px', fontSize: '12px', color: 'var(--sub)', height: '16px' } },
-      h('span', { class: 'grow', style: { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'left' } }, infoText(owner, item)),
+      h('span', { class: 'grow', style: { whiteSpace: 'nowrap', textAlign: 'left' } }, levelChip(owner, item)),
       item.Count > 1 ? h('b', { style: { color: 'var(--text)' } }, `×${item.Count}`) : null)));
   }
   if (opts.showEmpty !== false) {

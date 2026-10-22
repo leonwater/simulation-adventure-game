@@ -36,7 +36,7 @@ describe('캐릭터 (CharacterTests)', () => {
       const c = createCharacter('a', j);
       expect(maxHp(c)).toBe(hp[j]);
       expect(c.CurrentHp).toBe(hp[j]);
-      expect(c.Gold).toBe(300);
+      expect(c.Gold).toBe(200);
       expect(getStat(c.BaseStats, 'Toughness')).toBe(j === 'Warrior' ? 10 : 5);
     }
   });
@@ -47,7 +47,7 @@ describe('캐릭터 (CharacterTests)', () => {
     expect(equipped(c, 'Weapon')!.Name).toBe('견습 지팡이');
     expect(countOf(c.Inventory, 'potion')).toBe(3);
     expect(c.Skills.Equipped).toEqual(['m_fireball']);
-    expect(c.Inventory.Capacity).toBe(20);
+    expect(c.Inventory.Capacity).toBe(15);
     expect(c.Storage.Capacity).toBe(4);
   });
 
@@ -163,7 +163,7 @@ describe('캐릭터 (CharacterTests)', () => {
     c.Rank = 'C';
     c.BagsBought = 3;
     recalculateCapacities(c);
-    expect([c.Inventory.Capacity, c.Storage.Capacity]).toEqual([35, 10]);
+    expect([c.Inventory.Capacity, c.Storage.Capacity]).toEqual([30, 10]);
   });
 });
 

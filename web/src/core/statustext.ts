@@ -10,7 +10,7 @@ export function describeStatus(s: string, value: number): string {
     case 'Focus': return `성공률 +${value}%`;
     case 'Swift': return `회피 +${value}%`;
     case 'Keen': return `스킬 치명타 확률 +${value}%`;
-    case 'Cruel': return `치명타 피해 +${value}%`;
+    case 'Cruel': return `치명타 피해량 +${value}%`;
     case 'Poison': return `턴마다 최대 HP ${value}% 피해`;
     case 'Bleed': return `행동할 때마다 공격력 ${value}% 피해`;
     case 'Burn': return `턴마다 공격력 ${value}% 피해, 받는 회복 -50%`;

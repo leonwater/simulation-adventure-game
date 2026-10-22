@@ -81,7 +81,7 @@ const CHECK = () => {
   };
   for (const el of document.querySelectorAll('.screen *')) {
     const cs = getComputedStyle(el);
-    if (cs.display === 'none' || cs.visibility === 'hidden' || el.closest('.floatup, .flash, .toast, .intro')) continue;
+    if (cs.display === 'none' || cs.visibility === 'hidden' || el.closest('.floatup, .flash, .toast, .intro') || el.classList.contains('blurfill')) continue;
     const r = el.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) continue;
     // 무대(전투)는 변환으로 줄이므로 바깥 상자만 본다

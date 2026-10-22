@@ -45,7 +45,7 @@ export function rollRoomTypes(rng: Rng): RoomType[] {
 
 /** 던전 상인 물건: 소모품 5종, 물건마다 2~5개까지만 판다. */
 export function merchantGoods(rng: Rng, floor = 1): ShopGood[] {
-  return ['potion', 'potion_hi', 'antidote', 'bandage', 'salve'].map((id) => ({
+  return ['potion', 'potion_hi', 'antidote', 'bandage', 'salve'].filter((id) => id !== 'potion_hi' || floor >= B.HighPotionFirstFloor).map((id) => ({
     Item: consumableAt(id, floor),
     Stock: rng.rangeInclusive(B.MerchantStockMin, B.MerchantStockMax),
   }));

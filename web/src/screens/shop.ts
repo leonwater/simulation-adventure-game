@@ -13,7 +13,7 @@ import { goodUnlimited } from '../core/items';
 import { jobLine, npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { offerBetterGear, isBetter } from '../ui/gearoffer';
-import { colored, compareLine, gearText, gradeTag, infoText, itemTitle, kindLine, levelCompare, nameColor } from '../ui/items';
+import { colored, compareLine, compareChip, gearText, gradeTag, infoText, itemTitle, kindLine, levelChip, nameColor } from '../ui/items';
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -60,10 +60,10 @@ export class ShopScreen extends Screen {
     const shop = S.data!.Shop;
     const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } }, ...cells);
     return [
-      h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '12px 8px 8px 12px' } },
+      h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '6px 8px 6px 12px' } },
         h('b', { class: 'grow', style: { fontSize: '15px' } }, '물건 갱신'),
         h('b', { class: 'gold', style: { fontSize: '13px' } }, `${rerollCost(shop).toLocaleString('en-US')}G`),
-        (() => { const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm'); b.style.width = '64px'; return b; })()),
+        (() => { const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm'); b.style.width = '64px'; b.style.minHeight = '34px'; b.style.height = '34px'; return b; })()),
       h('div', { class: 'col', 'data-anchor': 'shop.equip' },
         h('b', null, '장비'),
         shop.Equipment.length === 0 ? sub("장비가 모두 팔렸습니다. '갱신'으로 새 물건을 들여올 수 있어요.") : null,
@@ -83,7 +83,9 @@ export class ShopScreen extends Screen {
     const cell = this.cardButton(() => this.buyEquipDialog(item),
       kindLine(item, 12),
       h('b', { style: { fontSize: '14px', color: nameColor(item), textAlign: 'left' } }, item.Name),
-      h('span', { class: 'sub' }, usable ? levelCompare(c, item, true) : colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, '#E38A82')),
+      // 위: 능력치 변화(또는 직업 전용) · 아래: 착용 레벨 · 가격
+      h('span', { class: 'sub' }, usable ? compareChip(c, item) : colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, '#E38A82')),
+      h('span', { class: 'sub' }, levelChip(c, item)),
       h('span', { class: 'spacer' }),
       h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
     if (!usable) cell.style.opacity = '.55';
@@ -116,7 +118,7 @@ export class ShopScreen extends Screen {
     if (!def) return '';
     if (def.JobRestriction < 0) return '모든 직업';
     const job = JOBS[def.JobRestriction];
-    return jobLine(job, `${Names.tier(def.Tier)} · ${Names.job(job)} 전용`, size, job === S.c.Job ? 'var(--sub)' : '#E38A82');
+    return jobLine(job, `${Names.job(job)} 전용`, size, job === S.c.Job ? 'var(--sub)' : '#E38A82');
   }
 
   private goodCell(g: ShopGood): HTMLElement {
@@ -232,7 +234,8 @@ export class ShopScreen extends Screen {
     const cell = h('button', { class: 'card-btn', style: { height: '118px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', position: 'relative', background: sel ? 'var(--accent-bg)' : 'var(--card)', borderColor: sel ? 'var(--accent)' : 'var(--card-border)' } },
       kindLine(item, 12),
       h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item)),
-      h('div', { class: 'sub', style: { textAlign: 'left' } }, infoText(c, item)),
+      h('div', { class: 'sub', style: { textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, infoText(c, item)),
+      h('div', { class: 'sub', style: { textAlign: 'left' } }, levelChip(c, item)),
       h('span', { class: 'spacer' }),
       h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${item.Count > 1 ? '개당 ' : ''}${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null),
       sel ? h('span', { class: 'chip' }, '√') : null);

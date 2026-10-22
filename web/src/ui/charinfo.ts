@@ -56,7 +56,7 @@ export function showCharacterInfo(battle: Battle | null = null): void {
     h('div', { style: { fontSize: '13px' } }, `HP ${hp}/${max}`),
     progress(hp / Math.max(1, max), 'var(--red)'),
     h('div', { class: 'row sub', style: { gap: '8px' } }, '경험치', h('div', { class: 'grow' }, progress(expProgress(c), 'var(--blue)'))),
-    h('div', { class: 'sub' }, `골드 ${gold(c.Gold)}`, c.UnspentPoints > 0 ? colored(` · 남은 포인트 ${c.UnspentPoints}`, 'var(--gold)') : null),
+    h('div', { class: 'sub' }, `골드 ${gold(c.Gold)}`, c.UnspentPoints > 0 ? colored(` · 포인트 ${c.UnspentPoints}`, 'var(--gold)') : null),
     ...section('전투 능력치'),
     pair('공격력', String(me?.attack ?? attack(c)), '방어력', String(defense(c))),
     pair('회피', percent(evasion(c)), '받는 피해 감소', percent(damageReduction(c))),
