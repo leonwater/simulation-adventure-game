@@ -13,7 +13,8 @@
     "shot": "node scripts/shot.mjs",
     "cap:sync": "npm run build && cap sync android",
     "balance": "rolldown src/sim/cli.ts --file .sim/balance.mjs --format esm --platform node && node .sim/balance.mjs",
-    "flow": "node scripts/flow.mjs"
+    "flow": "node scripts/flow.mjs",
+    "e2e": "node scripts/e2e.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.3",

@@ -23,6 +23,7 @@ export function isBetter(c: Character, item: ItemInstance | null): boolean {
 export function offerBetterGear(items: (ItemInstance | null)[], after?: () => void): void {
   const c = S.c;
   const queue = items.filter((i): i is ItemInstance => !!i && !asked.has(i.Uid) && isBetter(c, i));
+  if (queue.length === 0) return; // 물을 것이 없으면 after(화면 다시 그리기)를 부르지 않는다: 부르면 afterShow가 다시 물으러 와 끝없이 돈다
   next(queue, after);
 }
 

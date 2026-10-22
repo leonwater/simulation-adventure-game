@@ -38,9 +38,9 @@ export const coach = {
 function show(anchor: string | null, title: string, html: string, action: boolean, onNext: (() => void) | null, onSkip: (() => void) | null): void {
   coach.clear();
   const my = token;
-  const holder = h('div', { class: 'coach', style: { position: 'absolute', inset: '0', zIndex: '45' } });
+  const holder = h('div', { class: 'coach', style: { position: 'absolute', inset: '0', zIndex: '70', pointerEvents: 'none' } });
   // 말풍선이 그려지기 전 잠깐 사이에도 다른 버튼이 눌리지 않게 화면 전체를 막아 둔다
-  const guard = h('div', { style: { position: 'absolute', inset: '0' } });
+  const guard = h('div', { style: { position: 'absolute', inset: '0', pointerEvents: 'auto' } });
   holder.append(guard);
   router.layer.append(holder);
   current = holder;
@@ -65,7 +65,7 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
   };
   const dim = 'rgba(0,0,0,.68)';
   const box = (l: number, t: number, w: number, hgt: number, color: string, click: (() => void) | null): HTMLElement => {
-    const el = h('div', { style: { position: 'absolute', left: `${l}px`, top: `${t}px`, width: `${Math.max(0, w)}px`, height: `${Math.max(0, hgt)}px`, background: color } });
+    const el = h('div', { style: { position: 'absolute', left: `${l}px`, top: `${t}px`, width: `${Math.max(0, w)}px`, height: `${Math.max(0, hgt)}px`, background: color, pointerEvents: 'auto' } });
     if (click) el.addEventListener('click', click);
     return el;
   };
@@ -88,7 +88,7 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
   const spaceBelow = hole ? area.height - hole.b : 0, spaceAbove = hole ? hole.t : 0;
   const below = !!hole && spaceBelow >= estimate + gap && (spaceBelow >= spaceAbove || spaceAbove < estimate + gap);
   const above = !!hole && !below && spaceAbove >= estimate + gap;
-  const bubble = h('div', { style: { position: 'absolute', left: '16px', right: '16px', background: 'var(--dialog)', border: '1px solid var(--gold)', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px' } },
+  const bubble = h('div', { style: { position: 'absolute', left: '16px', right: '16px', background: 'var(--dialog)', border: '1px solid var(--gold)', borderRadius: '12px', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', pointerEvents: 'auto' } },
     h('b', { style: { color: 'var(--gold)', fontSize: '13px' } }, title),
     h('div', { style: { fontSize: '15px', lineHeight: '1.4' } }));
   (bubble.lastElementChild as HTMLElement).innerHTML = html;
@@ -106,7 +106,7 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
   holder.append(bubble);
   // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 작게. 막는 판보다 위라 언제나 눌린다
   if (onSkip) {
-    holder.append(h('button', { style: { position: 'absolute', right: '12px', top: '12px', minHeight: '30px', padding: '0 10px', fontSize: '12px', background: 'var(--dialog)' }, on: { click: () => {
+    holder.append(h('button', { style: { position: 'absolute', right: '12px', top: '12px', minHeight: '30px', padding: '0 10px', fontSize: '12px', background: 'var(--dialog)', pointerEvents: 'auto' }, on: { click: () => {
       coach.clear();
       onSkip();
     } } }, '건너뛰기'));
