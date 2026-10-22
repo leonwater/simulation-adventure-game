@@ -1,0 +1,23 @@
+@font-face { font-family: 'Nanum Gothic'; font-weight: 400; src: url('/fonts/NanumGothic-Regular.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Nanum Gothic'; font-weight: 700; src: url('/fonts/NanumGothic-Bold.ttf') format('truetype'); font-display: swap; }
+:root {
+  --page: #0F1115; --bg: #14161C; --bar: #181B22; --card: #1B1E26; --line: #2A2E38;
+  --text: #ECE7DD; --sub: #A29E95; --gold: #E2B657; --accent: #D9A441; --on-accent: #1A1408;
+  --blue: #6E9BD1; --red: #C9483E; --green: #6FB37A;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: var(--page); color: var(--text);
+  font-family: 'Nanum Gothic', 'Noto Sans KR', system-ui, sans-serif; overscroll-behavior: none; }
+#app { height: 100%; display: flex; justify-content: center; }
+/* 세로 모바일 화면(390×844 비율)을 브라우저 높이에 맞춘다. 폰에서는 화면 전체 */
+.screen { position: relative; width: 100%; max-width: 480px; height: 100%; background: var(--bg);
+  display: flex; flex-direction: column; overflow: hidden;
+  padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+@media (min-width: 600px) { .screen { max-width: calc(100vh * 390 / 844); } }
+button { font: inherit; color: inherit; cursor: pointer; border: 1px solid var(--line); background: #1E222B; border-radius: 12px; min-height: 44px; padding: 0 14px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 700; }
+button:disabled { opacity: .4; cursor: default; }
+.bar { display: flex; align-items: center; height: 64px; padding: 10px 16px; background: var(--bar); border-bottom: 1px solid var(--line); flex-shrink: 0; }
+.scroll { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--card); border: 1px solid #2F333E; border-radius: 12px; padding: 12px 14px; }
+.sub { color: var(--sub); font-size: 12px; }

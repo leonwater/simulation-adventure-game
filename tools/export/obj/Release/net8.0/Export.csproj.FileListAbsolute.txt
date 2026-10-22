@@ -1,0 +1,15 @@
+/home/user/simulation-adventure-game/tools/export/bin/Release/net8.0/Export
+/home/user/simulation-adventure-game/tools/export/bin/Release/net8.0/Export.deps.json
+/home/user/simulation-adventure-game/tools/export/bin/Release/net8.0/Export.runtimeconfig.json
+/home/user/simulation-adventure-game/tools/export/bin/Release/net8.0/Export.dll
+/home/user/simulation-adventure-game/tools/export/bin/Release/net8.0/Export.pdb
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.GeneratedMSBuildEditorConfig.editorconfig
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.AssemblyInfoInputs.cache
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.AssemblyInfo.cs
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.csproj.CoreCompileInputs.cache
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.sourcelink.json
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.dll
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/refint/Export.dll
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.pdb
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/Export.genruntimeconfig.cache
+/home/user/simulation-adventure-game/tools/export/obj/Release/net8.0/ref/Export.dll

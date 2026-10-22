@@ -306,3 +306,11 @@
 - 웹 빌드는 main 푸시마다 자동 (`web-build.yml`). 앱 버전 2.4.x
 - 보통 사망률 1~5층 32% · 6~10층 35% · 11~15층 44% · 16~20층 39% · 21~25층 48% · 26~30층 59%, 30층 정복 9/12 (어려움 1/12)
 - 테스트 182 → 187개 (`V24Tests`)
+
+## 22. 웹 이식 준비 (v2.5 준비, 2026-10-22)
+
+- `web/`: Vite 8 + TypeScript 7 + Vitest 5, 의존성 없는 DOM 도우미, 나눔고딕 포함, 390×844 비율 화면. `npm run check` = 타입 + 테스트 + 빌드
+- `tools/export` (C# → `web/src/data/*.json`): 스킬 40·몬스터·소모품·이벤트 34·직업 4·밸런스 상수. Unity는 `unity-v2.4` 태그로 고정
+- `web/scripts/shot.mjs`: 설치된 크로미움으로 스크린샷 (화면 확인용)
+- Capacitor 8 안드로이드(`web/android`, 세로 고정, 버전은 gradle 속성 `appVersionName/Code`), `web-app.yml`이 웹 zip + 디버그 APK를 `next-web` `next-android`로 올림 (Unity 라이선스 불필요)
+- 첫 TS 코드: `core/rng.ts`, `core/balance.ts`(명중률·이벤트 판정, C# 값과 같은지 테스트)

@@ -140,3 +140,8 @@ Unity 에디터에서는 Window → General → Test Runner → EditMode에서 �
 - 압축을 풀고 그 폴더에서 `python3 -m http.server`를 실행한 뒤 브라우저에서 `localhost:8000`을 연다 (압축 끔, 어느 정적 서버에서도 열림).
 - 저장은 브라우저 저장소(IndexedDB)에 남고(`Assets/Plugins/WebGL/AdventureFs.jslib`로 쓸 때마다 동기화), 브라우저 데이터를 지우면 사라진다. 타이틀의 '게임 종료'는 웹에서 숨긴다.
 - 알려진 한계: 휴대폰 브라우저에서는 이름 입력창에서 키보드가 안 뜰 수 있다 (안드로이드 앱은 정상).
+
+## 웹 이식 개발 (v2.5~)
+
+개발은 `web/`(TypeScript)에서 하고 앱은 Capacitor로 감싼다. 방법·순서·명령은 `docs/WEB_PORT.md`, 작업 규칙은 `CLAUDE.md`.
+Unity판은 `unity-v2.4` 태그로 고정(기준용). `web/`가 바뀌어 main에 올라오면 "웹 앱 빌드"가 웹 zip(`next-web`)과 APK(`next-android`)를 만든다.

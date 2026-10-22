@@ -1,0 +1,89 @@
+# 웹 이식판 빌드 (v2.5~): Unity 없이 web/ 만으로 테스트 → 웹 zip + 안드로이드 APK(Capacitor).
+# - web/ 아래가 바뀌어 main에 올라오면 자동 실행, Actions 탭 Run workflow로도 실행.
+# - 결과는 Releases: "next-web"(압축을 풀고 정적 서버로 열기), "next-android"(APK).
+#   이식이 끝나 Unity판을 대체하면 태그를 android-latest·web-latest로 바꾼다 (docs/WEB_PORT.md).
+# - Unity 라이선스 비밀값이 필요 없다. APK는 디버그 키 서명 (고정 키는 선택: ANDROID_KEYSTORE_* 비밀값이 생기면 추가).
+name: 웹 앱 빌드
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "web/**"
+      - "tools/export/**"
+      - ".github/workflows/web-app.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: web-app
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 테스트 · 웹 · APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: 설치
+        run: npm ci
+
+      - name: 타입 검사 · 테스트 · 웹 빌드
+        run: npm run check
+
+      - name: 웹 zip
+        run: |
+          (cd dist && zip -qr "$GITHUB_WORKSPACE/adventurer-web.zip" .)
+          ls -la "$GITHUB_WORKSPACE/adventurer-web.zip"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: 안드로이드 프로젝트에 웹 빌드 넣기
+        run: npx cap sync android
+
+      - name: APK 빌드 (디버그 키)
+        working-directory: web/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon \
+            -PappVersionName=2.5.${{ github.run_number }} -PappVersionCode=${{ github.run_number }}0
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/adventurer-next.apk"
+          ls -la "$GITHUB_WORKSPACE/adventurer-next.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adventurer-next-${{ github.run_number }}
+          path: |
+            adventurer-web.zip
+            adventurer-next.apk
+          retention-days: 14
+
+      - name: 릴리스 갱신
+        working-directory: ${{ github.workspace }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete next-web --yes --cleanup-tag || true
+          gh release create next-web adventurer-web.zip --prerelease --target "${{ github.sha }}" \
+            --title "웹 이식판 웹 빌드 #${{ github.run_number }}" \
+            --notes "압축을 풀고 폴더에서 'python3 -m http.server' 후 localhost:8000"
+          gh release delete next-android --yes --cleanup-tag || true
+          gh release create next-android adventurer-next.apk --prerelease --target "${{ github.sha }}" \
+            --title "웹 이식판 APK #${{ github.run_number }}" \
+            --notes "Capacitor로 감싼 안드로이드 앱 (테스트용, 디버그 서명)"
