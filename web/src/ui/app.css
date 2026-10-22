@@ -76,7 +76,9 @@ span.ic { background-color: currentColor; -webkit-mask: var(--src) center / cont
 .dim { position: absolute; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 20px; }
 .modal { width: 100%; max-height: 90%; overflow-y: auto; background: var(--dialog); border: 1px solid var(--btn-border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .modal h3 { margin: 0; font-size: 17px; }
-.toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); max-width: 86%; background: rgba(40,43,52,.96); border: 1px solid var(--btn-border); border-radius: 12px; padding: 10px 16px; font-size: 14px; z-index: 60; text-align: center; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; }
+.modal-x { width: 36px; height: 36px; min-height: 0; padding: 0; margin: -6px -6px -6px 0; font-size: 22px; line-height: 1; background: transparent; border: 0; color: var(--sub); }
+.toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); max-width: 86%; background: rgba(40,43,52,.96); border: 1px solid var(--btn-border); border-radius: 12px; padding: 10px 16px; font-size: 14px; z-index: 60; text-align: center; pointer-events: none; }
 .flash { position: absolute; left: 50%; top: 40%; transform: translate(-50%,-50%); font-size: 22px; font-weight: 700; z-index: 60; pointer-events: none; text-shadow: 0 2px 8px #000; animation: flash .8s ease-out forwards; }
 @keyframes flash { from { opacity: 1; transform: translate(-50%,-50%); } to { opacity: 0; transform: translate(-50%,-90%); } }
 

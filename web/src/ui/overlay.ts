@@ -9,13 +9,15 @@ export interface ModalHandle {
 
 /** 가운데 팝업. closable이면 바깥을 누르거나 뒤로 가기로 닫는다. */
 export function modal(title: string | null, closable = true): ModalHandle {
-  const body = h('div', { class: 'modal' }, title ? h('h3', null, title) : null);
+  const body = h('div', { class: 'modal' });
   const dim = h('div', { class: 'dim' }, body);
   let release = (): void => {};
   const close = (): void => {
     release();
     dim.remove();
   };
+  // 제목줄: 닫을 수 있는 팝업은 오른쪽 위에 × 버튼 (바깥을 눌러야만 닫히면 휴대폰에서 찾기 어렵다)
+  if (title || closable) body.append(h('div', { class: 'modal-head' }, h('h3', null, title ?? ''), closable ? h('button', { class: 'modal-x', 'aria-label': '닫기', on: { click: close } }, '×') : null));
   if (closable) dim.addEventListener('click', (e) => e.target === dim && close());
   release = router.pushCloser(() => {
     if (closable) close();
@@ -53,7 +55,7 @@ export function infoBox(title: string, message: string, okLabel = '확인', onCl
 let toastTimer = 0;
 export function toast(message: string): void {
   router.layer.querySelectorAll('.toast').forEach((e) => e.remove());
-  const el = h('div', { class: 'toast', on: { click: () => el.remove() } }, message);
+  const el = h('div', { class: 'toast' }, message);
   router.layer.append(el);
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => el.remove(), 2200);
