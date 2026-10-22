@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { B } from '../src/core/balance';
-import { createCharacter } from '../src/core/character';
 import { Rng } from '../src/core/rng';
 import { shopGrade } from '../src/core/shop';
 

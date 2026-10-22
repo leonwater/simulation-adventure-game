@@ -193,7 +193,7 @@ export function prepareStrong(s: GameSession): void {
     const questMat = d.Guild.Active.some((q) => q.MaterialId === item.TemplateId);
     if (item.Kind === 'Equipment' || (item.Kind === 'Material' && !questMat)) sell(c, item.Uid, item.Count);
   }
-  // 강화: 무기 먼저 (+10까지), 그다음 방어구·장신구를 낮은 쪽부터 +6까지, 남으면 무기를 더
+  // 강화: 무기 먼저 (+13까지), 그다음 방어구·장신구를 낮은 쪽부터 +8까지, 남으면 무기를 더
   const pieces = (): ReturnType<typeof equipped>[] => (['Weapon', 'Helmet', 'Armor', 'Pants', 'Boots', 'Necklace', 'Ring1', 'Ring2'] as const).map((sl) => equipped(c, sl)).filter(Boolean);
   const tryEnhance = (uid: string): boolean => {
     const it = pieces().find((p) => p!.Uid === uid)!;
@@ -211,10 +211,10 @@ export function prepareStrong(s: GameSession): void {
   for (let i = 0; i < 400; i++) {
     const w = equipped(c, 'Weapon');
     const targets = [];
-    if (w && w.Enhance < 10) targets.push(w);
-    for (const p of pieces()) if (p && p.Uid !== w?.Uid && p.Enhance < 6) targets.push(p);
-    if (w && w.Enhance >= 10) targets.push(w);
-    targets.sort((a, b) => (a === w && a.Enhance < 10 ? -1 : b === w && b.Enhance < 10 ? 1 : a.Enhance - b.Enhance));
+    if (w && w.Enhance < 13) targets.push(w);
+    for (const p of pieces()) if (p && p.Uid !== w?.Uid && p.Enhance < 8) targets.push(p);
+    if (w && w.Enhance >= 13) targets.push(w);
+    targets.sort((a, b) => (a === w && a.Enhance < 13 ? -1 : b === w && b.Enhance < 13 ? 1 : a.Enhance - b.Enhance));
     const t = targets.find((x) => x && goldCost(x) + reserve() <= c.Gold);
     if (!t || !tryEnhance(t.Uid)) break;
   }
