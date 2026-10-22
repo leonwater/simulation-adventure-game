@@ -11,6 +11,18 @@ static class Export
 {
     static void Main(string[] args)
     {
+        if (args.Length > 1 && args[0] == "--save")
+        {
+            WriteSampleSave(args[1]);
+            return;
+        }
+        if (args.Length > 1 && args[0] == "--load")
+        {
+            var store = new MemorySaveStore { Content = File.ReadAllText(args[1]) };
+            var data = SaveSystem.Load(store);
+            Console.WriteLine(data == null ? "읽기 실패" : "읽음: " + data.Character.Name + " Lv." + data.Character.Level + " " + data.Character.Job + " 던전=" + (data.Run != null) + " 방=" + (data.Run?.Map.Rooms.Count ?? 0));
+            return;
+        }
         string dir = args.Length > 0 ? args[0] : "out";
         Directory.CreateDirectory(dir);
         Write(dir, "skills.json", SkillDb.AllSkills);
@@ -22,6 +34,29 @@ static class Export
         Write(dir, "jobs.json", jobs);
         Write(dir, "balance.json", Balance());
         Console.WriteLine("내보냄: " + Path.GetFullPath(dir));
+    }
+
+    /// <summary>Unity 저장 형식 확인용 샘플 저장 파일 (웹 테스트가 이 파일을 읽어 본다).</summary>
+    static void WriteSampleSave(string path)
+    {
+        var store = new MemorySaveStore();
+        var s = new GameSession(store, () => new DateTime(2026, 10, 22, 9, 0, 0, DateTimeKind.Utc), 17);
+        s.NewGame("검사", Job.Warrior, Difficulty.Normal);
+        s.SetTutorial(TutorialStage.Done);
+        Leveling.AddExp(s.C, 100 + 283 + 520 + 1000);
+        Leveling.AutoAllocate(s.C);
+        s.C.Gold = 4321;
+        s.C.HighestFloorCleared = 3;
+        s.C.Inventory.Add(ItemDb.CreateEnhanceStone(3));
+        s.C.Inventory.Add(EquipmentFactory.Create(GearType.Ring, ItemGrade.Rare, 8, Job.Warrior, Stat.Strength));
+        s.C.Inventory.Add(ItemDb.CreateSkillBook("w_guard"));
+        SkillSystem.Learn(s.C, "w_guard");
+        s.C.Storage.Add(ItemDb.CreateConsumable("potion_hi", 2));
+        s.SelectFloor(2);
+        s.EnterDungeon();
+        s.Save();
+        File.WriteAllText(path, store.Content, new UTF8Encoding(false));
+        Console.WriteLine("저장 샘플: " + Path.GetFullPath(path));
     }
 
     static void Write(string dir, string name, object value)

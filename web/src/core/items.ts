@@ -325,8 +325,11 @@ export function goldSpent(item: ItemInstance): number {
 }
 export const stoneCost = (item: ItemInstance): number => (item.Enhance >= B.MaxEnhance ? 0 : B.EnhanceStones[item.Enhance + 1]);
 
-/** 상점·상인 진열품 (아이템 + 재고). */
+/** 상점·상인 진열품. Stock: 남은 수량 (-1 = 제한 없음). 마을 소모품은 제한 없음, 스킬서는 1권, 던전 상인 물건은 2~5개. */
 export interface ShopGood {
   Item: ItemInstance;
   Stock: number;
 }
+export const goodUnlimited = (g: ShopGood): boolean => g.Stock < 0;
+/** 한 번에 살 수 있는 최대 개수. */
+export const goodMaxBuy = (g: ShopGood): number => (g.Stock < 0 ? B.MaxStack : g.Stock);

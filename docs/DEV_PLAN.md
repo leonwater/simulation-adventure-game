@@ -331,3 +331,9 @@
 
 - `web/src/core`: `map`(방·층 지도·최단 거리) · `generator`(방 종류 굴림·가지/순환/격자 배치·규칙 보정·튜토리얼 고정 층·상인 물건) · `dungeon`(`DungeonRun`·이동 후보·이동 패드·텔레포트·휴식·보물·다음 층·보스 처치) · `events`(이벤트 34개 표 조회·뽑기) · `eventrules`(선택지 표시·성공률·특수 이벤트 5종·결과 적용) · `explore`(탐험 효과 6종) · `mapevents`(방 공개·숨은 보물 방·보스 통로·연쇄·상인 변신) · `loot`(보상 계산·정산·`collectRewards`) · `settlement`(사망·귀환 정산) · `guild`(퀘스트·창고, P1d 몫 일부를 먼저 이식)
 - 테스트 `dungeon.test.ts` 27개. 웹 테스트 총 94개
+
+## 26. 웹 이식 P1d (마을·저장, 2026-10-22)
+
+- `web/src/core`: `shop`(첫 채움·갱신 비용·구매/판매·가방) · `save`(SaveData·Repair·메모리/localStorage 저장소) · `session`(GameSession: 마을 입장·던전 이동·전투 정산·이벤트·시련·귀환/사망·튜토리얼)
+- 저장 모양은 C#과 같아서 Unity 저장을 읽고(`tests/fixtures/unity-save.json`, `tools/export/run.sh`의 `--save`로 다시 만들 수 있음), TS 저장도 C#이 읽는다 (`--load`로 확인). 시각은 C# ticks 모양이지만 JS 숫자 한계로 아랫자릿수는 부정확
+- 웹 테스트 총 116개

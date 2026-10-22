@@ -1,0 +1,142 @@
+import { B, roundEven } from './balance';
+import type { Character } from './character';
+import { maxChallengeFloor, recalculateCapacities } from './character';
+import { createDrop, createConsumable, createSkillBook, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited } from './items';
+import type { ItemInstance, ShopGood } from './items';
+import { rollItemJob } from './jobs';
+import { knowsSkill } from './equipment';
+import type { Rng } from './rng';
+import { obtainableSkills, preferOwnLevel } from './skills';
+
+export interface ShopState {
+  Equipment: ItemInstance[];
+  Goods: ShopGood[];
+  /** 마지막 자동 갱신 시각 (UTC ticks). */
+  LastRefreshTicks: number;
+  /** 갱신 비용 배수 횟수. */
+  RerollCount: number;
+  Initialized: boolean;
+}
+export const newShopState = (): ShopState => ({ Equipment: [], Goods: [], LastRefreshTicks: 0, RerollCount: 0, Initialized: false });
+
+/** C# DateTime.Ticks (0001-01-01 기준 100ns 단위). 값이 커서 아래 자릿수는 부정확하다. */
+export const toTicks = (d: Date): number => (d.getTime() + 62135596800000) * 10000;
+
+const OPTIONAL = ['potion_hi', 'bandage', 'salve'];
+
+/** 처음 한 번만 물건을 채운다 (시간이 지나도 저절로 바뀌지 않는다). 채웠으면 true. */
+export function ensureStocked(s: ShopState, c: Character, now: Date, rng: Rng): boolean {
+  if (s.Initialized) return false;
+  s.Initialized = true;
+  s.LastRefreshTicks = toTicks(now);
+  s.RerollCount = 0;
+  restock(s, c, rng);
+  return true;
+}
+
+/** 던전에서 돌아오면 갱신 비용이 처음 값(100G)으로 돌아간다. */
+export const resetRerollCost = (s: ShopState): void => {
+  s.RerollCount = 0;
+};
+export const rerollCost = (s: ShopState): number => B.ShopRerollBaseCost * Math.pow(2, Math.min(20, s.RerollCount));
+
+export function reroll(s: ShopState, c: Character, rng: Rng): { ok: boolean; error: string | null } {
+  const cost = rerollCost(s);
+  if (c.Gold < cost) return { ok: false, error: '골드가 부족합니다' };
+  c.Gold -= cost;
+  s.RerollCount++;
+  s.LastRefreshTicks += 1000; // 알림 점: 바뀐 물건을 아직 보지 않았다
+  restock(s, c, rng);
+  return { ok: true, error: null };
+}
+
+export function restock(s: ShopState, c: Character, rng: Rng): void {
+  const floor = Math.max(1, maxChallengeFloor(c));
+  s.Equipment = [];
+  for (let i = 0; i < B.ShopEquipmentSlots; i++) {
+    s.Equipment.push(createDrop(rng, rng.chance(0.3) ? 'Uncommon' : 'Common', floor, c));
+  }
+  s.Goods = [];
+  s.Goods.push({ Item: createConsumable('potion'), Stock: -1 });
+  s.Goods.push({ Item: createConsumable('antidote'), Stock: -1 });
+  const optional = [...OPTIONAL];
+  rng.shuffle(optional);
+  s.Goods.push({ Item: createConsumable(optional[0]), Stock: -1 });
+  // 하급·중급 스킬서 2권: 권마다 지금 직업 70%·다른 직업 각 10%, 아직 배우지 않은 것 · 같은 책은 한 권만
+  for (let i = 0; i < 2; i++) {
+    let books = obtainableSkills(c.Level, rollItemJob(c.Job, rng), ['Low', 'Mid']);
+    books = books.filter((b) => !knowsSkill(c, b.Id) && !s.Goods.some((g) => g.Item.SkillId === b.Id));
+    books = preferOwnLevel(books, c.Level, rng);
+    if (books.length > 0) s.Goods.push({ Item: createSkillBook(rng.pick(books).Id), Stock: 1 });
+  }
+  for (let i = 1; s.Goods.length < B.ShopGoodsSlots && i < optional.length; i++) s.Goods.push({ Item: createConsumable(optional[i]), Stock: -1 });
+}
+
+export const bagPrice = (c: Character): number => B.BagBasePrice * Math.pow(2, Math.min(20, c.BagsBought));
+export const canBuyBag = (c: Character): boolean => c.Inventory.Capacity < B.InventoryMax;
+
+export function buyBag(c: Character): { ok: boolean; error: string | null } {
+  if (!canBuyBag(c)) return { ok: false, error: '가방을 더 늘릴 수 없습니다' };
+  const price = bagPrice(c);
+  if (c.Gold < price) return { ok: false, error: '골드가 부족합니다' };
+  c.Gold -= price;
+  c.BagsBought++;
+  recalculateCapacities(c);
+  return { ok: true, error: null };
+}
+
+function pay(c: Character, price: number, item: ItemInstance): { ok: boolean; error: string | null } {
+  if (c.Gold < price) return { ok: false, error: '골드가 부족합니다' };
+  if (!canAdd(c.Inventory, item)) {
+    return { ok: false, error: overConsumableLimit(c.Inventory, item) ? `소모품은 종류마다 ${B.MaxConsumable}개까지 가질 수 있습니다` : '가방이 가득 찼습니다' };
+  }
+  c.Gold -= price;
+  return { ok: true, error: null };
+}
+
+export function buyEquipment(s: ShopState, c: Character, uid: string): { ok: boolean; error: string | null } {
+  const item = s.Equipment.find((i) => i.Uid === uid);
+  if (!item) return { ok: false, error: '이미 팔린 물건입니다' };
+  const r = pay(c, item.Price, item);
+  if (!r.ok) return r;
+  s.Equipment.splice(s.Equipment.indexOf(item), 1);
+  addItem(c.Inventory, item);
+  return r;
+}
+
+export function buyGood(s: ShopState, c: Character, uid: string, count: number, priceMultiplier = 1): { ok: boolean; error: string | null } {
+  const good = s.Goods.find((g) => g.Item.Uid === uid);
+  if (!good) return { ok: false, error: '이미 팔린 물건입니다' };
+  if (good.Item.Kind === 'SkillBook' && knowsSkill(c, good.Item.SkillId)) return { ok: false, error: '이미 배운 스킬입니다' };
+  count = Math.max(1, Math.min(count, goodMaxBuy(good)));
+  const item = cloneWithCount(good.Item, count);
+  const price = roundEven(good.Item.Price * priceMultiplier) * count;
+  const r = pay(c, price, item);
+  if (!r.ok) return r;
+  addItem(c.Inventory, item);
+  if (!goodUnlimited(good)) {
+    good.Stock -= count;
+    if (good.Stock <= 0) s.Goods.splice(s.Goods.indexOf(good), 1);
+  }
+  return r;
+}
+
+/** 가방의 아이템을 판다 (장착 중인 장비는 팔 수 없음). */
+export function sell(c: Character, uid: string, count: number): { ok: boolean; error: string | null } {
+  const item = findItem(c.Inventory, uid);
+  if (!item) return { ok: false, error: '가방에 없는 아이템입니다' };
+  count = Math.max(1, Math.min(count, item.Count));
+  const taken = takeItem(c.Inventory, uid, count)!;
+  c.Gold += sellPrice(taken) * taken.Count;
+  return { ok: true, error: null };
+}
+
+/** 여러 칸을 한 번에 판다 (칸마다 전부). 받은 골드 합계를 돌려준다. */
+export function sellMany(c: Character, uids: Iterable<string>): number {
+  const before = c.Gold;
+  for (const uid of uids) {
+    const item = findItem(c.Inventory, uid);
+    if (item) sell(c, uid, item.Count);
+  }
+  return c.Gold - before;
+}
