@@ -49,9 +49,16 @@ export const isAccessory = (i: ItemInstance): boolean => i.Kind === 'Equipment' 
 export const canBeUsedBy = (i: ItemInstance, job: Job): boolean => i.JobRestriction < 0 || i.JobRestriction === ord(JOBS, job);
 export const displayName = (i: ItemInstance): string => (i.Enhance > 0 ? `${i.Name} +${i.Enhance}` : i.Name);
 
-/** 강화가 반영된 수치. 강화 1단계마다 기본 수치 × 등급별 2~4% (무기·방어구 최소 +1, 장신구 2단계마다 최소 +1). */
+/** 강화 단계 e까지 쌓인 보너스 단계 수 (+1~+5는 1씩, +6~+10은 2씩, +11~+15는 3씩 → 높이 갈수록 크게 오른다). */
+export function enhanceSteps(e: number): number {
+  let sum = 0;
+  for (let t = 1; t <= e; t++) sum += B.EnhanceStepWeight[Math.min(t, B.EnhanceStepWeight.length) - 1];
+  return sum;
+}
+
+/** 강화가 반영된 수치. 강화 1단계마다 기본 수치 × 등급별 2~4% × 단계 가중치 (무기·방어구 최소 +1, 장신구 2단계마다 최소 +1). */
 export function valueAt(i: ItemInstance, enhance: number): number {
-  const bonus = roundEven(i.BaseValue * B.EnhanceValuePerLevel[ord(GRADES, i.Grade)] * enhance);
+  const bonus = roundEven(i.BaseValue * B.EnhanceValuePerLevel[ord(GRADES, i.Grade)] * enhanceSteps(enhance));
   const min = isAccessory(i) ? Math.floor((enhance + 1) / 2) : enhance;
   return i.BaseValue + Math.max(bonus, min);
 }
@@ -305,11 +312,11 @@ export function maxGradeForFloor(floor: number): ItemGrade {
  * 드롭·보상·상점 장비: 층 기준 레벨이 내 레벨보다 높으면 절반 확률로 내 레벨 -0~2로 다시 정하고,
  * 내 레벨보다 낮은 장비는 10% 확률로 한 등급 위 (그 층 최고 등급까지).
  */
-export function createDrop(rng: Rng, grade: ItemGrade, floor: number, who: { Level: number; Job: Job }): ItemInstance {
+export function createDrop(rng: Rng, grade: ItemGrade, floor: number, who: { Level: number; Job: Job }, promote = true): ItemInstance {
   let lv = itemLevelForFloor(floor, rng);
   if (lv > who.Level && rng.chance(B.OverLevelReroll)) lv = clamp(who.Level - rng.rangeInclusive(0, 2), 1, B.MaxLevel);
   let g = ord(GRADES, grade);
-  if (lv < who.Level && g < ord(GRADES, maxGradeForFloor(floor)) && rng.chance(B.UnderLevelGradeUp)) g++;
+  if (promote && lv < who.Level && g < ord(GRADES, maxGradeForFloor(floor)) && rng.chance(B.UnderLevelGradeUp)) g++;
   return createRandomGear(rng, GRADES[g], lv, who.Job);
 }
 

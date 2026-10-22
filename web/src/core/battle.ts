@@ -404,7 +404,7 @@ export class Battle {
     lines.push('');
     lines.push(`재사용 ${this.cooldownOf(def)}턴`);
     if (def.Target === 'Self') lines.push('자신에게 거는 스킬: 성공률 100%');
-    else if (target) lines.push(`성공 확률: ${this.hitBreakdown(target, def.SuccessBonus)}`);
+    else if (target) lines.push(`${def.Hits > 1 ? '타격당 ' : ''}성공 확률: ${this.hitBreakdown(target, def.SuccessBonus)}`);
     return lines.join('\n');
   }
 

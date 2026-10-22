@@ -16,7 +16,8 @@
     "flow": "node scripts/flow.mjs",
     "e2e": "node scripts/e2e.mjs",
     "monkey": "node scripts/monkey.mjs",
-    "systems": "node scripts/systems.mjs"
+    "systems": "node scripts/systems.mjs",
+    "gear": "rolldown src/sim/gearcli.ts --file .sim/gear.mjs --format esm --platform node && node .sim/gear.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.3",

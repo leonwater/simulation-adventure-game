@@ -4,7 +4,7 @@ import { JOBS } from '../core/enums';
 import { GameSession } from '../core/session';
 import { MemorySaveStore } from '../core/save';
 import type { Battle } from '../core/battle';
-import { prepareInTown, step } from './bot';
+import { prepareInTown, prepareStrong, step } from './bot';
 
 // 난이도별로 봇이 몇 번 도전해 몇 층을 돌파하는지, 어디서 쓰러지는지 잰다 (C# tools/balance와 같은 출력).
 // (실행 파일은 cli.ts) npm run balance -- [도전 횟수=150] [시드 수=3] [난이도=Normal,Hard] [직업=모두, 예: Rogue]
@@ -42,7 +42,7 @@ function playRun(s: GameSession, st: Stats): void {
   if (boss && boss.outcome === 'Defeat') st.bossLosses[bandOf(boss.floor)]++;
 }
 
-export function simulate(diff: Difficulty, runs: number, seeds: number, jobs: readonly Job[]): Stats {
+export function simulate(diff: Difficulty, runs: number, seeds: number, jobs: readonly Job[], strong = false): Stats {
   const st: Stats = {
     reach: new Map(MILESTONES.map((m) => [m, []])), level: new Map(MILESTONES.map((m) => [m, []])),
     runs: new Array(BAND_COUNT).fill(0), deaths: new Array(BAND_COUNT).fill(0), bossFights: new Array(BAND_COUNT).fill(0),
@@ -57,7 +57,7 @@ export function simulate(diff: Difficulty, runs: number, seeds: number, jobs: re
       s.setTutorial('Done');
       const reached = new Set<number>();
       for (let run = 1; run <= runs && s.hasGame; run++) {
-        prepareInTown(s);
+        (strong ? prepareStrong : prepareInTown)(s);
         s.enterDungeon();
         const band = bandOf(s.run!.Floor);
         st.runs[band]++;

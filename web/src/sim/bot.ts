@@ -5,9 +5,9 @@ import { cannotEquipReason, enhance, equip, equipSkill, replacedBy, summary, tra
 import * as dungeon from '../core/dungeon';
 import { successChance, unavailableReason, visibleChoices } from '../core/eventrules';
 import { acceptQuest, isQuestComplete, turnInQuest } from '../core/guild';
-import { countOf, freeCells, goldCost } from '../core/items';
+import { countOf, ENHANCE_STONE_ID, freeCells, goldCost, stoneCost } from '../core/items';
 import type { GameSession } from '../core/session';
-import { bagPrice, buyBag, buyGood, canBuyBag, sell } from '../core/shop';
+import { bagPrice, buyBag, buyEquipment, buyGood, canBuyBag, reroll, rerollCost, sell } from '../core/shop';
 import type { SkillDef } from '../core/skills';
 import { skillDef } from '../core/skills';
 
@@ -157,3 +157,77 @@ export function pickBattleChoice(b: Battle): BattleChoice {
   return best ?? all.find((x) => x.enabled)!;
 }
 
+
+/**
+ * 열심히 키우는 플레이어: 남는 골드를 전부 쓴다 (상점 장비를 사고, 가끔 갱신하고, 강화석을 사서 무기부터 강화, 수련).
+ * 밸런스 시뮬레이션에서 "최소 기준 봇"과 비교해 장비에 투자하면 깨지는지 본다.
+ */
+export function prepareStrong(s: GameSession): void {
+  const c = s.c;
+  const d = s.data!;
+  autoAllocate(c);
+  for (const q of [...d.Guild.Active]) if (isQuestComplete(q, c)) turnInQuest(d.Guild, c, q.Id);
+  while (d.Guild.Active.length < 3 && d.Guild.Board.length > 0) if (!acceptQuest(d.Guild, c, d.Guild.Board[0].Id).ok) break;
+  for (const item of [...c.Inventory.Items]) if (item.Kind === 'SkillBook') useSkillBook(c, item.Uid);
+  for (const st of c.Skills.Learned) equipSkill(c, st.SkillId);
+  const reserve = (): number => 300 + 60 * Math.max(0, 6 - countOf(c.Inventory, 'potion'));
+  const upgrade = (): void => {
+    for (const item of [...c.Inventory.Items]) {
+      if (item.Kind !== 'Equipment' || cannotEquipReason(c, item) != null) continue;
+      if (replacedBy(c, item) == null || (summary(c, item)?.delta ?? 0) > 0) equip(c, item.Uid);
+    }
+  };
+  upgrade();
+  // 상점 장비: 지금 장비보다 좋고 살 수 있으면 산다. 골드가 넉넉하면 갱신해 더 본다 (최대 4번)
+  for (let round = 0; round < 5; round++) {
+    for (const it of [...d.Shop.Equipment]) {
+      if (cannotEquipReason(c, it) != null || (replacedBy(c, it) != null && (summary(c, it)?.delta ?? 0) <= 0)) continue;
+      if (c.Gold - it.Price > reserve() && freeCells(c.Inventory) > 0) buyEquipment(d.Shop, c, it.Uid);
+    }
+    upgrade();
+    if (round < 4 && c.Gold > reserve() + rerollCost(d.Shop) * 12) reroll(d.Shop, c, s.rng);
+    else break;
+  }
+  upgrade();
+  for (const item of [...c.Inventory.Items]) {
+    const questMat = d.Guild.Active.some((q) => q.MaterialId === item.TemplateId);
+    if (item.Kind === 'Equipment' || (item.Kind === 'Material' && !questMat)) sell(c, item.Uid, item.Count);
+  }
+  // 강화: 무기 먼저 (+10까지), 그다음 방어구·장신구를 낮은 쪽부터 +6까지, 남으면 무기를 더
+  const pieces = (): ReturnType<typeof equipped>[] => (['Weapon', 'Helmet', 'Armor', 'Pants', 'Boots', 'Necklace', 'Ring1', 'Ring2'] as const).map((sl) => equipped(c, sl)).filter(Boolean);
+  const tryEnhance = (uid: string): boolean => {
+    const it = pieces().find((p) => p!.Uid === uid)!;
+    if (it.Enhance >= 15) return false;
+    const need = stoneCost(it);
+    if (need > countOf(c.Inventory, ENHANCE_STONE_ID)) {
+      const stone = d.Shop.Goods.find((g) => g.Item.Kind === 'EnhanceStone');
+      const lack = need - countOf(c.Inventory, ENHANCE_STONE_ID);
+      if (!stone || c.Gold < goldCost(it) + stone.Item.Price * lack + reserve() || !buyGood(d.Shop, c, stone.Item.Uid, lack).ok) return false;
+    }
+    if (c.Gold - goldCost(it) < reserve()) return false;
+    enhance(c, uid, s.rng);
+    return true;
+  };
+  for (let i = 0; i < 400; i++) {
+    const w = equipped(c, 'Weapon');
+    const targets = [];
+    if (w && w.Enhance < 10) targets.push(w);
+    for (const p of pieces()) if (p && p.Uid !== w?.Uid && p.Enhance < 6) targets.push(p);
+    if (w && w.Enhance >= 10) targets.push(w);
+    targets.sort((a, b) => (a === w && a.Enhance < 10 ? -1 : b === w && b.Enhance < 10 ? 1 : a.Enhance - b.Enhance));
+    const t = targets.find((x) => x && goldCost(x) + reserve() <= c.Gold);
+    if (!t || !tryEnhance(t.Uid)) break;
+  }
+  for (const st of c.Skills.Learned) if (c.Gold > trainingCost(st) + reserve() && trainingCost(st) > 0) trainSkill(c, st.SkillId);
+  const potion = d.Shop.Goods.find((g) => g.Item.TemplateId === 'potion');
+  const need = 6 - countOf(c.Inventory, 'potion');
+  if (potion && need > 0 && c.Gold > potion.Item.Price * need) buyGood(d.Shop, c, potion.Item.Uid, need);
+  const hi = d.Shop.Goods.find((g) => g.Item.TemplateId === 'potion_hi');
+  const needHi = 3 - countOf(c.Inventory, 'potion_hi');
+  if (hi && needHi > 0 && c.Gold > hi.Item.Price * needHi + reserve()) buyGood(d.Shop, c, hi.Item.Uid, needHi);
+  if (freeCells(c.Inventory) < 4 && canBuyBag(c) && c.Gold > bagPrice(c) * 2) buyBag(c);
+  let floor = maxChallengeFloor(c);
+  while (floor > 1 && c.Level < Math.round(floor * 1.7)) floor--;
+  s.selectFloor(floor);
+  s.save();
+}

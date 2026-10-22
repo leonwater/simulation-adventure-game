@@ -3,6 +3,7 @@ import type { Character } from './character';
 import { maxChallengeFloor, recalculateCapacities } from './character';
 import { createDrop, consumableAt, createConsumable, createEnhanceStone, createSkillBook, rollDropGrade, stonePrice, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited } from './items';
 import type { ItemInstance, ShopGood } from './items';
+import type { ItemGrade } from './enums';
 import { rollItemJob } from './jobs';
 import { knowsSkill } from './equipment';
 import type { Rng } from './rng';
@@ -52,11 +53,18 @@ export function reroll(s: ShopState, c: Character, rng: Rng): { ok: boolean; err
   return { ok: true, error: null };
 }
 
+/** 상점 장비 등급: 보통 일반·고급, 아주 가끔 희귀(5층~)·영웅(12층~). 상점에서는 레벨이 낮다고 등급이 오르지 않고 전설은 나오지 않는다. */
+export function shopGrade(rng: Rng, floor: number): ItemGrade {
+  if (floor >= B.GradeFirstFloor[3] && rng.chance(B.ShopEpicChance)) return 'Epic';
+  if (floor >= B.GradeFirstFloor[2] && rng.chance(B.ShopRareChance)) return 'Rare';
+  return rng.chance(0.3) ? 'Uncommon' : 'Common';
+}
+
 export function restock(s: ShopState, c: Character, rng: Rng): void {
   const floor = Math.max(1, maxChallengeFloor(c));
   s.Equipment = [];
   for (let i = 0; i < B.ShopEquipmentSlots; i++) {
-    s.Equipment.push(createDrop(rng, rng.chance(0.3) ? 'Uncommon' : 'Common', floor, c));
+    s.Equipment.push(createDrop(rng, shopGrade(rng, floor), floor, c, false));
   }
   s.Goods = [];
   s.Goods.push({ Item: consumableAt('potion', floor), Stock: -1 });

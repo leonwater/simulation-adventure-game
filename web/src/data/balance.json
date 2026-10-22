@@ -73,6 +73,7 @@
     0.035,
     0.04
   ],
+  "EnhanceStepWeight": [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3],
   "EnhanceSuccess": [
     0,
     1,
@@ -170,6 +171,8 @@
   "TrainingGoldPerLevel": 200,
   "SkillBookLevelWindow": 5,
   "ShopEquipmentSlots": 6,
+  "ShopRareChance": 0.02,
+  "ShopEpicChance": 0.003,
   "ShopGoodsSlots": 6,
   "ShopRerollBaseCost": 100,
   "MerchantPriceMultiplier": 1.5,
@@ -202,6 +205,9 @@
   "EarlyBoostUntil": 8,
   "EarlyBoostHp": 25,
   "EarlyBoostAttack": 3.5,
+  "LateFloorStart": 20,
+  "LateHpBonus": 0.5,
+  "LateAttackBonus": 0.5,
   "EliteHp": 1.6,
   "EliteAttack": 1.25,
   "EliteReward": 2,

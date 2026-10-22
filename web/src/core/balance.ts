@@ -45,6 +45,8 @@ export const earlyBoostScale = (d: string): number => (d === 'Easy' ? 0 : d === 
 
 export const enemyHp = (f: number, early = 1): number => 200 + f * 70 - f * f * 0.5 + B.EarlyBoostHp * earlyBoost(f) * early;
 export const enemyAttack = (f: number, early = 1): number => (5 + f * 2.8 + f * f * 0.05) * 0.55 + B.EarlyBoostAttack * earlyBoost(f) * early;
+/** 후반(LateFloorStart층~)부터 적 HP·공격력이 더 가파르게 오른다: 30층에서 1 + LateHpBonus / 1 + LateAttackBonus. */
+export const lateRamp = (f: number): number => clamp((f - B.LateFloorStart + 1) / (B.MaxFloor - B.LateFloorStart + 1), 0, 1);
 export const enemyDefense = (f: number): number => 8 + f * 6;
 export const enemyExp = (f: number): number => roundEven(10 + 20 * Math.pow(f, 1.5));
 export const enemyGold = (f: number): number => 8 + f * 6;

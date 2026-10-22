@@ -1,4 +1,4 @@
-import { B, difficultyMultiplier, earlyBoostScale, enemyAttack, enemyDefense, enemyExp, enemyGold, enemyHp, expToNext, roundEven } from './balance';
+import { B, difficultyMultiplier, earlyBoostScale, enemyAttack, enemyDefense, enemyExp, enemyGold, enemyHp, expToNext, lateRamp, roundEven } from './balance';
 import { equipBossTraits } from './bosskit';
 import { Combatant } from './combatant';
 import type { MonsterSpecies } from './monsters';
@@ -13,14 +13,15 @@ export function createEnemy(sp: MonsterSpecies, floor: number, diff: string, rol
   const atkRole = role === 2 ? (sp.UniqueBoss ? B.UniqueBossAttack : B.FloorBossAttack) : role === 1 ? B.EliteAttack : 1;
   const reward = role === 2 ? (sp.UniqueBoss ? B.UniqueBossReward : B.FloorBossReward) : role === 1 ? B.EliteReward : 1;
   const early = earlyBoostScale(diff);
-  const hp = Math.max(1, roundEven(enemyHp(floor, early) * sp.HpMul * hpRole * d));
+  const late = lateRamp(floor);
+  const hp = Math.max(1, roundEven(enemyHp(floor, early) * sp.HpMul * hpRole * d * (1 + B.LateHpBonus * late)));
   let name = sp.Name;
   if (role === 1) name = `정예 ${sp.Name}`;
   else if (role === 2 && !sp.UniqueBoss) name = `${sp.Name} 우두머리`;
   const c = new Combatant();
   c.name = name;
   c.maxHp = c.hp = hp;
-  c.attack = Math.max(1, roundEven(enemyAttack(floor, early) * sp.AttackMul * atkRole * d));
+  c.attack = Math.max(1, roundEven(enemyAttack(floor, early) * sp.AttackMul * atkRole * d * (1 + B.LateAttackBonus * late)));
   c.defense = roundEven(enemyDefense(floor) * sp.DefenseMul);
   c.requirement = (10 + floor * 2.4) * sp.RequirementMul + (role > 0 ? 2 : 0);
   c.resist = role === 2 ? 0.3 : role === 1 ? 0.1 : 0;

@@ -322,6 +322,8 @@ export class BattleScreen extends Screen {
     // 아이템·도주는 추가 설명 없이 (못 쓸 때는 눌렀을 때 알림)
     const plain = ch.kind === 'Item' || ch.kind === 'Flee';
     const right = plain ? (ch.kind === 'Flee' && ch.enabled ? `${Math.round(ch.chance * 100)}%` : '') : ch.enabled ? (ch.kind === 'Wait' ? ch.note : `${Math.round(ch.chance * 100)}%`) : ch.note;
+    // 여러 번 때리는 스킬의 %는 한 번 때릴 때의 확률
+    const perHit = pct && ch.kind === 'Skill' && (skillDef(ch.skillId)?.Hits ?? 1) > 1;
     let label = ch.label;
     if (ch.target >= 0) {
       const cut = label.indexOf(' · ');
@@ -334,7 +336,9 @@ export class BattleScreen extends Screen {
     const el = h('div', { role: 'button', class: 'bchoice', style: { background: st.fill, border: `1px solid ${st.border}`, minHeight: subText ? '60px' : '52px', cursor: 'pointer', opacity: ch.enabled ? '1' : '.5' } },
       h('i', { class: 'kbar', style: { background: st.bar } }),
       h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name' }, label), subText ? h('span', { class: 'dmg' }, subText) : null),
-      right ? h('span', { style: { fontSize: pct ? '15px' : '12px', fontWeight: pct ? '700' : '400', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right' } }, right) : null);
+      right ? h('div', { class: 'col', style: { alignItems: 'flex-end', gap: '0' } },
+        perHit ? h('span', { style: { fontSize: '11px', color: 'var(--sub)' } }, '타격당') : null,
+        h('span', { style: { fontSize: pct ? '15px' : '12px', fontWeight: pct ? '700' : '400', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right' } }, right)) : null);
     longPress(el, () => {
       if (!tutorial.running) this.showDetail(ch); // 튜토리얼 중에는 안내한 행동만
     }, () => this.pick(ch));
