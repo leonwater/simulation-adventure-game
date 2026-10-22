@@ -32,7 +32,7 @@ npm run shot [url] [out.png]   # 390×844 스크린샷 (화면 확인은 이것�
 | 단계 | 내용 | 확인 방법 |
 |---|---|---|
 | P0 | 뼈대: 빌드·테스트·스크린샷·Capacitor·CI·데이터 내보내기 **(완료)** | `npm run check`, 첫 화면 스크린샷 |
-| P1a | Core 기본: 캐릭터·능력치·레벨·등급·직업, 아이템·장비·강화, 스킬 | C# 테스트(`CharacterTests` `ItemSkillTests` 등)를 vitest로 옮김 |
+| P1a | Core 기본: 캐릭터·능력치·레벨·등급·직업, 아이템·장비·강화, 스킬 | C# 테스트(`CharacterTests` `ItemSkillTests` 등)를 vitest로 옮김 | — **완료** (`web/src/core` enums·names·jobs·skills·items·character·equipment, `tests/core-basics.test.ts`)
 | P1b | Core 전투(상태 이상·보스 특성·몬스터 행동·확률) | `BattleTests` `V21~V24Tests`를 옮김 + 통계 비교 |
 | P1c | Core 던전: 층 생성(배치 규칙)·이동 패드·이벤트 34종·드롭·정산 | `DungeonTests` `SpecialEventTests` `V23~V24Tests` |
 | P1d | Core 마을·저장: 상점·길드·퀘스트·창고, 저장(C#과 **같은 JSON 필드 이름**이라 Unity 저장도 읽을 수 있게) | `TownTests` `SaveTests` |

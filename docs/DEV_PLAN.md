@@ -314,3 +314,9 @@
 - `web/scripts/shot.mjs`: 설치된 크로미움으로 스크린샷 (화면 확인용)
 - Capacitor 8 안드로이드(`web/android`, 세로 고정, 버전은 gradle 속성 `appVersionName/Code`), `web-app.yml`이 웹 zip + 디버그 APK를 `next-web` `next-android`로 올림 (Unity 라이선스 불필요)
 - 첫 TS 코드: `core/rng.ts`, `core/balance.ts`(명중률·이벤트 판정, C# 값과 같은지 테스트)
+
+## 23. 웹 이식 P1a (코어 기본, 2026-10-22)
+
+- `web/src/core`: `enums`(C# 열거형 순서·이름, 저장 시 이름 문자열) · `names`(한글 이름·골드·조사) · `jobs`(직업 표·시작 능력치·직업 굴림) · `skills`(스킬 40종 표 조회) · `items`(아이템·보관함·장비 생성·드롭·강화 비용) · `character`(캐릭터·파생 수치·등급·레벨업·배분) · `equipment`(착용/해제·강화·스킬 습득/장착/수련)
+- 저장 모양은 C#과 같은 필드 이름 (`Character`, `ItemInstance`, `ItemContainer`, `Equipment.Slots`, `SkillSet`). C# `Math.Round`(짝수 반올림)는 `roundEven`으로 맞춤
+- 테스트 `core-basics.test.ts` 22개 (CharacterTests·ItemSkillTests 주요 항목 이식). 웹 테스트 총 29개

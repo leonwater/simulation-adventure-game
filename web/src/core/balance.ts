@@ -21,3 +21,18 @@ export const eventChance = (stat: number, requirement: number, luck: number): nu
   clamp(B.EventBase + (stat - requirement) * B.EventPerStatPoint + luck * B.EventBonusPerLuck, B.EventMin, B.EventMax);
 
 export const enemyRequirement = (floor: number): number => 10 + floor * 2.4;
+
+/** C# Math.Round (짝수 쪽으로 반올림). */
+export function roundEven(x: number): number {
+  const f = Math.floor(x);
+  const d = x - f;
+  if (d < 0.5) return f;
+  if (d > 0.5) return f + 1;
+  return f % 2 === 0 ? f : f + 1;
+}
+
+/** 다음 레벨까지 필요한 경험치. */
+export const expToNext = (level: number): number => (level >= B.MaxLevel ? 0 : roundEven(100 * Math.pow(level, 1.5)));
+
+/** 강화 목표 단계 target에 실패했을 때 한 단계 내려갈 확률. */
+export const enhanceDowngradeChance = (target: number): number => (target >= 11 ? 0.5 : target >= 7 ? 0.3 : 0);
