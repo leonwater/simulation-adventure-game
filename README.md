@@ -144,4 +144,4 @@ Unity 에디터에서는 Window → General → Test Runner → EditMode에서 �
 ## 웹 이식 개발 (v2.5~)
 
 개발은 `web/`(TypeScript)에서 하고 앱은 Capacitor로 감싼다. 방법·순서·명령은 `docs/WEB_PORT.md`, 작업 규칙은 `CLAUDE.md`.
-Unity판은 `unity-v2.4` 태그로 고정(기준용). `web/`가 바뀌어 main에 올라오면 "웹 앱 빌드"가 웹 zip(`next-web`)과 APK(`next-android`)를 만든다.
+Unity판은 `unity-v2.4` 태그로 고정(기준용). `web/`가 바뀌어 main에 올라오면 "웹 앱 빌드"가 웹 zip(`web-latest`)과 APK(`android-latest`)를 만든다.

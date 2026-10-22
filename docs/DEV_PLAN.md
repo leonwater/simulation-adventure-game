@@ -350,3 +350,9 @@
 - `web/src/ui`(router·overlay·kit·chrome·items 등)와 `web/src/screens`(title·register·town·character·inventory·skills·shop·guild·blacksmith·training·dungeon·event·merchant·battle·result)로 C# 화면을 모두 옮김
 - P2f: `ui/coach.ts`(어둡게 덮고 한 곳만 밝히는 안내·`data-anchor` 이름표) · `ui/tutorial.ts`(마을 안내 → 첫 던전 → 귀환 후 창고, 첫 던전 중 가방·도주·타이틀로 잠금, 완료 뒤 건너뛰기)
 - 화면 확인: `cd web && npm run build && npx vite preview --port 4173` 후 `npm run flow -- "url=http://localhost:4173/?debug" ...`
+
+## 29. 웹 이식 P4 (교체, 2026-10-22)
+
+- `web-app.yml`이 `web-latest`(웹 zip)·`android-latest`(APK)에 올린다. 옛 `next-*` 릴리스는 더 만들지 않는다
+- Unity 워크플로(`android-build.yml`·`web-build.yml`)는 **삭제하지 않고** 푸시 자동 실행을 끄고 수동 실행 전용으로 보관, 결과 태그는 `unity-android`·`unity-web`
+- 남은 것: 새 APK 실기기 확인 (Unity판과 서명이 달라 지우고 설치)

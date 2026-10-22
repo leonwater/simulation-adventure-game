@@ -1,6 +1,7 @@
-# Android APK 자동 빌드 (GameCI)
+# [보관용] Unity판 APK 빌드 (GameCI). v2.5부터 자동 실행하지 않고 Actions 탭 "Run workflow"로만 돈다.
+# 결과 태그는 unity-android (현재 앱은 web-app.yml이 android-latest로 올린다).
 # - main에 게임 파일이 바뀌어 올라오면, 또는 Actions 탭에서 "Run workflow"를 누르면 실행된다.
-# - 결과 APK는 Releases의 "android-latest"(휴대폰에서 바로 받기)와 Actions 실행 결과(Artifacts)에 올라간다.
+# - 결과 APK는 Releases의 "unity-android"(휴대폰에서 바로 받기)와 Actions 실행 결과(Artifacts)에 올라간다.
 # - 필요한 비밀값(Settings → Secrets and variables → Actions):
 #     UNITY_LICENSE  : Unity_lic.ulf 파일 내용 전체
 #     UNITY_EMAIL    : Unity 계정 이메일
@@ -9,16 +10,9 @@
 #     (넣으면 고정 키로 서명되어 기존 앱을 지우지 않고 업데이트 설치할 수 있다. 없으면 빌드마다 디버그 키가 달라
 #      새 APK를 덮어 설치할 수 없다)
 # - 버전 코드는 실행 번호로 매번 커진다 (낮아지면 안드로이드가 업데이트 설치를 거부한다).
-name: Android APK 빌드
+name: Android APK 빌드 (Unity, 보관용)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "Assets/**"
-      - "Packages/**"
-      - "ProjectSettings/**"
-      - ".github/workflows/android-build.yml"
   workflow_dispatch:
 
 permissions:
@@ -115,8 +109,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cp "${{ steps.apk.outputs.path }}" adventurer.apk
-          gh release delete android-latest --yes --cleanup-tag || true
-          gh release create android-latest adventurer.apk \
+          gh release delete unity-android --yes --cleanup-tag || true
+          gh release create unity-android adventurer.apk \
             --prerelease \
             --target "${{ github.sha }}" \
             --title "최신 APK (빌드 #${{ github.run_number }})" \

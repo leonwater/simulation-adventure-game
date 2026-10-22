@@ -26,7 +26,7 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 ```
 
 - 화면을 바꾼 뒤에는 `npm run build && npm run preview &` → `npm run shot` → 이미지를 열어 확인한다 (Unity에서는 불가능했던 일).
-- 푸시하면 `.github/workflows/web-app.yml`이 테스트 → 웹 zip → APK를 만들어 Releases `next-web`, `next-android`에 올린다 (약 5~8분).
+- 푸시하면 `.github/workflows/web-app.yml`이 테스트 → 웹 zip → APK를 만들어 Releases `web-latest`, `android-latest`에 올린다 (약 5~8분).
 
 ## 이식 순서
 
@@ -40,7 +40,7 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 | P1e | 자동 플레이 봇 + 밸런스 시뮬레이션 | C# `tools/balance` 결과와 사망률 ±3%p 이내 — **완료** (`web/src/sim` `npm run balance`, 보통 사망률 C#과 ±3%p 이내: C# 30.3/32.1/38.7/40.2/52.0/61.4 → 웹 27.8/30.8/37.4/41.8/53.0/61.5) |
 | P2 | 화면: 시작·등록 → 마을·시설 → 캐릭터·가방·스킬 → 던전 → 전투 → 이벤트·상인 → 정산·클리어 → 설정 → 튜토리얼 | 화면마다 `npm run shot`, UI 시안(Claude Design)과 비교 |
 | P3 | 패리티 확인: 테스트 187개 전부 대응, 밸런스·사망률 일치 | 완료 (아래 대응표) |
-| P4 | 교체: 릴리스 태그를 `android-latest` `web-latest`로, Unity 워크플로·폴더 정리 | 새 APK 실기기 확인 |
+| P4 | 교체: 릴리스 태그를 `android-latest` `web-latest`로 (완료). Unity 워크플로는 지우지 않고 수동 실행 전용·`unity-android` `unity-web` 태그로 보관 | 새 APK 실기기 확인 |
 
 - 새 기능·수정은 **이식된 부분은 TS에만** 한다. 아직 이식 안 된 부분을 고쳐야 하면 먼저 그 부분을 이식한다 (Unity는 고치지 않는다).
 - 데이터 표(스킬·몬스터 등)를 바꿀 일이 생기면, 그 표가 아직 C#에만 있는 동안은 C#을 고치고 `tools/export/run.sh`로 다시 뽑는다. 표를 TS로 옮긴 뒤에는 TS가 원본이다 (그때 이 줄을 고친다).

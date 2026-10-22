@@ -1,16 +1,9 @@
-# 웹(WebGL) 빌드 (GameCI) - main에 게임 파일이 바뀌어 올라오면 안드로이드와 함께 자동으로 돈다 (v2.4). Actions 탭 "Run workflow"로도 실행.
-# 결과: Releases의 "web-latest"에 adventurer-web.zip (압축을 풀고 index.html을 로컬 서버로 열면 된다) + Actions 실행 결과.
+# [보관용] Unity판 WebGL 빌드 (GameCI). v2.5부터 자동 실행하지 않고 Actions 탭 "Run workflow"로만 돈다. 결과 태그는 unity-web.
+# 결과: Releases의 "unity-web"에 adventurer-web.zip (압축을 풀고 index.html을 로컬 서버로 열면 된다) + Actions 실행 결과.
 # 필요한 비밀값은 안드로이드 빌드와 같다 (UNITY_LICENSE · UNITY_EMAIL · UNITY_PASSWORD).
-name: 웹 빌드
+name: 웹 빌드 (Unity, 보관용)
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "Assets/**"
-      - "Packages/**"
-      - "ProjectSettings/**"
-      - ".github/workflows/web-build.yml"
   workflow_dispatch:
 
 permissions:
@@ -97,8 +90,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete web-latest --yes --cleanup-tag || true
-          gh release create web-latest adventurer-web.zip \
+          gh release delete unity-web --yes --cleanup-tag || true
+          gh release create unity-web adventurer-web.zip \
             --prerelease \
             --target "${{ github.sha }}" \
             --title "최신 웹 빌드 (빌드 #${{ github.run_number }})" \

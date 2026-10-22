@@ -1,7 +1,6 @@
 # 웹 이식판 빌드 (v2.5~): Unity 없이 web/ 만으로 테스트 → 웹 zip + 안드로이드 APK(Capacitor).
 # - web/ 아래가 바뀌어 main에 올라오면 자동 실행, Actions 탭 Run workflow로도 실행.
-# - 결과는 Releases: "next-web"(압축을 풀고 정적 서버로 열기), "next-android"(APK).
-#   이식이 끝나 Unity판을 대체하면 태그를 android-latest·web-latest로 바꾼다 (docs/WEB_PORT.md).
+# - 결과는 Releases: "web-latest"(압축을 풀고 정적 서버로 열기), "android-latest"(APK). Unity판 워크플로는 보관용(수동 실행, unity-* 태그).
 # - Unity 라이선스 비밀값이 필요 없다. APK는 디버그 키 서명 (고정 키는 선택: ANDROID_KEYSTORE_* 비밀값이 생기면 추가).
 name: 웹 앱 빌드
 
@@ -79,11 +78,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release delete next-web --yes --cleanup-tag || true
-          gh release create next-web adventurer-web.zip --prerelease --target "${{ github.sha }}" \
-            --title "웹 이식판 웹 빌드 #${{ github.run_number }}" \
+          gh release delete web-latest --yes --cleanup-tag || true
+          gh release create web-latest adventurer-web.zip --prerelease --target "${{ github.sha }}" \
+            --title "최신 웹 빌드 #${{ github.run_number }}" \
             --notes "압축을 풀고 폴더에서 'python3 -m http.server' 후 localhost:8000"
-          gh release delete next-android --yes --cleanup-tag || true
-          gh release create next-android adventurer-next.apk --prerelease --target "${{ github.sha }}" \
-            --title "웹 이식판 APK #${{ github.run_number }}" \
+          gh release delete android-latest --yes --cleanup-tag || true
+          gh release create android-latest adventurer-next.apk --prerelease --target "${{ github.sha }}" \
+            --title "최신 APK #${{ github.run_number }}" \
             --notes "Capacitor로 감싼 안드로이드 앱 (테스트용, 디버그 서명)"
