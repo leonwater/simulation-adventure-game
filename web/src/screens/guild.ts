@@ -14,6 +14,7 @@ import { button, divider, h, icon, row, sub, tabs } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { rankIcon } from '../ui/theme';
+import { tutorial } from '../ui/tutorial';
 import { navigate } from './nav';
 
 const num = (n: number): string => n.toLocaleString('en-US');
@@ -46,7 +47,11 @@ export class GuildScreen extends Screen {
         this.tab = i;
         router.rebuild();
       }),
-      h('div', { class: 'scroll', style: { gap: '8px' } }, ...(this.tab === 0 ? this.quests() : this.tab === 1 ? this.rankTab() : this.storageTab())));
+      h('div', { class: 'scroll', 'data-anchor': this.tab === 2 ? 'guild.storage' : 'guild.list', style: { gap: '8px' } }, ...(this.tab === 0 ? this.quests() : this.tab === 1 ? this.rankTab() : this.storageTab())));
+  }
+
+  afterShow(): void {
+    tutorial.onGuild(this.tab);
   }
 
   // ── 퀘스트 ──

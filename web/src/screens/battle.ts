@@ -1,3 +1,4 @@
+import { tutorial } from '../ui/tutorial';
 import { B } from '../core/balance';
 import type { BattleChoice, BattleEvent, DamageKind, LogTone } from '../core/battle';
 import type { Battle } from '../core/battle';
@@ -108,6 +109,9 @@ export class BattleScreen extends Screen {
       const events = this.pending;
       this.pending = null;
       this.startPlayback(events);
+    } else if (!this.playing && !this.finished) {
+      tutorial.onBattle();
+      tutorial.onBossIntent();
     }
   }
 
@@ -165,7 +169,7 @@ export class BattleScreen extends Screen {
     // 보스의 다음 턴 행동 예고는 이름 자리에 주황색으로 (연출 중에는 이름)
     const intent = enemy && alive && c.kit && !this.playing && !this.pending ? c.kit.intent : '';
     const warn = !!intent;
-    const name = h('div', { class: 'unit-label', style: { left: `${center[0] - width / 2}px`, top: `${top - (enemy ? 44 : 30)}px`, width: `${width}px`, fontSize: `${enemy ? 11 : 12}px`, color: warn ? '#FF9A4A' : alive ? 'var(--text)' : 'var(--sub)', fontWeight: !enemy || warn ? '700' : '400' } }, warn ? `! ${intent}` : title);
+    const name = h('div', { class: 'unit-label', 'data-anchor': warn ? 'battle.intent' : undefined, style: { left: `${center[0] - width / 2}px`, top: `${top - (enemy ? 44 : 30)}px`, width: `${width}px`, fontSize: `${enemy ? 11 : 12}px`, color: warn ? '#FF9A4A' : alive ? 'var(--text)' : 'var(--sub)', fontWeight: !enemy || warn ? '700' : '400' } }, warn ? `! ${intent}` : title);
     stage.append(name);
     let hpText = name;
     if (enemy) {
@@ -258,10 +262,12 @@ export class BattleScreen extends Screen {
         ? h('div', { class: 'sub grow' }, '대상 ', colored(targetName, 'var(--gold)'), ' · 적을 눌러 바꾸기')
         : h('div', { class: 'sub grow' }, '모든 선택은 1턴을 사용합니다'),
       sub('길게 누르면 상세')));
-    const list = h('div', { class: 'col', style: { gap: '6px', overflowY: 'auto', flex: '1', minHeight: '0', paddingTop: '2px' } });
+    const list = h('div', { class: 'col', 'data-anchor': 'battle.choices', style: { gap: '6px', overflowY: 'auto', flex: '1', minHeight: '0', paddingTop: '2px' } });
     for (const ch of b.getChoices()) {
       if (ch.target >= 0 && ch.target !== this.target) continue;
-      list.append(this.choice(ch));
+      const el = this.choice(ch);
+      if (ch.kind === 'Attack' && !list.querySelector('[data-anchor="battle.choice0"]')) el.dataset.anchor = 'battle.choice0';
+      list.append(el);
     }
     if (this.playing) list.style.pointerEvents = 'none';
     parent.append(list);
@@ -312,6 +318,7 @@ export class BattleScreen extends Screen {
 
   private pick(ch: BattleChoice): void {
     if (this.playing || this.finished || this.leaving || !ch.enabled) return;
+    if (ch.kind === 'Flee' && tutorial.blocks('도주')) return;
     if (ch.kind === 'Item') return this.itemMenu();
     this.execute(ch);
   }

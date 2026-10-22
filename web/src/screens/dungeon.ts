@@ -1,3 +1,5 @@
+import { anchored } from '../ui/coach';
+import { tutorial } from '../ui/tutorial';
 import { B } from '../core/balance';
 import { AllocationDraft, expProgress, maxHp } from '../core/character';
 import * as dungeon from '../core/dungeon';
@@ -60,7 +62,7 @@ export class DungeonScreen extends Screen {
     this.choices(dock, run);
     const canReturn = S.canReturn;
     const ibtn = (name: string, label: string, onClick: () => void, style: 'normal' | 'return' | 'locked' = 'normal'): HTMLElement => {
-      const b = h('button', { class: 'ibtn', style: style === 'return' ? { background: 'var(--return-bg)', borderColor: 'var(--return-border)' } : style === 'locked' ? { background: '#221A1B', borderColor: '#4E3838', color: '#8A6E6C' } : {}, on: { click: onClick } },
+      const b = h('button', { class: 'ibtn', 'data-anchor': name === 'return' ? 'dungeon.return' : undefined, style: style === 'return' ? { background: 'var(--return-bg)', borderColor: 'var(--return-border)' } : style === 'locked' ? { background: '#221A1B', borderColor: '#4E3838', color: '#8A6E6C' } : {}, on: { click: onClick } },
         icon(name, 26, style === 'locked' ? '#8A6E6C' : undefined), label);
       return b;
     };
@@ -73,7 +75,7 @@ export class DungeonScreen extends Screen {
         h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px' } }, h('b', { class: 'sub' }, sit.title), h('div', { class: 'body' }, sit.text))),
       dock,
       h('div', { class: 'bottombar' },
-        ibtn('bag', '가방', () => router.show(new InventoryScreen(true))),
+        ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
         ibtn('character', '정보', () => showCharacterInfo()),
         ibtn('guild', '퀘스트', () => showQuests()),
         ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast('아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
@@ -86,6 +88,7 @@ export class DungeonScreen extends Screen {
     // 방에서 얻은 장비가 지금 장비보다 좋으면 바로 착용할지 묻는다
     const run = S.run;
     if (S.notice?.Loot && run && !run.FloorIntroPending) offerBetterGear(S.notice.Loot.Items, () => router.rebuild());
+    if (run && !run.FloorIntroPending && !this.levelUp) tutorial.onDungeon();
   }
 
   /** 층에 들어오면 1초 정도 큰 제목을 보여 준다. */
@@ -107,7 +110,7 @@ export class DungeonScreen extends Screen {
     if (this.levelUp) {
       this.levelUp = false;
       if (S.c.UnspentPoints > 0) this.levelUpAllocation(new AllocationDraft(S.c));
-    }
+    } else tutorial.onDungeon();
   }
 
   // ── 레벨 업 배분: 자동 배분 · 확정 · 나중에 ──
@@ -115,6 +118,7 @@ export class DungeonScreen extends Screen {
   private levelUpAllocation(draft: AllocationDraft): void {
     const c = S.c;
     const m = modal(`레벨 업! Lv.${c.Level}`, false);
+    window.setTimeout(() => tutorial.onLevelUp(), 0);
     const redraw = (): void => {
       m.close();
       this.levelUpAllocation(draft);
@@ -122,10 +126,10 @@ export class DungeonScreen extends Screen {
     const stats = jobData(c.Job).allocatable;
     m.body.append(h('div', null, '남은 포인트 ', colored(String(draft.remaining), 'var(--gold)')),
       ...stats.map((st, i) => statRow(draft, st, i < stats.length - 1, redraw)));
-    const auto = button('자동 배분', () => {
+    const auto = anchored(button('자동 배분', () => {
       draft.auto();
       redraw();
-    }, '', 'grow');
+    }, '', 'grow'), 'levelup.auto');
     auto.disabled = draft.remaining <= 0;
     const ok = button('확정', () => {
       const before = maxHp(c);
@@ -148,7 +152,7 @@ export class DungeonScreen extends Screen {
     const room = dungeon.currentRoom(run);
     if (room.Type === 'Boss' && run.BossDefeated) {
       if (S.canDescend) dock.append(this.bigButton('descend', '아래층으로 내려간다', `${run.Floor + 1}층 · ${themeFor(run.Floor + 1).Name} · 현재 HP 유지`, () => this.descend()));
-      dock.append(this.bigButton('return', '마을로 귀환한다', S.inTutorialRun ? '첫 모험은 여기까지 · 획득한 것은 모두 유지' : run.Floor >= B.MaxFloor ? '던전을 정복했다' : `${run.Floor + 1}층이 열렸다 · 획득한 것은 모두 유지`, () => this.returnNow()));
+      dock.append(anchored(this.bigButton('return', '마을로 귀환한다', S.inTutorialRun ? '첫 모험은 여기까지 · 획득한 것은 모두 유지' : run.Floor >= B.MaxFloor ? '던전을 정복했다' : `${run.Floor + 1}층이 열렸다 · 획득한 것은 모두 유지`, () => this.returnNow()), 'dungeon.home'));
     }
     const potions = this.quickPotions();
     if (potions) dock.append(potions);
@@ -241,7 +245,11 @@ export class DungeonScreen extends Screen {
     }
     const kids = [h('span', { class: 't', style: { color: text } }, title), h('span', { class: 's', style: { color: subc } }, tag), glow ? h('i', { class: 'glow' }) : null];
     const style = { gridArea: area, background: fill, border: `2px solid ${border}` };
-    if (room && open) return h('button', { style, on: { click: () => this.move(room.Id) } }, ...kids);
+    if (room && open) {
+      const btn = h('button', { style, on: { click: () => this.move(room.Id) } }, ...kids);
+      if (glow) btn.dataset.anchor = 'dungeon.choice0';
+      return btn;
+    }
     return h('div', { style }, ...kids);
   }
 
@@ -292,7 +300,7 @@ export class DungeonScreen extends Screen {
     const canTeleport = dungeon.teleportTargets(run).length > 0 && dungeon.canLeave(run);
     const map = h('div', { class: 'minimap' });
     this.drawMap(map, MAP_W, MAP_H, run, null);
-    return h('div', { role: 'button', style: { background: '#191C23', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
+    return h('div', { role: 'button', 'data-anchor': 'dungeon.map', style: { background: '#191C23', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
       map,
       h('div', { class: 'row', style: { gap: '12px', fontSize: '12px', height: '32px' } },
         colored('■ 클리어', 'var(--return-sub)'), colored('■ 현재 위치', 'var(--gold)'), colored('□ 갈 수 있음', 'var(--gold)'), h('span', { class: 'spacer' }),

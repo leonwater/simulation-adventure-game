@@ -49,7 +49,7 @@ export const dot = (): HTMLElement => h('span', { class: 'dot' });
 
 /** 탭 줄 (구매 | 판매). */
 export function tabs(labels: string[], active: number, onChange: (i: number) => void): HTMLElement {
-  return h('div', { class: 'tabs' }, ...labels.map((l, i) => h('button', { class: i === active ? 'on' : '', on: { click: () => onChange(i) } }, l)));
+  return h('div', { class: 'tabs' }, ...labels.map((l, i) => h('button', { class: i === active ? 'on' : '', 'data-anchor': `tab.${i}`, on: { click: () => onChange(i) } }, l)));
 }
 
 /** 짧게 누르면 onTap, 오래 누르면 onLong. */

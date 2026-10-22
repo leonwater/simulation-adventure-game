@@ -9,6 +9,7 @@ import { colored } from '../ui/items';
 import { button, h, sub } from '../ui/kit';
 import { toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
+import { tutorial } from '../ui/tutorial';
 import { navigate } from './nav';
 
 /** 수련장: 골드를 내고 보유 스킬을 강화 (+5까지, 단계당 위력 하급 +8% ~ 최상급 +15%). */
@@ -40,7 +41,11 @@ export class TrainingScreen extends Screen {
     return h('div', { class: 'page' },
       townBar('수련장', '마을', () => navigate('town'), c),
       npcIllustration('training', '수련 교관', this.line, 260),
-      h('div', { class: 'scroll', style: { gap: '0' } }, ...rows));
+      h('div', { class: 'scroll', 'data-anchor': 'train.list', style: { gap: '0' } }, ...rows));
+  }
+
+  afterShow(): void {
+    tutorial.onFacility('training');
   }
 
   private train(id: string): void {

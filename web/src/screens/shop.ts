@@ -17,6 +17,7 @@ import { colored, compareLine, gearText, gradeTag, infoText, itemTitle, kindLine
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
+import { tutorial } from '../ui/tutorial';
 import { navigate } from './nav';
 
 
@@ -51,6 +52,10 @@ export class ShopScreen extends Screen {
       this.selected ? this.sellBar() : null);
   }
 
+  afterShow(): void {
+    tutorial.onFacility('shop');
+  }
+
   private buyTab(): HTMLElement[] {
     const shop = S.data!.Shop;
     const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } }, ...cells);
@@ -59,7 +64,7 @@ export class ShopScreen extends Screen {
         h('div', { class: 'col grow', style: { gap: '0' } }, h('b', { style: { fontSize: '15px' } }, '물건 갱신'), sub(`던전에 다녀오면 비용이 ${B.ShopRerollBaseCost}G로 돌아와요`)),
         h('b', { class: 'gold', style: { fontSize: '13px' } }, `${rerollCost(shop).toLocaleString('en-US')}G`),
         (() => { const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm'); b.style.width = '64px'; return b; })()),
-      h('div', { class: 'col' },
+      h('div', { class: 'col', 'data-anchor': 'shop.equip' },
         h('b', null, '장비'),
         shop.Equipment.length === 0 ? sub("장비가 모두 팔렸습니다. '갱신'으로 새 물건을 들여올 수 있어요.") : null,
         sub('카드를 누르면 자세한 정보와 착용 장비 비교가 나옵니다.'),

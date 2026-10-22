@@ -344,3 +344,9 @@
 - 보통 난이도 사망률 (도전 150회 · 8시드 · 32명): C# 30.3/32.1/38.7/40.2/52.0/61.4% ↔ 웹 27.8/30.8/37.4/41.8/53.0/61.5% (5층 단위, 모두 ±3%p 이내), 30층 정복 C# 19/32 ↔ 웹 21/32. 어려움도 비슷 (정복 1/16 ↔ 3/16)
 - `tests/balance-sim.test.ts`: 작은 표본(12명)으로 C# 값과 ±8%p 안인지 확인. 웹 테스트 총 117개
 - `tools/export/Program.cs`: `--save`(Unity 저장 샘플 만들기) · `--load`(저장 파일 읽어 보기)
+
+## 28. 웹 이식 P2 (화면, 2026-10-22)
+
+- `web/src/ui`(router·overlay·kit·chrome·items 등)와 `web/src/screens`(title·register·town·character·inventory·skills·shop·guild·blacksmith·training·dungeon·event·merchant·battle·result)로 C# 화면을 모두 옮김
+- P2f: `ui/coach.ts`(어둡게 덮고 한 곳만 밝히는 안내·`data-anchor` 이름표) · `ui/tutorial.ts`(마을 안내 → 첫 던전 → 귀환 후 창고, 첫 던전 중 가방·도주·타이틀로 잠금, 완료 뒤 건너뛰기)
+- 화면 확인: `cd web && npm run build && npx vite preview --port 4173` 후 `npm run flow -- "url=http://localhost:4173/?debug" ...`

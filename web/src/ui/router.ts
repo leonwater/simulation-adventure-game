@@ -43,6 +43,7 @@ export const router = {
   /** 같은 화면을 다시 그린다 (스크롤 위치는 유지). */
   rebuild(): void {
     if (!current) return;
+    layer.querySelectorAll('.coach').forEach((e) => e.remove());
     const scrolls = [...view.querySelectorAll<HTMLElement>('.scroll')].map((e) => e.scrollTop);
     applyTextScale();
     view.replaceChildren(current.build());

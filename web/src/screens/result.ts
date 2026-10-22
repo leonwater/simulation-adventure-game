@@ -9,6 +9,7 @@ import { S } from '../ui/game';
 import { colored } from '../ui/items';
 import { button, h, row, sub } from '../ui/kit';
 import { Screen } from '../ui/router';
+import { tutorial } from '../ui/tutorial';
 import { goTitle, goTown, goToCurrent } from './index';
 
 export type ResultKind = 'Death' | 'Hardcore' | 'Return' | 'Clear';
@@ -61,8 +62,14 @@ export class ResultScreen extends Screen {
       case 'Clear': this.clear(body); break;
       default: this.returned(body);
     }
-    body.append(h('div', { class: 'spacer' }), button(this.kind === 'Hardcore' ? '처음으로' : '마을로 돌아가기', () => this.next(), 'primary', 'lg'));
+    const nextBtn = button(this.kind === 'Hardcore' ? '처음으로' : '마을로 돌아가기', () => this.next(), 'primary', 'lg');
+    nextBtn.dataset.anchor = 'result.next';
+    body.append(h('div', { class: 'spacer' }), nextBtn);
     return h('div', { class: 'page' }, body);
+  }
+
+  afterShow(): void {
+    tutorial.onResult();
   }
 
   /** 패배: 항목 · 이전 · 현재 · 변화를 한 표로. */
@@ -74,7 +81,7 @@ export class ResultScreen extends Screen {
     }
     body.append(heading('패배', '#E38A82', `${d.Floor}층 · ${cause(d.KilledBy)}`));
     const expBefore = Math.floor(d.ExpPctBefore * 100), expAfter = Math.floor(d.ExpPctAfter * 100);
-    body.append(h('div', { class: 'card', style: { gap: '0', padding: '6px 12px' } },
+    body.append(h('div', { class: 'card', 'data-anchor': 'result.panel', style: { gap: '0', padding: '6px 12px' } },
       tableRow('항목', '이전', '현재', '변화', true),
       tableRow('골드', num(d.GoldBefore), num(d.GoldAfter), change(-d.GoldLost)),
       tableRow('경험치', `${expBefore}%`, `${expAfter}%`, change(expAfter - expBefore, '%p')),
@@ -104,6 +111,7 @@ export class ResultScreen extends Screen {
     // 보스를 잡았으면 "N층 클리어", 아니면 "N층 귀환"
     body.append(heading(`${r.Floor}층 ${r.BossCleared ? '클리어' : '귀환'}`, r.BossCleared ? 'var(--gold)' : 'var(--blue-light)', `탐험한 방 ${r.Rooms}개`));
     const got = panel('획득', 'var(--gold)', 'var(--card)', 'var(--card-border)');
+    got.dataset.anchor = 'result.panel';
     got.append(line('골드', `+${num(r.GoldEarned)} G`), line('경험치', `+${num(r.ExpEarned)}`),
       h('div', { class: 'col', style: { gap: '4px', padding: '0 0 8px' } }, h('div', null, `아이템 ${r.Loot.length}개`),
         r.Loot.length > 0 ? sub(r.Loot.slice(0, 6).join(', ') + (r.Loot.length > 6 ? ` 외 ${r.Loot.length - 6}개` : '')) : null));

@@ -12,6 +12,7 @@ import { button, h, icon, row, sub } from '../ui/kit';
 import { flash, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { GRADE_COLOR } from '../ui/theme';
+import { tutorial } from '../ui/tutorial';
 import { navigate } from './nav';
 
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
@@ -47,6 +48,10 @@ export class BlacksmithScreen extends Screen {
         bag.length > 0 ? grid(...bag.map((i) => this.cell(i, Names.gear(i.Gear), false))) : sub('가방에 장비가 없습니다.')));
   }
 
+  afterShow(): void {
+    tutorial.onFacility('blacksmith');
+  }
+
   /** 장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). */
   private cell(item: ItemInstance | null, part: string, equipped: boolean): HTMLElement {
     if (!item) {
@@ -64,7 +69,7 @@ export class BlacksmithScreen extends Screen {
 
   private detail(item: ItemInstance): HTMLElement {
     const c = S.c;
-    const card = h('div', { class: 'card', style: { background: 'var(--btn)', borderColor: 'var(--btn-border)', gap: '6px', padding: '12px 14px' } },
+    const card = h('div', { class: 'card', 'data-anchor': 'smith.detail', style: { background: 'var(--btn)', borderColor: 'var(--btn-border)', gap: '6px', padding: '12px 14px' } },
       row(h('b', { class: 'grow', style: { fontSize: '16px', color: GRADE_COLOR[item.Grade] } }, displayName(item)), h('span', { style: { fontSize: '12px' } }, gradeTag(item), ' ', colored(gearText(item), 'var(--sub)'))));
     const cl = compareLine(c, item);
     if (cl && !findEquipped(c, item.Uid)) card.append(cl);

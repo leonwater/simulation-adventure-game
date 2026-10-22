@@ -1,3 +1,4 @@
+import { tutorial } from './tutorial';
 import { S } from './game';
 import { button } from './kit';
 import { modal } from './overlay';
@@ -11,6 +12,7 @@ export function openPauseMenu(): void {
     sub('진행 상황은 방을 하나 끝낼 때마다 자동으로 저장됩니다.'),
     button('계속하기', m.close, 'primary'),
     button('저장하고 타이틀로', () => {
+      if (tutorial.blocks('타이틀로 가기')) return;
       m.close();
       S.save();
       goTitle();
