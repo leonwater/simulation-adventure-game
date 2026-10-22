@@ -24,7 +24,7 @@ import type { SaveData, SaveStore, TutorialStage } from './save';
 import { loadGame, newSaveData, saveGame } from './save';
 import type { DeathReport, ReturnReport } from './settlement';
 import { die, returnToTown } from './settlement';
-import { buyGood, ensureStocked, merchantExtras, resetRerollCost, sell } from './shop';
+import { buyGood, ensureStocked, merchantExtras, refreshPrices, resetRerollCost, sell } from './shop';
 
 /**
  * 게임 진행 흐름. 화면(UI)은 이 객체만 보고 상태를 그리며,
@@ -200,6 +200,7 @@ export class GameSession {
     c.CurrentHp = maxHp(c);
     ensureStocked(d.Shop, c, this.now, this.rng);
     if (refresh) resetRerollCost(d.Shop);
+    refreshPrices(d.Shop, c);
     if (refresh || d.Guild.Board.length === 0) refreshBoard(d.Guild, c, this.rng);
     d.SelectedFloor = maxChallengeFloor(c);
     this.save();

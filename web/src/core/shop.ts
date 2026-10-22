@@ -84,6 +84,19 @@ export function merchantExtras(goods: ShopGood[], c: Character, floor: number, r
   }
 }
 
+/**
+ * 마을에 돌아올 때마다 물약·강화석 칸만 지금 도전 층 가격으로 맞춘다 (장비는 그대로).
+ * 갱신을 하지 않아도 물약 값이 층을 따라가고, 10층에 닿으면 강화석이 진열된다.
+ */
+export function refreshPrices(s: ShopState, c: Character): void {
+  const floor = Math.max(1, maxChallengeFloor(c));
+  for (const g of s.Goods) {
+    if (g.Item.Kind === 'Consumable') g.Item.Price = consumableAt(g.Item.TemplateId, floor).Price;
+    else if (g.Item.Kind === 'EnhanceStone') g.Item.Price = stonePrice(floor);
+  }
+  if (floor >= B.StoneFirstFloor && !s.Goods.some((g) => g.Item.Kind === 'EnhanceStone')) s.Goods.push({ Item: { ...createEnhanceStone(), Price: stonePrice(floor) }, Stock: -1 });
+}
+
 export const bagPrice = (c: Character): number => B.BagBasePrice * Math.pow(2, Math.min(20, c.BagsBought));
 export const canBuyBag = (c: Character): boolean => c.Inventory.Capacity < B.InventoryMax;
 

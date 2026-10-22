@@ -246,7 +246,7 @@
   "UtilityTrainingGoldPerLevel": 600,
   "MerchantEquipChance": 0.3,
   "MerchantBookChance": 0.25,
-  "PotionPricePerFloor": 0.1,
+  "PotionPricePerFloor": 0.03,
   "StonePriceBase": 300,
   "StonePricePerFloor": 15
 }

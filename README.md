@@ -5,7 +5,7 @@ v2.5부터 **웹(TypeScript, `web/`)으로 개발하고 Capacitor로 안드로�
 
 ## 웹판 (v2.5~)
 
-- 실행: `cd web && npm install && npm run dev` · 점검 `npm run check` (타입·테스트 190개·빌드) · 실제 클릭 점검 `npm run build && npm run e2e`
+- 실행: `cd web && npm install && npm run dev` · 점검 `npm run check` (타입·테스트 195개·빌드) · 실제 클릭 점검 `npm run build && npm run e2e` · 화면 틀 점검 `node scripts/layout.mjs`
 - 받기: main에 푸시하면 Releases `android-latest`(APK, 고정 키 서명이라 덮어 설치됨)·`web-latest`(웹 zip)
 - 글꼴: 프리텐다드 (SIL OFL 1.1) · 직업·스킬 요약: `docs/JOBS_SKILLS.md` · 이식·작업 방법: `docs/WEB_PORT.md`
 
