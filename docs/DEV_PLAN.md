@@ -320,3 +320,9 @@
 - `web/src/core`: `enums`(C# 열거형 순서·이름, 저장 시 이름 문자열) · `names`(한글 이름·골드·조사) · `jobs`(직업 표·시작 능력치·직업 굴림) · `skills`(스킬 40종 표 조회) · `items`(아이템·보관함·장비 생성·드롭·강화 비용) · `character`(캐릭터·파생 수치·등급·레벨업·배분) · `equipment`(착용/해제·강화·스킬 습득/장착/수련)
 - 저장 모양은 C#과 같은 필드 이름 (`Character`, `ItemInstance`, `ItemContainer`, `Equipment.Slots`, `SkillSet`). C# `Math.Round`(짝수 반올림)는 `roundEven`으로 맞춤
 - 테스트 `core-basics.test.ts` 22개 (CharacterTests·ItemSkillTests 주요 항목 이식). 웹 테스트 총 29개
+
+## 24. 웹 이식 P1b (전투, 2026-10-22)
+
+- `web/src/core`: `status`(중첩 규칙) · `combatant` · `monsters`(종족·테마 표) · `enemies`(적 생성·튜토리얼 적) · `bosskit`(보스 특성 11종) · `battle`(선택지·확률·피해식·상태 이상·보스 행동·분열/소환/부활, 상세 문구)
+- `CollectRewards`는 드롭표(`Loot`)가 필요해 P1c에서 옮긴다
+- 테스트 `battle.test.ts` 38개 (BattleTests·BossTests 이식). 웹 테스트 총 67개

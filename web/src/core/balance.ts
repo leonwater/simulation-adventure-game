@@ -36,3 +36,16 @@ export const expToNext = (level: number): number => (level >= B.MaxLevel ? 0 : r
 
 /** 강화 목표 단계 target에 실패했을 때 한 단계 내려갈 확률. */
 export const enhanceDowngradeChance = (target: number): number => (target >= 11 ? 0.5 : target >= 7 ? 0.3 : 0);
+
+export const difficultyMultiplier = (d: string): number => (d === 'Easy' ? 0.75 : d === 'Hard' || d === 'Hardcore' ? 1.25 : 1);
+
+/** 초반 보정: 1층 1.0 → 8층 0. 쉬움은 없음, 어려움·하드코어는 40%만. */
+export const earlyBoost = (f: number): number => Math.max(0, (B.EarlyBoostUntil - f) / (B.EarlyBoostUntil - 1));
+export const earlyBoostScale = (d: string): number => (d === 'Easy' ? 0 : d === 'Normal' ? 1 : 0.4);
+
+export const enemyHp = (f: number, early = 1): number => 200 + f * 70 - f * f * 0.5 + B.EarlyBoostHp * earlyBoost(f) * early;
+export const enemyAttack = (f: number, early = 1): number => (5 + f * 2.8 + f * f * 0.05) * 0.55 + B.EarlyBoostAttack * earlyBoost(f) * early;
+export const enemyDefense = (f: number): number => 8 + f * 6;
+export const enemyExp = (f: number): number => roundEven(10 + 20 * Math.pow(f, 1.5));
+export const enemyGold = (f: number): number => 8 + f * 6;
+export const eventRequirement = (f: number): number => roundEven(6 + f * 1.5);
