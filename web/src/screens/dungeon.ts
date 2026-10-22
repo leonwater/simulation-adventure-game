@@ -9,7 +9,6 @@ import { effectDescribe, effectName, effectRemaining } from '../core/explore';
 import type { Room } from '../core/map';
 import { displayType, getRoom } from '../core/map';
 import { jobData } from '../core/jobs';
-import { consumableDef, countOf } from '../core/items';
 import { themeFor, themeIndex } from '../core/monsters';
 import { Names } from '../core/names';
 import { dungeonHeader } from '../ui/chrome';
@@ -18,7 +17,7 @@ import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
 import { colored } from '../ui/items';
 import { button, h, icon, row, sub } from '../ui/kit';
-import { confirmBox, flash, modal, toast } from '../ui/overlay';
+import { confirmBox, modal, toast } from '../ui/overlay';
 import { openPauseMenu } from '../ui/pause';
 import { Screen, router } from '../ui/router';
 import { statRow } from '../ui/statrow';
@@ -37,6 +36,11 @@ const ROOM_ICON: Record<string, string> = { Battle: 'room_battle', Boss: 'room_b
 const isBuff = (t: ExploreEffectType): boolean => t === 'Regen' || t === 'Focus' || t === 'DemonPact';
 
 /** 던전 탐험: 층·HP, 테마 색 미니맵(누르면 전체 지도 + 순간이동), 상황 텍스트, 아래 고정 이동 방향키, 층 진입 제목, 전투 뒤 레벨 업 배분, 가방·귀환. */
+const showSituation = (run: DungeonRun): boolean => {
+  const t = dungeon.currentRoom(run).Type;
+  return (t === 'Boss' && run.BossDefeated) || t === 'Return' || t === 'Merchant';
+};
+
 export class DungeonScreen extends Screen {
   constructor(private levelUp = false) {
     super();
@@ -72,12 +76,13 @@ export class DungeonScreen extends Screen {
         ...(run.Effects.length > 0 ? this.effectTags(run) : []),
         this.miniMap(run),
         S.notice ? this.noticeCard(S.notice) : null,
-        h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px' } }, h('b', { class: 'sub' }, sit.title), h('div', { class: 'body' }, sit.text))),
+        // 갈림길·통로·막다른 곳 설명은 보이지 않는다 (보스 처치·귀환 방·상인 방만)
+        showSituation(run) ? h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px' } }, h('b', { class: 'sub' }, sit.title), h('div', { class: 'body' }, sit.text)) : null),
       dock,
       h('div', { class: 'bottombar' },
         ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
         ibtn('character', '정보', () => showCharacterInfo()),
-        ibtn('guild', '퀘스트', () => showQuests()),
+        ibtn('quest', '퀘스트', () => showQuests()),
         ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast('아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
       run.FloorIntroPending ? this.floorIntro(run) : null);
     if (!run.FloorIntroPending) queueMicrotask(() => this.afterIntro());
@@ -154,8 +159,6 @@ export class DungeonScreen extends Screen {
       if (S.canDescend) dock.append(this.bigButton('descend', '아래층으로 내려간다', `${run.Floor + 1}층 · ${themeFor(run.Floor + 1).Name} · 현재 HP 유지`, () => this.descend()));
       dock.append(anchored(this.bigButton('return', '마을로 귀환한다', S.inTutorialRun ? '첫 모험은 여기까지 · 획득한 것은 모두 유지' : run.Floor >= B.MaxFloor ? '던전을 정복했다' : `${run.Floor + 1}층이 열렸다 · 획득한 것은 모두 유지`, () => this.returnNow()), 'dungeon.home'));
     }
-    const potions = this.quickPotions();
-    if (potions) dock.append(potions);
     // 방 안에서 하는 행동은 보라색. 귀환 방은 선택지 없이 글자만 보여 주고, 귀환은 아래 귀환 버튼으로 한다.
     if (room.Type === 'Merchant') {
       dock.append(this.bigButton('action', '상인과 거래한다', room.MerchantDiscount ? '소모품 (은인 할인: 마을보다 30% 쌈)' : '소모품 (마을보다 50% 비쌈)', () => goMerchant(), '›'));
@@ -182,68 +185,39 @@ export class DungeonScreen extends Screen {
       kind === 'new' ? h('i', { class: 'glow' }) : null);
   }
 
-  /** 회복 물약 바로 쓰기: 가방에 들어가지 않고 한 번 눌러 쓴다. HP가 가득하면 잠긴다. */
-  private quickPotions(): HTMLElement | null {
-    const c = S.c;
-    const seen = new Set<string>();
-    const full = c.CurrentHp >= maxHp(c);
-    const buttons: HTMLElement[] = [];
-    for (const item of c.Inventory.Items) {
-      const def = consumableDef(item.TemplateId);
-      if (!def || def.HealRatio <= 0 || seen.has(item.TemplateId)) continue;
-      seen.add(item.TemplateId);
-      const b = h('button', { class: 'grow', style: { minHeight: '40px', background: 'var(--return-bg)', borderColor: 'var(--return-border)', color: 'var(--return-text)', fontWeight: '700', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }, on: { click: () => this.usePotion(item.Uid) } },
-        icon('stat_vitality', 16), `${def.Name} ×${countOf(c.Inventory, item.TemplateId)} · HP +${Math.round(def.HealRatio * 100)}%`);
-      b.disabled = full;
-      buttons.push(b);
-    }
-    return buttons.length ? row(...buttons) : null;
-  }
-
-  private usePotion(uid: string): void {
-    const r = S.useConsumable(uid);
-    if (!r.ok) return toast(r.message);
-    flash(r.message, 'var(--green)');
-    router.rebuild();
-  }
-
   // ── 이동 패드: 위 · 왼쪽 · 오른쪽 · 아래 칸은 늘 같은 자리·같은 크기, 상태는 색과 글자로만 ──
 
   private padView(run: DungeonRun, pad: MovePad): HTMLElement {
     const open = dungeon.canLeave(run);
-    const place: Record<string, string> = { Up: '1 / 2', Left: '2 / 1', Right: '2 / 3', Down: '3 / 2' };
-    const cells = pad.Slots.map((slot) => this.padCell(slot, open, place[slot.Dir]));
-    const cur = dungeon.currentRoom(run);
-    const center = h('div', { style: { gridArea: '2 / 2', background: '#191C23', border: '1px solid var(--btn-border)' } },
-      h('span', { class: 'sub', style: { fontSize: '11px' } }, '현재 방'),
-      h('b', null, cur.Type === 'Start' ? '시작 방' : `${Names.room(cur.Type)} 방`));
-    return h('div', { class: 'pad' }, ...cells, center);
+    // 키보드 방향키 배치: 위 칸은 가운데, 아래 줄에 ← ↓ →
+    const place: Record<string, string> = { Up: '1 / 2', Left: '2 / 1', Down: '2 / 2', Right: '2 / 3' };
+    return h('div', { class: 'pad' }, ...pad.Slots.map((slot) => this.padCell(slot, open, place[slot.Dir])));
   }
 
+  /** 방향 칸: 색으로만 상태를 보인다 (금색 새 방 · 파랑 탐험함 · 초록 귀환 · 빨강 보스 · 어두움 막힘). */
   private padCell(slot: PadSlot, open: boolean, area: string): HTMLElement {
     const room = slot.Room;
     const title = `${PAD_ARROW[slot.Dir]} ${PAD_NAME[slot.Dir]}`;
-    let fill: string, border: string, text: string, subc: string, tag: string;
+    let fill: string, border: string, text: string;
+    let tag = '';
     let glow = false;
     if (!room || !open) {
-      fill = '#1B1813'; border = '#3A3326'; text = subc = '#9C937F';
-      tag = !room ? '막힘' : '선택 후 이동';
+      fill = '#1B1813'; border = '#3A3326'; text = '#6E675A';
     } else {
       const shown = displayType(room);
       const special = slot.Known && (shown === 'Return' || shown === 'Boss');
       if (special && shown === 'Return') {
-        fill = 'var(--return-bg)'; border = 'var(--return-border)'; text = 'var(--return-text)'; subc = 'var(--return-sub)'; tag = '귀환 방';
+        fill = 'var(--return-bg)'; border = 'var(--return-border)'; text = 'var(--return-text)'; tag = '귀환';
       } else if (special) {
-        fill = 'var(--red-bg)'; border = 'var(--red)'; text = 'var(--red-light)'; subc = 'var(--red-light)'; tag = '보스 방';
+        fill = 'var(--red-bg)'; border = 'var(--red)'; text = 'var(--red-light)'; tag = '보스';
       } else if (room.Visited) {
-        fill = 'var(--blue-bg)'; border = 'var(--blue-border)'; text = 'var(--blue-light)'; subc = '#7FA8D8'; tag = slot.IsPrevious ? '방금 온 곳' : '탐험함';
+        fill = 'var(--blue-bg)'; border = 'var(--blue-border)'; text = 'var(--blue-light)';
       } else {
-        fill = 'var(--accent-bg)'; border = 'var(--accent)'; text = 'var(--text)'; subc = 'var(--gold)';
-        tag = room.Chain ? '새 방 (!)' : slot.Known ? `새 방 · ${Names.room(shown)}` : '새 방';
+        fill = 'var(--accent-bg)'; border = 'var(--accent)'; text = 'var(--text)';
         glow = true;
       }
     }
-    const kids = [h('span', { class: 't', style: { color: text } }, title), h('span', { class: 's', style: { color: subc } }, tag), glow ? h('i', { class: 'glow' }) : null];
+    const kids = [h('span', { class: 't', style: { color: text } }, tag ? `${title} · ${tag}` : title), glow ? h('i', { class: 'glow' }) : null];
     const style = { gridArea: area, background: fill, border: `2px solid ${border}` };
     if (room && open) {
       const btn = h('button', { style, on: { click: () => this.move(room.Id) } }, ...kids);

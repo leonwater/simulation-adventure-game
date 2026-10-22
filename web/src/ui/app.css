@@ -1,5 +1,5 @@
-@font-face { font-family: 'Nanum Gothic'; font-weight: 400; src: url('/fonts/NanumGothic-Regular.ttf') format('truetype'); font-display: swap; }
-@font-face { font-family: 'Nanum Gothic'; font-weight: 700; src: url('/fonts/NanumGothic-Bold.ttf') format('truetype'); font-display: swap; }
+@font-face { font-family: 'Pretendard'; font-weight: 400; src: url('/fonts/Pretendard-Regular.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Pretendard'; font-weight: 700; src: url('/fonts/Pretendard-Bold.woff2') format('woff2'); font-display: swap; }
 :root {
   --page: #0F1115; --bg: #14161C; --bar: #181B22; --line: #2A2E38; --line-soft: #262A33; --card: #1B1E26; --card-border: #2F333E;
   --btn: #1E222B; --btn-border: #3A3F4B; --dialog: #20232C; --log: #111318;
@@ -14,8 +14,8 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; background: var(--page); color: var(--text);
-  font-family: 'Nanum Gothic', 'Noto Sans KR', system-ui, sans-serif; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
-#app { height: 100%; display: flex; justify-content: center; }
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif; word-break: keep-all; overflow-wrap: anywhere; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
+#app { height: var(--app-h, 100%); display: flex; justify-content: center; }
 /* 세로 모바일 화면(390×844 비율)을 브라우저 높이에 맞춘다. 폰에서는 화면 전체 */
 .screen { position: relative; width: 100%; max-width: 480px; height: 100%; background: var(--bg);
   display: flex; flex-direction: column; overflow: hidden; font-size: calc(14px * var(--text-scale));
@@ -96,7 +96,7 @@ input.text::placeholder { color: #8F8C85; }
 /* 던전 */
 @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
 .blink { animation: blink 1.6s ease-in-out infinite; }
-.pad { display: grid; grid-template-columns: repeat(3, 104px); grid-template-rows: repeat(3, 56px); gap: 10px 12px; justify-content: center; align-content: center; height: 204px; background: #191C23; border: 1px solid var(--card-border); border-radius: 16px; flex-shrink: 0; }
+.pad { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 54px); gap: 8px; padding: 10px; height: 136px; background: #191C23; border: 1px solid var(--card-border); border-radius: 16px; flex-shrink: 0; }
 .pad > * { border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; position: relative; overflow: hidden; }
 .pad button { min-height: 0; }
 .pad .t { font-size: 16px; font-weight: 700; }
@@ -134,3 +134,16 @@ input.text::placeholder { color: #8F8C85; }
 .bchoice .tag { font-size: 11px; font-weight: 700; }
 .bchoice .name { font-size: 15px; font-weight: 700; }
 .bchoice .dmg { font-size: 12px; color: var(--body); }
+.stat-icons .more { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; color: var(--text); background: rgba(255,255,255,.12); border-radius: 4px; }
+
+/* 한 화면 맞춤 목록: 정해진 칸은 줄지 않고, flex를 준 칸(일러스트 등)만 남는 높이에 맞춰 줄어든다 */
+.scroll.fit > * { flex-shrink: 0; }
+.scroll.fit > .illust { flex-shrink: 1; }
+/* 키가 작은 폰: 마을 시설 칸과 간격을 줄여 스크롤 없이 한 화면에 */
+@media (max-height: 760px) {
+  .fac { height: 88px; gap: 4px; }
+  .fac .ic, .fac img { width: 38px !important; height: 38px !important; }
+  .scroll.fit { gap: 10px !important; padding-top: 12px; padding-bottom: 12px; }
+  .statrow { height: 50px !important; }
+  .statrow button { min-height: 34px; height: 34px; }
+}

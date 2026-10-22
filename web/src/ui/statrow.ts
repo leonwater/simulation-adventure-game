@@ -26,7 +26,7 @@ export function statRow(draft: AllocationDraft, stat: Stat, line: boolean, onCha
     b.disabled = !enabled;
     return b;
   };
-  return h('div', { class: 'row', style: { height: '60px', borderBottom: line ? '1px solid var(--line-soft)' : '' } },
+  return h('div', { class: 'row statrow', style: { height: '60px', borderBottom: line ? '1px solid var(--line-soft)' : '' } },
     icon(statIcon(stat), 24),
     h('div', { class: 'col grow', style: { gap: '1px' } },
       h('b', null, Names.stat(stat), own >= B.StatCap ? colored(' 최대', 'var(--gold)') : null),

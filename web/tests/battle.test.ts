@@ -236,7 +236,7 @@ describe('전투 진행', () => {
     const bash = b.getChoices().find((x) => x.skillId === 'w_bash')!;
     expect(bash.detail).toContain('재사용 4턴');
     expect(bash.detail).toContain('치명타');
-    expect(bash.damageNote.startsWith('피해 약 ')).toBe(true);
+    expect(bash.damageNote.startsWith('단일 · 피해 약 ')).toBe(true);
   });
 
   it('피해 공식: 방어·버프·취약·감소', () => {

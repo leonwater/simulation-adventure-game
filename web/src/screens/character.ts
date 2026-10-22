@@ -3,7 +3,6 @@ import {
   AllocationDraft, attack, badgeBonus, damageReduction, dropBonus, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
   percent, promotionStatus, resist, totalStat, weaponAttack, defense,
 } from '../core/character';
-import { expToNext } from '../core/balance';
 import type { Stat } from '../core/enums';
 import { STATS } from '../core/enums';
 import { jobData } from '../core/jobs';
@@ -51,12 +50,13 @@ export class CharacterScreen extends Screen {
     const pct = Math.floor(expProgress(c) * 100);
     return h('div', { class: 'page' },
       townBar('캐릭터', '마을', () => navigate('town'), c),
-      h('div', { class: 'scroll' },
+      h('div', { class: 'scroll fit', style: { gap: '10px' } },
         row(
           h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { style: { fontSize: '24px' } }, c.Name), jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level} / ${B.MaxLevel}`, 13)),
-          sub(c.Level >= B.MaxLevel ? '최대 레벨' : `경험치 ${pct}%`)),
-        progress(expProgress(c), 'var(--blue)'),
-        c.Level < B.MaxLevel ? h('div', { class: 'sub', style: { textAlign: 'right' } }, `${c.Exp.toLocaleString('en-US')} / ${expToNext(c.Level).toLocaleString('en-US')}`) : null,
+          // 경험치: 글자 바로 아래 가로 막대 (마을 머리줄과 같은 모양)
+          h('div', { class: 'col', style: { width: '132px', gap: '6px', alignItems: 'stretch' } },
+            h('div', { class: 'sub', style: { textAlign: 'right' } }, c.Level >= B.MaxLevel ? '최대 레벨' : `경험치 ${pct}%`),
+            progress(expProgress(c), 'var(--blue)'))),
         this.badgePanel(),
         this.statsPanel(draft),
         row(
@@ -72,8 +72,8 @@ export class CharacterScreen extends Screen {
             const b = button('확정', () => this.commit(), 'primary', 'grow');
             b.disabled = !draft.hasChanges;
             return b;
-          })()),
-        button('상세 능력치 보기', () => this.details(), 'ghost')),
+          })(),
+          button('상세 능력치', () => this.details(), 'ghost', 'grow'))),
       bottomNav(1, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
   }
 
@@ -119,7 +119,7 @@ export class CharacterScreen extends Screen {
       line('방어력', String(defense(c))),
       line('회피', percent(evasion(c))),
       line('받는 피해 감소', percent(damageReduction(c))),
-      line('디버프 저항', percent(resist(c))),
+      line('상태 이상 저항', percent(resist(c))),
       ...(c.Job === 'Rogue' ? [line('치명타', `도적 스킬 전용 · 피해 ×${B.CritMultiplier}`)] : []),
       line('드롭률', `+${percent(dropBonus(c) - 1)}`),
       line('이벤트 판정 (행운)', `+${percent(eventLuckBonus(c))}`),

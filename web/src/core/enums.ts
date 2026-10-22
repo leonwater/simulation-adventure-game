@@ -8,7 +8,8 @@ export const ITEM_KINDS = ['Equipment', 'Consumable', 'Material', 'SkillBook', '
 export const GEARS = ['Helmet', 'Armor', 'Pants', 'Boots', 'Necklace', 'Ring', 'Weapon'] as const;
 export const SLOTS = ['Helmet', 'Armor', 'Pants', 'Boots', 'Necklace', 'Ring1', 'Ring2', 'Weapon'] as const;
 export const TIERS = ['Low', 'Mid', 'High', 'Top'] as const;
-export const TARGETS = ['SingleEnemy', 'AllEnemies', 'Self', 'MultiEnemy', 'ChainEnemies'] as const;
+/** 광역: Column 좌우(같은 열 위·아래) · Row 앞뒤(같은 가로줄) · AllEnemies 전체 · RandomEnemies·ChainEnemies 인원수(대상 + 무작위). */
+export const TARGETS = ['SingleEnemy', 'AllEnemies', 'Self', 'Column', 'Row', 'RandomEnemies', 'ChainEnemies'] as const;
 export const STATUSES = ['Empower', 'Fortify', 'Regen', 'Focus', 'Swift', 'Keen', 'Cruel', 'Poison', 'Bleed', 'Burn', 'Weaken', 'Vulnerable', 'Stun', 'Silence', 'Blind', 'Fear'] as const;
 export const ROOM_TYPES = ['Start', 'Battle', 'Event', 'Treasure', 'Rest', 'Merchant', 'Return', 'Boss'] as const;
 export const LAYOUTS = ['Branch', 'Loop', 'Grid'] as const;

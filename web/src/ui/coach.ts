@@ -72,7 +72,8 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
   let hole: { l: number; t: number; r: number; b: number } | null = null;
   if (target && target.isConnected) {
     const r = target.getBoundingClientRect();
-    hole = { l: r.left - area.left - 4, t: r.top - area.top - 4, r: r.right - area.left + 4, b: r.bottom - area.top + 4 };
+    // 화면 밖으로 나가지 않게 테두리를 화면 안쪽으로 자른다 (큰 목록·창고 칸)
+    hole = { l: Math.max(4, r.left - area.left - 4), t: Math.max(4, r.top - area.top - 4), r: Math.min(area.width - 4, r.right - area.left + 4), b: Math.min(area.height - 4, r.bottom - area.top + 4) };
     const c = action ? null : next;
     // 구멍 둘레 네 장으로 나머지를 덮는다 (행동 단계에서는 구멍만 눌린다)
     holder.append(

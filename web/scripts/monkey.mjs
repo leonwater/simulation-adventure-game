@@ -65,7 +65,7 @@ for (let i = 0; i < N; i++) {
   if (!cands.length) { await page.mouse.wheel(0, 600); await page.keyboard.press('Escape'); stuck++; await page.waitForTimeout(300); if (stuck > 8) { await page.screenshot({ path: 'shots/monkey-stuck.png' }); console.error('누를 곳이 없음:', info.sig); errors.add('누를 곳 없음 ' + info.sig); break; } continue; }
   const st = await page.evaluate(() => { const S = window.__S; return { dun: S.inDungeon, bat: !!S.battle, hp: S.c?.CurrentHp }; }).catch(() => ({}));
   // 던전·전투에서는 진행되도록 새 방·선택지를 더 자주 누른다
-  const weighted = cands.flatMap((e) => (/새 방|공격|보스|계속|확인|마을로/.test(e.text) ? [e, e, e] : [e]));
+  const weighted = cands.flatMap((e) => (/↑|↓|←|→|공격|보스|계속|확인|마을로/.test(e.text) ? [e, e, e] : [e]));
   const pick = weighted[Math.floor(rnd() * weighted.length)];
   history.push(`${pick.text}`);
   if (history.length > 12) history.shift();

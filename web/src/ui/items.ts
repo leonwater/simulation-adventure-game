@@ -86,13 +86,14 @@ export function levelCompare(c: Character, item: ItemInstance, withLabel = false
   }
   if (compare(c, item).length === 0) return el;
   const d = summary(c, item);
-  if (d) el.append(' · ', colored(`${withLabel ? `${d.label} ` : ''}${delta(d.delta)}`, deltaColor(d.delta)));
+  // 좁은 카드에서 줄이 밀리지 않도록 '공격력·방어력'은 '공격·방어'로 줄여 쓴다
+  if (d) el.append(' · ', colored(`${withLabel ? `${d.label === '공격력' ? '공격' : d.label === '방어력' ? '방어' : d.label} ` : ''}${delta(d.delta)}`, deltaColor(d.delta)));
   return el;
 }
 
 /** 칸의 정보 한 줄: 장비는 착용 레벨과 지금 장비 대비, 스킬서는 등급 · 쓸 수 있는 직업 (내 직업이 아니면 빨강). */
 export function infoText(c: Character | null, item: ItemInstance): Child {
-  if (item.Kind === 'Equipment' && c) return levelCompare(c, item);
+  if (item.Kind === 'Equipment' && c) return levelCompare(c, item, true);
   const def = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
   if (!def) return '';
   if (def.JobRestriction < 0) return `${Names.tier(def.Tier)} · 공용`;

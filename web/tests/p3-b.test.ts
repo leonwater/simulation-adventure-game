@@ -386,7 +386,7 @@ describe('V19Tests (기본 공격 명중·스킬 등급·강화 +15·보스 체�
       expect(s.SuccessBonus, s.Id + ': 모든 스킬은 기본 공격보다 덜 맞는다').toBeLessThan(0);
       expect(s.SuccessBonus, s.Id + ' 보정은 -12%까지').toBeGreaterThanOrEqual(-0.12 - 1e-9);
       const total = (s.ChainMults.length > 0 ? s.ChainMults[0] : s.DamageMult) * s.Hits;
-      const strong = (s.Target === 'AllEnemies' && s.IsAttack) || s.GuaranteedCrit || total >= 2.5;
+      const strong = (['AllEnemies', 'RandomEnemies', 'Column'].includes(s.Target) && s.IsAttack) || s.GuaranteedCrit || total >= 2.5;
       if (strong) expect(s.SuccessBonus, s.Id + ' 광역·고위력 -8~12%').toBeLessThanOrEqual(-0.08 + 1e-9);
       else expect(s.SuccessBonus, s.Id + ' 저위력 -3~6%').toBeGreaterThanOrEqual(-0.06 - 1e-9);
     }

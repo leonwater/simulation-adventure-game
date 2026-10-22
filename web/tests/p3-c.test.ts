@@ -9,7 +9,7 @@ import type { Character } from '../src/core/character';
 import { currentRoom, moveTo, startRun } from '../src/core/dungeon';
 import type { DungeonRun } from '../src/core/dungeon';
 import { createEnemy } from '../src/core/enemies';
-import { canTrain, equip, equipSkill, learnSkill, moveEquippedSkill, slotFor, summary, trainSkill } from '../src/core/equipment';
+import { equip, equipSkill, getSkillState, learnSkill, maxSkillLevel, moveEquippedSkill, slotFor, summary, trainSkill, trainingCost } from '../src/core/equipment';
 import { GEARS, GRADES, JOBS, RANKS } from '../src/core/enums';
 import type { GearType, ItemGrade, Job, Stat } from '../src/core/enums';
 import { eventDef, eventsGrantingActiveEffects } from '../src/core/events';
@@ -25,7 +25,7 @@ import { monster } from '../src/core/monsters';
 import { Rng } from '../src/core/rng';
 import { loadGame, MemorySaveStore } from '../src/core/save';
 import { GameSession } from '../src/core/session';
-import { ALL_SKILLS, obtainableSkills, preferOwnLevel, skillDef, skillsForJob } from '../src/core/skills';
+import { ALL_SKILLS, obtainableSkills, preferOwnLevel, skillCooldown, skillDef, skillsForJob, skillTurns } from '../src/core/skills';
 import { jobData } from '../src/core/jobs';
 
 const NOW = new Date(Date.UTC(2026, 9, 21, 9, 0, 0));
@@ -241,16 +241,30 @@ describe('기획서 v2.4 (V24Tests)', () => {
     expect(damageReduction(w), '최대 30%').toBeCloseTo(0.3, 9);
   });
 
-  it('상태만 거는 스킬은 수련할 수 없다', () => {
+  it('비전투 스킬 수련 (v2.6): 2단계, 단계당 600G, 지속 +1 → 재사용 -1, 재사용은 늘 지속보다 1턴 이상 길다', () => {
     const c = createCharacter('a', 'Warrior');
     c.Gold = 100_000;
     learnSkill(c, 'w_warcry');
-    expect(canTrain(skillDef('w_warcry'))).toBe(false);
-    const r = trainSkill(c, 'w_warcry');
-    expect(r.ok).toBe(false);
-    expect(r.error).toContain('바뀌는 것이 없는');
-    expect(canTrain(skillDef('w_bash'))).toBe(true);
-    for (const s of ALL_SKILLS) expect(canTrain(s), s.Id).toBe(s.IsAttack || s.HealRatio > 0);
+    const def = skillDef('w_warcry')!;
+    expect(maxSkillLevel(def)).toBe(2);
+    expect(maxSkillLevel(skillDef('w_bash'))).toBe(5);
+    expect(trainingCost(getSkillState(c, 'w_warcry')!)).toBe(600);
+    expect(trainSkill(c, 'w_warcry').ok).toBe(true);
+    expect(trainingCost(getSkillState(c, 'w_warcry')!)).toBe(1200);
+    expect(trainSkill(c, 'w_warcry').ok).toBe(true);
+    expect(trainSkill(c, 'w_warcry').error).toBe('최대 강화 단계입니다');
+    expect(c.Gold).toBe(100_000 - 1800);
+    expect(skillTurns(def, 2, 0)).toBe(2);
+    expect(skillTurns(def, 2, 1)).toBe(3);
+    expect(skillCooldown(def, 1)).toBe(6);
+    expect(skillCooldown(def, 2)).toBe(5);
+    for (const s of ALL_SKILLS.filter((x) => !x.IsAttack)) {
+      for (const st of s.Statuses) expect(st.Turns, `${s.Id} 0단계 지속`).toBe(2);
+      for (let lv = 0; lv <= maxSkillLevel(s); lv++) {
+        const turns = Math.max(...s.Statuses.map((st) => skillTurns(s, st.Turns, lv)));
+        expect(skillCooldown(s, lv), `${s.Id} +${lv}`).toBeGreaterThanOrEqual(turns + 1);
+      }
+    }
   });
 
   it('상태 이상 실제 확률 = 명중률 × 효과 확률 × (1 - 저항)', () => {

@@ -47,8 +47,10 @@ export class MerchantScreen extends Screen {
       return b;
     });
     return h('div', { class: 'page', style: { background: th.bg } },
-      dungeonSubBar(rescued ? '구해 준 상인' : '떠돌이 상인', '던전', () => this.leave(), c, () => openPauseMenu()),
+      dungeonSubBar('', '던전', () => this.leave(), c, () => openPauseMenu()),
       h('div', { class: 'scroll', style: { gap: '10px' } },
+        // 제목은 위 막대가 아니라 화면 위쪽 가운데에 크게
+        h('div', { class: 'center', style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', padding: '4px 0 2px', textAlign: 'center' } }, rescued ? '구해 준 상인' : '떠돌이 상인'),
         h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', height: '64px', padding: '0 14px' } },
           row(icon('gold', 28), h('b', { style: { fontSize: '20px' } }, gold(c.Gold))),
           h('span', { class: 'spacer' }),

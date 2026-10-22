@@ -49,6 +49,33 @@ export function nameDuplicates(list: Combatant[]): void {
   }
 }
 
+/**
+ * 진형: 적 자리는 배열 순서와 같다 — 0 전방 위 · 1 후방 위 · 2 전방 아래 · 3 후방 아래 (플레이어 쪽 왼쪽 열이 전방).
+ * 궁수·주술사처럼 후방을 좋아하는 종족을 먼저 후방 칸에 넣는다. lines면 일반·정예에게 줄 보정을 준다:
+ * 전방은 HP가 많고 약하게 때리며, 후방은 HP가 적고 세게 때린다 (balance.json Front/Back). 혼자 나온 적은 보정 없음.
+ */
+export function arrange(list: Combatant[], lines: boolean): Combatant[] {
+  const n = Math.min(4, list.length);
+  const back = [1, 3].filter((s) => s < n);
+  const front = [0, 2].filter((s) => s < n);
+  const out: Combatant[] = new Array(n);
+  const rest: Combatant[] = [];
+  for (const e of list.slice(0, n)) {
+    if (e.species?.Line === 'Back' && back.length > 0) out[back.shift()!] = e;
+    else rest.push(e);
+  }
+  for (const e of rest) out[(front.length > 0 ? front : back).shift()!] = e;
+  if (lines && n > 1) {
+    out.forEach((e, i) => {
+      if (e.role >= 2) return;
+      const isBack = i % 2 === 1;
+      e.maxHp = e.hp = Math.max(1, roundEven(e.maxHp * (isBack ? B.BackHp : B.FrontHp)));
+      e.attack = Math.max(1, roundEven(e.attack * (isBack ? B.BackAttack : B.FrontAttack)));
+    });
+  }
+  return out;
+}
+
 /** 전투 방의 적 무리 (1~4마리, 낮은 확률로 엘리트 1마리). extra: 전쟁의 북소리 (최대 4마리). */
 export function createGroup(floor: number, diff: string, seed: number, extra = 0): Combatant[] {
   const rng = new Rng(seed);
@@ -60,8 +87,9 @@ export function createGroup(floor: number, diff: string, seed: number, extra = 0
   const list: Combatant[] = [];
   const elite = rng.chance(B.EliteChance) ? rng.range(0, count) : -1;
   for (let i = 0; i < count; i++) list.push(createEnemy(sp(rng.pick(theme.SpeciesIds)), floor, diff, i === elite ? 1 : 0));
-  nameDuplicates(list);
-  return list;
+  const arranged = arrange(list, true);
+  nameDuplicates(arranged);
+  return arranged;
 }
 
 /** 보스 방: 10·20·30층은 고유 보스, 그 외 층은 테마 몬스터의 강화형. 보스는 특성을 가진다. */
@@ -76,7 +104,7 @@ export function createBoss(floor: number, diff: string, seed: number): Combatant
   }
   equipBossTraits(list[0], floor);
   nameDuplicates(list);
-  return list;
+  return list; // 보스가 0번(전방), 함께 나온 졸개는 1번(후방). 줄 보정 없음
 }
 
 /** 미믹: HP ×1.5 · 공격력 ×1.3, 물어뜯기(출혈). 이기면 장비 확정 + 골드 ×3. */
@@ -89,7 +117,7 @@ export function createMimic(floor: number, diff: string): Combatant[] {
 
 /** 도박하는 고블린에게 속임수가 들통났을 때의 전투 (고블린 2마리). */
 export function createGamblers(floor: number, diff: string): Combatant[] {
-  const list = [createEnemy(sp('goblin'), floor, diff, 0), createEnemy(sp('goblin'), floor, diff, 0)];
+  const list = arrange([createEnemy(sp('goblin'), floor, diff, 0), createEnemy(sp('goblin'), floor, diff, 0)], true);
   nameDuplicates(list);
   return list;
 }
@@ -117,8 +145,9 @@ export function createGoblinChase(floor: number, diff: string, seed: number): Co
     e.goldReward *= 2;
     list.push(e);
   }
-  nameDuplicates(list);
-  return list;
+  const arranged = arrange(list, true);
+  nameDuplicates(arranged);
+  return arranged;
 }
 
 /** 튜토리얼 적: 1층 초반 보정을 빼고 배율을 곱한다. */

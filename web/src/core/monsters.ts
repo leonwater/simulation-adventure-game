@@ -22,6 +22,8 @@ export interface MonsterSpecies {
   Skills: EnemySkill[];
   UniqueBoss: boolean;
   RegenPercent: number;
+  /** 무리에서 서고 싶은 줄: 궁수·주술사처럼 멀리서 공격하는 종족은 후방. */
+  Line?: 'Front' | 'Back';
 }
 export interface FloorTheme {
   Name: string;

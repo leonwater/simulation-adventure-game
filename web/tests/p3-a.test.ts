@@ -222,7 +222,7 @@ describe('상태 이상 지속 턴 v2.1.1 (V21Tests)', () => {
     expect(b.player.statuses.has('Poison')).toBe(false);
   });
 
-  it('자기 강화는 이어지는 3차례를 덮는다', () => {
+  it('자기 강화는 이어지는 2차례를 덮는다 (v2.6 기본 2턴)', () => {
     const c0 = createCharacter('에단', 'Warrior');
     learnSkill(c0, 'w_warcry');
     c0.Skills.Equipped.push('w_warcry');
@@ -232,8 +232,8 @@ describe('상태 이상 지속 턴 v2.1.1 (V21Tests)', () => {
     const cry = b.getChoices().find((x) => x.skillId === 'w_warcry');
     expect(cry).toBeDefined();
     b.execute(cry!);
-    expect(b.player.statuses.active('Empower')!.Turns).toBe(3); // 자기 차례에 건 강화는 그 차례 끝에 줄지 않는다
-    for (let i = 0; i < 3; i++) {
+    expect(b.player.statuses.active('Empower')!.Turns).toBe(2); // 자기 차례에 건 강화는 그 차례 끝에 줄지 않는다
+    for (let i = 0; i < 2; i++) {
       expect(b.player.statuses.has('Empower'), `강화 ${i + 1}번째 차례`).toBe(true);
       b.execute(attackChoice(b));
     }
@@ -450,8 +450,8 @@ describe('보스·스킬 설명 (BossTests · ItemSkillTests)', () => {
   it('스킬 설명이 자연스럽게 읽힌다', () => {
     expect(skillDef('w_bash')!.Description).toBe('단일 250% · 재사용 4턴');
     expect(skillDef('w_shield')!.Description).toBe('단일 150% + 60% 확률로 기절 1턴 · 재사용 5턴');
-    expect(skillDef('w_warcry')!.Description).toBe('3턴 동안 공격력 +20% · 재사용 6턴');
-    expect(skillDef('w_whirl')!.Description).toBe('모든 적 180% · 재사용 6턴');
+    expect(skillDef('w_warcry')!.Description).toBe('2턴 동안 공격력 +20% · 재사용 6턴');
+    expect(skillDef('w_whirl')!.Description).toBe('전체 광역 180% · 재사용 6턴');
     expect(skillDef('w_bash')!.SuccessText).toBe('성공률 -10%');
     expect(skillDef('w_shield')!.SuccessText).toBe('성공률 -4%');
     expect(skillDef('a_aim')!.SuccessText).toBe('성공률 -3%');

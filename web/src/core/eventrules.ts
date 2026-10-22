@@ -327,7 +327,7 @@ function resolveSpecial(def: EventDef, index: number, run: DungeonRun, c: Charac
         applyLoot(c, run, result.Loot);
         const curse = rng.chance(BLOOD_RISK[room.EventStep]) ? bloodCurse(run, c, rng, result) : '';
         room.EventStep++;
-        result.Text = `피가 우물로 스며들자 깨달음이 밀려든다. (${room.EventStep}/${BLOOD_REWARDS.length})${curse}`;
+        result.Text = `피가 우물로 스며들자 깨달음이 밀려든다.${curse}`;
         result.Continues = room.EventStep < BLOOD_REWARDS.length;
         if (!result.Continues) room.Cleared = true;
         return result;

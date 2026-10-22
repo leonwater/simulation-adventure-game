@@ -163,7 +163,7 @@ export function effectLabel(c: Character, stat: Stat): string {
   const atk = jobData(c.Job).attackStat;
   switch (stat) {
     case 'Vitality': return `HP ${maxHp(c)}`;
-    case 'Spirit': return `저항 ${percent(resist(c))}`;
+    case 'Spirit': return `상태 이상 저항 ${percent(resist(c))}`;
     case 'Luck': return `드롭 +${percent(dropBonus(c) - 1)} · 이벤트 +${percent(eventLuckBonus(c))}`;
     case 'Strength':
     case 'Intelligence': return atk === stat ? `공격력 ${attack(c)}` : '-';

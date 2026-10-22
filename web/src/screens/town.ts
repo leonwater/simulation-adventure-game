@@ -24,8 +24,9 @@ export class TownScreen extends Screen {
     const max = maxChallengeFloor(c);
     return h('div', { class: 'page' },
       townHeader(c),
-      h('div', { class: 'scroll', style: { gap: '16px' } },
-        h('div', { class: 'illust round', style: { height: '200px', backgroundImage: `url(${assetUrl('illustrations/town.jpg')})` } }),
+      // 한 화면에 맞춤: 일러스트가 남는 높이만큼만 차지한다 (작은 폰에서는 줄어든다)
+      h('div', { class: 'scroll fit', style: { gap: '14px' } },
+        h('div', { class: 'illust round', style: { flex: '1 1 0', minHeight: '90px', maxHeight: '220px', backgroundImage: `url(${assetUrl('illustrations/town.jpg')})` } }),
         row(h('b', { class: 'grow', style: { fontSize: '22px' } }, '라브 마을'), h('b', { style: { color: DIFFICULTY_COLOR[S.difficulty], fontSize: '14px' } }, Names.difficulty(S.difficulty))),
         c.UnspentPoints > 0
           ? h('button', { class: 'card-btn on', style: { minHeight: '44px', color: 'var(--gold)', fontSize: '13px' }, on: { click: () => navigate('character') } }, `남은 능력치 포인트 ${c.UnspentPoints} — 캐릭터 화면에서 배분하세요`)

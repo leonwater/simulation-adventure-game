@@ -12,7 +12,7 @@ import { jobData } from './jobs';
 import { Names } from './names';
 import type { Rng } from './rng';
 import type { SkillDef } from './skills';
-import { skillDef } from './skills';
+import { isUtility, skillCooldown, skillDef, skillTurns } from './skills';
 
 // ── 장비 착용·해제 ───────────────────────────────────────
 
@@ -161,7 +161,7 @@ export const knowsSkill = (c: Character, id: string): boolean => getSkillState(c
 export const isSkillEquipped = (c: Character, id: string): boolean => c.Skills.Equipped.includes(id);
 
 /** 수련 배율: 등급이 높을수록 단계마다 많이 오른다 (하급 +8% ~ 최상급 +15%). */
-export const powerMultiplier = (def: SkillDef, level: number): number => 1 + B.SkillPowerPerLevel[ord(TIERS, def.Tier)] * level;
+export const powerMultiplier = (def: SkillDef, level: number): number => (isUtility(def) ? 1 : 1 + B.SkillPowerPerLevel[ord(TIERS, def.Tier)] * level);
 
 export function learnSkill(c: Character, skillId: string): boolean {
   const def = skillDef(skillId);
@@ -222,17 +222,27 @@ export function moveEquippedSkill(c: Character, from: number, to: number): boole
   return true;
 }
 
-/** 수련 비용 = 200G × 다음 강화 단계. 최대 단계면 0. */
-export const trainingCost = (s: SkillState): number => (s.Level >= B.MaxSkillLevel ? 0 : B.TrainingGoldPerLevel * (s.Level + 1));
+/** 수련 최대 단계: 전투 스킬 5, 비전투 스킬(효과만 거는 스킬) 2. */
+export const maxSkillLevel = (def: SkillDef | null): number => (def && isUtility(def) ? B.UtilityMaxSkillLevel : B.MaxSkillLevel);
 
-/** 수련 효과는 피해·회복량에만 곱해진다. 피해도 회복도 없이 상태만 거는 스킬은 수련할 수 없다. */
-export const canTrain = (def: SkillDef | null): boolean => !!def && (def.IsAttack || def.HealRatio > 0);
+/** 수련 비용 = 다음 단계 × 200G (비전투 스킬은 × 600G). 최대 단계면 0. */
+export function trainingCost(s: SkillState): number {
+  const def = skillDef(s.SkillId);
+  if (s.Level >= maxSkillLevel(def)) return 0;
+  return (def && isUtility(def) ? B.UtilityTrainingGoldPerLevel : B.TrainingGoldPerLevel) * (s.Level + 1);
+}
+
+/** 수련 효과: 전투 스킬은 단계마다 위력, 비전투 스킬은 1단계 지속 +1턴 · 2단계 재사용 -1턴. */
+export function trainingEffect(def: SkillDef, level: number): string {
+  if (!isUtility(def)) return `위력 +${Math.round((powerMultiplier(def, level) - 1) * 100)}%`;
+  const turns = Math.max(0, ...def.Statuses.map((s) => skillTurns(def, s.Turns, level)));
+  return `지속 ${turns}턴 · 재사용 ${skillCooldown(def, level)}턴`;
+}
 
 export function trainSkill(c: Character, skillId: string): { ok: boolean; error: string | null } {
   const st = getSkillState(c, skillId);
   if (!st) return { ok: false, error: '배우지 않은 스킬입니다' };
-  if (!canTrain(skillDef(skillId))) return { ok: false, error: '수련해도 바뀌는 것이 없는 스킬입니다' };
-  if (st.Level >= B.MaxSkillLevel) return { ok: false, error: '최대 강화 단계입니다' };
+  if (st.Level >= maxSkillLevel(skillDef(skillId))) return { ok: false, error: '최대 강화 단계입니다' };
   const cost = trainingCost(st);
   if (c.Gold < cost) return { ok: false, error: '골드가 부족합니다' };
   c.Gold -= cost;

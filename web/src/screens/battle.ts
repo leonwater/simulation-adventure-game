@@ -11,6 +11,7 @@ import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
+import { consumableDef, countOf, findItem } from '../core/items';
 import { button, h, icon, longPress, sub } from '../ui/kit';
 import { modal } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -39,11 +40,12 @@ interface UnitView {
 const DAMAGE_COLOR: Record<DamageKind, string> = { Normal: '#fff', Crit: '#E2B657', Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Heal: '#A8E6A0' };
 const TONE_COLOR: Record<LogTone, string> = { Normal: '#C9C3B7', Good: '#E2B657', Bad: '#E38A82', System: '#ECE7DD' };
 
+/** 적 자리 = 배열 순서: 왼쪽 열이 전방(0·2), 오른쪽 열이 후방(1·3). */
 function enemyCenters(n: number): [number, number][] {
   switch (n) {
     case 1: return [[286, 150]];
     case 2: return [[242, 150], [338, 150]];
-    case 3: return [[242, 86], [338, 86], [290, 230]];
+    case 3: return [[242, 86], [338, 86], [242, 230]];
     default: return [[242, 86], [338, 86], [242, 230], [338, 230]];
   }
 }
@@ -205,7 +207,9 @@ export class BattleScreen extends Screen {
     const vis = c.statuses.visible();
     if (c.alive && vis.length > 0) {
       const tags = h('div', { class: 'stat-icons', style: { left: `${center[0]}px`, top: `${center[1] + size / 2 + 5}px` } });
-      vis.slice(0, enemy && b.enemies.length > 1 ? 4 : 6).forEach((s) => tags.append(Object.assign(icon(statusIcon(s.Type), 18), s.Turns === 1 ? { className: 'ic blink' } : {})));
+      // 3개 이상이면 2개만 보이고 셋째 칸에 '…' (눌러서 상세 정보에서 모두 확인)
+      vis.slice(0, 2).forEach((s) => tags.append(Object.assign(icon(statusIcon(s.Type), 18), s.Turns === 1 ? { className: 'ic blink' } : {})));
+      if (vis.length >= 3) tags.append(h('span', { class: 'more' }, '…'));
       stage.append(tags);
     }
     this.units.set(index, v);
@@ -263,14 +267,37 @@ export class BattleScreen extends Screen {
         : h('div', { class: 'sub grow' }, '모든 선택은 1턴을 사용합니다'),
       sub('길게 누르면 상세')));
     const list = h('div', { class: 'col', 'data-anchor': 'battle.choices', style: { gap: '6px', overflowY: 'auto', flex: '1', minHeight: '0', paddingTop: '2px' } });
+    const bottom: HTMLElement[] = [];
     for (const ch of b.getChoices()) {
       if (ch.target >= 0 && ch.target !== this.target) continue;
       const el = this.choice(ch);
       if (ch.kind === 'Attack' && !list.querySelector('[data-anchor="battle.choice0"]')) el.dataset.anchor = 'battle.choice0';
-      list.append(el);
+      // 아이템 사용과 도망치기는 맨 아래 한 줄에 좌우로
+      if (ch.kind === 'Item' || ch.kind === 'Flee') bottom.push(el);
+      else list.append(el);
     }
+    const potions = this.quickPotions();
+    if (potions) list.append(potions);
+    if (bottom.length > 0) list.append(h('div', { class: 'row', style: { gap: '6px', alignItems: 'stretch' } }, ...bottom.map((e) => Object.assign(e, { style: `${e.getAttribute('style')};flex:1 1 0;min-width:0` }))));
     if (this.playing) list.style.pointerEvents = 'none';
     parent.append(list);
+  }
+
+  /** 회복 물약 바로 쓰기 (종류마다 한 칸, 1턴 사용). HP가 가득하면 잠긴다. */
+  private quickPotions(): HTMLElement | null {
+    const seen = new Set<string>();
+    const buttons: HTMLElement[] = [];
+    for (const ch of this.b!.getItemChoices()) {
+      const item = findItem(S.c.Inventory, ch.itemUid ?? '');
+      const def = item ? consumableDef(item.TemplateId) : null;
+      if (!item || !def || def.HealRatio <= 0 || seen.has(item.TemplateId)) continue;
+      seen.add(item.TemplateId);
+      const b = h('button', { class: 'grow', style: { minHeight: '40px', background: 'var(--return-bg)', borderColor: 'var(--return-border)', color: 'var(--return-text)', fontWeight: '700', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', borderRadius: '10px' }, on: { click: () => this.pick(ch) } },
+        icon('stat_vitality', 16), `${def.Name} ×${countOf(S.c.Inventory, item.TemplateId)} · HP +${Math.round(def.HealRatio * 100)}%`);
+      b.disabled = !ch.enabled;
+      buttons.push(b);
+    }
+    return buttons.length ? h('div', { class: 'row', style: { gap: '6px' } }, ...buttons) : null;
   }
 
   private kindStyle(ch: BattleChoice): { tag: string; bar: string; fill: string; border: string } {
@@ -296,17 +323,15 @@ export class BattleScreen extends Screen {
     }
     if (ch.kind === 'Attack') label = '공격';
     // 예상 피해를 바로 보여 준다 (스킬은 효과 요약도 함께)
-    let subText: string | null = ch.damageNote || null;
-    if (ch.kind === 'Skill') {
-      const def = skillDef(ch.skillId);
-      if (def) subText = subText === null ? def.Effect : `${subText} · ${def.Effect}`;
-    }
+    const subText: string | null = ch.damageNote || null;
     const st = this.kindStyle(ch);
     const el = h('div', { role: 'button', class: 'bchoice', style: { background: st.fill, border: `1px solid ${st.border}`, minHeight: subText ? '60px' : '52px', cursor: 'pointer', opacity: ch.enabled ? '1' : '.5' } },
       h('i', { class: 'kbar', style: { background: st.bar } }),
       h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name' }, label), subText ? h('span', { class: 'dmg' }, subText) : null),
       right ? h('span', { style: { fontSize: pct ? '15px' : '12px', fontWeight: pct ? '700' : '400', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right' } }, right) : null);
-    longPress(el, () => this.showDetail(ch), () => this.pick(ch));
+    longPress(el, () => {
+      if (!tutorial.running) this.showDetail(ch); // 튜토리얼 중에는 안내한 행동만
+    }, () => this.pick(ch));
     return el;
   }
 

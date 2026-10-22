@@ -127,7 +127,8 @@ function skillValue(b: Battle, def: SkillDef | null): number {
   }
   if (!def.IsAttack) return 0.4 * alive; // 광역 약화 등
   const mult = def.ChainMults.length > 0 ? def.ChainMults.reduce((a, m) => a + m, 0) : def.DamageMult * def.Hits;
-  const targets = def.Target === 'AllEnemies' ? alive : def.Target === 'MultiEnemy' ? Math.min(def.TargetCount, alive) : 1;
+  const targets = def.Target === 'AllEnemies' ? alive : def.Target === 'Column' || def.Target === 'Row' ? Math.min(2, alive) * 0.8
+    : def.Target === 'RandomEnemies' ? Math.min(def.TargetCount, alive) : 1;
   return 0.5 + mult * targets * 0.25;
 }
 

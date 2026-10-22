@@ -49,7 +49,7 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 ## 주의
 
 - Capacitor APK는 Unity APK와 서명 키가 달라 **덮어 설치되지 않는다** (지우고 설치). 저장 파일도 기기 안 위치가 달라 자동으로 이어지지 않는다 (P1d의 저장 가져오기로 해결).
-- 글꼴은 `web/public/fonts` (나눔고딕)을 쓴다. 글꼴에 없는 기호는 Unity와 같이 피한다.
+- 글꼴은 `web/public/fonts` 프리텐다드(Regular·Bold, SIL OFL 1.1, 상업적 이용·앱 포함 배포 가능)를 쓴다.
 - Node 22, Vite 8, TypeScript 7, Vitest 5, Capacitor 8 (APK 빌드는 JDK 21).
 
 

@@ -1,12 +1,12 @@
 import { B } from '../core/balance';
 import { maxChallengeFloor, skillSlots, totalStat, precisionBonus } from '../core/character';
-import { canTrain, cannotEquipSkillReason, equipSkill, getSkillState, isSkillEquipped, meetsSkillRequirement, moveEquippedSkill, powerMultiplier, unequipSkill } from '../core/equipment';
+import { cannotEquipSkillReason, maxSkillLevel, trainingEffect, equipSkill, getSkillState, isSkillEquipped, meetsSkillRequirement, moveEquippedSkill, powerMultiplier, unequipSkill } from '../core/equipment';
 import { TIERS, ord } from '../core/enums';
 import { jobData } from '../core/jobs';
 import { enemyRequirement } from '../core/balance';
 import { clamp } from '../core/balance';
 import { Names } from '../core/names';
-import { skillDef } from '../core/skills';
+import { isUtility, skillCooldown, skillDef, skillTurns } from '../core/skills';
 import { isDebuff } from '../core/status';
 import { describeStatus, explainStatus } from '../core/statustext';
 import { bottomNav, townBar } from '../ui/chrome';
@@ -97,10 +97,10 @@ export class SkillsScreen extends Screen {
     const m = modal(def.Name);
     const line = (k: string, v: string): HTMLElement => h('div', { class: 'row', style: { alignItems: 'flex-start' } }, h('div', { class: 'sub', style: { width: '72px', flexShrink: '0', fontSize: '13px' } }, k), h('div', { class: 'grow', style: { whiteSpace: 'pre-line' } }, v));
     m.body.append(
-      h('b', { class: 'gold', style: { fontSize: '13px' } }, `${Names.tier(def.Tier)} 스킬 · ${def.Role} · 수련 +${st.Level} / ${B.MaxSkillLevel}`),
+      h('b', { class: 'gold', style: { fontSize: '13px' } }, `${Names.tier(def.Tier)} 스킬 · ${def.Role} · 수련 +${st.Level} / ${maxSkillLevel(def)}`),
       h('div', { style: { fontSize: '15px' } }, def.Effect),
       divider(),
-      line('재사용', `${def.Cooldown}턴`));
+      line('재사용', `${skillCooldown(def, st.Level)}턴`));
     if (def.Target === 'Self') m.body.append(line('성공률', '100% (자신에게 거는 스킬)'));
     else {
       const floor = Math.max(1, maxChallengeFloor(c));
@@ -110,13 +110,13 @@ export class SkillsScreen extends Screen {
     }
     const per = Math.round(B.SkillPowerPerLevel[ord(TIERS, def.Tier)] * 100);
     m.body.append(
-      line('수련 효과', canTrain(def) ? `단계마다 위력 +${per}% (지금 +${Math.round((powerMultiplier(def, st.Level) - 1) * 100)}%)` : '수련 불가 (피해·회복 없이 효과만 거는 스킬)'),
+      line('수련 효과', isUtility(def) ? `1단계 지속 +1턴 · 2단계 재사용 -1턴 (지금 ${trainingEffect(def, st.Level)})` : `단계마다 위력 +${per}% (지금 +${Math.round((powerMultiplier(def, st.Level) - 1) * 100)}%)`),
       line('장착 조건', `Lv.${def.ReqLevel} · ${def.ReqRank} 등급`));
     for (const s of def.Statuses) {
       const who = s.OnSelf || def.Target === 'Self' ? '자신' : '적';
       const chance = s.Chance < 1 ? ` · 확률 ${Math.round(s.Chance * 100)}%` : '';
       const resist = who === '적' && isDebuff(s.Type) ? '\n명중해야 걸리고, 적의 저항(정예 10% · 보스 30%)만큼 막힐 수 있음' : '';
-      m.body.append(line(Names.status(s.Type), `${who} · ${s.Turns}턴 · ${describeStatus(s.Type, s.Value)}${chance}\n${explainStatus(s.Type)}${resist}`));
+      m.body.append(line(Names.status(s.Type), `${who} · ${skillTurns(def, s.Turns, st.Level)}턴 · ${describeStatus(s.Type, s.Value)}${chance}\n${explainStatus(s.Type)}${resist}`));
     }
     const equipped = isSkillEquipped(c, id);
     const reason = equipped ? null : cannotEquipSkillReason(c, id);

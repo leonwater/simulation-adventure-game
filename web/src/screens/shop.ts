@@ -61,13 +61,12 @@ export class ShopScreen extends Screen {
     const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } }, ...cells);
     return [
       h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '12px 8px 8px 12px' } },
-        h('div', { class: 'col grow', style: { gap: '0' } }, h('b', { style: { fontSize: '15px' } }, '물건 갱신'), sub(`던전에 다녀오면 비용이 ${B.ShopRerollBaseCost}G로 돌아와요`)),
+        h('b', { class: 'grow', style: { fontSize: '15px' } }, '물건 갱신'),
         h('b', { class: 'gold', style: { fontSize: '13px' } }, `${rerollCost(shop).toLocaleString('en-US')}G`),
         (() => { const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm'); b.style.width = '64px'; return b; })()),
       h('div', { class: 'col', 'data-anchor': 'shop.equip' },
         h('b', null, '장비'),
         shop.Equipment.length === 0 ? sub("장비가 모두 팔렸습니다. '갱신'으로 새 물건을 들여올 수 있어요.") : null,
-        sub('카드를 누르면 자세한 정보와 착용 장비 비교가 나옵니다.'),
         grid(...shop.Equipment.map((i) => this.equipCell(i)))),
       h('div', { class: 'col' }, h('b', null, '소모품 · 스킬'), grid(...shop.Goods.map((g) => this.goodCell(g)))),
     ];
@@ -203,7 +202,7 @@ export class ShopScreen extends Screen {
       const junk = button('일괄 판매', () => this.sellMaterials(), 'ghost', 'sm');
       junk.disabled = !c.Inventory.Items.some((i) => i.Kind === 'Material');
       head.append(multi, junk);
-      out.push(head, sub('카드를 누르면 팔 수 있고, 길게 누르면 선택 판매가 됩니다. 일괄 판매는 퀘스트에 쓰지 않는 기타 아이템을 모두 팝니다.'));
+      out.push(head);
     } else {
       const all = this.selected.size === c.Inventory.Items.length;
       head.append(
@@ -217,7 +216,7 @@ export class ShopScreen extends Screen {
           c.Inventory.Items.filter((i) => i.Kind === 'Equipment').forEach((i) => this.selected!.add(i.Uid));
           router.rebuild();
         }, 'ghost', 'sm'));
-      out.push(head, sub('팔 물건을 누르세요. 여러 개 쌓인 칸은 전부 팝니다.'));
+      out.push(head);
     }
     if (!any) {
       out.push(sub('가방이 비어 있습니다.'));

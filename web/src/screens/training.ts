@@ -1,5 +1,6 @@
 import { B } from '../core/balance';
-import { canTrain, getSkillState, isSkillEquipped, trainSkill, trainingCost } from '../core/equipment';
+import { getSkillState, isSkillEquipped, maxSkillLevel, trainSkill, trainingCost, trainingEffect } from '../core/equipment';
+import { isUtility } from '../core/skills';
 import { ord, TIERS } from '../core/enums';
 import { Names } from '../core/names';
 import { skillDef } from '../core/skills';
@@ -28,14 +29,15 @@ export class TrainingScreen extends Screen {
       if (!def) return null;
       const per = Math.round(B.SkillPowerPerLevel[ord(TIERS, def.Tier)] * 100);
       const cost = trainingCost(st);
-      const trainable = canTrain(def);
-      const b = button(!trainable ? '수련 불가' : cost === 0 ? '최대' : `수련 · ${cost.toLocaleString('en-US')}G`, () => this.train(st.SkillId), 'outline', 'sm');
+      const b = button(cost === 0 ? '최대' : `수련 · ${cost.toLocaleString('en-US')}G`, () => this.train(st.SkillId), 'outline', 'sm');
       b.style.width = '104px';
-      b.disabled = !(trainable && cost > 0 && c.Gold >= cost);
+      b.disabled = !(cost > 0 && c.Gold >= cost);
+      const next = st.Level < maxSkillLevel(def) ? ` → ${trainingEffect(def, st.Level + 1)}` : '';
       return h('div', { class: 'row', style: { minHeight: '64px', padding: '8px 0', borderBottom: '1px solid var(--line-soft)', gap: '10px' } },
         h('div', { class: 'col grow', style: { gap: '2px' } },
-          h('span', { style: { fontSize: '15px' } }, `${def.Name} `, colored(`${Names.tier(def.Tier)}${trainable ? ` · +${st.Level} (단계당 +${per}%)` : ' · 효과만 거는 스킬'}`, 'var(--sub)')),
-          sub(def.Description + (isSkillEquipped(c, def.Id) ? ' · 장착 중' : ''))),
+          h('span', { style: { fontSize: '15px' } }, `${def.Name} `, colored(`${Names.tier(def.Tier)} · +${st.Level}/${maxSkillLevel(def)}${isUtility(def) ? '' : ` (단계당 +${per}%)`}`, 'var(--sub)')),
+          sub(def.Description + (isSkillEquipped(c, def.Id) ? ' · 장착 중' : '')),
+          isUtility(def) ? sub(`지금 ${trainingEffect(def, st.Level)}${next}`) : null),
         b);
     });
     return h('div', { class: 'page' },

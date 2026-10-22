@@ -9,7 +9,7 @@ import { jobData } from './jobs';
 import { Names, josa } from './names';
 import type { Rng } from './rng';
 import type { SkillDef } from './skills';
-import { skillDef } from './skills';
+import { areaName, skillCooldown, skillDef, skillTurns } from './skills';
 import type { StatusApply } from './skills';
 import { isDebuff } from './status';
 import { describeStatus } from './statustext';
@@ -257,7 +257,7 @@ export class Battle {
           list.push(choice({
             kind: 'Skill', skillId: id, label: `${def.Name} · ${e.name}`, target: this.enemies.indexOf(e),
             chance: this.hitChance(e, def.SuccessBonus),
-            damageNote: this.skillDamageNote(def, e) + this.statusNote(def, [e]) + (def.IsAttack ? guardNote(e) : ''),
+            damageNote: this.skillNote(def, e, [e]) + (def.IsAttack ? guardNote(e) : ''),
             detail: this.skillDetail(def, e),
           }));
         }
@@ -269,7 +269,7 @@ export class Battle {
         }
         list.push(choice({
           kind: 'Skill', skillId: id, label: def.Name, chance, enabled, note,
-          damageNote: (target ? this.skillDamageNote(def, target) : '') + this.statusNote(def, alive), detail: this.skillDetail(def, target),
+          damageNote: this.skillNote(def, target, alive), detail: this.skillDetail(def, target),
         }));
       }
     }
@@ -301,25 +301,47 @@ export class Battle {
     return this.player.critDamage + this.player.statuses.value('Cruel') / 100;
   }
 
-  /** 선택지에 보여 줄 예상 피해 한 줄 (치명타·처형 제외 기준, 확정 치명타면 반영). */
-  skillDamageNote(def: SkillDef, target: Combatant | null): string {
+  /** 수련 단계를 반영한 재사용 대기. */
+  private cooldownOf(def: SkillDef): number {
+    return skillCooldown(def, getSkillState(this.character, def.Id)?.Level ?? 0);
+  }
+  private turnsOf(def: SkillDef, s: StatusApply): number {
+    return skillTurns(def, s.Turns, getSkillState(this.character, def.Id)?.Level ?? 0);
+  }
+
+  /**
+   * 선택지 아래 한 줄: 단일/광역 종류 · 예상 피해 · 상태 이상 이름과 걸릴 확률 · 치명타 같은 특수 효과.
+   * targets는 상태 이상 확률을 평균 낼 적 (보통 고른 적 하나).
+   */
+  skillNote(def: SkillDef, target: Combatant | null, targets: Combatant[]): string {
+    const parts: string[] = [];
     if (def.Target === 'Self') {
-      if (def.HealRatio > 0) return `HP 약 ${roundEven(this.player.maxHp * def.HealRatio * powerMultiplier(def, getSkillState(this.character, def.Id)?.Level ?? 0))} 회복`;
-      return def.Statuses.length > 0 ? `${Names.status(def.Statuses[0].Type)} ${def.Statuses[0].Turns}턴` : '';
+      parts.push('자신');
+      if (def.HealRatio > 0) parts.push(`HP 약 ${roundEven(this.player.maxHp * def.HealRatio * powerMultiplier(def, getSkillState(this.character, def.Id)?.Level ?? 0))} 회복`);
+      for (const s of def.Statuses) parts.push(`${Names.status(s.Type)} ${this.turnsOf(def, s)}턴`);
+      if (def.GrantsNextCrit) parts.push('다음 스킬 확정 치명타');
+      return parts.join(' · ');
     }
-    if (!def.IsAttack && def.Statuses.length > 0) {
-      return `${def.Target === 'AllEnemies' ? '모든 적 ' : ''}${Names.status(def.Statuses[0].Type)} ${def.Statuses[0].Turns}턴`;
-    }
-    if (!def.IsAttack || !target) return '';
+    parts.push(areaName(def) ?? '단일');
     const crit = this.sureCrit(def);
-    if (def.Target === 'ChainEnemies') {
-      const parts = def.ChainMults.map((_, i) => String(damage(this.player, target, this.skillMult(def, i), crit)));
-      return `피해 약 ${parts.join(' → ')} (연쇄)`;
+    if (def.IsAttack && target) {
+      if (def.Target === 'ChainEnemies') parts.push(`피해 약 ${def.ChainMults.map((_, i) => damage(this.player, target, this.skillMult(def, i), crit)).join(' → ')}`);
+      else parts.push(`피해 약 ${damage(this.player, target, this.skillMult(def), crit)}${def.Hits > 1 ? ` × ${def.Hits}회` : ''}`);
     }
-    const d = damage(this.player, target, this.skillMult(def), crit);
-    let text = `${def.Target === 'AllEnemies' ? '모든 적 ' : ''}피해 약 ${d}${def.Hits > 1 ? ` × ${def.Hits}회` : ''}`;
-    if (def.Target === 'MultiEnemy' && def.TargetCount > 1) text += ` · ${def.TargetCount}명`;
-    return crit ? `${text} (치명타)` : text;
+    for (const s of def.Statuses) {
+      if (s.OnSelf) {
+        parts.push(`자신 ${Names.status(s.Type)} ${this.turnsOf(def, s)}턴`);
+        continue;
+      }
+      const sum = targets.reduce((acc, t) => acc + this.statusLandChance(def, s, t), 0);
+      parts.push(`${Names.status(s.Type)} ${this.turnsOf(def, s)}턴 ${targets.length > 0 ? r100(sum / targets.length) : r100(s.Chance)}%`);
+    }
+    if (def.IsAttack) {
+      if (crit) parts.push('확정 치명타');
+      else if (this.critChance(def) > 0) parts.push(`치명타 ${r100(Math.min(1, this.critChance(def)))}%`);
+      if (def.ExecuteThreshold > 0) parts.push(`HP ${r100(def.ExecuteThreshold)}% 이하 ×${def.ExecuteMult}`);
+    }
+    return parts.join(' · ');
   }
 
   /** 상태 이상이 실제로 걸릴 확률: 한 번이라도 명중할 확률 × 효과 확률 × (1 - 대상의 저항). */
@@ -331,17 +353,6 @@ export class Battle {
     if (s.OnSelf) return any * s.Chance;
     const res = isDebuff(s.Type) ? target.resist : 0;
     return any * s.Chance * (1 - res);
-  }
-
-  private statusNote(def: SkillDef, targets: Combatant[]): string {
-    if (def.Target === 'Self' || targets.length === 0) return '';
-    const parts: string[] = [];
-    for (const s of def.Statuses) {
-      if (s.OnSelf) continue;
-      const sum = targets.reduce((a, t) => a + this.statusLandChance(def, s, t), 0);
-      parts.push(`${Names.status(s.Type)} ${r100(sum / targets.length)}%`);
-    }
-    return parts.length === 0 ? '' : ` · ${parts.join(' · ')}`;
   }
 
   /** 피해 계산식: 공격력 × 배율 → 방어력 → 피해 감소 → 치명타. */
@@ -366,7 +377,7 @@ export class Battle {
       lines.push('');
       lines.push(this.damageFormula(def.Target === 'ChainEnemies' ? this.skillMult(def, 0) : this.skillMult(def), target, this.sureCrit(def)));
       if (def.Hits > 1) lines.push(`타격 ${def.Hits}회, 타격마다 따로 명중 판정`);
-      if (def.Target === 'AllEnemies') lines.push('모든 적에게 따로 판정 (적마다 방어력에 따라 피해가 다름)');
+      if (areaName(def)) lines.push(`${areaName(def)}: 적마다 따로 판정 (적마다 방어력에 따라 피해가 다름)`);
       if (def.Target === 'ChainEnemies') lines.push(`연쇄 배율 ${def.ChainMults.map((m) => `${r100(m)}%`).join(' → ')}`);
       lines.push('');
       if (this.sureCrit(def)) lines.push(`치명타 확정 (피해 ×${fmtNum(r2(this.critNow))})${this.nextSkillCrit ? ' — 연막 효과' : def.FirstTurnCrit ? ' — 첫 턴' : ''}`);
@@ -382,7 +393,7 @@ export class Battle {
       for (const st of def.Statuses) {
         const who = st.OnSelf || def.Target === 'Self' ? '자신: ' : '적: ';
         const chance = st.Chance < 1 ? ` (${r100(st.Chance)}% 확률)` : '';
-        lines.push(`· ${who}${Names.status(st.Type)} ${st.Turns}턴 — ${describeStatus(st.Type, st.Value)}${chance}`);
+        lines.push(`· ${who}${Names.status(st.Type)} ${this.turnsOf(def, st)}턴 — ${describeStatus(st.Type, st.Value)}${chance}`);
         if (target || def.Target === 'Self') {
           const res = !st.OnSelf && def.Target !== 'Self' && isDebuff(st.Type) && target && target.resist > 0 ? ` (저항 ${r100(target.resist)}% 반영)` : '';
           lines.push(`  실제로 걸릴 확률 약 ${r100(this.statusLandChance(def, st, target))}%${res}`);
@@ -390,7 +401,7 @@ export class Battle {
       }
     }
     lines.push('');
-    lines.push(`재사용 ${def.Cooldown}턴`);
+    lines.push(`재사용 ${this.cooldownOf(def)}턴`);
     if (def.Target === 'Self') lines.push('자신에게 거는 스킬: 성공률 100%');
     else if (target) lines.push(`성공 확률: ${this.hitBreakdown(target, def.SuccessBonus)}`);
     return lines.join('\n');
@@ -462,7 +473,7 @@ export class Battle {
 
   private tickCooldowns(used: BattleChoice): void {
     for (const [k, v] of [...this.cooldowns]) {
-      if (used.kind === 'Skill' && used.skillId === k && v === skillDef(k)!.Cooldown) continue;
+      if (used.kind === 'Skill' && used.skillId === k && v === this.cooldownOf(skillDef(k)!)) continue;
       this.cooldowns.set(k, Math.max(0, v - 1));
     }
   }
@@ -500,10 +511,20 @@ export class Battle {
     if (def.Target === 'AllEnemies') return alive;
     const list: Combatant[] = [];
     if (primary >= 0 && primary < this.enemies.length && this.enemies[primary].alive) list.push(this.enemies[primary]);
-    const want = def.Target === 'MultiEnemy' ? def.TargetCount : def.Target === 'ChainEnemies' ? def.ChainMults.length : 1;
-    for (const e of alive) {
-      if (list.length >= want) break;
-      if (!list.includes(e)) list.push(e);
+    else if (alive.length > 0) list.push(alive[0]);
+    if (list.length === 0) return list;
+    // 적 자리 = 배열 순서: 0 전방 위 · 1 후방 위 · 2 전방 아래 · 3 후방 아래 (왼쪽 열이 전방)
+    const at = this.enemies.indexOf(list[0]);
+    const add = (i: number): void => {
+      const e = this.enemies[i];
+      if (e && e.alive && !list.includes(e)) list.push(e);
+    };
+    if (def.Target === 'Column') add(at ^ 2); // 좌우: 같은 열의 위·아래
+    else if (def.Target === 'Row') add(at ^ 1); // 앞뒤: 같은 가로줄의 앞·뒤
+    else if (def.Target === 'RandomEnemies' || def.Target === 'ChainEnemies') {
+      const want = def.Target === 'ChainEnemies' ? def.ChainMults.length : def.TargetCount;
+      const rest = alive.filter((e) => !list.includes(e));
+      while (list.length < want && rest.length > 0) list.push(rest.splice(this.rng.range(0, rest.length), 1)[0]);
     }
     return list;
   }
@@ -511,13 +532,16 @@ export class Battle {
   private useSkill(c: BattleChoice): void {
     const def = skillDef(c.skillId)!;
     const state = getSkillState(this.character, def.Id);
-    const power = powerMultiplier(def, state?.Level ?? 0);
-    this.cooldowns.set(def.Id, def.Cooldown);
+    const level = state?.Level ?? 0;
+    const power = powerMultiplier(def, level);
+    this.cooldowns.set(def.Id, skillCooldown(def, level));
+    // 비전투 스킬은 수련 1단계부터 효과가 1턴 더 간다
+    const statuses = def.Statuses.map((s) => ({ ...s, Turns: skillTurns(def, s.Turns, level) }));
     this.add(`${def.Name}!`);
     if (def.Target === 'Self') {
       this.event('Text', -1, -1, { text: def.Name });
       if (def.HealRatio > 0) this.heal(this.player, roundEven(this.player.maxHp * def.HealRatio * power));
-      for (const s of def.Statuses) this.applyStatus(this.player, this.player, s);
+      for (const s of statuses) this.applyStatus(this.player, this.player, s);
       if (def.GrantsNextCrit) {
         this.nextSkillCrit = true;
         this.add('다음 스킬은 확정 치명타!', 'Good');
@@ -535,7 +559,7 @@ export class Battle {
           this.event('Miss', -1, this.indexOf(t), { hpAfter: t.hp });
           continue;
         }
-        for (const s of def.Statuses) this.applyStatus(this.player, s.OnSelf ? this.player : t, s);
+        for (const s of statuses) this.applyStatus(this.player, s.OnSelf ? this.player : t, s);
       }
       return;
     }

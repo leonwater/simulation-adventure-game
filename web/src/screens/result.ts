@@ -2,7 +2,6 @@ import { B } from '../core/balance';
 import { maxChallengeFloor } from '../core/character';
 import { isQuestComplete } from '../core/guild';
 import { jobData } from '../core/jobs';
-import { itemNames } from '../core/loot';
 import { josa } from '../core/names';
 import { jobLine } from '../ui/chrome';
 import { S } from '../ui/game';
@@ -89,8 +88,6 @@ export class ResultScreen extends Screen {
       tableRow(`${d.Floor}층 진행`, `${d.RoomsExplored}/${d.RoomsTotal}방`, '초기화', colored('초기화', '#E38A82')),
       tableRow('장착 장비', `${d.EquippedKept}개`, `${d.EquippedKept}개`, colored('유지', 'var(--green)')),
       tableRow('길드 창고', `${d.StorageCount}개`, `${d.StorageCount}개`, colored('유지', 'var(--green)'), false, true)));
-    if (d.ItemsLost.length > 0) body.append(sub(`잃은 아이템: ${itemNames(d.ItemsLost, 6)}`));
-    body.append(sub(`레벨·도달 층(돌파 ${S.c.HighestFloorCleared}층)·가방 확장은 그대로입니다.`));
   }
 
   private hardcore(body: HTMLElement): void {

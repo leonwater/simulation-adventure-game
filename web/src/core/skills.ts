@@ -44,6 +44,28 @@ export interface SkillDef {
   Description: string;
 }
 
+/** 광역 종류 이름 (전투 선택지·스킬 상세). 단일·자신은 null. */
+export function areaName(def: SkillDef): string | null {
+  switch (def.Target) {
+    case 'AllEnemies': return '전체 광역';
+    case 'Column': return '좌우 광역';
+    case 'Row': return '앞뒤 광역';
+    case 'RandomEnemies': case 'ChainEnemies': return `인원수 광역 ${def.Target === 'ChainEnemies' ? def.ChainMults.length : def.TargetCount}명`;
+    default: return null;
+  }
+}
+
+/** 피해 없이 효과만 거는 비전투 스킬: 수련하면 지속 +1턴(1단계) → 재사용 -1턴(2단계). */
+export const isUtility = (def: SkillDef): boolean => !def.IsAttack;
+/** 수련 단계를 반영한 효과 지속 턴 (비전투 스킬 1단계부터 +1). */
+export const skillTurns = (def: SkillDef, turns: number, level: number): number => turns + (isUtility(def) && level >= 1 ? 1 : 0);
+/** 수련 단계를 반영한 재사용 대기 (비전투 스킬 2단계부터 -1, 언제나 지속보다 1턴 이상 길다). */
+export function skillCooldown(def: SkillDef, level: number): number {
+  if (!isUtility(def)) return def.Cooldown;
+  const longest = Math.max(0, ...def.Statuses.map((s) => skillTurns(def, s.Turns, level)));
+  return Math.max(longest + 1, def.Cooldown - (level >= 2 ? 1 : 0));
+}
+
 export const ALL_SKILLS = skillsJson as unknown as SkillDef[];
 const BY_ID = new Map(ALL_SKILLS.map((s) => [s.Id, s]));
 

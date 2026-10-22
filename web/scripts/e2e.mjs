@@ -82,7 +82,7 @@ for (let i = 0; i < 500; i++) {
     if (await has('.dock button.choice')) { await page.locator('.dock button.choice').first().click(T).catch(() => {}); continue; }
     const pad = page.locator('.pad button');
     if (await pad.count()) {
-      const pick = (await pad.filter({ hasText: '보스' }).count()) ? pad.filter({ hasText: '보스' }) : (await pad.filter({ hasText: '새 방' }).count()) ? pad.filter({ hasText: '새 방' }) : pad;
+      const pick = (await pad.filter({ hasText: '보스' }).count()) ? pad.filter({ hasText: '보스' }) : (await page.locator('.pad button:has(.glow)').count()) ? page.locator('.pad button:has(.glow)') : pad;
       await pick.first().click(T).catch(() => {}); await page.waitForTimeout(300); continue;
     }
   }

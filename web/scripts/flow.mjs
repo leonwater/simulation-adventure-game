@@ -1,4 +1,5 @@
 // 화면 흐름 스크린샷: node scripts/flow.mjs "click=시작하기" "fill=input|검사" "shot=shots/a.png" ...
+// 화면 크기: VIEW=360x700 처럼 바꿀 수 있다 (기본 390x844)
 // 단계: loadsave=파일(저장 JSON을 넣고 새로고침) · click=글자(보이는 글자로 찾아 누름) · fill=선택자|값 · wait=ms · shot=파일 · eval=자바스크립트 · url=주소(처음 한 번, 기본 localhost:4173)
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
@@ -9,7 +10,8 @@ const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
 const dir = fs.readdirSync(root).filter((d) => d.startsWith('chromium-')).sort().pop();
 const exe = dir ? [path.join(root, dir, 'chrome-linux64', 'chrome'), path.join(root, dir, 'chrome-linux', 'chrome')].find((p) => fs.existsSync(p)) : undefined;
 const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
-const page = await browser.newPage({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
+const [vw, vh] = (process.env.VIEW ?? '390x844').split('x').map(Number);
+const page = await browser.newPage({ viewport: { width: vw, height: vh }, deviceScaleFactor: 2 });
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });

@@ -301,7 +301,7 @@ describe('아이템 (ItemSkillTests)', () => {
     expect(useSkillBook(c, again.Uid).error).toBe('이미 배운 스킬입니다');
   });
 
-  it('수련: 비용 200×단계, 최대 5, 상태만 거는 스킬은 불가', () => {
+  it('수련: 비용 200×단계, 최대 5 (비전투 스킬은 따로)', () => {
     const c = createCharacter('a', 'Warrior');
     c.Gold = 10000;
     expect(trainingCost(getSkillState(c, 'w_bash')!)).toBe(200);
@@ -310,7 +310,7 @@ describe('아이템 (ItemSkillTests)', () => {
     expect(trainSkill(c, 'w_bash').error).toBe('최대 강화 단계입니다');
     const onlyStatus = ALL_SKILLS.find((s) => s.JobRestriction === 0 && !s.IsAttack && s.HealRatio === 0)!;
     learnSkill(c, onlyStatus.Id);
-    expect(trainSkill(c, onlyStatus.Id).error).toBe('수련해도 바뀌는 것이 없는 스킬입니다');
+    expect(trainSkill(c, onlyStatus.Id).ok).toBe(true); // v2.6: 비전투 스킬도 수련 (최대 2단계)
   });
 
   it('모든 스킬서·재료가 만들어진다', () => {
