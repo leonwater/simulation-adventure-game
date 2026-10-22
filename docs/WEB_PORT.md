@@ -22,6 +22,7 @@ npm run dev        # 개발 서버 (핫 리로드)
 npm run check      # 타입 검사 + 테스트 + 빌드  ← 푸시 전 필수
 npm run preview    # 빌드 결과를 localhost:4173 으로
 npm run shot [url] [out.png]   # 390×844 스크린샷 (화면 확인은 이것으로, shots/ 폴더)
+npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools/balance/run.sh와 같은 출력)
 ```
 
 - 화면을 바꾼 뒤에는 `npm run build && npm run preview &` → `npm run shot` → 이미지를 열어 확인한다 (Unity에서는 불가능했던 일).
@@ -36,7 +37,7 @@ npm run shot [url] [out.png]   # 390×844 스크린샷 (화면 확인은 이것�
 | P1b | Core 전투(상태 이상·보스 특성·몬스터 행동·확률) | `BattleTests` `V21~V24Tests`를 옮김 + 통계 비교 — **완료** (`battle` `bosskit` `enemies` `monsters` `status` `combatant`, `tests/battle.test.ts`). 보상 정산(`CollectRewards`)은 드롭표가 있는 P1c에서 이식 |
 | P1c | Core 던전: 층 생성(배치 규칙)·이동 패드·이벤트 34종·드롭·정산 | `DungeonTests` `SpecialEventTests` `V23~V24Tests` — **완료** (`map` `generator` `dungeon` `events` `eventrules` `explore` `mapevents` `loot` `settlement` `guild`, `tests/dungeon.test.ts`) |
 | P1d | Core 마을·저장: 상점·길드·퀘스트·창고, 저장(C#과 **같은 JSON 필드 이름**이라 Unity 저장도 읽을 수 있게) | `TownTests` `SaveTests` — **완료** (`shop` `save` `session`, `tests/town-session.test.ts`; Unity 저장 샘플 `tests/fixtures/unity-save.json` 읽기 · TS 저장을 C#이 읽는 것도 확인) |
-| P1e | 자동 플레이 봇 + 밸런스 시뮬레이션 | C# `tools/balance` 결과와 사망률 ±3%p 이내 |
+| P1e | 자동 플레이 봇 + 밸런스 시뮬레이션 | C# `tools/balance` 결과와 사망률 ±3%p 이내 — **완료** (`web/src/sim` `npm run balance`, 보통 사망률 C#과 ±3%p 이내: C# 30.3/32.1/38.7/40.2/52.0/61.4 → 웹 27.8/30.8/37.4/41.8/53.0/61.5) |
 | P2 | 화면: 시작·등록 → 마을·시설 → 캐릭터·가방·스킬 → 던전 → 전투 → 이벤트·상인 → 정산·클리어 → 설정 → 튜토리얼 | 화면마다 `npm run shot`, UI 시안(Claude Design)과 비교 |
 | P3 | 패리티 확인: 테스트 187개 전부 대응, 밸런스·사망률 일치 | 체크리스트 |
 | P4 | 교체: 릴리스 태그를 `android-latest` `web-latest`로, Unity 워크플로·폴더 정리 | 새 APK 실기기 확인 |

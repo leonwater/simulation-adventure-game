@@ -337,3 +337,10 @@
 - `web/src/core`: `shop`(첫 채움·갱신 비용·구매/판매·가방) · `save`(SaveData·Repair·메모리/localStorage 저장소) · `session`(GameSession: 마을 입장·던전 이동·전투 정산·이벤트·시련·귀환/사망·튜토리얼)
 - 저장 모양은 C#과 같아서 Unity 저장을 읽고(`tests/fixtures/unity-save.json`, `tools/export/run.sh`의 `--save`로 다시 만들 수 있음), TS 저장도 C#이 읽는다 (`--load`로 확인). 시각은 C# ticks 모양이지만 JS 숫자 한계로 아랫자릿수는 부정확
 - 웹 테스트 총 116개
+
+## 27. 웹 이식 P1e (봇·밸런스 시뮬레이션, 2026-10-22)
+
+- `web/src/sim/bot.ts` (C# BotPlayer와 같은 규칙) · `balance.ts` (시뮬레이션·출력) · `cli.ts`; 실행 `cd web && npm run balance -- 150 3 Normal,Hard`
+- 보통 난이도 사망률 (도전 150회 · 8시드 · 32명): C# 30.3/32.1/38.7/40.2/52.0/61.4% ↔ 웹 27.8/30.8/37.4/41.8/53.0/61.5% (5층 단위, 모두 ±3%p 이내), 30층 정복 C# 19/32 ↔ 웹 21/32. 어려움도 비슷 (정복 1/16 ↔ 3/16)
+- `tests/balance-sim.test.ts`: 작은 표본(12명)으로 C# 값과 ±8%p 안인지 확인. 웹 테스트 총 117개
+- `tools/export/Program.cs`: `--save`(Unity 저장 샘플 만들기) · `--load`(저장 파일 읽어 보기)

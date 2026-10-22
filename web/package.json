@@ -11,7 +11,8 @@
     "test": "vitest run",
     "check": "tsc --noEmit && vitest run && vite build",
     "shot": "node scripts/shot.mjs",
-    "cap:sync": "npm run build && cap sync android"
+    "cap:sync": "npm run build && cap sync android",
+    "balance": "rolldown src/sim/cli.ts --file .sim/balance.mjs --format esm --platform node && node .sim/balance.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "^8.5.3",
