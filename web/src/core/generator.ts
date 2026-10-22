@@ -2,7 +2,7 @@ import { B } from './balance';
 import { pickEvent } from './events';
 import type { LayoutPattern, RoomType } from './enums';
 import { LAYOUTS } from './enums';
-import { createConsumable } from './items';
+import { consumableAt } from './items';
 import type { FloorMap, Room } from './map';
 import { branchesOnBossPath, deadEnds, distances, linkRooms, newFloorMap, newRoom } from './map';
 import type { Rng } from './rng';
@@ -44,9 +44,9 @@ export function rollRoomTypes(rng: Rng): RoomType[] {
 }
 
 /** 던전 상인 물건: 소모품 5종, 물건마다 2~5개까지만 판다. */
-export function merchantGoods(rng: Rng): ShopGood[] {
+export function merchantGoods(rng: Rng, floor = 1): ShopGood[] {
   return ['potion', 'potion_hi', 'antidote', 'bandage', 'salve'].map((id) => ({
-    Item: createConsumable(id),
+    Item: consumableAt(id, floor),
     Stock: rng.rangeInclusive(B.MerchantStockMin, B.MerchantStockMax),
   }));
 }
@@ -203,7 +203,7 @@ function assignTypes(map: FloorMap, types: RoomType[], floor: number, rng: Rng, 
       r.EventId = pickEvent(rng, floor, usedEvents).Id;
       usedEvents.add(r.EventId);
     }
-    if (r.Type === 'Merchant') r.MerchantGoods = merchantGoods(rng);
+    if (r.Type === 'Merchant') r.MerchantGoods = merchantGoods(rng, floor);
   }
 }
 

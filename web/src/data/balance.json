@@ -101,13 +101,13 @@
     1,
     1,
     1,
+    1,
     2,
     2,
     2,
-    3,
-    3,
-    3,
-    3
+    2,
+    2,
+    2
   ],
   "StoneFirstFloor": 10,
   "EnhanceGradeCost": [
@@ -159,7 +159,7 @@
   "MaxStack": 99,
   "MaxConsumable": 99,
   "BagBasePrice": 500,
-  "SellRatio": 0.5,
+  "SellRatio": 0.3,
   "MaxEnhance": 15,
   "MaxGearShare": 0.4,
   "DefenseConstant": 400,
@@ -243,5 +243,10 @@
   "BackHp": 0.7,
   "BackAttack": 1.25,
   "UtilityMaxSkillLevel": 2,
-  "UtilityTrainingGoldPerLevel": 600
+  "UtilityTrainingGoldPerLevel": 600,
+  "MerchantEquipChance": 0.3,
+  "MerchantBookChance": 0.25,
+  "PotionPricePerFloor": 0.1,
+  "StonePriceBase": 300,
+  "StonePricePerFloor": 15
 }

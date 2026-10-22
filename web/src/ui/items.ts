@@ -2,7 +2,7 @@ import type { Character } from '../core/character';
 import { findEquipped } from '../core/character';
 import { compare, replacedBy, summary } from '../core/equipment';
 import type { ItemInstance, ItemContainer } from '../core/items';
-import { displayName, isAccessory, isWeapon } from '../core/items';
+import { consumableDef, displayName, isAccessory, isWeapon } from '../core/items';
 import { Names } from '../core/names';
 import { skillDef } from '../core/skills';
 import type { Child } from './kit';
@@ -47,11 +47,13 @@ const circle = (color: string, size: number): HTMLElement => h('i', { style: { d
 /** 종류 줄: 색 원 + 종류. */
 export function kindLine(item: ItemInstance, size = 12): HTMLElement {
   const cat = category(item);
-  return h('div', { class: 'row', style: { gap: '4px', fontSize: `${size}px`, color: 'var(--body)', height: `${Math.round(size * 1.4)}px` } }, circle(CAT_COLOR[cat], size * 0.8), CAT_NAME[cat]);
+  // 스킬서는 등급까지: '하급 스킬서'
+  const book = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
+  return h('div', { class: 'row', style: { gap: '4px', fontSize: `${size}px`, color: 'var(--body)', height: `${Math.round(size * 1.4)}px`, whiteSpace: 'nowrap' } }, circle(CAT_COLOR[cat], size * 0.8), book ? `${Names.tier(book.Tier)} ${CAT_NAME[cat]}` : CAT_NAME[cat]);
 }
 
-const delta = (d: number): string => (d > 0 ? `+${d}` : d < 0 ? `-${-d}` : '±0');
-const deltaColor = (d: number): string => (d > 0 ? GREEN : d < 0 ? RED : 'var(--sub)');
+export const delta = (d: number): string => (d > 0 ? `+${d}` : d < 0 ? `-${-d}` : '0');
+export const deltaColor = (d: number): string => (d > 0 ? GREEN : d < 0 ? RED : 'var(--sub)');
 
 /** 착용 중인 장비와 비교 (+초록 / -빨강). 비교할 것이 없으면 null. */
 export function compareText(c: Character, item: ItemInstance, withLabel = true): HTMLElement | null {
@@ -91,17 +93,26 @@ export function levelCompare(c: Character, item: ItemInstance, withLabel = false
   return el;
 }
 
+/** 소모품 효과 한 줄: 'HP 30% 회복', '독 해제'. */
+function shortConsumable(id: string): string {
+  const d = consumableDef(id);
+  if (!d) return '';
+  return d.HealRatio > 0 ? `HP +${Math.round(d.HealRatio * 100)}%` : d.Description;
+}
+
 /** 칸의 정보 한 줄: 장비는 착용 레벨과 지금 장비 대비, 스킬서는 등급 · 쓸 수 있는 직업 (내 직업이 아니면 빨강). */
 export function infoText(c: Character | null, item: ItemInstance): Child {
   if (item.Kind === 'Equipment' && c) return levelCompare(c, item, true);
+  // 능력치 증감이 없는 물품은 짧은 설명 (소모품 효과 · 재료 · 강화석)
+  if (item.Kind === 'Consumable') return shortConsumable(item.TemplateId);
+  if (item.Kind === 'Material') return '퀘스트·판매 재료';
+  if (item.Kind === 'EnhanceStone') return '+6 이상 강화 재료';
   const def = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
   if (!def) return '';
-  if (def.JobRestriction < 0) return `${Names.tier(def.Tier)} · 공용`;
+  if (def.JobRestriction < 0) return '공용';
   const jobs = ['Warrior', 'Archer', 'Rogue', 'Mage'] as const;
   const job = Names.job(jobs[def.JobRestriction]);
-  const el = h('span', null, `${Names.tier(def.Tier)} · `);
-  el.append(c && def.JobRestriction !== jobs.indexOf(c.Job) ? colored(job, RED) : job);
-  return el;
+  return c && def.JobRestriction !== jobs.indexOf(c.Job) ? colored(`${job} 전용`, RED) : `${job} 전용`;
 }
 
 export const gradeTag = (item: ItemInstance): HTMLElement => colored(`[${Names.grade(item.Grade)}]`, GRADE_COLOR[item.Grade]);

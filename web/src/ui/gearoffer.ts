@@ -1,10 +1,10 @@
 import type { Character } from '../core/character';
-import { cannotEquipReason, equip, replacedBy, summary } from '../core/equipment';
+import { cannotEquipReason, compare, equip, replacedBy, summary } from '../core/equipment';
 import type { ItemInstance } from '../core/items';
 import { displayName, findItem } from '../core/items';
-import { Names } from '../core/names';
+import { josa } from '../core/names';
 import { S } from './game';
-import { compareText } from './items';
+import { colored, delta, deltaColor, nameColor } from './items';
 import { button, h, row } from './kit';
 import { modal, toast } from './overlay';
 import { router } from './router';
@@ -36,12 +36,14 @@ function next(queue: ItemInstance[], after?: () => void): void {
     return;
   }
   asked.add(item.Uid);
-  const cur = replacedBy(c, item);
-  const m = modal('더 좋은 장비', false);
-  const cmp = compareText(c, item);
+  // 제목 없이: '…을(를) 획득했습니다. / 바로 착용하시겠습니까? / 장착 시 능력치 변화: …'
+  const m = modal(null, false);
+  const changes = compare(c, item);
   m.body.append(
-    h('div', { style: { lineHeight: '1.5' } }, h('b', null, displayName(item)), h('br'),
-      cur == null ? `${Names.gear(item.Gear)} 칸이 비어 있습니다` : `착용 중 ${displayName(cur)} 대비 `, cmp, h('br'), '바로 착용할까요?'),
+    h('div', { style: { lineHeight: '1.6', fontSize: '15px' } },
+      h('b', { style: { color: nameColor(item) } }, displayName(item)), `${josa(displayName(item), '을/를').slice(displayName(item).length)} 획득했습니다.`, h('br'),
+      '바로 착용하시겠습니까?', h('br'),
+      '장착 시 능력치 변화: ', ...(changes.length === 0 ? ['없음'] : changes.flatMap((d, i) => [i > 0 ? ', ' : '', `${d.label} `, colored(delta(d.delta), deltaColor(d.delta))]))),
     row(
       button('나중에', () => {
         m.close();
@@ -52,7 +54,6 @@ function next(queue: ItemInstance[], after?: () => void): void {
         const r = equip(c, item.Uid);
         if (r.ok) {
           S.save();
-          toast(`${displayName(item)} 착용`);
           router.rebuild();
         } else toast(r.error ?? '');
         next(queue, after);

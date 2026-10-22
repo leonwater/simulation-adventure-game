@@ -47,7 +47,6 @@ export class CharacterScreen extends Screen {
     const c = S.c;
     if (!this.draft) this.draft = new AllocationDraft(c);
     const draft = this.draft;
-    const pct = Math.floor(expProgress(c) * 100);
     return h('div', { class: 'page' },
       townBar('캐릭터', '마을', () => navigate('town'), c),
       h('div', { class: 'scroll fit', style: { gap: '10px' } },
@@ -55,7 +54,7 @@ export class CharacterScreen extends Screen {
           h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { style: { fontSize: '24px' } }, c.Name), jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level} / ${B.MaxLevel}`, 13)),
           // 경험치: 글자 바로 아래 가로 막대 (마을 머리줄과 같은 모양)
           h('div', { class: 'col', style: { width: '132px', gap: '6px', alignItems: 'stretch' } },
-            h('div', { class: 'sub', style: { textAlign: 'right' } }, c.Level >= B.MaxLevel ? '최대 레벨' : `경험치 ${pct}%`),
+            h('div', { class: 'sub', style: { textAlign: 'right' } }, c.Level >= B.MaxLevel ? '최대 레벨' : '경험치'),
             progress(expProgress(c), 'var(--blue)'))),
         this.badgePanel(),
         this.statsPanel(draft),

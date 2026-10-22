@@ -1,4 +1,5 @@
 import { tutorial } from '../ui/tutorial';
+import { areaDiagram } from '../ui/skillinfo';
 import { B } from '../core/balance';
 import type { BattleChoice, BattleEvent, DamageKind, LogTone } from '../core/battle';
 import type { Battle } from '../core/battle';
@@ -13,7 +14,7 @@ import { S } from '../ui/game';
 import { colored } from '../ui/items';
 import { consumableDef, countOf, findItem } from '../core/items';
 import { button, h, icon, longPress, sub } from '../ui/kit';
-import { modal } from '../ui/overlay';
+import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { dungeonTheme } from '../ui/theme';
 import { settings, vibrate } from '../ui/settings';
@@ -102,7 +103,17 @@ export class BattleScreen extends Screen {
     this.buildStage();
     this.lower = h('div', { class: 'lower' });
     if (this.finished) this.finishedView(this.lower);
-    else if (!b.isOver || this.pending) this.choices(this.lower);
+    // 마지막 일격을 재생하는 동안(전투는 끝났지만 연출 중)에는 선택지를 그리지 않는다 — 물약 칸만 남았다가 사라지지 않게
+    else if (!b.isOver) this.choices(this.lower);
+    // 무대는 390px 기준 좌표로 그리고, 화면 폭이 더 좁으면 통째로 줄여 양옆이 잘리지 않게 한다
+    const fit = (): void => {
+      // 키가 작은 폰에서는 무대를 더 줄여 아래 선택지가 스크롤 없이 보이게 한다
+      const tall = document.querySelector<HTMLElement>('.screen')?.clientHeight ?? 844;
+      const s = Math.min(1, stageWrap.clientWidth / 390 || 1, tall < 700 ? 0.7 : tall < 780 ? 0.82 : 1);
+      this.stage!.style.transform = s < 1 ? `scale(${s})` : '';
+      stageWrap.style.height = `${Math.round(300 * s)}px`;
+    };
+    requestAnimationFrame(fit);
     return h('div', { class: 'page', style: { background: th.bg } }, this.topBar(), stageWrap, this.log(), this.lower);
   }
 
@@ -315,7 +326,9 @@ export class BattleScreen extends Screen {
 
   private choice(ch: BattleChoice): HTMLElement {
     const pct = ch.enabled && ch.kind !== 'Item' && ch.kind !== 'Wait';
-    const right = ch.enabled ? (ch.kind === 'Item' || ch.kind === 'Wait' ? ch.note : `${Math.round(ch.chance * 100)}%`) : ch.note;
+    // 아이템·도주는 추가 설명 없이 (못 쓸 때는 눌렀을 때 알림)
+    const plain = ch.kind === 'Item' || ch.kind === 'Flee';
+    const right = plain ? (ch.kind === 'Flee' && ch.enabled ? `${Math.round(ch.chance * 100)}%` : '') : ch.enabled ? (ch.kind === 'Wait' ? ch.note : `${Math.round(ch.chance * 100)}%`) : ch.note;
     let label = ch.label;
     if (ch.target >= 0) {
       const cut = label.indexOf(' · ');
@@ -338,11 +351,18 @@ export class BattleScreen extends Screen {
   private showDetail(ch: BattleChoice): void {
     const text = ch.detail || ch.note;
     const m = modal(ch.label);
+    const def = ch.kind === 'Skill' ? skillDef(ch.skillId) : null;
+    if (def) m.body.append(areaDiagram(def));
     m.body.append(h('div', { class: 'body', style: { whiteSpace: 'pre-line', lineHeight: '1.4', fontSize: '14px' } }, text));
   }
 
   private pick(ch: BattleChoice): void {
-    if (this.playing || this.finished || this.leaving || !ch.enabled) return;
+    if (this.playing || this.finished || this.leaving) return;
+    if (!ch.enabled) {
+      if (ch.kind === 'Flee') toast(this.b!.isBoss ? '보스에게서는 도망칠 수 없습니다' : '지금은 도망칠 수 없습니다');
+      else if (ch.kind === 'Item') toast('사용할 수 있는 아이템이 없습니다');
+      return;
+    }
     if (ch.kind === 'Flee' && tutorial.blocks('도주')) return;
     if (ch.kind === 'Item') return this.itemMenu();
     this.execute(ch);
@@ -527,10 +547,6 @@ export class BattleScreen extends Screen {
       if (loot.Dropped.length > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `· 가방이 가득 차거나 99개라 두고 옴: ${itemNames(loot.Dropped)}`));
       if (loot.LevelsGained > 0) card.append(h('b', { class: 'gold' }, `레벨 업! Lv.${b.character.Level} · 능력치 포인트 +${loot.LevelsGained * B.PointsPerLevel}`));
     }
-    const trial = S.trialWon;
-    if (trial) card.append(sub(`시련 통과! ${S.run!.TrialFloor}층까지 클리어 · 돌파 층 ${b.character.HighestFloorCleared}`));
-    else if (b.isBoss) card.append(sub(`돌파 층 ${b.character.HighestFloorCleared} · 다음 층이 열렸다`));
-    card.append(sub(`${trial ? '잠시 후 마을로 귀환합니다' : '잠시 후 던전으로 돌아갑니다'} · 눌러서 바로 계속`));
     parent.append(h('div', { style: { overflowY: 'auto', flex: '1' } }, card));
   }
 

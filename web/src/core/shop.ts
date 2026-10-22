@@ -1,7 +1,7 @@
 import { B, roundEven } from './balance';
 import type { Character } from './character';
 import { maxChallengeFloor, recalculateCapacities } from './character';
-import { createDrop, createConsumable, createSkillBook, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited } from './items';
+import { createDrop, consumableAt, createConsumable, createEnhanceStone, createSkillBook, rollDropGrade, stonePrice, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited } from './items';
 import type { ItemInstance, ShopGood } from './items';
 import { rollItemJob } from './jobs';
 import { knowsSkill } from './equipment';
@@ -57,11 +57,13 @@ export function restock(s: ShopState, c: Character, rng: Rng): void {
     s.Equipment.push(createDrop(rng, rng.chance(0.3) ? 'Uncommon' : 'Common', floor, c));
   }
   s.Goods = [];
-  s.Goods.push({ Item: createConsumable('potion'), Stock: -1 });
+  s.Goods.push({ Item: consumableAt('potion', floor), Stock: -1 });
   s.Goods.push({ Item: createConsumable('antidote'), Stock: -1 });
   const optional = [...OPTIONAL];
   rng.shuffle(optional);
-  s.Goods.push({ Item: createConsumable(optional[0]), Stock: -1 });
+  s.Goods.push({ Item: consumableAt(optional[0], floor), Stock: -1 });
+  // 강화석은 필요해지는 층(10층)부터 상점에서 판다
+  if (floor >= B.StoneFirstFloor) s.Goods.push({ Item: { ...createEnhanceStone(), Price: stonePrice(floor) }, Stock: -1 });
   // 하급·중급 스킬서 2권: 권마다 지금 직업 70%·다른 직업 각 10%, 아직 배우지 않은 것 · 같은 책은 한 권만
   for (let i = 0; i < 2; i++) {
     let books = obtainableSkills(c.Level, rollItemJob(c.Job, rng), ['Low', 'Mid']);
@@ -69,7 +71,17 @@ export function restock(s: ShopState, c: Character, rng: Rng): void {
     books = preferOwnLevel(books, c.Level, rng);
     if (books.length > 0) s.Goods.push({ Item: createSkillBook(rng.pick(books).Id), Stock: 1 });
   }
-  for (let i = 1; s.Goods.length < B.ShopGoodsSlots && i < optional.length; i++) s.Goods.push({ Item: createConsumable(optional[i]), Stock: -1 });
+  for (let i = 1; s.Goods.length < B.ShopGoodsSlots + (floor >= B.StoneFirstFloor ? 1 : 0) && i < optional.length; i++) s.Goods.push({ Item: consumableAt(optional[i], floor), Stock: -1 });
+}
+
+/** 떠돌이 상인의 덤: 낮은 확률로 장비 1점(정예 드롭 등급)·스킬서 1권 (아직 배우지 않은 하급~상급). 재고 1. */
+export function merchantExtras(goods: ShopGood[], c: Character, floor: number, rng: Rng): void {
+  if (rng.chance(B.MerchantEquipChance)) goods.push({ Item: createDrop(rng, rollDropGrade(rng, floor, 1), floor, c), Stock: 1 });
+  if (rng.chance(B.MerchantBookChance)) {
+    let books = obtainableSkills(c.Level, rollItemJob(c.Job, rng), ['Low', 'Mid', 'High']).filter((b) => !knowsSkill(c, b.Id));
+    books = preferOwnLevel(books, c.Level, rng);
+    if (books.length > 0) goods.push({ Item: createSkillBook(rng.pick(books).Id), Stock: 1 });
+  }
 }
 
 export const bagPrice = (c: Character): number => B.BagBasePrice * Math.pow(2, Math.min(20, c.BagsBought));

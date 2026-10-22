@@ -112,6 +112,16 @@ for (const m of monstersJson.Species as any[]) {
 }
 export const materialDef = (id: string): MaterialDef | undefined => MATERIALS.get(id);
 
+/** 회복 물약 구매가: 층이 깊을수록 비싸진다 (기본가 × (1 + (층-1) × PotionPricePerFloor)). 해독제류는 그대로. */
+export function consumableAt(id: string, floor: number, count = 1): ItemInstance {
+  const item = createConsumable(id, count);
+  if ((consumableDef(id)?.HealRatio ?? 0) > 0) item.Price = roundEven(item.Price * (1 + (Math.max(1, floor) - 1) * B.PotionPricePerFloor));
+  return item;
+}
+
+/** 상점 강화석 가격 (10층부터 판매). */
+export const stonePrice = (floor: number): number => roundEven(B.StonePriceBase + B.StonePricePerFloor * Math.max(1, floor));
+
 export function createConsumable(id: string, count = 1): ItemInstance {
   const d = consumableDef(id);
   if (!d) throw new Error(`unknown consumable ${id}`);

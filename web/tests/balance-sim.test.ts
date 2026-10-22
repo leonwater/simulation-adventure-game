@@ -11,7 +11,8 @@ describe('밸런스 시뮬레이션 (C#과 비교)', () => {
     const st = simulate('Normal', 150, 3, JOBS);
     st.runs.forEach((runs, i) => {
       const rate = runs === 0 ? 0 : (100 * st.deaths[i]) / runs;
-      expect(Math.abs(rate - CSHARP[i]), `${i * 5 + 1}~${(i + 1) * 5}층 사망률 ${rate.toFixed(1)}%`).toBeLessThan(8);
+      // v2.7 골드 조정(판매 30%·물약 층별 가격)으로 물약을 덜 사는 만큼 사망률이 조금 오른다 — 허용 폭 8 → 10%p (표본 12명)
+      expect(Math.abs(rate - CSHARP[i]), `${i * 5 + 1}~${(i + 1) * 5}층 사망률 ${rate.toFixed(1)}%`).toBeLessThan(10);
     });
     expect(st.conquered).toBeGreaterThanOrEqual(4);
   }, 60000);

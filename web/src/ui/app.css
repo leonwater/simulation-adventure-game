@@ -118,7 +118,8 @@ input.text::placeholder { color: #8F8C85; }
 
 /* 전투 */
 .stagewrap { flex-shrink: 0; position: relative; height: 300px; border-bottom: 1px solid var(--line); overflow: hidden; }
-.stage { position: relative; width: 390px; height: 300px; margin: 0 auto; }
+.stage { position: relative; width: 390px; height: 300px; margin: 0 auto; transform-origin: top center; }
+.stagewrap .stage { position: absolute; left: 50%; margin-left: -195px; }
 .unit-shape { position: absolute; transform-origin: center; cursor: pointer; }
 .unit-shape > * { position: absolute; }
 .unit-label { position: absolute; text-align: center; white-space: nowrap; pointer-events: none; }
@@ -147,3 +148,14 @@ input.text::placeholder { color: #8F8C85; }
   .statrow { height: 50px !important; }
   .statrow button { min-height: 34px; height: 34px; }
 }
+/* 아주 작은 폰(높이 680 이하) */
+@media (max-height: 680px) {
+  .fac { height: 74px; }
+  .statrow { height: 42px !important; }
+  .statrow button { min-height: 30px; height: 30px; }
+  .scroll.fit { gap: 8px !important; }
+  .scroll.fit > .card { padding-top: 8px !important; padding-bottom: 8px !important; }
+}
+.pad .potion { background: var(--return-bg); border: 2px solid var(--return-border); flex-direction: row; gap: 6px; }
+.pad .potion .s { font-size: 14px; font-weight: 700; color: var(--return-text); }
+.pad .potion.off { opacity: .45; }

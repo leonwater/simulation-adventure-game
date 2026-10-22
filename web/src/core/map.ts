@@ -26,6 +26,8 @@ export interface Room {
   EventBank: number;
   /** 상인의 보답: 마을 가격 × 0.7. */
   MerchantDiscount: boolean;
+  /** 떠돌이 상인이 낮은 확률로 내놓는 장비·스킬서를 이미 굴렸는지 (처음 들어갈 때 한 번). */
+  MerchantExtras?: boolean;
 }
 
 export interface FloorMap {

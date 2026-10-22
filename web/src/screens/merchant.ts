@@ -1,21 +1,28 @@
-
-import { consumableDef, countOf } from '../core/items';
-
 import * as dungeon from '../core/dungeon';
+import { cannotEquipReason } from '../core/equipment';
+import { knowsSkill } from '../core/equipment';
+import type { ItemInstance, ShopGood } from '../core/items';
+import { countOf, displayName, sellPrice, statLine } from '../core/items';
+import { themeIndex } from '../core/monsters';
 import { gold } from '../core/names';
-import { dungeonSubBar } from '../ui/chrome';
+import { charStrip, dungeonSubBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { button, h, icon, row, sub } from '../ui/kit';
-import { flash, toast } from '../ui/overlay';
+import { offerBetterGear } from '../ui/gearoffer';
+import { compareLine, infoText, itemTitle, kindLine, nameColor } from '../ui/items';
+import { button, h, icon, row, tabs } from '../ui/kit';
+import { flash, modal, toast } from '../ui/overlay';
 import { openPauseMenu } from '../ui/pause';
 import { Screen, router } from '../ui/router';
 import { dungeonTheme } from '../ui/theme';
-import { themeIndex } from '../core/monsters';
 import { goDungeon } from './index';
 
-
-/** 던전 상인: 전체 화면. 맨 위에 보유 골드와 가방을 크게, 물건마다 가격·보유·재고를 카드로. 사면 숫자가 바로 바뀐다. */
+/**
+ * 떠돌이 상인: 상점과 같은 모양(구매 / 판매 탭, 3열 카드)이지만 일러스트가 없다.
+ * 소모품 + 낮은 확률로 장비·스킬서. 판매 가격은 마을 상점과 같다.
+ */
 export class MerchantScreen extends Screen {
+  private tab = 0;
+
   onBack(): boolean {
     this.leave();
     return true;
@@ -30,40 +37,89 @@ export class MerchantScreen extends Screen {
       queueMicrotask(() => goDungeon());
       return h('div');
     }
+    S.openMerchant();
     const c = S.c;
     const room = dungeon.currentRoom(run);
-    const rescued = room.MerchantDiscount;
     const th = dungeonTheme(themeIndex(run.Floor));
-    const cards = room.MerchantGoods.map((g) => {
-      const price = S.merchantPrice(g.Item);
-      const can = c.Gold >= price;
-      const def = consumableDef(g.Item.TemplateId);
-      const b = h('button', { class: 'card-btn row', style: { minHeight: '68px', padding: '8px 14px', gap: '10px', borderRadius: '12px', background: 'var(--btn)' }, on: { click: () => this.buy(g.Item.Uid, g.Item.Name) } },
-        h('div', { class: 'col grow', style: { gap: '2px', alignItems: 'flex-start' } },
-          h('b', { style: { fontSize: '16px' } }, g.Item.Name), def ? sub(def.Description) : null,
-          h('span', { class: 'body', style: { fontSize: '12px' } }, `보유 ${countOf(c.Inventory, g.Item.TemplateId)} · 재고 ${g.Stock}`)),
-        icon('gold', 18), h('b', { style: { fontSize: '16px', color: can ? '#fff' : 'var(--red-light)' } }, price.toLocaleString('en-US')));
-      if (!can) b.style.opacity = '.45';
-      return b;
-    });
+    const grid = (cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...cells);
+    const body = this.tab === 0 ? grid(room.MerchantGoods.map((g) => this.goodCell(g))) : grid(c.Inventory.Items.map((i) => this.sellCell(i)));
     return h('div', { class: 'page', style: { background: th.bg } },
       dungeonSubBar('', '던전', () => this.leave(), c, () => openPauseMenu()),
-      h('div', { class: 'scroll', style: { gap: '10px' } },
-        // 제목은 위 막대가 아니라 화면 위쪽 가운데에 크게
-        h('div', { class: 'center', style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', padding: '4px 0 2px', textAlign: 'center' } }, rescued ? '구해 준 상인' : '떠돌이 상인'),
-        h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', height: '64px', padding: '0 14px' } },
-          row(icon('gold', 28), h('b', { style: { fontSize: '20px' } }, gold(c.Gold))),
-          h('span', { class: 'spacer' }),
-          row(icon('bag', 28), h('b', { style: { fontSize: '20px' } }, `${c.Inventory.Items.length} / ${c.Inventory.Capacity}`))),
-        sub(rescued ? '은인에게는 마을보다 30% 싸게 팝니다.' : '마을보다 50% 비싸게 팝니다. 필요한 것만 사 가세요.'),
-        ...(cards.length ? cards : [sub('물건이 모두 팔렸습니다.')])),
-      h('div', { style: { padding: '8px 16px', background: 'var(--bar)', borderTop: '1px solid var(--line)' } }, button('거래를 마친다', () => this.leave(), 'primary', 'lg')));
+      charStrip(c),
+      h('div', { style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', textAlign: 'center', padding: '10px 0 4px', flexShrink: '0' } }, room.MerchantDiscount ? '구해 준 상인' : '떠돌이 상인'),
+      tabs(['구매', '판매'], this.tab, (i) => {
+        this.tab = i;
+        router.rebuild();
+      }),
+      h('div', { class: 'scroll', style: { gap: '12px' } },
+        row(row(icon('gold', 22), h('b', { style: { fontSize: '16px' } }, gold(c.Gold))), h('span', { class: 'spacer' }),
+          row(icon('bag', 22), h('b', { style: { fontSize: '16px' } }, `${c.Inventory.Items.length} / ${c.Inventory.Capacity}`))),
+        body),
+      h('div', { style: { padding: '8px 16px', background: 'var(--bar)', borderTop: '1px solid var(--line)', flexShrink: '0' } }, Object.assign(button('거래를 마친다', () => this.leave(), 'primary', 'lg'), { style: 'width:100%' })));
   }
 
-  private buy(uid: string, name: string): void {
-    const r = S.buyFromMerchant(uid, 1);
-    if (!r.ok) return toast(r.error ?? '');
-    flash(`${name} 구매`, 'var(--gold)');
-    router.rebuild();
+  private card(onClick: () => void, ...kids: (Node | string | null)[]): HTMLButtonElement {
+    return h('button', { class: 'card-btn', style: { height: '112px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: '0', overflow: 'hidden' }, on: { click: onClick } }, ...kids);
+  }
+
+  private goodCell(g: ShopGood): HTMLElement {
+    const c = S.c;
+    const item = g.Item;
+    const price = S.merchantPrice(item);
+    const known = item.Kind === 'SkillBook' && knowsSkill(c, item.SkillId);
+    const cell = this.card(() => this.buyDialog(g),
+      kindLine(item, 12),
+      h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item)),
+      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, item.Kind === 'Consumable' ? `보유 ${countOf(c.Inventory, item.TemplateId)} · 재고 ${g.Stock}` : infoText(c, item)),
+      h('span', { class: 'spacer' }),
+      h('b', { style: { fontSize: '14px', color: c.Gold >= price ? 'var(--gold)' : 'var(--red-light)' } }, `${price.toLocaleString('en-US')} G`));
+    if (known) cell.style.opacity = '.5';
+    return cell;
+  }
+
+  private buyDialog(g: ShopGood): void {
+    const c = S.c;
+    const item = g.Item;
+    const m = modal(displayName(item));
+    m.body.append(h('div', null, statLine(item)));
+    const cl = item.Kind === 'Equipment' ? compareLine(c, item) : null;
+    if (cl) m.body.append(cl);
+    const reason = item.Kind === 'Equipment' ? cannotEquipReason(c, item) : null;
+    if (reason) m.body.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, reason));
+    m.body.append(button(`구매 · ${S.merchantPrice(item).toLocaleString('en-US')}G`, () => {
+      const r = S.buyFromMerchant(item.Uid, 1);
+      if (!r.ok) return toast(r.error ?? '');
+      m.close();
+      router.rebuild();
+      // 산 장비가 지금보다 좋으면 바로 착용할지 묻는다
+      const bought = item.Kind === 'Equipment' ? c.Inventory.Items[c.Inventory.Items.length - 1] : null;
+      if (bought) offerBetterGear([bought], () => router.rebuild());
+      else flash(`${item.Name} 구매`, 'var(--gold)');
+    }, 'primary'));
+  }
+
+  private sellCell(item: ItemInstance): HTMLElement {
+    const c = S.c;
+    return this.card(() => this.sellDialog(item),
+      kindLine(item, 12),
+      h('div', { style: { fontSize: '13px', lineHeight: '1.1', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item)),
+      h('div', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, infoText(c, item)),
+      h('span', { class: 'spacer' }),
+      h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null));
+  }
+
+  private sellDialog(item: ItemInstance): void {
+    const m = modal(displayName(item));
+    m.body.append(h('div', null, statLine(item)));
+    const doSell = (n: number): void => {
+      const r = S.sellToMerchant(item.Uid, n);
+      if (!r.ok) return toast(r.error ?? '');
+      m.close();
+      router.rebuild();
+    };
+    const actions = row();
+    if (item.Count > 1) actions.append(button(`1개 · ${sellPrice(item)}G`, () => doSell(1), '', 'grow'));
+    actions.append(button(item.Count > 1 ? `전부 ${item.Count}개` : `판매 · ${sellPrice(item).toLocaleString('en-US')}G`, () => doSell(item.Count), 'primary', 'grow'));
+    m.body.append(actions);
   }
 }

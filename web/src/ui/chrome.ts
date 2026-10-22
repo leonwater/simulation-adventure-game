@@ -75,13 +75,26 @@ export function hpBlock(hp: number, max: number, showBar = true): HTMLElement {
 }
 
 export function pauseButton(onPause: () => void): HTMLElement {
-  return h('button', { style: { width: '44px', height: '44px', padding: '0', fontWeight: '700', flexShrink: '0' }, on: { click: onPause } }, '‖');
+  return h('button', { style: { width: '44px', height: '44px', padding: '0', flexShrink: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }, 'aria-label': '일시정지', on: { click: onPause } }, icon('pause', 20, 'var(--text)'));
 }
 
 /** 던전 계열 머리줄: 제목·부제 + HP + 일시정지. */
-export function dungeonHeader(title: string, subText: string | null, c: Character, onPause: (() => void) | null, showHpBar = true): HTMLElement {
+/** 던전 화면들의 캐릭터 한 줄: 이름 · 직업 · Lv · 경험치 막대. */
+export function charLine(c: Character): HTMLElement {
+  return h('div', { class: 'row', style: { gap: '6px', minWidth: '0', fontSize: '12px' } },
+    h('b', { style: { fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '96px' } }, c.Name),
+    icon(jobIcon(c.Job), 15, 'var(--sub)'),
+    h('b', { style: { whiteSpace: 'nowrap' } }, `Lv.${c.Level}`),
+    progress(expProgress(c), 'var(--blue)', 56));
+}
+
+/** 던전 안 화면(가방·상인)의 캐릭터 정보 줄: 던전 메인 머리줄과 같은 정보. */
+export const charStrip = (c: Character): HTMLElement =>
+  h('div', { style: { padding: '6px 16px 8px', borderBottom: '1px solid var(--line)', background: 'var(--bar)', flexShrink: '0' } }, charLine(c));
+
+export function dungeonHeader(title: string, c: Character, onPause: (() => void) | null, showHpBar = true): HTMLElement {
   return h('div', { class: 'header', style: { height: '60px', padding: '6px 12px 6px 16px' } },
-    h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { style: { fontSize: '15px' } }, title), subText ? h('div', { class: 'sub' }, subText) : null),
+    h('div', { class: 'col grow', style: { gap: '4px', minWidth: '0' } }, h('b', { style: { fontSize: '15px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, title), charLine(c)),
     hpBlock(c.CurrentHp, maxHp(c), showHpBar),
     onPause ? pauseButton(onPause) : null);
 }

@@ -75,7 +75,7 @@ export class EventScreen extends Screen {
   }
 
   private wrap(floor: number, inner: HTMLElement): HTMLElement {
-    return h('div', { class: 'page' }, S.hasGame ? dungeonHeader(`${floor}층 · 특수 이벤트`, null, S.c, null) : null, h('div', { class: 'scroll', style: { padding: '16px' } }, inner));
+    return h('div', { class: 'page' }, S.hasGame ? dungeonHeader(`${floor}층 · 특수 이벤트`, S.c, null) : null, h('div', { class: 'scroll', style: { padding: '16px' } }, inner));
   }
 
   private resultBox(): HTMLElement {

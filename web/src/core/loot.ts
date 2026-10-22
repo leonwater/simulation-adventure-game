@@ -93,7 +93,7 @@ const stonesDropOn = (floor: number): boolean => floor >= B.StoneFirstFloor;
 
 export function treasure(floor: number, c: Character, rng: Rng): LootReport {
   const r = newLootReport();
-  r.Gold = enemyGold(floor) * rng.rangeInclusive(5, 8);
+  r.Gold = enemyGold(floor) * rng.rangeInclusive(3, 5); // v2.7: ×5~8 → ×3~5
   if (rng.chance(0.6)) r.Items.push(randomEquipment(floor, c, rng, 1));
   if (rng.chance(0.35)) r.Items.push(createConsumable(rng.chance(0.7) ? 'potion' : 'potion_hi', rng.rangeInclusive(1, 2)));
   if (stonesDropOn(floor) && rng.chance(0.15)) r.Items.push(createEnhanceStone());

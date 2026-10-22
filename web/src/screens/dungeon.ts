@@ -1,7 +1,7 @@
 import { anchored } from '../ui/coach';
 import { tutorial } from '../ui/tutorial';
 import { B } from '../core/balance';
-import { AllocationDraft, expProgress, maxHp } from '../core/character';
+import { AllocationDraft, maxHp } from '../core/character';
 import * as dungeon from '../core/dungeon';
 import type { DungeonRun, MovePad, PadSlot } from '../core/dungeon';
 import type { ExploreEffectType } from '../core/explore';
@@ -10,6 +10,7 @@ import type { Room } from '../core/map';
 import { displayType, getRoom } from '../core/map';
 import { jobData } from '../core/jobs';
 import { themeFor, themeIndex } from '../core/monsters';
+import { consumableDef, countOf } from '../core/items';
 import { Names } from '../core/names';
 import { dungeonHeader } from '../ui/chrome';
 import { showCharacterInfo, showQuests } from '../ui/charinfo';
@@ -17,7 +18,7 @@ import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
 import { colored } from '../ui/items';
 import { button, h, icon, row, sub } from '../ui/kit';
-import { confirmBox, modal, toast } from '../ui/overlay';
+import { confirmBox, flash, modal, toast } from '../ui/overlay';
 import { openPauseMenu } from '../ui/pause';
 import { Screen, router } from '../ui/router';
 import { statRow } from '../ui/statrow';
@@ -38,7 +39,7 @@ const isBuff = (t: ExploreEffectType): boolean => t === 'Regen' || t === 'Focus'
 /** 던전 탐험: 층·HP, 테마 색 미니맵(누르면 전체 지도 + 순간이동), 상황 텍스트, 아래 고정 이동 방향키, 층 진입 제목, 전투 뒤 레벨 업 배분, 가방·귀환. */
 const showSituation = (run: DungeonRun): boolean => {
   const t = dungeon.currentRoom(run).Type;
-  return (t === 'Boss' && run.BossDefeated) || t === 'Return' || t === 'Merchant';
+  return t === 'Merchant';
 };
 
 export class DungeonScreen extends Screen {
@@ -60,7 +61,6 @@ export class DungeonScreen extends Screen {
     const c = S.c;
     const th = dungeonTheme(themeIndex(run.Floor));
     const theme = themeFor(run.Floor);
-    const exp = c.Level >= B.MaxLevel ? '최대 레벨' : `경험치 ${Math.floor(expProgress(c) * 100)}%`;
     const sit = dungeon.situation(run);
     const dock = h('div', { class: 'dock' });
     this.choices(dock, run);
@@ -71,7 +71,7 @@ export class DungeonScreen extends Screen {
       return b;
     };
     const page = h('div', { class: 'page', style: { background: th.bg } },
-      dungeonHeader(`${run.Floor}층 · ${theme.Name}`, `탐험한 방 ${dungeon.roomsExplored(run)} · Lv.${c.Level} ${exp}`, c, () => openPauseMenu()),
+      dungeonHeader(`${run.Floor}층 · ${theme.Name}`, c, () => openPauseMenu()),
       h('div', { class: 'scroll', style: { gap: '12px' } },
         ...(run.Effects.length > 0 ? this.effectTags(run) : []),
         this.miniMap(run),
@@ -84,7 +84,8 @@ export class DungeonScreen extends Screen {
         ibtn('character', '정보', () => showCharacterInfo()),
         ibtn('quest', '퀘스트', () => showQuests()),
         ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast('아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
-      run.FloorIntroPending ? this.floorIntro(run) : null);
+      run.FloorIntroPending ? this.floorIntro(run) : null,
+      dungeon.currentRoom(run).Type === 'Boss' && run.BossDefeated ? this.bossChoice(run) : null);
     if (!run.FloorIntroPending) queueMicrotask(() => this.afterIntro());
     return page;
   }
@@ -155,13 +156,9 @@ export class DungeonScreen extends Screen {
 
   private choices(dock: HTMLElement, run: DungeonRun): void {
     const room = dungeon.currentRoom(run);
-    if (room.Type === 'Boss' && run.BossDefeated) {
-      if (S.canDescend) dock.append(this.bigButton('descend', '아래층으로 내려간다', `${run.Floor + 1}층 · ${themeFor(run.Floor + 1).Name} · 현재 HP 유지`, () => this.descend()));
-      dock.append(anchored(this.bigButton('return', '마을로 귀환한다', S.inTutorialRun ? '첫 모험은 여기까지 · 획득한 것은 모두 유지' : run.Floor >= B.MaxFloor ? '던전을 정복했다' : `${run.Floor + 1}층이 열렸다 · 획득한 것은 모두 유지`, () => this.returnNow()), 'dungeon.home'));
-    }
     // 방 안에서 하는 행동은 보라색. 귀환 방은 선택지 없이 글자만 보여 주고, 귀환은 아래 귀환 버튼으로 한다.
     if (room.Type === 'Merchant') {
-      dock.append(this.bigButton('action', '상인과 거래한다', room.MerchantDiscount ? '소모품 (은인 할인: 마을보다 30% 쌈)' : '소모품 (마을보다 50% 비쌈)', () => goMerchant(), '›'));
+      dock.append(this.bigButton('action', '상인과 거래한다', room.MerchantDiscount ? '은인 할인 · 마을보다 30% 쌈' : '물약 · 가끔 장비와 스킬서', () => goMerchant(), '›'));
     }
     const pad = dungeon.movePad(run, S.difficulty);
     dock.append(this.padView(run, pad));
@@ -191,7 +188,27 @@ export class DungeonScreen extends Screen {
     const open = dungeon.canLeave(run);
     // 키보드 방향키 배치: 위 칸은 가운데, 아래 줄에 ← ↓ →
     const place: Record<string, string> = { Up: '1 / 2', Left: '2 / 1', Down: '2 / 2', Right: '2 / 3' };
-    return h('div', { class: 'pad' }, ...pad.Slots.map((slot) => this.padCell(slot, open, place[slot.Dir])));
+    return h('div', { class: 'pad' }, ...pad.Slots.map((slot) => this.padCell(slot, open, place[slot.Dir])), this.potionButton());
+  }
+
+  /** 방향키 오른쪽 위 빈칸: 회복 물약 한 번에 마시기 (가장 약한 회복 물약부터). HP가 가득하거나 물약이 없으면 잠긴다. */
+  private potionButton(): HTMLElement {
+    const c = S.c;
+    const potions = c.Inventory.Items.filter((i) => (consumableDef(i.TemplateId)?.HealRatio ?? 0) > 0)
+      .sort((a, b) => consumableDef(a.TemplateId)!.HealRatio - consumableDef(b.TemplateId)!.HealRatio);
+    const first = potions[0];
+    const count = first ? countOf(c.Inventory, first.TemplateId) : 0;
+    const full = c.CurrentHp >= maxHp(c);
+    const b = h('button', { class: 'potion', style: { gridArea: '1 / 3' }, on: { click: () => {
+      if (!first) return toast('회복 물약이 없습니다');
+      if (full) return toast('HP가 가득 찼습니다');
+      const r = S.useConsumable(first.Uid);
+      if (!r.ok) return toast(r.message);
+      flash(r.message, 'var(--green)');
+      router.rebuild();
+    } } }, icon('potion', 30), h('span', { class: 's' }, first ? `×${count}` : '없음'));
+    if (!first || full) b.classList.add('off');
+    return b;
   }
 
   /** 방향 칸: 색으로만 상태를 보인다 (금색 새 방 · 파랑 탐험함 · 초록 귀환 · 빨강 보스 · 어두움 막힘). */
@@ -233,7 +250,8 @@ export class DungeonScreen extends Screen {
     return h('div', { class: 'card', style: { borderColor: 'var(--btn-border)', gap: '4px', padding: '12px 14px' } },
       h('b', { style: { fontSize: '17px' } }, n.Title),
       ...n.Lines.map((l) => h('div', { style: { fontSize: '15px', lineHeight: '1.25' } }, l)),
-      ...lootLines(n).map((l) => h('div', { style: { fontSize: '14px' } }, `· ${l}`)));
+      // 보상은 한 덩어리로 이어 써서 칸이 길어지지 않게
+      lootLines(n).length > 0 ? h('div', { style: { fontSize: '14px', lineHeight: '1.4' } }, lootLines(n).join(' · ')) : null);
   }
 
   private effectTags(run: DungeonRun): HTMLElement[] {
@@ -272,8 +290,12 @@ export class DungeonScreen extends Screen {
   private miniMap(run: DungeonRun): HTMLElement {
     const th = dungeonTheme(themeIndex(run.Floor));
     const canTeleport = dungeon.teleportTargets(run).length > 0 && dungeon.canLeave(run);
-    const map = h('div', { class: 'minimap' });
-    this.drawMap(map, MAP_W, MAP_H, run, null);
+    // 화면 폭·높이에 맞춰 미니맵 크기를 정한다 (작은 폰에서 틀 밖으로 나가거나 아래 칸을 밀어내지 않게)
+    const scr = document.querySelector<HTMLElement>('.screen');
+    const w = Math.min(MAP_W, (scr?.clientWidth ?? 390) - 58);
+    const hgt = (scr?.clientHeight ?? 844) < 760 ? 150 : MAP_H;
+    const map = h('div', { class: 'minimap', style: { width: `${w}px`, height: `${hgt}px` } });
+    this.drawMap(map, w, hgt, run, null);
     return h('div', { role: 'button', 'data-anchor': 'dungeon.map', style: { background: '#191C23', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
       map,
       h('div', { class: 'row', style: { gap: '12px', fontSize: '12px', height: '32px' } },
@@ -286,7 +308,8 @@ export class DungeonScreen extends Screen {
     const run = S.run!;
     const m = modal(`${run.Floor}층 지도`);
     const can = dungeon.canLeave(run);
-    const w = 326, hh = 420;
+    const scr = document.querySelector<HTMLElement>('.screen');
+    const w = Math.min(326, (scr?.clientWidth ?? 390) - 66), hh = Math.min(420, Math.round((scr?.clientHeight ?? 844) * 0.5));
     const map = h('div', { class: 'minimap', style: { width: `${w}px`, height: `${hh}px` } });
     this.drawMap(map, w - 8, hh - 8, run, can ? (room) => {
       m.close();
@@ -386,6 +409,16 @@ export class DungeonScreen extends Screen {
         if (S.lastLoot && S.lastLoot.LevelsGained > 0) this.levelUp = true;
         router.rebuild();
     }
+  }
+
+  /** 보스를 잡으면 화면을 어둡게 덮고 '마을 귀환 / 다음 층 탐험' 둘 중 하나만 고른다 (다른 버튼은 눌리지 않는다). */
+  private bossChoice(run: DungeonRun): HTMLElement {
+    const last = run.Floor >= B.MaxFloor;
+    const card = h('div', { class: 'card', style: { width: '100%', gap: '10px', padding: '18px 16px', background: 'var(--dialog)', borderColor: 'var(--gold)' } },
+      h('b', { class: 'gold center', style: { fontSize: '20px', textAlign: 'center' } }, last ? '던전 정복!' : '보스 처치'),
+      S.canDescend ? this.bigButton('descend', `${run.Floor + 1}층 탐험`, `${themeFor(run.Floor + 1).Name} · 현재 HP 유지`, () => this.descend()) : null,
+      anchored(this.bigButton('return', '마을 귀환', '획득한 것은 모두 유지', () => this.returnNow()), 'dungeon.home'));
+    return h('div', { class: 'bosschoice', style: { position: 'absolute', inset: '0', zIndex: '30', background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' } }, card);
   }
 
   private confirmReturn(): void {

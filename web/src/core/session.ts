@@ -24,7 +24,7 @@ import type { SaveData, SaveStore, TutorialStage } from './save';
 import { loadGame, newSaveData, saveGame } from './save';
 import type { DeathReport, ReturnReport } from './settlement';
 import { die, returnToTown } from './settlement';
-import { buyGood, ensureStocked, resetRerollCost } from './shop';
+import { buyGood, ensureStocked, merchantExtras, resetRerollCost, sell } from './shop';
 
 /**
  * 게임 진행 흐름. 화면(UI)은 이 객체만 보고 상태를 그리며,
@@ -432,6 +432,24 @@ export class GameSession {
     this.c.CurrentHp = Math.min(max, this.c.CurrentHp + roundEven(max * def.HealRatio));
     this.save();
     return { ok: true, message: `HP ${this.c.CurrentHp - before} 회복` };
+  }
+
+  /** 상인 방에 처음 들어가면 장비·스킬서 덤을 한 번 굴린다 (방 시드로 정해져 다시 들어와도 같다). */
+  openMerchant(): void {
+    const run = this.data?.Run;
+    if (!run) return;
+    const room = dungeon.currentRoom(run);
+    if (room.Type !== 'Merchant' || room.MerchantExtras) return;
+    merchantExtras(room.MerchantGoods, this.c, run.Floor, new Rng(room.Seed ^ 0x5eed));
+    room.MerchantExtras = true;
+    this.save();
+  }
+
+  /** 상인에게 판다 (가격은 마을 상점과 같다). */
+  sellToMerchant(uid: string, count: number): { ok: boolean; error: string | null } {
+    const r = sell(this.c, uid, count);
+    if (r.ok) this.save();
+    return r;
   }
 
   buyFromMerchant(uid: string, count: number): { ok: boolean; error: string | null } {

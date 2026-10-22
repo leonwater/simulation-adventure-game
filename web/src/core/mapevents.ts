@@ -88,7 +88,7 @@ export function chainEvent(run: DungeonRun, followupId: string, rng: Rng): void 
 export function becomeMerchant(run: DungeonRun, rng: Rng): void {
   const room = currentRoom(run);
   room.Type = 'Merchant';
-  room.MerchantGoods = merchantGoods(rng);
+  room.MerchantGoods = merchantGoods(rng, run.Floor);
   room.MerchantDiscount = true;
   room.Cleared = true;
 }

@@ -8,7 +8,8 @@ import { consumableDef, displayName, sellPrice, statLine, takeItem } from '../co
 import { Names, josa } from '../core/names';
 import { skillDef } from '../core/skills';
 import { bagPrice, buyBag, canBuyBag, sell } from '../core/shop';
-import { bottomNav, jobLine, townBar } from '../ui/chrome';
+import { bottomNav, charStrip, dungeonSubBar, jobLine, townBar } from '../ui/chrome';
+import { openPauseMenu } from '../ui/pause';
 import { S } from '../ui/game';
 import { button, h, icon, row, sub } from '../ui/kit';
 import { compareLine, gearText, gradeTag, itemGrid, kindLine, legend } from '../ui/items';
@@ -35,8 +36,10 @@ export class InventoryScreen extends Screen {
 
   build(): HTMLElement {
     const c = S.c;
-    // 던전 머리줄은 던전 화면(P2d)에서 만든다. 그 전에는 마을 막대와 같은 모양을 쓴다.
-    const bar = townBar('가방', this.fromDungeon ? '던전' : '마을', () => this.back(), c);
+    // 던전에서 연 가방은 던전 머리줄(HP·일시정지) + 캐릭터 정보 줄
+    const bar = this.fromDungeon
+      ? h('div', null, dungeonSubBar('가방', '던전', () => this.back(), c, () => openPauseMenu()), charStrip(c))
+      : townBar('가방', '마을', () => this.back(), c);
     const expand = button(icon('plus', 20, 'var(--gold)'), () => this.buyBag(), '', '');
     expand.style.cssText = 'width:40px;min-height:40px;height:40px;padding:0;border-color:var(--accent);background:var(--bg)';
     expand.disabled = !canBuyBag(c);

@@ -6,7 +6,7 @@ import { josa } from '../core/names';
 import { jobLine } from '../ui/chrome';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
-import { button, h, row, sub } from '../ui/kit';
+import { button, h, progress, row, sub } from '../ui/kit';
 import { Screen } from '../ui/router';
 import { tutorial } from '../ui/tutorial';
 import { goTitle, goTown, goToCurrent } from './index';
@@ -37,7 +37,8 @@ function change(delta: number, unit = ''): HTMLElement {
 }
 
 function tableRow(a: string, b: string | HTMLElement, c: string | HTMLElement, d: string | HTMLElement, head = false, last = false): HTMLElement {
-  const cell = (v: string | HTMLElement, w: number, right: boolean): HTMLElement => h('div', { style: { width: `${w}px`, textAlign: right ? 'right' : 'left', flexShrink: '0' } }, v);
+  // 칸 폭은 화면 폭에 맞춰 나눈다 (고정 폭이면 작은 폰에서 표가 틀 밖으로 나간다)
+  const cell = (v: string | HTMLElement, w: number, right: boolean): HTMLElement => h('div', { style: { flex: `${w} 1 0`, minWidth: '0', textAlign: right ? 'right' : 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'flex', justifyContent: right ? 'flex-end' : 'flex-start' } }, v);
   return h('div', { class: 'row', style: { gap: '6px', minHeight: head ? '34px' : '42px', fontSize: head ? '12px' : '13px', color: head ? 'var(--sub)' : 'var(--text)', fontWeight: head ? '700' : '400', borderBottom: last ? '' : `1px solid ${head ? 'var(--line)' : 'var(--line-soft)'}` } },
     cell(a, 86, false), cell(b, 76, true), cell(c, 76, true), cell(d, 76, true));
 }
@@ -83,7 +84,7 @@ export class ResultScreen extends Screen {
     body.append(h('div', { class: 'card', 'data-anchor': 'result.panel', style: { gap: '0', padding: '6px 12px' } },
       tableRow('항목', '이전', '현재', '변화', true),
       tableRow('골드', num(d.GoldBefore), num(d.GoldAfter), change(-d.GoldLost)),
-      tableRow('경험치', `${expBefore}%`, `${expAfter}%`, change(expAfter - expBefore, '%p')),
+      tableRow('경험치', progress(d.ExpPctBefore, 'var(--blue)', 60), progress(d.ExpPctAfter, 'var(--blue)', 60), change(expAfter - expBefore, '%p')),
       tableRow('가방 아이템', `${d.BagBefore}개`, `${d.BagAfter}개`, change(d.BagAfter - d.BagBefore, '개')),
       tableRow(`${d.Floor}층 진행`, `${d.RoomsExplored}/${d.RoomsTotal}방`, '초기화', colored('초기화', '#E38A82')),
       tableRow('장착 장비', `${d.EquippedKept}개`, `${d.EquippedKept}개`, colored('유지', 'var(--green)')),

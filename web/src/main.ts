@@ -1,5 +1,8 @@
 import { router } from './ui/router';
+import * as screens from './screens';
 import { goTitle, goToCurrent } from './screens';
+import { navigate } from './screens/nav';
+import { InventoryScreen } from './screens/inventory';
 import { S } from './ui/game';
 
 // 화면 높이 고정: 이름 입력 등으로 키보드가 올라와 창 높이가 줄어도 화면을 줄이지 않는다 (폭이 바뀌면 다시 잰다)
@@ -23,4 +26,6 @@ goTitle();
 if (location.search.includes('debug')) {
   (window as unknown as { __S: typeof S }).__S = S;
   (window as unknown as { __go: () => void }).__go = goToCurrent;
+  // 화면 점검 도구(scripts/layout.mjs)가 화면을 직접 연다
+  Object.assign(window, { __screens: screens, __nav: navigate, __router: router, __bag: () => router.show(new InventoryScreen(true)) });
 }

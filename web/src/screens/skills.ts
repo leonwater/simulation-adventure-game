@@ -1,9 +1,9 @@
 import { B } from '../core/balance';
-import { maxChallengeFloor, skillSlots, totalStat, precisionBonus } from '../core/character';
+import { attack, maxChallengeFloor, skillDamageBonus, skillSlots, totalStat, precisionBonus } from '../core/character';
 import { cannotEquipSkillReason, maxSkillLevel, trainingEffect, equipSkill, getSkillState, isSkillEquipped, meetsSkillRequirement, moveEquippedSkill, powerMultiplier, unequipSkill } from '../core/equipment';
 import { TIERS, ord } from '../core/enums';
 import { jobData } from '../core/jobs';
-import { enemyRequirement } from '../core/balance';
+import { enemyDefense, enemyRequirement } from '../core/balance';
 import { clamp } from '../core/balance';
 import { Names } from '../core/names';
 import { isUtility, skillCooldown, skillDef, skillTurns } from '../core/skills';
@@ -11,6 +11,7 @@ import { isDebuff } from '../core/status';
 import { describeStatus, explainStatus } from '../core/statustext';
 import { bottomNav, townBar } from '../ui/chrome';
 import { dragReorder } from '../ui/drag';
+import { areaDiagram } from '../ui/skillinfo';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
 import { button, divider, h, row, sub } from '../ui/kit';
@@ -101,12 +102,21 @@ export class SkillsScreen extends Screen {
       h('div', { style: { fontSize: '15px' } }, def.Effect),
       divider(),
       line('재사용', `${skillCooldown(def, st.Level)}턴`));
+    // 범위 그림 · 피해 계산식 · 상태 이상 실제 확률 (지금 도전 층의 보통 몬스터 기준)
+    m.body.append(h('div', { class: 'row', style: { alignItems: 'center' } }, h('div', { class: 'sub', style: { width: '72px', flexShrink: '0', fontSize: '13px' } }, '범위'), areaDiagram(def)));
+    const floor = Math.max(1, maxChallengeFloor(c));
+    let hit = 1;
     if (def.Target === 'Self') m.body.append(line('성공률', '100% (자신에게 거는 스킬)'));
     else {
-      const floor = Math.max(1, maxChallengeFloor(c));
-      const hit = clamp(B.BaseHit + (totalStat(c, jobData(c.Job).attackStat) - enemyRequirement(floor)) * B.HitPerStatPoint + precisionBonus(c) + def.SuccessBonus, B.MinHit, B.MaxHit);
-      const bonus = Math.abs(def.SuccessBonus) < 1e-6 ? '보정 없음' : `기본 공격 대비 ${def.SuccessText.replace('성공률 ', '')}`;
-      m.body.append(line('성공률', `${bonus}\n${floor}층 보통 몬스터에게 약 ${Math.round(hit * 100)}% (전투에서는 대상별 실제 확률)`));
+      hit = clamp(B.BaseHit + (totalStat(c, jobData(c.Job).attackStat) - enemyRequirement(floor)) * B.HitPerStatPoint + precisionBonus(c) + def.SuccessBonus, B.MinHit, B.MaxHit);
+      m.body.append(line('성공률', `${floor}층 보통 몬스터에게 약 ${Math.round(hit * 100)}%`));
+    }
+    if (def.IsAttack) {
+      const mults = def.ChainMults.length > 0 ? def.ChainMults : [def.DamageMult];
+      const power = powerMultiplier(def, st.Level) * (1 + skillDamageBonus(c));
+      const atk = attack(c), dfn = enemyDefense(floor), guard = B.DefenseConstant / (B.DefenseConstant + dfn);
+      const dmg = mults.map((x) => Math.max(1, Math.round(atk * x * power * guard)));
+      m.body.append(line('피해 계산', `공격력 ${atk} × 배율 ${mults.map((x) => Math.round(x * power * 100)).join(' → ')}% × 방어 보정 ${guard.toFixed(2)} (${floor}층 방어력 ${dfn})\n= 약 ${dmg.join(' → ')}${def.Hits > 1 ? ` × ${def.Hits}회` : ''}${def.CritChance > 0 || def.GuaranteedCrit ? ` · 치명타 ${def.GuaranteedCrit ? '확정' : `${Math.round(def.CritChance * 100)}%`}` : ''}`));
     }
     const per = Math.round(B.SkillPowerPerLevel[ord(TIERS, def.Tier)] * 100);
     m.body.append(
@@ -114,9 +124,9 @@ export class SkillsScreen extends Screen {
       line('장착 조건', `Lv.${def.ReqLevel} · ${def.ReqRank} 등급`));
     for (const s of def.Statuses) {
       const who = s.OnSelf || def.Target === 'Self' ? '자신' : '적';
-      const chance = s.Chance < 1 ? ` · 확률 ${Math.round(s.Chance * 100)}%` : '';
-      const resist = who === '적' && isDebuff(s.Type) ? '\n명중해야 걸리고, 적의 저항(정예 10% · 보스 30%)만큼 막힐 수 있음' : '';
-      m.body.append(line(Names.status(s.Type), `${who} · ${skillTurns(def, s.Turns, st.Level)}턴 · ${describeStatus(s.Type, s.Value)}${chance}\n${explainStatus(s.Type)}${resist}`));
+      // 실제로 걸릴 확률 = 한 번이라도 명중할 확률 × 효과 확률 (보통 몬스터는 저항 0, 정예 10% · 보스 30%는 더 낮다)
+      const land = who === '자신' ? s.Chance : (1 - Math.pow(1 - hit, Math.max(1, def.Hits))) * s.Chance;
+      m.body.append(line(Names.status(s.Type), `${who} · ${skillTurns(def, s.Turns, st.Level)}턴 · ${describeStatus(s.Type, s.Value)}\n실제로 걸릴 확률 약 ${Math.round(land * 100)}%${who === '적' && isDebuff(s.Type) ? ' (정예·보스는 저항만큼 낮음)' : ''}\n${explainStatus(s.Type)}`));
     }
     const equipped = isSkillEquipped(c, id);
     const reason = equipped ? null : cannotEquipSkillReason(c, id);
