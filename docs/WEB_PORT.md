@@ -67,3 +67,10 @@ npm run balance -- 150 3 Normal,Hard   # 봇 밸런스 시뮬레이션 (C# tools
 
 - 대응하지 않은 것: `Json_ParsesNumbersAndEscapes` (C# 자체 JSON 파서 검증, TS는 `JSON.parse`)
 - 코어 이식 버그는 발견되지 않음. 밸런스·사망률은 P1e 결과(±3%p)로 확인
+
+## APK 업데이트 설치 (고정 서명 키)
+
+- 안드로이드는 **같은 키로 서명한 APK끼리만** 덮어 설치(업데이트)된다. 키가 없으면 빌드마다 임시 키가 새로 만들어져 업데이트가 안 된다.
+- 해결: 고정 키를 GitHub Secrets 4개로 넣는다 → `ANDROID_KEYSTORE_BASE64` · `ANDROID_KEYSTORE_PASS` · `ANDROID_KEYALIAS_NAME` · `ANDROID_KEYALIAS_PASS`. `web-app.yml`이 있으면 그 키로 서명하고, 없으면 경고만 남기고 임시 키로 만든다.
+- 키 파일·비밀번호는 저장소에 올리지 않는다(`.gitignore`에 `*.jks`). 키를 잃어버리면 새 키로 바꿔야 하고 그때 한 번은 지우고 설치해야 한다.
+- 키를 처음 적용하는 빌드는 기존(임시 키) 앱과 서명이 달라 **한 번만 지우고 설치**한다. 그 뒤로는 덮어 설치된다.

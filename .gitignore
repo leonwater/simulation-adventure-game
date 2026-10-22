@@ -40,3 +40,8 @@ crashlytics-build.properties
 /tools/balance/bin/
 /tools/balance/obj/
 !/tools/balance/*.csproj
+
+# 안드로이드 서명 키 (절대 올리지 않는다)
+*.jks
+*.keystore
+adventurer-signing-*
