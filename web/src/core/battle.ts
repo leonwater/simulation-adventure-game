@@ -12,6 +12,7 @@ import type { SkillDef } from './skills';
 import { skillDef } from './skills';
 import type { StatusApply } from './skills';
 import { isDebuff } from './status';
+import { describeStatus } from './statustext';
 
 export type BattleOutcome = 'Ongoing' | 'Victory' | 'Defeat' | 'Fled';
 export type ActionKind = 'Wait' | 'Attack' | 'Skill' | 'Item' | 'Flee';
@@ -935,26 +936,3 @@ function fmtMult(v: number): string {
 }
 /** C# 숫자 문자열 (정수는 그대로, 소수는 필요한 만큼). */
 const fmtNum = (v: number): string => String(v);
-
-/** 상태 효과 설명 (전투 상세 보기). value는 그 효과의 수치(%, 출혈·화상은 시전자 공격력 %). */
-export function describeStatus(s: string, value: number): string {
-  switch (s) {
-    case 'Empower': return `공격력 +${value}%`;
-    case 'Fortify': return `받는 피해 -${value}%`;
-    case 'Regen': return `턴마다 최대 HP ${value}% 회복`;
-    case 'Focus': return `성공률 +${value}%`;
-    case 'Swift': return `회피 +${value}%`;
-    case 'Keen': return `스킬 치명타 확률 +${value}%`;
-    case 'Cruel': return `치명타 피해 +${value}%`;
-    case 'Poison': return `턴마다 최대 HP ${value}% 피해`;
-    case 'Bleed': return `행동할 때마다 공격력 ${value}% 피해`;
-    case 'Burn': return `턴마다 공격력 ${value}% 피해, 받는 회복 -50%`;
-    case 'Weaken': return `공격력 -${value}%`;
-    case 'Vulnerable': return `받는 피해 +${value}%`;
-    case 'Stun': return '행동 불가';
-    case 'Silence': return '스킬 사용 불가';
-    case 'Blind': return `성공률 -${value}%`;
-    case 'Fear': return `도주 외 성공률 -${value}%`;
-    default: return '';
-  }
-}

@@ -1,4 +1,4 @@
-import { expProgress } from '../core/character';
+import { expProgress, maxHp } from '../core/character';
 import type { Character } from '../core/character';
 import type { Job } from '../core/enums';
 import { jobData } from '../core/jobs';
@@ -65,4 +65,31 @@ export function townBar(title: string, backLabel: string, onBack: (() => void) |
     h('div', { style: { width: '130px' } }, onBack ? h('button', { style: { border: '0', background: 'transparent', color: 'var(--gold)', padding: '0', textAlign: 'left', fontSize: '14px' }, on: { click: onBack } }, `‹ ${backLabel}`) : null),
     h('div', { class: 'grow center title', style: { fontSize: '16px' } }, title),
     h('div', { style: { width: '130px', display: 'flex', justifyContent: 'flex-end' } }, goldAndSettings(c)));
+}
+
+/** 머리줄 오른쪽 HP 칸: 하트 아이콘 + 'HP 현재/최대' 글자, 아래에 막대. */
+export function hpBlock(hp: number, max: number, showBar = true): HTMLElement {
+  return h('div', { class: 'col', style: { width: '110px', gap: '3px', alignItems: 'flex-end', flexShrink: '0' } },
+    row(icon('stat_vitality', 14), h('span', { style: { fontSize: '12px', whiteSpace: 'nowrap' } }, `HP ${hp}/${max}`)),
+    showBar ? progress(hp / Math.max(1, max), 'var(--red)', 110) : null);
+}
+
+export function pauseButton(onPause: () => void): HTMLElement {
+  return h('button', { style: { width: '44px', height: '44px', padding: '0', fontWeight: '700', flexShrink: '0' }, on: { click: onPause } }, '‖');
+}
+
+/** 던전 계열 머리줄: 제목·부제 + HP + 일시정지. */
+export function dungeonHeader(title: string, subText: string | null, c: Character, onPause: (() => void) | null, showHpBar = true): HTMLElement {
+  return h('div', { class: 'header', style: { height: '60px', padding: '6px 12px 6px 16px' } },
+    h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { style: { fontSize: '15px' } }, title), subText ? h('div', { class: 'sub' }, subText) : null),
+    hpBlock(c.CurrentHp, maxHp(c), showHpBar),
+    onPause ? pauseButton(onPause) : null);
+}
+
+/** 던전 안 가방 머리줄: 왼쪽 뒤로 · 가운데 제목 · 오른쪽은 던전 화면과 같은 HP + 일시정지. */
+export function dungeonSubBar(title: string, backLabel: string, onBack: () => void, c: Character, onPause: () => void): HTMLElement {
+  return h('div', { class: 'bar', style: { padding: '6px 12px 6px 16px' } },
+    h('div', { style: { width: '70px' } }, h('button', { style: { border: '0', background: 'transparent', color: 'var(--gold)', padding: '0', textAlign: 'left', fontSize: '14px' }, on: { click: onBack } }, `‹ ${backLabel}`)),
+    h('div', { class: 'grow center title', style: { fontSize: '16px' } }, title),
+    hpBlock(c.CurrentHp, maxHp(c)), pauseButton(onPause));
 }

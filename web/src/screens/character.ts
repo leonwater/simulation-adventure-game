@@ -1,12 +1,12 @@
 import { B } from '../core/balance';
 import {
-  AllocationDraft, attack, badgeBonus, damageReduction, dropBonus, effectLabel, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
+  AllocationDraft, attack, badgeBonus, damageReduction, dropBonus, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
   percent, promotionStatus, resist, totalStat, weaponAttack, defense,
 } from '../core/character';
 import { expToNext } from '../core/balance';
 import type { Stat } from '../core/enums';
 import { STATS } from '../core/enums';
-import { getStat, jobData } from '../core/jobs';
+import { jobData } from '../core/jobs';
 import { Names } from '../core/names';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
@@ -14,10 +14,10 @@ import { button, divider, h, icon, progress, row, sub } from '../ui/kit';
 import { colored } from '../ui/items';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
+import { statIcon, statRow } from '../ui/statrow';
 import { rankIcon } from '../ui/theme';
 import { navigate } from './nav';
 
-const statIcon = (s: Stat): string => `stat_${s.toLowerCase()}`;
 
 /** 능력치가 주는 효과 (상세 능력치 창의 한 줄 설명). */
 function statEffect(s: Stat): string {
@@ -95,36 +95,7 @@ export class CharacterScreen extends Screen {
     const stats = jobData(c.Job).allocatable;
     return h('div', { class: 'card', style: { padding: '6px 14px', gap: '0' } },
       row(h('b', { class: 'grow', style: { height: '40px', lineHeight: '40px' } }, '능력치'), h('span', { style: { fontSize: '13px' } }, '남은 포인트 ', colored(String(draft.remaining), 'var(--gold)'))),
-      ...stats.map((stat, i) => this.statRow(draft, stat, i < stats.length - 1)));
-  }
-
-  private statRow(draft: AllocationDraft, stat: Stat, line: boolean): HTMLElement {
-    const c = S.c;
-    const pending = draft.pendingOf(stat);
-    const own = getStat(c.BaseStats, stat) + pending;
-    const extra = equipmentBonus(c, stat);
-    const step = (label: string, enabled: boolean, fn: () => void): HTMLElement => {
-      const b = button(label, fn, 'ghost', 'sm');
-      b.style.width = '40px';
-      b.style.padding = '0';
-      b.disabled = !enabled;
-      return b;
-    };
-    return h('div', { class: 'row', style: { height: '60px', borderBottom: line ? '1px solid var(--line-soft)' : '' } },
-      icon(statIcon(stat), 24),
-      h('div', { class: 'col grow', style: { gap: '1px' } },
-        h('b', null, Names.stat(stat), own >= B.StatCap ? colored(' 최대', 'var(--gold)') : null),
-        h('div', { class: 'sub', style: { fontSize: '11px' } }, effectLabel(c, stat))),
-      step('-', pending > 0, () => {
-        draft.remove(stat);
-        router.rebuild();
-      }),
-      h('div', { style: { minWidth: '64px', textAlign: 'center', fontWeight: '700' } }, String(ownStat(c, stat)),
-        extra > 0 ? colored(`(+${extra})`, 'var(--green)') : null, pending > 0 ? colored(` +${pending}`, 'var(--gold)') : null),
-      step('+', draft.canAdd(stat), () => {
-        draft.add(stat);
-        router.rebuild();
-      }));
+      ...stats.map((stat, i) => statRow(draft, stat, i < stats.length - 1, () => router.rebuild())));
   }
 
   private commit(): void {

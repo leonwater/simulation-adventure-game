@@ -90,3 +90,45 @@ input.text::placeholder { color: #8F8C85; }
 .tabs button { flex: 1; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--sub); min-height: 44px; }
 .tabs button.on { color: var(--gold); border-bottom-color: var(--accent); font-weight: 700; }
 .chip { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: var(--on-accent); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+
+/* 던전 */
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .55; } }
+.blink { animation: blink 1.6s ease-in-out infinite; }
+.pad { display: grid; grid-template-columns: repeat(3, 104px); grid-template-rows: repeat(3, 56px); gap: 10px 12px; justify-content: center; align-content: center; height: 204px; background: #191C23; border: 1px solid var(--card-border); border-radius: 16px; flex-shrink: 0; }
+.pad > * { border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px; position: relative; overflow: hidden; }
+.pad button { min-height: 0; }
+.pad .t { font-size: 16px; font-weight: 700; }
+.pad .s { font-size: 12px; }
+.pad .glow { position: absolute; left: 6px; right: 6px; top: 0; height: 6px; background: linear-gradient(to bottom, var(--gold), transparent); animation: blink 1.6s ease-in-out infinite; }
+.choice { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-height: 60px; padding: 8px 14px; border-width: 2px; text-align: left; border-radius: 12px; position: relative; overflow: hidden; }
+.choice .t { font-size: 15px; font-weight: 700; }
+.choice .s { font-size: 12px; }
+.dock { display: flex; flex-direction: column; gap: 8px; padding: 8px 16px; flex-shrink: 0; }
+.bottombar { display: flex; align-items: center; justify-content: space-between; padding: 8px 16px; background: var(--bar); border-top: 1px solid var(--line); flex-shrink: 0; }
+.ibtn { width: 80px; min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 4px 6px; font-size: 12px; font-weight: 700; border-radius: 12px; }
+.minimap { position: relative; width: 334px; height: 204px; margin: 0 auto; }
+.mnode { position: absolute; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid; padding: 0; min-height: 0; }
+.medge { position: absolute; background: var(--edge); }
+.intro { position: absolute; inset: 0; background: rgba(0,0,0,.72); z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; animation: introfade 1.3s ease-in forwards; pointer-events: none; }
+@keyframes introfade { 0%,60% { opacity: 1; } 100% { opacity: 0; } }
+.etag { border-radius: 14px; min-height: 28px; font-size: 12px; font-weight: 700; padding: 0 10px; }
+.choice .glow { position: absolute; left: 6px; right: 6px; top: 0; height: 6px; background: linear-gradient(to bottom, var(--gold), transparent); animation: blink 1.6s ease-in-out infinite; }
+
+/* 전투 */
+.stagewrap { flex-shrink: 0; position: relative; height: 300px; border-bottom: 1px solid var(--line); overflow: hidden; }
+.stage { position: relative; width: 390px; height: 300px; margin: 0 auto; }
+.unit-shape { position: absolute; transform-origin: center; cursor: pointer; }
+.unit-shape > * { position: absolute; }
+.unit-label { position: absolute; text-align: center; white-space: nowrap; pointer-events: none; }
+.hpbar { position: absolute; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; pointer-events: none; }
+.hpbar > i { display: block; height: 100%; transition: width .25s; }
+.stat-icons { position: absolute; display: flex; gap: 2px; transform: translateX(-50%); pointer-events: none; }
+.floatup { position: absolute; transform: translate(-50%, -50%); font-weight: 700; text-shadow: 0 0 3px #000, 0 0 3px #000; pointer-events: none; white-space: nowrap; animation: floatup .95s ease-out forwards; z-index: 5; }
+@keyframes floatup { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -190%); } }
+.battlelog { background: var(--log); border-bottom: 1px solid var(--line); padding: 8px 16px; height: 74px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; overflow: hidden; flex-shrink: 0; font-size: 13px; }
+.lower { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 14px; }
+.bchoice { display: flex; align-items: center; gap: 10px; text-align: left; padding: 6px 12px 6px 18px; min-height: 52px; border-radius: 10px; position: relative; }
+.bchoice .kbar { position: absolute; left: 7px; top: 7px; bottom: 7px; width: 4px; border-radius: 2px; }
+.bchoice .tag { font-size: 11px; font-weight: 700; }
+.bchoice .name { font-size: 15px; font-weight: 700; }
+.bchoice .dmg { font-size: 12px; color: var(--body); }

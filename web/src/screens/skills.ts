@@ -8,7 +8,7 @@ import { clamp } from '../core/balance';
 import { Names } from '../core/names';
 import { skillDef } from '../core/skills';
 import { isDebuff } from '../core/status';
-import { describeStatus } from '../core/battle';
+import { describeStatus, explainStatus } from '../core/statustext';
 import { bottomNav, townBar } from '../ui/chrome';
 import { dragReorder } from '../ui/drag';
 import { S } from '../ui/game';
@@ -17,14 +17,6 @@ import { button, divider, h, row, sub } from '../ui/kit';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { navigate } from './nav';
-
-const EXPLAIN: Record<string, string> = {
-  Empower: '공격력이 오른다.', Fortify: '받는 피해가 줄어든다.', Regen: '내 턴이 시작될 때 최대 HP의 일부를 회복한다.', Focus: '모든 선택지의 성공률이 오른다.',
-  Swift: '회피가 올라 적의 공격을 더 잘 피한다.', Keen: '공격 스킬의 치명타 확률이 오른다.', Cruel: '치명타로 주는 피해가 커진다.',
-  Poison: '턴이 시작될 때마다 최대 HP의 일부만큼 피해. 해독제로 풀린다.', Bleed: '행동할 때마다 정해진 피해. 붕대로 풀린다.',
-  Burn: '턴마다 정해진 피해, 받는 회복이 절반. 화상 연고로 풀린다.', Weaken: '공격력이 내려간다.', Vulnerable: '받는 피해가 늘어난다.',
-  Stun: '다음 행동을 할 수 없다.', Silence: '스킬을 쓸 수 없다 (기본 공격·아이템은 가능).', Blind: '모든 선택지의 성공률이 내려간다.', Fear: '도주를 뺀 선택지의 성공률이 내려간다.',
-};
 
 /** 스킬: 장착 슬롯, 보유 스킬(재사용 턴·장착 조건), 장착·해제. 스킬을 누르면 상세 창. */
 export class SkillsScreen extends Screen {
@@ -124,7 +116,7 @@ export class SkillsScreen extends Screen {
       const who = s.OnSelf || def.Target === 'Self' ? '자신' : '적';
       const chance = s.Chance < 1 ? ` · 확률 ${Math.round(s.Chance * 100)}%` : '';
       const resist = who === '적' && isDebuff(s.Type) ? '\n명중해야 걸리고, 적의 저항(정예 10% · 보스 30%)만큼 막힐 수 있음' : '';
-      m.body.append(line(Names.status(s.Type), `${who} · ${s.Turns}턴 · ${describeStatus(s.Type, s.Value)}${chance}\n${EXPLAIN[s.Type]}${resist}`));
+      m.body.append(line(Names.status(s.Type), `${who} · ${s.Turns}턴 · ${describeStatus(s.Type, s.Value)}${chance}\n${explainStatus(s.Type)}${resist}`));
     }
     const equipped = isSkillEquipped(c, id);
     const reason = equipped ? null : cannotEquipSkillReason(c, id);
