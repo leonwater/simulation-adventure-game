@@ -1,9 +1,12 @@
-import { toast } from '../ui/overlay';
 import { router } from '../ui/router';
+import { BlacksmithScreen } from './blacksmith';
 import { CharacterScreen } from './character';
+import { GuildScreen } from './guild';
 import { goTown } from './index';
 import { InventoryScreen } from './inventory';
+import { ShopScreen } from './shop';
 import { SkillsScreen } from './skills';
+import { TrainingScreen } from './training';
 
 export type Dest = 'town' | 'character' | 'inventory' | 'skills' | 'guild' | 'shop' | 'blacksmith' | 'training';
 
@@ -14,6 +17,9 @@ export function navigate(dest: Dest): void {
     case 'character': return router.show(new CharacterScreen());
     case 'inventory': return router.show(new InventoryScreen());
     case 'skills': return router.show(new SkillsScreen());
-    default: toast('이 화면은 아직 옮기는 중입니다');
+    case 'guild': return router.show(new GuildScreen());
+    case 'shop': return router.show(new ShopScreen());
+    case 'blacksmith': return router.show(new BlacksmithScreen());
+    case 'training': return router.show(new TrainingScreen());
   }
 }

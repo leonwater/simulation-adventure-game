@@ -46,3 +46,41 @@ export const divider = (): HTMLDivElement => h('div', { class: 'divider' });
 export const progress = (ratio: number, color = 'var(--blue)', width?: number): HTMLElement =>
   h('div', { class: 'progress', style: width ? { width: `${width}px` } : {} }, h('i', { style: { width: `${Math.round(Math.max(0, Math.min(1, ratio)) * 100)}%`, background: color } }));
 export const dot = (): HTMLElement => h('span', { class: 'dot' });
+
+/** 탭 줄 (구매 | 판매). */
+export function tabs(labels: string[], active: number, onChange: (i: number) => void): HTMLElement {
+  return h('div', { class: 'tabs' }, ...labels.map((l, i) => h('button', { class: i === active ? 'on' : '', on: { click: () => onChange(i) } }, l)));
+}
+
+/** 짧게 누르면 onTap, 오래 누르면 onLong. */
+export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void, ms = 450): void {
+  let timer = 0;
+  let fired = false;
+  el.addEventListener('pointerdown', () => {
+    fired = false;
+    timer = window.setTimeout(() => {
+      fired = true;
+      onLong();
+    }, ms);
+  });
+  const cancel = (): void => window.clearTimeout(timer);
+  el.addEventListener('pointerup', cancel);
+  el.addEventListener('pointerleave', cancel);
+  el.addEventListener('pointercancel', cancel);
+  el.addEventListener('click', () => {
+    if (!fired) onTap();
+  });
+  el.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+/** - 값 + 버튼 줄 (값이 바뀌어도 버튼이 움직이지 않는다). */
+export function stepper(valueText: string, onMinus: () => void, minusOn: boolean, onPlus: () => void, plusOn: boolean): HTMLElement {
+  const b = (label: string, fn: () => void, on: boolean): HTMLButtonElement => {
+    const el = button(label, fn, 'ghost', 'sm');
+    el.style.width = '40px';
+    el.style.padding = '0';
+    el.disabled = !on;
+    return el;
+  };
+  return h('div', { class: 'row', style: { gap: '8px' } }, b('-', onMinus, minusOn), h('div', { style: { minWidth: '64px', textAlign: 'center', fontWeight: '700' } }, valueText), b('+', onPlus, plusOn));
+}
