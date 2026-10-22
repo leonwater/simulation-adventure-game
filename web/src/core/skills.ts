@@ -1,7 +1,7 @@
 import skillsJson from '../data/skills.json';
 import { B } from './balance';
 import type { Job, Rank, SkillTarget, SkillTier, StatusType } from './enums';
-import { JOBS, RANKS, TIERS, ord } from './enums';
+import { JOBS, TIERS, ord } from './enums';
 import type { Rng } from './rng';
 
 export interface StatusApply {
@@ -89,4 +89,3 @@ export function preferOwnLevel(list: SkillDef[], level: number, rng: Rng): Skill
   return own.length > 0 ? own : list;
 }
 
-export const reqRankIndex = (def: SkillDef): number => ord(RANKS, def.ReqRank);

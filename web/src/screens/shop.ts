@@ -3,7 +3,7 @@ import { cannotEquipReason } from '../core/equipment';
 import { JOBS } from '../core/enums';
 
 import type { ItemInstance } from '../core/items';
-import { canBeUsedBy, countOf, displayName, sellPrice, statLine } from '../core/items';
+import { canBeUsedBy, countOf, sellPrice, statLine } from '../core/items';
 import { skillDef } from '../core/skills';
 import { knowsSkill } from '../core/equipment';
 import { Names } from '../core/names';
@@ -13,8 +13,10 @@ import { goodUnlimited } from '../core/items';
 import { jobLine, npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { offerBetterGear, isBetter } from '../ui/gearoffer';
-import { colored, compareLine, compareChip, gearText, gradeTag, infoText, itemTitle, kindLine, levelChip, nameColor } from '../ui/items';
+import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemTitle, kindLine, levelChip, nameColor } from '../ui/items';
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
+import { sellCountDialog } from '../ui/sellcount';
+import { tierColor } from '../ui/theme';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { tutorial } from '../ui/tutorial';
@@ -83,9 +85,8 @@ export class ShopScreen extends Screen {
     const cell = this.cardButton(() => this.buyEquipDialog(item),
       kindLine(item, 12),
       h('b', { style: { fontSize: '14px', color: nameColor(item), textAlign: 'left' } }, item.Name),
-      // 위: 능력치 변화(또는 직업 전용) · 아래: 착용 레벨 · 가격
-      h('span', { class: 'sub' }, usable ? compareChip(c, item) : colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, '#E38A82')),
-      h('span', { class: 'sub' }, levelChip(c, item)),
+      // 착용 레벨 · 능력치 변화(또는 직업 전용)를 한 줄에
+      h('span', { class: 'sub', style: { whiteSpace: 'nowrap' } }, ...(usable ? [equipLine(c, item)] : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, '#E38A82')])),
       h('span', { class: 'spacer' }),
       h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
     if (!usable) cell.style.opacity = '.55';
@@ -142,12 +143,17 @@ export class ShopScreen extends Screen {
     const c = S.c;
     const item = g.Item;
     const m = modal(item.Name);
-    m.body.append(h('div', null, statLine(item)));
     if (item.Kind === 'SkillBook') {
+      // 스킬서 이름 / 장착 조건 / 등급·직업 / 효과 / 재사용 — 한 줄씩
       const def = skillDef(item.SkillId)!;
-      m.body.append(h('div', { style: { fontSize: '13px' } }, this.skillBookJob(item, 13)), sub(`장착 조건 Lv.${def.ReqLevel} · ${def.ReqRank} 등급`));
+      m.body.append(
+        h('div', { class: 'col', style: { gap: '6px', lineHeight: '1.4' } },
+          h('div', null, `장착 조건: Lv.${def.ReqLevel} · ${def.ReqRank} 등급`),
+          h('div', { class: 'row', style: { gap: '6px' } }, h('span', { style: { color: tierColor(def.Tier) } }, `${Names.tier(def.Tier)} 스킬`), this.skillBookJob(item, 14)),
+          h('div', null, def.Effect),
+          h('div', { class: 'sub' }, `재사용 ${def.Cooldown}턴`)));
       if (knowsSkill(c, def.Id)) m.body.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, '이미 배운 스킬입니다.'));
-    }
+    } else m.body.append(h('div', null, statLine(item)));
     let count = 1;
     const countEl = h('div', { style: { minWidth: '64px', textAlign: 'center', fontWeight: '700' } });
     const buy = button('', () => {
@@ -234,10 +240,9 @@ export class ShopScreen extends Screen {
     const cell = h('button', { class: 'card-btn', style: { height: '118px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', position: 'relative', background: sel ? 'var(--accent-bg)' : 'var(--card)', borderColor: sel ? 'var(--accent)' : 'var(--card-border)' } },
       kindLine(item, 12),
       h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item)),
-      h('div', { class: 'sub', style: { textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, infoText(c, item)),
-      h('div', { class: 'sub', style: { textAlign: 'left' } }, levelChip(c, item)),
+      h('div', { class: 'sub', style: { textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)),
       h('span', { class: 'spacer' }),
-      h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${item.Count > 1 ? '개당 ' : ''}${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null),
+      h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null),
       sel ? h('span', { class: 'chip' }, '√') : null);
     longPress(cell, () => {
       if (!this.selected) this.selected = new Set();
@@ -280,22 +285,14 @@ export class ShopScreen extends Screen {
 
   private sellDialog(item: ItemInstance): void {
     const c = S.c;
-    const m = modal(displayName(item));
-    if (item.Kind === 'Equipment') m.body.append(h('div', { style: { fontSize: '13px' } }, gradeTag(item), ' ', gearText(item)));
-    m.body.append(h('div', null, statLine(item)));
-    if (S.data!.Guild.Active.some((q) => q.MaterialId === item.TemplateId)) m.body.append(h('div', { class: 'gold', style: { fontSize: '13px' } }, '진행 중인 채집 퀘스트에 필요한 아이템입니다.'));
-    const doSell = (n: number): void => {
+    const needed = S.data!.Guild.Active.some((q) => q.MaterialId === item.TemplateId);
+    sellCountDialog(item, (n) => {
       const r = sell(c, item.Uid, n);
       if (!r.ok) return toast(r.error ?? '');
-      m.close();
       this.line = '흠, 이 정도면 값을 쳐 주지. 거래 고맙네.';
       S.save();
       router.rebuild();
-    };
-    const actions = row();
-    if (item.Count > 1) actions.append(button(`1개 · ${sellPrice(item)}G`, () => doSell(1), '', 'grow'));
-    actions.append(button(item.Count > 1 ? `전부 ${item.Count}개 · 개당 ${sellPrice(item).toLocaleString('en-US')}G` : `판매 · ${sellPrice(item).toLocaleString('en-US')}G`, () => doSell(item.Count), 'primary', 'grow'));
-    m.body.append(actions);
+    }, [needed ? h('div', { class: 'gold', style: { fontSize: '13px' } }, '진행 중인 채집 퀘스트에 필요한 아이템입니다.') : null]);
   }
 
   private sellMaterials(): void {

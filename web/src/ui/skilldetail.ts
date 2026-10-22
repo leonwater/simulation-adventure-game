@@ -9,6 +9,7 @@ import { describeStatus, explainStatus } from '../core/statustext';
 import { S } from './game';
 import { button, divider, h } from './kit';
 import { modal } from './overlay';
+import { tierColor } from './theme';
 import { areaDiagram } from './skillinfo';
 
 /**
@@ -20,21 +21,23 @@ export function showSkillDetail(id: string, actions: { equip: (id: string) => vo
     const def = skillDef(id);
     const st = getSkillState(c, id);
     if (!def || !st) return;
-    const m = modal(def.Name);
+    const m = modal(`${def.Name} (+${st.Level})`);
+    const title = m.body.querySelector('h3') as HTMLElement | null;
+    if (title) title.style.color = tierColor(def.Tier);
     const line = (k: string, v: string): HTMLElement => h('div', { class: 'row', style: { alignItems: 'flex-start' } }, h('div', { class: 'sub', style: { width: '72px', flexShrink: '0', fontSize: '13px' } }, k), h('div', { class: 'grow', style: { whiteSpace: 'pre-line' } }, v));
     m.body.append(
-      h('b', { class: 'gold', style: { fontSize: '13px' } }, `${Names.tier(def.Tier)} 스킬 · ${def.Role} · 수련 +${st.Level} / ${maxSkillLevel(def)}`),
+      h('b', { style: { fontSize: '13px', color: tierColor(def.Tier) } }, `${Names.tier(def.Tier)} 스킬 · ${def.Role} · 수련 +${st.Level} / ${maxSkillLevel(def)}`),
       h('div', { style: { fontSize: '15px' } }, def.Effect),
       divider(),
       line('재사용', `${skillCooldown(def, st.Level)}턴`));
     // 범위 그림 · 피해 계산식 · 상태 이상 실제 확률 (지금 도전 층의 보통 몬스터 기준)
-    m.body.append(h('div', { class: 'row', style: { alignItems: 'center' } }, h('div', { class: 'sub', style: { width: '72px', flexShrink: '0', fontSize: '13px' } }, '범위'), areaDiagram(def)));
+    m.body.append(h('div', { class: 'row', style: { alignItems: 'center' } }, h('div', { class: 'sub', style: { width: '72px', flexShrink: '0', fontSize: '13px' } }, '범위'), areaDiagram(def, false)));
     const floor = Math.max(1, maxChallengeFloor(c));
     let hit = 1;
-    if (def.Target === 'Self') m.body.append(line('성공률', '100% (자신에게 거는 스킬)'));
+    if (def.Target === 'Self') m.body.append(line('성공률', '100%'));
     else {
       hit = clamp(B.BaseHit + (totalStat(c, jobData(c.Job).attackStat) - enemyRequirement(floor)) * B.HitPerStatPoint + precisionBonus(c) + def.SuccessBonus, B.MinHit, B.MaxHit);
-      m.body.append(line(def.Hits > 1 ? '타격당 성공률' : '성공률', `${floor}층 보통 몬스터에게 약 ${Math.round(hit * 100)}%`));
+      m.body.append(line(def.Hits > 1 ? '타격당 성공률' : '성공률', `${Math.round(hit * 100)}%`));
     }
     if (def.IsAttack) {
       const mults = def.ChainMults.length > 0 ? def.ChainMults : [def.DamageMult];
@@ -61,6 +64,7 @@ export function showSkillDetail(id: string, actions: { equip: (id: string) => vo
         else actions.equip(id);
       }, equipped ? 'outline' : 'primary');
       b.disabled = !equipped && reason !== null;
+      b.style.marginTop = '16px';
       m.body.append(b);
     }
 }

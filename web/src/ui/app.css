@@ -167,3 +167,8 @@ input.text::placeholder { color: #8F8C85; }
 .battle-potion { flex-shrink: 0; width: 58px; height: 58px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: var(--return-bg); border: 2px solid var(--return-border); border-radius: 12px; align-self: center; }
 .battle-potion .s { font-size: 11px; font-weight: 700; color: var(--return-text); line-height: 1; }
 .battle-potion.off { opacity: .45; }
+
+/* 타이틀 화면 배경: 가운데에 정사각형 그림을 흐리게 깔고 가장자리는 부드럽게 지운다 */
+.title-bg { position: absolute; left: 50%; top: 50%; width: min(100%, 600px); aspect-ratio: 1; transform: translate(-50%, -50%); background-repeat: no-repeat; background-position: center; background-size: cover; opacity: .55; pointer-events: none;
+  -webkit-mask-image: radial-gradient(closest-side, #000 50%, transparent 100%); mask-image: radial-gradient(closest-side, #000 50%, transparent 100%); }
+.title-bg ~ * { position: relative; }

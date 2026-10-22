@@ -12,7 +12,7 @@ import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { button, h, icon, row, sub } from '../ui/kit';
-import { compareLine, gearText, gradeTag, itemGrid, kindLine, legend } from '../ui/items';
+import { compareLine, gearText, gradeTag, itemGrid, kindLine } from '../ui/items';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { GRADE_COLOR } from '../ui/theme';
@@ -47,7 +47,6 @@ export class InventoryScreen extends Screen {
         h('b', null, '장착 장비'),
         h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' } }, ...SLOTS.map((s) => this.slotCell(s))),
         row(h('b', { class: 'grow' }, '가방 ', h('span', { class: 'sub', style: { fontSize: '14px' } }, `${c.Inventory.Items.length} / ${c.Inventory.Capacity}`)), this.fromDungeon ? null : expand),
-        legend(),
         itemGrid(c.Inventory, c, (item) => this.showItem(item, null)),
         sub('사망하면 장착하지 않은 아이템을 모두 잃습니다. 길드 창고에 맡겨 두세요.')),
       this.fromDungeon

@@ -56,7 +56,7 @@ export function bottomNav(active: number, go: (index: number) => void): HTMLElem
 const WIDE = new Set(['training', 'shop']);
 
 export function npcIllustration(name: string, npcName: string, line: string, height = 290): HTMLElement {
-  const url = `url(${assetUrl(`illustrations/${name}.jpg`)})`;
+  const url = `url(${assetUrl(`illustrations/${name}.webp`)})`;
   if (WIDE.has(name)) {
     return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: url } },
       h('div', { class: 'blurfill', style: { backgroundImage: url } }),

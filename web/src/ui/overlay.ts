@@ -41,17 +41,6 @@ export function confirmBox(title: string, message: string, okLabel: string, onOk
   );
 }
 
-export function infoBox(title: string, message: string, okLabel = '확인', onClose?: () => void): void {
-  const m = modal(title, false);
-  m.body.append(
-    h('div', { class: 'body', style: { whiteSpace: 'pre-line', lineHeight: '1.5' } }, message),
-    button(okLabel, () => {
-      m.close();
-      onClose?.();
-    }, 'primary'),
-  );
-}
-
 let toastTimer = 0;
 export function toast(message: string): void {
   router.layer.querySelectorAll('.toast').forEach((e) => e.remove());

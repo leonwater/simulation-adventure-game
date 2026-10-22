@@ -10,7 +10,6 @@ import { h } from './kit';
 import { GRADE_COLOR } from './theme';
 
 export type ItemCategory = 'Weapon' | 'Armor' | 'Accessory' | 'Consumable' | 'Other' | 'SkillBook' | 'Stone';
-const LEGEND: ItemCategory[] = ['Weapon', 'Armor', 'Accessory', 'Consumable', 'Other', 'SkillBook', 'Stone'];
 const CAT_COLOR: Record<ItemCategory, string> = {
   Weapon: '#E8894A', Armor: '#7FA8D8', Accessory: '#C08BE8', Consumable: '#6CC48A', SkillBook: '#5CCAD8', Stone: '#E2B657', Other: '#B08F6A',
 };
@@ -30,8 +29,6 @@ export function category(item: ItemInstance): ItemCategory {
     default: return 'Other';
   }
 }
-export const categoryName = (c: ItemCategory): string => CAT_NAME[c];
-export const categoryColor = (c: ItemCategory): string => CAT_COLOR[c];
 
 /** 장비 상세에 쓰는 종류: "방어구 · 투구", "장신구 · 반지", "무기". */
 export function gearText(item: ItemInstance): string {
@@ -93,6 +90,15 @@ export function levelChip(c: Character | null, item: ItemInstance): Child {
   return c && c.Level < item.LevelReq ? colored(`Lv.${item.LevelReq}`, RED) : `Lv.${item.LevelReq}`;
 }
 
+/** 장비 카드 한 줄: 착용 레벨 먼저, 이어서 지금 장비 대비 능력치 변화 ('Lv.26 방어 +6'). */
+export function equipLine(c: Character | null, item: ItemInstance): HTMLElement {
+  const el = h('span', { style: { whiteSpace: 'nowrap' } }, levelChip(c, item));
+  const cmp = c ? compareChip(c, item) : '';
+  if (typeof cmp === 'string' && cmp !== '') el.append(' ', cmp);
+  else if (cmp instanceof Node) el.append(' ', cmp);
+  return el;
+}
+
 /** 소모품 효과 한 줄: 'HP 30% 회복', '독 해제'. */
 function shortConsumable(id: string): string {
   const d = consumableDef(id);
@@ -121,12 +127,6 @@ export const gradeTag = (item: ItemInstance): HTMLElement => colored(`[${Names.g
 export const itemTitle = (item: ItemInstance): string =>
   item.Kind === 'SkillBook' && skillDef(item.SkillId) ? skillDef(item.SkillId)!.Name : displayName(item);
 
-/** 종류 색 안내. */
-export function legend(): HTMLElement {
-  return h('div', { class: 'row', style: { gap: '8px', flexWrap: 'wrap' } }, ...LEGEND.map((c) =>
-    h('span', { class: 'row', style: { gap: '3px', fontSize: '10px', color: 'var(--sub)' } }, circle(CAT_COLOR[c], 7), CAT_NAME[c])));
-}
-
 /** 가방·창고 4열 격자. 칸마다 종류 색 원 + 종류 · 이름(두 줄까지) · 아래 줄(왼쪽 정보 / 오른쪽 개수). */
 export function itemGrid(container: ItemContainer, owner: Character | null, onTap: (item: ItemInstance) => void, opts: { selectedUid?: string | null; showEmpty?: boolean } = {}): HTMLElement {
   const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' } });
@@ -138,12 +138,13 @@ export function itemGrid(container: ItemContainer, owner: Character | null, onTa
     },
     kindLine(item, 12),
     h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), fontWeight: item.Kind === 'Equipment' ? '700' : '400', wordBreak: 'keep-all' } }, itemTitle(item)),
-    // 능력치 변화·설명은 개수(×N) 줄 위쪽에 따로 둔다 (아래 줄은 착용 레벨과 개수)
-    h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, infoText(owner, item)),
+    // 장비는 '착용 레벨 · 능력치 변화'를 한 줄에, 그 밖의 물품은 설명 한 줄 + 개수(×N)
     h('div', { class: 'spacer' }),
-    h('div', { class: 'row', style: { gap: '4px', fontSize: '12px', color: 'var(--sub)', height: '16px' } },
-      h('span', { class: 'grow', style: { whiteSpace: 'nowrap', textAlign: 'left' } }, levelChip(owner, item)),
-      item.Count > 1 ? h('b', { style: { color: 'var(--text)' } }, `×${item.Count}`) : null)));
+    item.Kind === 'Equipment'
+      ? h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', height: '16px' } }, equipLine(owner, item))
+      : h('div', { class: 'row', style: { gap: '4px', fontSize: '12px', color: 'var(--sub)', height: '16px' } },
+        h('span', { class: 'grow', style: { whiteSpace: 'nowrap', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' } }, infoText(owner, item)),
+        item.Count > 1 ? h('b', { style: { color: 'var(--text)' } }, `×${item.Count}`) : null)));
   }
   if (opts.showEmpty !== false) {
     for (let i = container.Items.length; i < container.Capacity; i++) {

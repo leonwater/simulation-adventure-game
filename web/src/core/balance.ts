@@ -34,9 +34,6 @@ export function roundEven(x: number): number {
 /** 다음 레벨까지 필요한 경험치. */
 export const expToNext = (level: number): number => (level >= B.MaxLevel ? 0 : roundEven(100 * Math.pow(level, 1.5)));
 
-/** 강화 목표 단계 target에 실패했을 때 한 단계 내려갈 확률. */
-export const enhanceDowngradeChance = (target: number): number => (target >= 11 ? 0.5 : target >= 7 ? 0.3 : 0);
-
 export const difficultyMultiplier = (d: string): number => (d === 'Easy' ? 0.75 : d === 'Hard' || d === 'Hardcore' ? 1.25 : 1);
 
 /** 초반 보정: 1층 1.0 → 8층 0. 쉬움은 없음, 어려움·하드코어는 40%만. */

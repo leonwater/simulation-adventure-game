@@ -14,14 +14,15 @@ export function createEnemy(sp: MonsterSpecies, floor: number, diff: string, rol
   const reward = role === 2 ? (sp.UniqueBoss ? B.UniqueBossReward : B.FloorBossReward) : role === 1 ? B.EliteReward : 1;
   const early = earlyBoostScale(diff);
   const late = lateRamp(floor);
-  const hp = Math.max(1, roundEven(enemyHp(floor, early) * sp.HpMul * hpRole * d * (1 + B.LateHpBonus * late)));
+  const trait = role < 2 && sp.Trait ? sp.Trait : { Hp: 1, Atk: 1 };
+  const hp = Math.max(1, roundEven(enemyHp(floor, early) * sp.HpMul * trait.Hp * hpRole * d * (1 + B.LateHpBonus * late)));
   let name = sp.Name;
   if (role === 1) name = `정예 ${sp.Name}`;
   else if (role === 2 && !sp.UniqueBoss) name = `${sp.Name} 우두머리`;
   const c = new Combatant();
   c.name = name;
   c.maxHp = c.hp = hp;
-  c.attack = Math.max(1, roundEven(enemyAttack(floor, early) * sp.AttackMul * atkRole * d * (1 + B.LateAttackBonus * late)));
+  c.attack = Math.max(1, roundEven(enemyAttack(floor, early) * sp.AttackMul * trait.Atk * atkRole * d * (1 + B.LateAttackBonus * late)));
   c.defense = roundEven(enemyDefense(floor) * sp.DefenseMul);
   c.requirement = (10 + floor * 2.4) * sp.RequirementMul + (role > 0 ? 2 : 0);
   c.resist = role === 2 ? 0.3 : role === 1 ? 0.1 : 0;
@@ -35,6 +36,8 @@ export function createEnemy(sp: MonsterSpecies, floor: number, diff: string, rol
 }
 
 const sp = (id: string): MonsterSpecies => monster(id)!;
+/** 튜토리얼 적은 종류 특색 없이 (약하게 맞춘 값 그대로). */
+const plain = (id: string): MonsterSpecies => ({ ...monster(id)!, Trait: undefined });
 
 /** 같은 이름이 여럿이면 A, B, C…를 붙인다. */
 export function nameDuplicates(list: Combatant[]): void {
@@ -52,10 +55,9 @@ export function nameDuplicates(list: Combatant[]): void {
 
 /**
  * 진형: 적 자리는 배열 순서와 같다 — 0 전방 위 · 1 후방 위 · 2 전방 아래 · 3 후방 아래 (플레이어 쪽 왼쪽 열이 전방).
- * 궁수·주술사처럼 후방을 좋아하는 종족을 먼저 후방 칸에 넣는다. lines면 일반·정예에게 줄 보정을 준다:
- * 전방은 HP가 많고 약하게 때리며, 후방은 HP가 적고 세게 때린다 (balance.json Front/Back). 혼자 나온 적은 보정 없음.
+ * 궁수·주술사처럼 후방을 좋아하는 종족을 먼저 후방 칸에 넣는다. 능력치는 자리가 아니라 종류(`Trait`)가 정한다.
  */
-export function arrange(list: Combatant[], lines: boolean): Combatant[] {
+export function arrange(list: Combatant[]): Combatant[] {
   const n = Math.min(4, list.length);
   const back = [1, 3].filter((s) => s < n);
   const front = [0, 2].filter((s) => s < n);
@@ -66,14 +68,6 @@ export function arrange(list: Combatant[], lines: boolean): Combatant[] {
     else rest.push(e);
   }
   for (const e of rest) out[(front.length > 0 ? front : back).shift()!] = e;
-  if (lines && n > 1) {
-    out.forEach((e, i) => {
-      if (e.role >= 2) return;
-      const isBack = i % 2 === 1;
-      e.maxHp = e.hp = Math.max(1, roundEven(e.maxHp * (isBack ? B.BackHp : B.FrontHp)));
-      e.attack = Math.max(1, roundEven(e.attack * (isBack ? B.BackAttack : B.FrontAttack)));
-    });
-  }
   return out;
 }
 
@@ -88,7 +82,7 @@ export function createGroup(floor: number, diff: string, seed: number, extra = 0
   const list: Combatant[] = [];
   const elite = rng.chance(B.EliteChance) ? rng.range(0, count) : -1;
   for (let i = 0; i < count; i++) list.push(createEnemy(sp(rng.pick(theme.SpeciesIds)), floor, diff, i === elite ? 1 : 0));
-  const arranged = arrange(list, true);
+  const arranged = arrange(list);
   nameDuplicates(arranged);
   return arranged;
 }
@@ -118,7 +112,7 @@ export function createMimic(floor: number, diff: string): Combatant[] {
 
 /** 도박하는 고블린에게 속임수가 들통났을 때의 전투 (고블린 2마리). */
 export function createGamblers(floor: number, diff: string): Combatant[] {
-  const list = arrange([createEnemy(sp('goblin'), floor, diff, 0), createEnemy(sp('goblin'), floor, diff, 0)], true);
+  const list = arrange([createEnemy(sp('goblin'), floor, diff, 0), createEnemy(sp('goblin'), floor, diff, 0)]);
   nameDuplicates(list);
   return list;
 }
@@ -146,7 +140,7 @@ export function createGoblinChase(floor: number, diff: string, seed: number): Co
     e.goldReward *= 2;
     list.push(e);
   }
-  const arranged = arrange(list, true);
+  const arranged = arrange(list);
   nameDuplicates(arranged);
   return arranged;
 }
@@ -165,12 +159,12 @@ function tutorial(e: Combatant, diff: string, hp: number, attack = 1): Combatant
 export function createTutorialGroup(first: boolean, diff: string): Combatant[] {
   const list: Combatant[] = [];
   if (first) {
-    const slime = tutorial(createEnemy(sp('slime'), 1, diff, 0), diff, 1);
+    const slime = tutorial(createEnemy(plain('slime'), 1, diff, 0), diff, 1);
     slime.expReward = Math.max(slime.expReward, expToNext(1));
     list.push(slime);
   } else {
-    list.push(tutorial(createEnemy(sp('goblin'), 1, diff, 0), diff, 1));
-    list.push(tutorial(createEnemy(sp('goblin'), 1, diff, 0), diff, 1));
+    list.push(tutorial(createEnemy(plain('goblin'), 1, diff, 0), diff, 1));
+    list.push(tutorial(createEnemy(plain('goblin'), 1, diff, 0), diff, 1));
   }
   nameDuplicates(list);
   return list;

@@ -26,7 +26,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.4,
+        "Atk": 0.7
+      }
     },
     {
       "Id": "goblin",
@@ -41,7 +45,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.15,
+        "Atk": 0.9
+      }
     },
     {
       "Id": "goblin_archer",
@@ -69,7 +77,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Back"
+      "Line": "Back",
+      "Trait": {
+        "Hp": 0.7,
+        "Atk": 1.25
+      }
     },
     {
       "Id": "bat",
@@ -84,7 +96,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Back"
+      "Line": "Back",
+      "Trait": {
+        "Hp": 0.65,
+        "Atk": 1.2
+      }
     },
     {
       "Id": "kobold",
@@ -99,7 +115,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.3,
+        "Atk": 0.8
+      }
     },
     {
       "Id": "spider",
@@ -127,7 +147,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 0.95,
+        "Atk": 1.05
+      }
     },
     {
       "Id": "wolf",
@@ -155,7 +179,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 0.9,
+        "Atk": 1.15
+      }
     },
     {
       "Id": "goblin_king",
@@ -210,7 +238,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.1,
+        "Atk": 0.95
+      }
     },
     {
       "Id": "skeleton",
@@ -225,7 +257,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.2,
+        "Atk": 0.9
+      }
     },
     {
       "Id": "zombie",
@@ -253,7 +289,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.4,
+        "Atk": 0.75
+      }
     },
     {
       "Id": "ghoul",
@@ -281,7 +321,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Back"
+      "Line": "Back",
+      "Trait": {
+        "Hp": 0.8,
+        "Atk": 1.2
+      }
     },
     {
       "Id": "orc_shaman",
@@ -321,7 +365,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Back"
+      "Line": "Back",
+      "Trait": {
+        "Hp": 0.7,
+        "Atk": 1.3
+      }
     },
     {
       "Id": "gargoyle",
@@ -336,7 +384,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.3,
+        "Atk": 0.85
+      }
     },
     {
       "Id": "lich",
@@ -388,7 +440,11 @@
       ],
       "UniqueBoss": true,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 0.85,
+        "Atk": 1.15
+      }
     },
     {
       "Id": "lizardman",
@@ -403,7 +459,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.1,
+        "Atk": 0.95
+      }
     },
     {
       "Id": "wyvern",
@@ -431,7 +491,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Back"
+      "Line": "Back",
+      "Trait": {
+        "Hp": 0.75,
+        "Atk": 1.25
+      }
     },
     {
       "Id": "golem",
@@ -459,7 +523,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.35,
+        "Atk": 0.8
+      }
     },
     {
       "Id": "troll",
@@ -474,7 +542,11 @@
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 5,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.2,
+        "Atk": 0.9
+      }
     },
     {
       "Id": "minotaur",
@@ -502,7 +574,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Front"
+      "Line": "Front",
+      "Trait": {
+        "Hp": 1.0,
+        "Atk": 1.05
+      }
     },
     {
       "Id": "dark_elf",
@@ -542,7 +618,11 @@
       ],
       "UniqueBoss": false,
       "RegenPercent": 0,
-      "Line": "Back"
+      "Line": "Back",
+      "Trait": {
+        "Hp": 0.7,
+        "Atk": 1.3
+      }
     },
     {
       "Id": "mimic",

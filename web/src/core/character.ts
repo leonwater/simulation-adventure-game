@@ -97,7 +97,6 @@ export const setEquipped = (c: Character, slot: EquipSlot, item: ItemInstance | 
 };
 export const findEquipped = (c: Character, uid: string): ItemInstance | undefined =>
   c.Equipment.Slots.find((s) => s != null && s.Uid === uid) ?? undefined;
-export const equippedCount = (c: Character): number => c.Equipment.Slots.filter((s) => s != null).length;
 
 export function defaultSlot(gear: GearType): EquipSlot {
   switch (gear) {

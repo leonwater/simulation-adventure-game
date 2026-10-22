@@ -168,15 +168,18 @@ export class GuildScreen extends Screen {
         cond('퀘스트 완료', st.questsCurrent, st.questsRequired, st.questsMet),
         sub('세 조건을 모두 채우면 자동으로 승급합니다.'));
     } else card.append(h('div', { class: 'gold' }, '최고 등급에 도달했습니다.'));
-    const table = h('div', { class: 'card', style: { gap: '0', padding: '14px 14px 6px' } }, h('b', { style: { fontSize: '16px', marginBottom: '6px' } }, '모험가 등급표'),
+    // 등급표: 열 머리글(스킬 · 창고 · 능력치)과 숫자만. 지금 등급은 금색 글자로만 표시한다
+    const COLS = ['58px', '58px', '64px'];
+    const cell = (text: string, w: string, color: string, bold = false): HTMLElement => h('div', { style: { width: w, textAlign: 'center', flexShrink: '0', color, fontWeight: bold ? '700' : '400', fontSize: '15px' } }, text);
+    const table = h('div', { class: 'card', style: { gap: '0', padding: '14px 14px 6px' } },
+      h('b', { style: { fontSize: '16px', marginBottom: '8px' } }, '모험가 등급표'),
+      h('div', { class: 'row', style: { gap: '8px', paddingBottom: '6px', borderBottom: '1px solid var(--line-soft)', fontSize: '12px', color: 'var(--sub)' } },
+        h('div', { class: 'grow' }, '등급'), cell('스킬', COLS[0], 'var(--sub)'), cell('창고', COLS[1], 'var(--sub)'), cell('능력치', COLS[2], 'var(--sub)')),
       ...RANKS.map((rank, r) => {
-        const cur = c.Rank === rank;
-        // 등급표는 승급 조건이 아니라 그 등급에서 얻는 이점 (승급 조건은 위 카드에만)
-        const req = `스킬 ${skillSlots(rank)}칸 · 창고 ${storageCapacity(rank)}칸`;
-        return h('div', { class: 'row', style: { minHeight: '60px', gap: '12px', padding: '4px 0', borderBottom: r < RANKS.length - 1 ? '1px solid var(--line-soft)' : '' } },
-          icon(rankIcon(rank), 40),
-          h('div', { class: 'col grow', style: { gap: '3px' } }, h('b', { style: { fontSize: '16px', color: cur ? 'var(--gold)' : 'var(--text)' } }, `${rank} 등급`), h('div', { class: 'sub', style: { fontSize: '13px' } }, req)),
-          h('b', { style: { fontSize: '16px', color: cur ? 'var(--gold)' : 'var(--body)' } }, `+${Math.round(B.BadgeBonus[r] * 100)}%`));
+        const color = c.Rank === rank ? 'var(--gold)' : 'var(--body)';
+        return h('div', { class: 'row', style: { minHeight: '52px', gap: '8px', padding: '4px 0', borderBottom: r < RANKS.length - 1 ? '1px solid var(--line-soft)' : '' } },
+          h('div', { class: 'row grow', style: { gap: '10px' } }, icon(rankIcon(rank), 36), h('b', { style: { fontSize: '16px', color: c.Rank === rank ? 'var(--gold)' : 'var(--text)' } }, `${rank} 등급`)),
+          cell(`${skillSlots(rank)}`, COLS[0], color), cell(`${storageCapacity(rank)}`, COLS[1], color), cell(`+${Math.round(B.BadgeBonus[r] * 100)}%`, COLS[2], color, true));
       }));
     return [card, table];
   }

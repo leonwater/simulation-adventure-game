@@ -120,7 +120,7 @@ describe('V16Tests (튜토리얼 귀환·퀘스트·초반 보정·방 알림)',
   });
 
   it('EarlyBoost_NormalOnlyAndNotInTutorial', () => {
-    const sp = monster('goblin')!;
+    const sp = { ...monster('goblin')!, Trait: undefined }; // 종류 특색(v3.0)은 빼고 초반 보정만 본다
     const normal = createEnemy(sp, 1, 'Normal', 0);
     const easy = createEnemy(sp, 1, 'Easy', 0);
     expect(enemyHp(1)).toBeGreaterThan(enemyHp(1, 0));

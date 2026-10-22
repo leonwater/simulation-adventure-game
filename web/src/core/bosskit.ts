@@ -63,12 +63,6 @@ const MINION: Record<string, { id: string; name: string; hp: number }> = {
   lich: { id: 'skeleton', name: '해골 병사', hp: 0.8 },
 };
 
-const TRAIT_NAME: Record<BossTrait, string> = {
-  Barrier: '방어막', Shield: '보호막', Thorns: '가시 비늘', Smash: '혼신의 일격', Flurry: '연속 공격', Lifesteal: '흡혈',
-  Enrage: '광폭화', Split: '분열', Ritual: '재생 의식', Revive: '부활', Summon: '부하 소환',
-};
-export const traitName = (t: BossTrait): string => TRAIT_NAME[t];
-
 export const traitsFor = (speciesId: string | null | undefined): BossTrait[] => (speciesId ? BY_SPECIES[speciesId] ?? [] : []);
 
 /** 특성별 체격: HP · 공격력 · 방어력 배율. */

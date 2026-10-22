@@ -42,7 +42,6 @@ export const newRun = (floor: number, map: FloorMap): DungeonRun => ({
 });
 
 export const currentRoom = (run: DungeonRun): Room => getRoom(run.Map, run.CurrentRoomId)!;
-export const roomsExplored = (run: DungeonRun): number => run.Map.Rooms.filter((r) => r.Visited && r.Type !== 'Start').length;
 export const returnRoomFound = (run: DungeonRun): boolean => run.Map.Rooms.some((r) => r.Type === 'Return' && r.Visited);
 
 /** 미니맵·경로 선택에 쓰는 이동 후보. */

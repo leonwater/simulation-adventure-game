@@ -43,6 +43,9 @@ const showSituation = (run: DungeonRun): boolean => {
   return t === 'Merchant';
 };
 
+/** 보스를 잡은 뒤 '이 층 탐험'을 고른 층 (같은 층에서 다시 보스 방에 와도 선택 창을 띄우지 않는다). */
+const exploringAfterBoss = new WeakSet<DungeonRun>();
+
 export class DungeonScreen extends Screen {
   constructor(private levelUp = false) {
     super();
@@ -87,7 +90,7 @@ export class DungeonScreen extends Screen {
         ibtn('quest', '퀘스트', () => showQuests()),
         ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast('아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
       run.FloorIntroPending ? this.floorIntro(run) : null,
-      dungeon.currentRoom(run).Type === 'Boss' && run.BossDefeated ? this.bossChoice(run) : null);
+      dungeon.currentRoom(run).Type === 'Boss' && run.BossDefeated && !exploringAfterBoss.has(run) ? this.bossChoice(run) : null);
     if (!run.FloorIntroPending) queueMicrotask(() => this.afterIntro());
     return page;
   }
@@ -316,6 +319,7 @@ export class DungeonScreen extends Screen {
     const map = h('div', { class: 'minimap', style: { width: `${w}px`, height: `${hh}px` } });
     this.drawMap(map, w - 8, hh - 8, run, can ? (room) => {
       m.close();
+      if (S.run) exploringAfterBoss.delete(S.run);
       if (S.teleport(room.Id)) router.rebuild();
     } : null);
     m.body.append(sub(can ? '탐험을 마친 방을 누르면 그곳으로 순간이동합니다.' : '지금 방을 끝내야 이동할 수 있습니다.'),
@@ -399,6 +403,7 @@ export class DungeonScreen extends Screen {
   // ── 행동 ──
 
   private move(roomId: number): void {
+    if (S.run) exploringAfterBoss.delete(S.run); // 보스 방을 떠나면, 돌아왔을 때 다시 선택 창이 뜬다 (다음 층으로 내려가는 길)
     const result = S.move(roomId);
     switch (result) {
       case 'Battle':
@@ -414,11 +419,16 @@ export class DungeonScreen extends Screen {
     }
   }
 
-  /** 보스를 잡으면 화면을 어둡게 덮고 '마을 귀환 / 다음 층 탐험' 둘 중 하나만 고른다 (다른 버튼은 눌리지 않는다). */
+  /** 보스를 잡으면 화면을 어둡게 덮고 '이 층 탐험 / 다음 층 탐험 / 마을 귀환' 중 하나를 고른다 (다른 버튼은 눌리지 않는다). */
   private bossChoice(run: DungeonRun): HTMLElement {
     const last = run.Floor >= B.MaxFloor;
     const card = h('div', { class: 'card', style: { width: '100%', gap: '10px', padding: '18px 16px', background: 'var(--dialog)', borderColor: 'var(--gold)' } },
       h('b', { class: 'gold center', style: { fontSize: '20px', textAlign: 'center' } }, last ? '던전 정복!' : '보스 처치'),
+      // 맨 위: 이 층에 남은 방을 더 둘러본다 (보스 방에서 나가면 같은 층을 이어서 탐험)
+      this.bigButton('new', '이 층 탐험', '남은 방을 더 둘러보기', () => {
+        exploringAfterBoss.add(run);
+        router.rebuild();
+      }),
       S.canDescend ? this.bigButton('descend', `${run.Floor + 1}층 탐험`, `${themeFor(run.Floor + 1).Name} · 현재 HP 유지`, () => this.descend()) : null,
       anchored(this.bigButton('return', '마을 귀환', '획득한 것은 모두 유지', () => this.returnNow()), 'dungeon.home'));
     return h('div', { class: 'bosschoice', style: { position: 'absolute', inset: '0', zIndex: '30', background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' } }, card);

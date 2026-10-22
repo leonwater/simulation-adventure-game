@@ -16,7 +16,7 @@ import { colored } from '../ui/items';
 import { button, h, icon, longPress, sub } from '../ui/kit';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
-import { dungeonTheme } from '../ui/theme';
+import { dungeonTheme, tierColor } from '../ui/theme';
 import { settings, vibrate } from '../ui/settings';
 import { goDungeon, goResult, goTitle, goToCurrent } from './index';
 
@@ -308,7 +308,7 @@ export class BattleScreen extends Screen {
     switch (ch.kind) {
       case 'Skill': {
         const def = skillDef(ch.skillId);
-        return { tag: `스킬${def ? ` · ${Names.tier(def.Tier)}` : ''}`, bar: '#7FA8D8', fill: '#1A2130', border: '#34465C' };
+        return { tag: `스킬${def ? ` · ${Names.tier(def.Tier)}` : ''}`, bar: def ? tierColor(def.Tier) : '#7FA8D8', fill: '#1A2130', border: '#34465C' };
       }
       case 'Item': return { tag: '아이템', bar: '#7DB38A', fill: '#1A231E', border: '#34503C' };
       case 'Flee': return { tag: '도주', bar: '#B07A70', fill: '#221C1D', border: '#4A3634' };

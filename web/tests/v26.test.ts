@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { B } from '../src/core/balance';
 import { Battle } from '../src/core/battle';
 import { createCharacter } from '../src/core/character';
 import { arrange, createEnemy, createGroup } from '../src/core/enemies';
@@ -10,33 +9,36 @@ import { areaName, skillDef } from '../src/core/skills';
 
 const make = (id: string) => createEnemy(monster(id)!, 5, 'Normal', 0);
 
-describe('v2.6 진형 (왼쪽 열 전방 · 오른쪽 열 후방)', () => {
-  it('후방을 좋아하는 종족은 후방 칸(1·3)에, 줄 보정은 HP·공격에 곱한다', () => {
-    const raw = [make('goblin_archer'), make('goblin'), make('bat'), make('kobold')];
-    const base = raw.map((e) => ({ name: e.species!.Id, hp: e.maxHp, atk: e.attack }));
-    const out = arrange(raw, true);
+describe('v2.6 진형 (왼쪽 열 전방 · 오른쪽 열 후방) · v3.0 능력치는 종류가 정한다', () => {
+  it('후방을 좋아하는 종족은 후방 칸(1·3)에 선다', () => {
+    const out = arrange([make('goblin_archer'), make('goblin'), make('bat'), make('kobold')]);
     expect(out[1].species!.Line).toBe('Back');
     expect(out[3].species!.Line).toBe('Back');
-    for (let i = 0; i < 4; i++) {
-      const b0 = base.find((x) => x.name === out[i].species!.Id)!;
-      const back = i % 2 === 1;
-      expect(out[i].maxHp).toBe(Math.round(b0.hp * (back ? B.BackHp : B.FrontHp)));
-      expect(out[i].attack).toBe(Math.round(b0.atk * (back ? B.BackAttack : B.FrontAttack)));
-    }
-    expect(B.FrontHp).toBeGreaterThan(1);
-    expect(B.FrontAttack).toBeLessThan(1);
-    expect(B.BackHp).toBeLessThan(1);
-    expect(B.BackAttack).toBeGreaterThan(1);
   });
 
-  it('혼자 나온 적과 보스는 줄 보정이 없다', () => {
-    const one = make('goblin');
-    const hp = one.maxHp;
-    expect(arrange([one], true)[0].maxHp).toBe(hp);
+  it('능력치는 자리가 아니라 종류의 특색을 따른다 (방패형 HP↑ 공격↓, 후방 딜러 HP↓ 공격↑)', () => {
+    const slime = make('slime'), archer = make('goblin_archer');
+    const base = (id: string) => createEnemy(monster(id)!, 5, 'Normal', 0);
+    // 자리를 바꿔도 값은 그대로
+    const before = [base('kobold').maxHp, base('kobold').attack];
+    arrange([base('kobold'), base('goblin')]);
+    arrange([base('goblin'), base('kobold')]);
+    expect([base('kobold').maxHp, base('kobold').attack]).toEqual(before);
+    expect(monster('slime')!.Trait!.Hp).toBeGreaterThan(1);
+    expect(monster('slime')!.Trait!.Atk).toBeLessThan(1);
+    expect(monster('goblin_archer')!.Trait!.Hp).toBeLessThan(1);
+    expect(monster('goblin_archer')!.Trait!.Atk).toBeGreaterThan(1);
+    expect(slime.maxHp).toBeGreaterThan(archer.maxHp);
+    expect(archer.attack).toBeGreaterThan(slime.attack);
+  });
+
+  it('보스는 종류 특색을 받지 않는다', () => {
     const boss = createEnemy(monster('goblin')!, 5, 'Normal', 2);
-    const bhp = boss.maxHp;
-    arrange([boss, make('goblin')], true);
-    expect(boss.maxHp).toBe(bhp);
+    const sp = monster('goblin')!;
+    const trait = sp.Trait!;
+    const plain = createEnemy({ ...sp, Trait: undefined }, 5, 'Normal', 2);
+    expect(boss.maxHp).toBe(plain.maxHp);
+    expect(trait.Hp).not.toBe(1);
   });
 
   it('실제 무리도 진형을 따른다', () => {
@@ -55,7 +57,7 @@ describe('v2.6 광역 종류', () => {
     c.Level = 40;
     learnSkill(c, skill);
     c.Skills.Equipped.push(skill);
-    const enemies = arrange([make('goblin'), make('goblin'), make('goblin'), make('goblin')], false);
+    const enemies = arrange([make('goblin'), make('goblin'), make('goblin'), make('goblin')]);
     for (const e of enemies) e.maxHp = e.hp = 1_000_000;
     return new Battle(c, 5, enemies, false, new Rng(seed));
   };

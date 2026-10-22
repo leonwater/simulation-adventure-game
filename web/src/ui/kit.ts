@@ -73,14 +73,3 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
   el.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
-/** - 값 + 버튼 줄 (값이 바뀌어도 버튼이 움직이지 않는다). */
-export function stepper(valueText: string, onMinus: () => void, minusOn: boolean, onPlus: () => void, plusOn: boolean): HTMLElement {
-  const b = (label: string, fn: () => void, on: boolean): HTMLButtonElement => {
-    const el = button(label, fn, 'ghost', 'sm');
-    el.style.width = '40px';
-    el.style.padding = '0';
-    el.disabled = !on;
-    return el;
-  };
-  return h('div', { class: 'row', style: { gap: '8px' } }, b('-', onMinus, minusOn), h('div', { style: { minWidth: '64px', textAlign: 'center', fontWeight: '700' } }, valueText), b('+', onPlus, plusOn));
-}

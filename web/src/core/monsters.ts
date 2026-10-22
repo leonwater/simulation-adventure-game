@@ -24,6 +24,8 @@ export interface MonsterSpecies {
   RegenPercent: number;
   /** 무리에서 서고 싶은 줄: 궁수·주술사처럼 멀리서 공격하는 종족은 후방. */
   Line?: 'Front' | 'Back';
+  /** 종류별 특색 (일반·정예만): HP·공격력 배율. 단단한 방패형은 HP↑ 공격↓, 후방 딜러는 HP↓ 공격↑. 자리와는 상관없다. */
+  Trait?: { Hp: number; Atk: number };
 }
 export interface FloorTheme {
   Name: string;

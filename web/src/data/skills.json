@@ -687,14 +687,14 @@
     "ExecuteThreshold": 0,
     "ExecuteMult": 1,
     "Statuses": [],
-    "Effect": "단일 110%, 치명타 50%. 전투 첫 턴이면 확정 치명타",
+    "Effect": "단일 110%, 치명타 확률 50%. 전투 첫 턴이면 확정 치명타",
     "Role": "단일",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -4%",
-    "Description": "단일 110%, 치명타 50%. 전투 첫 턴이면 확정 치명타 · 재사용 2턴"
+    "Description": "단일 110%, 치명타 확률 50%. 전투 첫 턴이면 확정 치명타 · 재사용 2턴"
   },
   {
     "Id": "r_venom",
@@ -724,14 +724,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "단일 80% + 독 3턴, 치명타 20%",
+    "Effect": "단일 80% + 독 3턴, 치명타 확률 20%",
     "Role": "상태",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -3%",
-    "Description": "단일 80% + 독 3턴, 치명타 20% · 재사용 3턴"
+    "Description": "단일 80% + 독 3턴, 치명타 확률 20% · 재사용 3턴"
   },
   {
     "Id": "r_keen",
@@ -790,14 +790,14 @@
     "ExecuteThreshold": 0,
     "ExecuteMult": 1,
     "Statuses": [],
-    "Effect": "좌우 광역 80%, 치명타 20%",
+    "Effect": "좌우 광역 80%, 치명타 확률 20%",
     "Role": "광역",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -8%",
-    "Description": "좌우 광역 80%, 치명타 20% · 재사용 3턴"
+    "Description": "좌우 광역 80%, 치명타 확률 20% · 재사용 3턴"
   },
   {
     "Id": "r_vital",
@@ -901,14 +901,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "전체 광역 70%, 치명타 40% + 출혈 2턴",
+    "Effect": "전체 광역 70%, 치명타 확률 40% + 출혈 2턴",
     "Role": "광역",
     "ReqLevel": 18,
     "ReqRank": "D",
     "IsAttack": true,
     "NeedsTarget": false,
     "SuccessText": "성공률 -8%",
-    "Description": "전체 광역 70%, 치명타 40% + 출혈 2턴 · 재사용 5턴"
+    "Description": "전체 광역 70%, 치명타 확률 40% + 출혈 2턴 · 재사용 5턴"
   },
   {
     "Id": "r_cruel",
@@ -938,14 +938,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "잔혹함 2턴 (치명타 피해 +50%)",
+    "Effect": "잔혹함 2턴 (치명타 피해량 +50%)",
     "Role": "보조",
     "ReqLevel": 18,
     "ReqRank": "D",
     "IsAttack": false,
     "NeedsTarget": false,
     "SuccessText": "성공률 100%",
-    "Description": "잔혹함 2턴 (치명타 피해 +50%) · 재사용 6턴"
+    "Description": "잔혹함 2턴 (치명타 피해량 +50%) · 재사용 6턴"
   },
   {
     "Id": "r_assassin",
@@ -1004,14 +1004,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "전체 광역 100%, 치명타 60% + 출혈 3턴",
+    "Effect": "전체 광역 100%, 치명타 확률 60% + 출혈 3턴",
     "Role": "광역",
     "ReqLevel": 30,
     "ReqRank": "C",
     "IsAttack": true,
     "NeedsTarget": false,
     "SuccessText": "성공률 -12%",
-    "Description": "전체 광역 100%, 치명타 60% + 출혈 3턴 · 재사용 7턴"
+    "Description": "전체 광역 100%, 치명타 확률 60% + 출혈 3턴 · 재사용 7턴"
   },
   {
     "Id": "m_fireball",

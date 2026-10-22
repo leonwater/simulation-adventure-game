@@ -201,7 +201,7 @@ export class Battle {
   }
 
   /** 성공률 계산 내역 (길게 눌러 보기). */
-  hitBreakdown(target: Combatant, skillBonus: number): string {
+  hitBreakdown(target: Combatant, skillBonus: number, basic = false): string {
     const stat = totalStat(this.character, jobData(this.character.Job).attackStat);
     const parts = [`기본 ${r100(B.BaseHit)}%`];
     parts.push(`${Names.stat(jobData(this.character.Job).attackStat)} ${stat} vs 요구치 ${roundEven(target.requirement * 10) / 10}: ${pct((stat - target.requirement) * B.HitPerStatPoint)}`);
@@ -211,7 +211,7 @@ export class Battle {
     if (s.has('Focus')) parts.push(`집중 ${pct(s.value('Focus') / 100)}`);
     if (s.has('Blind')) parts.push(`실명 ${pct(-s.value('Blind') / 100)}`);
     if (s.has('Fear')) parts.push(`공포 ${pct(-s.value('Fear') / 100)}`);
-    if (Math.abs(skillBonus) > 1e-9) parts.push(`스킬 보정 ${pct(skillBonus)}`);
+    if (Math.abs(skillBonus) > 1e-9) parts.push(`${basic ? '기본 공격 보정' : '스킬 보정'} ${pct(skillBonus)}`);
     return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)`;
   }
 
@@ -239,9 +239,9 @@ export class Battle {
     for (const e of alive) {
       const d = damage(this.player, e, basic, false);
       list.push(choice({
-        kind: 'Attack', label: `공격 · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e),
+        kind: 'Attack', label: `공격 · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus),
         damageNote: `피해 약 ${d}${guardNote(e)}`,
-        detail: `기본 공격 — 피해 ${r100(basic)}%, 치명타 없음\n\n${this.damageFormula(basic, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, 0)}`,
+        detail: `기본 공격 — 피해 ${r100(basic)}%, 치명타 없음\n\n${this.damageFormula(basic, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, B.BasicAttackBonus, true)}`,
       }));
     }
     const silenced = this.player.statuses.has('Silence');
@@ -485,7 +485,7 @@ export class Battle {
     switch (c.kind) {
       case 'Attack':
         this.event('Act', -1, c.target);
-        this.playerHits(this.enemies[c.target], jobData(this.character.Job).basicAttackMultiplier, 1, 0, null, false);
+        this.playerHits(this.enemies[c.target], jobData(this.character.Job).basicAttackMultiplier, 1, B.BasicAttackBonus, null, false);
         break;
       case 'Skill':
         this.useSkill(c);

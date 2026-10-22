@@ -8,10 +8,11 @@ import { gold } from '../core/names';
 import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
-import { colored, compareLine, infoText, itemTitle, kindLine, levelChip, nameColor } from '../ui/items';
+import { colored, compareLine, equipLine, infoText, itemTitle, kindLine, nameColor } from '../ui/items';
 import { button, h, icon, row, tabs } from '../ui/kit';
 import { flash, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
+import { sellCountDialog } from '../ui/sellcount';
 import { dungeonTheme } from '../ui/theme';
 import { goDungeon } from './index';
 
@@ -70,8 +71,7 @@ export class MerchantScreen extends Screen {
       h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item)),
       // 소모품은 보유·재고를 색으로 구분해 눈에 띄게 (보유 = 파랑 · 재고 = 금색)
       h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
-        ...(item.Kind === 'Consumable' ? [colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, '#8FC7FF'), ' · ', colored(`재고 ${g.Stock}`, 'var(--gold)')] : [infoText(c, item)])),
-      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px' } }, levelChip(c, item)),
+        ...(item.Kind === 'Consumable' ? [colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, '#8FC7FF'), ' · ', colored(`재고 ${g.Stock}`, 'var(--gold)')] : [item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)])),
       h('span', { class: 'spacer' }),
       h('b', { style: { fontSize: '14px', color: c.Gold >= price ? 'var(--gold)' : 'var(--red-light)' } }, `${price.toLocaleString('en-US')} G`));
     if (known) cell.style.opacity = '.5';
@@ -104,24 +104,16 @@ export class MerchantScreen extends Screen {
     return this.card(() => this.sellDialog(item),
       kindLine(item, 12),
       h('div', { style: { fontSize: '13px', lineHeight: '1.1', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item)),
-      h('div', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, infoText(c, item)),
-      h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px' } }, levelChip(c, item)),
+      h('div', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)),
       h('span', { class: 'spacer' }),
       h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null));
   }
 
   private sellDialog(item: ItemInstance): void {
-    const m = modal(displayName(item));
-    m.body.append(h('div', null, statLine(item)));
-    const doSell = (n: number): void => {
+    sellCountDialog(item, (n) => {
       const r = S.sellToMerchant(item.Uid, n);
       if (!r.ok) return toast(r.error ?? '');
-      m.close();
       router.rebuild();
-    };
-    const actions = row();
-    if (item.Count > 1) actions.append(button(`1개 · ${sellPrice(item)}G`, () => doSell(1), '', 'grow'));
-    actions.append(button(item.Count > 1 ? `전부 ${item.Count}개` : `판매 · ${sellPrice(item).toLocaleString('en-US')}G`, () => doSell(item.Count), 'primary', 'grow'));
-    m.body.append(actions);
+    });
   }
 }

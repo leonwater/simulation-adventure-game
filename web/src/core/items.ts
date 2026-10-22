@@ -161,7 +161,6 @@ export interface ItemContainer {
   Capacity: number;
 }
 export const newContainer = (capacity: number): ItemContainer => ({ Items: [], Capacity: capacity });
-export const usedCells = (c: ItemContainer): number => c.Items.length;
 export const freeCells = (c: ItemContainer): number => Math.max(0, c.Capacity - c.Items.length);
 export const findItem = (c: ItemContainer, uid: string): ItemInstance | undefined => c.Items.find((i) => i.Uid === uid);
 
