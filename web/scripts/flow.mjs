@@ -1,5 +1,5 @@
 // 화면 흐름 스크린샷: node scripts/flow.mjs "click=시작하기" "fill=input|검사" "shot=shots/a.png" ...
-// 단계: click=글자(보이는 글자로 찾아 누름) · fill=선택자|값 · wait=ms · shot=파일 · eval=자바스크립트 · url=주소(처음 한 번, 기본 localhost:4173)
+// 단계: loadsave=파일(저장 JSON을 넣고 새로고침) · click=글자(보이는 글자로 찾아 누름) · fill=선택자|값 · wait=ms · shot=파일 · eval=자바스크립트 · url=주소(처음 한 번, 기본 localhost:4173)
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,6 +22,7 @@ for (const s of steps) {
   const i = s.indexOf('=');
   const k = s.slice(0, i), v = s.slice(i + 1);
   if (k === 'click') await page.getByText(v, { exact: false }).first().click();
+  else if (k === 'loadsave') { const json = fs.readFileSync(v, 'utf8'); await page.evaluate((j) => localStorage.setItem('adventurer.save', j), json); await page.reload(); await page.waitForTimeout(300); }
   else if (k === 'sel') await page.locator(v).first().click();
   else if (k === 'clickexact') await page.getByText(v, { exact: true }).first().click();
   else if (k === 'fill') { const [sel, val] = v.split('|'); await page.fill(sel, val); }

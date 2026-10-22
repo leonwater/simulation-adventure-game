@@ -1,6 +1,7 @@
 import { B } from '../core/balance';
 import { jobData } from '../core/jobs';
 import { Names } from '../core/names';
+import { goTitle, goToCurrent } from '../screens';
 import { S } from './game';
 import { button, h, row } from './kit';
 import { jobLine } from './chrome';
@@ -40,7 +41,8 @@ export function openSettings(fromTitle = false): void {
       line('플레이 시간', `${Math.floor(sec / 3600)}시간 ${Math.floor(sec / 60) % 60}분`)));
     const goto = (name: 'title' | 'town'): void => {
       m.close();
-      void import('../screens').then((s) => (name === 'title' ? s.goTitle() : s.goToCurrent()));
+      if (name === 'title') goTitle();
+      else goToCurrent();
     };
     const tut = button('튜토리얼', () => confirmBox('튜토리얼', '마을 시설 안내부터 다시 보여 드립니다.', '다시 보기', () => {
       S.restartTutorial();

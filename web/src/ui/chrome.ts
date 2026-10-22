@@ -58,3 +58,11 @@ export function npcIllustration(name: string, npcName: string, line: string, hei
     line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
 }
 
+
+/** 마을 쪽 화면 머리줄: 왼쪽 뒤로 · 가운데 제목 · 오른쪽 골드 + 설정 버튼 (던전 밖 모든 화면 공통). */
+export function townBar(title: string, backLabel: string, onBack: (() => void) | null, c: Character): HTMLElement {
+  return h('div', { class: 'bar' },
+    h('div', { style: { width: '130px' } }, onBack ? h('button', { style: { border: '0', background: 'transparent', color: 'var(--gold)', padding: '0', textAlign: 'left', fontSize: '14px' }, on: { click: onBack } }, `‹ ${backLabel}`) : null),
+    h('div', { class: 'grow center title', style: { fontSize: '16px' } }, title),
+    h('div', { style: { width: '130px', display: 'flex', justifyContent: 'flex-end' } }, goldAndSettings(c)));
+}
