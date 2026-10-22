@@ -34,7 +34,7 @@ npm run shot [url] [out.png]   # 390×844 스크린샷 (화면 확인은 이것�
 | P0 | 뼈대: 빌드·테스트·스크린샷·Capacitor·CI·데이터 내보내기 **(완료)** | `npm run check`, 첫 화면 스크린샷 |
 | P1a | Core 기본: 캐릭터·능력치·레벨·등급·직업, 아이템·장비·강화, 스킬 | C# 테스트(`CharacterTests` `ItemSkillTests` 등)를 vitest로 옮김 | — **완료** (`web/src/core` enums·names·jobs·skills·items·character·equipment, `tests/core-basics.test.ts`)
 | P1b | Core 전투(상태 이상·보스 특성·몬스터 행동·확률) | `BattleTests` `V21~V24Tests`를 옮김 + 통계 비교 | — **완료** (`battle` `bosskit` `enemies` `monsters` `status` `combatant`, `tests/battle.test.ts`). 보상 정산(`CollectRewards`)은 드롭표가 있는 P1c에서 이식
-| P1c | Core 던전: 층 생성(배치 규칙)·이동 패드·이벤트 34종·드롭·정산 | `DungeonTests` `SpecialEventTests` `V23~V24Tests` |
+| P1c | Core 던전: 층 생성(배치 규칙)·이동 패드·이벤트 34종·드롭·정산 | `DungeonTests` `SpecialEventTests` `V23~V24Tests` | — **완료** (`map` `generator` `dungeon` `events` `eventrules` `explore` `mapevents` `loot` `settlement` `guild`, `tests/dungeon.test.ts`)
 | P1d | Core 마을·저장: 상점·길드·퀘스트·창고, 저장(C#과 **같은 JSON 필드 이름**이라 Unity 저장도 읽을 수 있게) | `TownTests` `SaveTests` |
 | P1e | 자동 플레이 봇 + 밸런스 시뮬레이션 | C# `tools/balance` 결과와 사망률 ±3%p 이내 |
 | P2 | 화면: 시작·등록 → 마을·시설 → 캐릭터·가방·스킬 → 던전 → 전투 → 이벤트·상인 → 정산·클리어 → 설정 → 튜토리얼 | 화면마다 `npm run shot`, UI 시안(Claude Design)과 비교 |

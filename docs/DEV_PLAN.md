@@ -326,3 +326,8 @@
 - `web/src/core`: `status`(중첩 규칙) · `combatant` · `monsters`(종족·테마 표) · `enemies`(적 생성·튜토리얼 적) · `bosskit`(보스 특성 11종) · `battle`(선택지·확률·피해식·상태 이상·보스 행동·분열/소환/부활, 상세 문구)
 - `CollectRewards`는 드롭표(`Loot`)가 필요해 P1c에서 옮긴다
 - 테스트 `battle.test.ts` 38개 (BattleTests·BossTests 이식). 웹 테스트 총 67개
+
+## 25. 웹 이식 P1c (던전, 2026-10-22)
+
+- `web/src/core`: `map`(방·층 지도·최단 거리) · `generator`(방 종류 굴림·가지/순환/격자 배치·규칙 보정·튜토리얼 고정 층·상인 물건) · `dungeon`(`DungeonRun`·이동 후보·이동 패드·텔레포트·휴식·보물·다음 층·보스 처치) · `events`(이벤트 34개 표 조회·뽑기) · `eventrules`(선택지 표시·성공률·특수 이벤트 5종·결과 적용) · `explore`(탐험 효과 6종) · `mapevents`(방 공개·숨은 보물 방·보스 통로·연쇄·상인 변신) · `loot`(보상 계산·정산·`collectRewards`) · `settlement`(사망·귀환 정산) · `guild`(퀘스트·창고, P1d 몫 일부를 먼저 이식)
+- 테스트 `dungeon.test.ts` 27개. 웹 테스트 총 94개

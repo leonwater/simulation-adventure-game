@@ -324,3 +324,9 @@ export function goldSpent(item: ItemInstance): number {
   return sum;
 }
 export const stoneCost = (item: ItemInstance): number => (item.Enhance >= B.MaxEnhance ? 0 : B.EnhanceStones[item.Enhance + 1]);
+
+/** 상점·상인 진열품 (아이템 + 재고). */
+export interface ShopGood {
+  Item: ItemInstance;
+  Stock: number;
+}
