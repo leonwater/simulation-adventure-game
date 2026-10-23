@@ -9,13 +9,15 @@ import { buyGood, isSoldOut, newShopState } from '../src/core/shop';
 import { createConsumable } from '../src/core/items';
 
 describe('v3.1', () => {
-  it('같은 레벨이면 등급 한 단계마다 기본 수치가 무기 +2 · 그 밖 +1만 오른다', () => {
+  it('같은 레벨에서 등급이 다르면 기본 수치가 언제나 다르다 (등급 배율 + 최소 무기 2 · 그 밖 1)', () => {
     for (const gear of GEARS) {
-      for (const lv of [1, 20, 40, 60]) {
-        const step = gear === 'Weapon' ? B.GradeStepWeapon : B.GradeStepOther;
-        for (let g = 1; g < GRADES.length; g++) expect(baseValue(gear, lv, GRADES[g]) - baseValue(gear, lv, GRADES[g - 1]), `${gear} Lv.${lv}`).toBe(step);
+      for (let lv = 1; lv <= B.MaxLevel; lv++) {
+        const step = gear === 'Weapon' ? B.GradeMinStepWeapon : B.GradeMinStepOther;
+        for (let g = 1; g < GRADES.length; g++) expect(baseValue(gear, lv, GRADES[g]) - baseValue(gear, lv, GRADES[g - 1]), `${gear} Lv.${lv} ${GRADES[g]}`).toBeGreaterThanOrEqual(step);
       }
     }
+    // 레벨이 높으면 배율이 그대로 살아 있다 (전설 ≈ 일반 × 1.9)
+    expect(baseValue('Weapon', 60, 'Legendary')).toBe(Math.round(baseValue('Weapon', 60, 'Common') * 1.9));
   });
 
   it('다 팔린 칸은 목록에 남고(재고 0) 더 살 수 없다', () => {

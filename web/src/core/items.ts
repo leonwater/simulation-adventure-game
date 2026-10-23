@@ -267,9 +267,16 @@ export function baseValueFor(gear: GearType, lv: number): number {
     default: return 1.0 + lv * 0.12;
   }
 }
-/** 기본 수치: 레벨이 정하고, 같은 레벨이면 등급이 한 단계 오를 때마다 무기 +2 · 그 밖의 장비 +1 (v3.1). */
-export const baseValue = (gear: GearType, lv: number, grade: ItemGrade): number =>
-  Math.max(1, roundEven(baseValueFor(gear, lv) * B.GearBaseScale) + ord(GRADES, grade) * (gear === 'Weapon' ? B.GradeStepWeapon : B.GradeStepOther));
+/**
+ * 기본 수치 = 레벨 공식 × 등급 배율(1.0~1.9). 같은 레벨에서 등급이 한 단계 오르면 반올림 때문에 값이 같아지지 않도록
+ * 최소 무기 +2 · 그 밖 +1은 오르게 한다 (낮은 레벨 장신구처럼 값이 작은 장비).
+ */
+export function baseValue(gear: GearType, lv: number, grade: ItemGrade): number {
+  const step = gear === 'Weapon' ? B.GradeMinStepWeapon : B.GradeMinStepOther;
+  let v = 0;
+  for (let g = 0; g <= ord(GRADES, grade); g++) v = Math.max(g === 0 ? 1 : v + step, roundEven(baseValueFor(gear, lv) * B.GradeValueMultiplier[g]));
+  return v;
+}
 export const priceFor = (lv: number, grade: ItemGrade): number =>
   roundEven((40 + lv * 45) * B.GradePriceMultiplier[ord(GRADES, grade)]);
 
