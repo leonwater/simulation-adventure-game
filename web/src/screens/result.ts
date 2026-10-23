@@ -110,9 +110,9 @@ export class ResultScreen extends Screen {
     body.append(heading(`${r.Floor}층 ${r.BossCleared ? '클리어' : '귀환'}`, r.BossCleared ? 'var(--gold)' : 'var(--blue-light)', `탐험한 방 ${r.Rooms}개`));
     const got = panel('획득', 'var(--gold)', 'var(--card)', 'var(--card-border)');
     got.dataset.anchor = 'result.panel';
-    got.append(line('골드', `+${num(r.GoldEarned)} G`), line('경험치', `+${num(r.ExpEarned)}`),
-      h('div', { class: 'col', style: { gap: '4px', padding: '0 0 8px' } }, h('div', null, `아이템 ${r.Loot.length}개`),
-        r.Loot.length > 0 ? sub(r.Loot.slice(0, 6).join(', ') + (r.Loot.length > 6 ? ` 외 ${r.Loot.length - 6}개` : '')) : null));
+    // 아이템 줄은 골드·경험치 줄과 같은 높이로 두고, 목록은 그 아래에 이어 붙인다 (목록이 길어도 '아이템' 글자가 밀려 올라가지 않게)
+    got.append(line('골드', `+${num(r.GoldEarned)} G`), line('경험치', `+${num(r.ExpEarned)}`), line('아이템', `${r.Loot.length}개`, true));
+    if (r.Loot.length > 0) got.append(h('div', { class: 'sub', style: { padding: '0 0 12px', lineHeight: '1.5' } }, r.Loot.slice(0, 6).join(', ') + (r.Loot.length > 6 ? ` 외 ${r.Loot.length - 6}개` : '')));
     const state = panel('진행', 'var(--blue-light)', 'var(--card)', 'var(--card-border)');
     state.append(line(`${r.Floor}층 보스`, r.BossCleared ? '처치' : '미처치 · 진행 초기화'), line('다음 도전', `${maxChallengeFloor(c)}층`, true));
     body.append(got, state);

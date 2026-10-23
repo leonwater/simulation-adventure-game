@@ -1,7 +1,7 @@
 import { B, roundEven } from './balance';
 import type { Character } from './character';
 import { maxChallengeFloor, recalculateCapacities } from './character';
-import { createDrop, consumableAt, createConsumable, createEnhanceStone, createSkillBook, rollDropGrade, stonePrice, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited } from './items';
+import { createDrop, consumableAt, createConsumable, createEnhanceStone, createSkillBook, rollDropGrade, stonePrice, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited, newUid } from './items';
 import type { ItemInstance, ShopGood } from './items';
 import type { ItemGrade } from './enums';
 import { rollItemJob } from './jobs';
@@ -17,8 +17,14 @@ export interface ShopState {
   /** 갱신 비용 배수 횟수. */
   RerollCount: number;
   Initialized: boolean;
+  /** 이번 진열에서 팔린 장비 (칸은 '판매 완료'로 남는다). 갱신하면 비운다. */
+  SoldUids?: string[];
 }
-export const newShopState = (): ShopState => ({ Equipment: [], Goods: [], LastRefreshTicks: 0, RerollCount: 0, Initialized: false });
+export const newShopState = (): ShopState => ({ Equipment: [], Goods: [], LastRefreshTicks: 0, RerollCount: 0, Initialized: false, SoldUids: [] });
+/** 장비 칸이 팔렸는지. */
+export const isSold = (s: ShopState, uid: string): boolean => !!s.SoldUids && s.SoldUids.includes(uid);
+/** 소모품·스킬서 칸이 다 팔렸는지 (재고 0). */
+export const isSoldOut = (g: ShopGood): boolean => g.Stock === 0;
 
 /** C# DateTime.Ticks (0001-01-01 기준 100ns 단위). 값이 커서 아래 자릿수는 부정확하다. */
 export const toTicks = (d: Date): number => (d.getTime() + 62135596800000) * 10000;
@@ -63,6 +69,7 @@ export function shopGrade(rng: Rng, floor: number): ItemGrade {
 export function restock(s: ShopState, c: Character, rng: Rng): void {
   const floor = Math.max(1, maxChallengeFloor(c));
   s.Equipment = [];
+  s.SoldUids = [];
   for (let i = 0; i < B.ShopEquipmentSlots; i++) {
     s.Equipment.push(createDrop(rng, shopGrade(rng, floor), floor, c, false));
   }
@@ -131,17 +138,18 @@ function pay(c: Character, price: number, item: ItemInstance): { ok: boolean; er
 
 export function buyEquipment(s: ShopState, c: Character, uid: string): { ok: boolean; error: string | null } {
   const item = s.Equipment.find((i) => i.Uid === uid);
-  if (!item) return { ok: false, error: '이미 팔린 물건입니다' };
+  if (!item || isSold(s, uid)) return { ok: false, error: '이미 팔린 물건입니다' };
   const r = pay(c, item.Price, item);
   if (!r.ok) return r;
-  s.Equipment.splice(s.Equipment.indexOf(item), 1);
-  addItem(c.Inventory, item);
+  // 칸은 '판매 완료'로 남기고, 가방에는 새 번호를 붙인 같은 장비를 넣는다
+  (s.SoldUids ??= []).push(uid);
+  addItem(c.Inventory, { ...item, Uid: newUid() });
   return r;
 }
 
 export function buyGood(s: ShopState, c: Character, uid: string, count: number, priceMultiplier = 1): { ok: boolean; error: string | null } {
   const good = s.Goods.find((g) => g.Item.Uid === uid);
-  if (!good) return { ok: false, error: '이미 팔린 물건입니다' };
+  if (!good || isSoldOut(good)) return { ok: false, error: '이미 팔린 물건입니다' };
   if (good.Item.Kind === 'SkillBook' && knowsSkill(c, good.Item.SkillId)) return { ok: false, error: '이미 배운 스킬입니다' };
   count = Math.max(1, Math.min(count, goodMaxBuy(good)));
   const item = cloneWithCount(good.Item, count);
@@ -150,8 +158,7 @@ export function buyGood(s: ShopState, c: Character, uid: string, count: number, 
   if (!r.ok) return r;
   addItem(c.Inventory, item);
   if (!goodUnlimited(good)) {
-    good.Stock -= count;
-    if (good.Stock <= 0) s.Goods.splice(s.Goods.indexOf(good), 1);
+    good.Stock = Math.max(0, good.Stock - count); // 0이 되면 칸은 '판매 완료'로 남는다
   }
   return r;
 }

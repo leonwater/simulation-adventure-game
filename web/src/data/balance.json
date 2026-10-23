@@ -45,7 +45,9 @@
     55,
     80
   ],
-  "GradeValueMultiplier": [1, 1.1, 1.25, 1.5, 1.9],
+  "GearBaseScale": 1.2,
+  "GradeStepWeapon": 2,
+  "GradeStepOther": 1,
   "GradePriceMultiplier": [
     1,
     1.6,

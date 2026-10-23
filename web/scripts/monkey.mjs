@@ -73,6 +73,8 @@ for (let i = 0; i < N; i++) {
   await page.waitForTimeout(pick.text.includes('공격') || st.bat ? 260 : 90);
   if (info.sig === lastSig) stuck++; else stuck = 0;
   lastSig = info.sig;
+  // 설정 창처럼 눌러도 글자가 안 바뀌는 팝업에서 오래 머물면 × 로 닫는다 (멈춤 오탐 방지)
+  if (stuck === 30) { const x = page.locator('.layer .modal-x').last(); if (await x.count()) { await x.click().catch(() => {}); stuck = 0; continue; } }
   if (stuck > 60) { await page.screenshot({ path: 'shots/monkey-stuck.png' }); errors.add('같은 화면 60번 반응 없음: ' + info.sig + ' / 최근: ' + history.join(' > ')); break; }
   if (i % 300 === 299) console.log(`· ${i + 1}회 화면 ${screens.size}종`, JSON.stringify(st));
   if (errors.size) { await page.screenshot({ path: 'shots/monkey-error.png' }); console.error('최근 클릭:', history.join(' > ')); break; }

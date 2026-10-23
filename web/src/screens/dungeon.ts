@@ -173,15 +173,16 @@ export class DungeonScreen extends Screen {
     }
   }
 
-  private bigButton(kind: 'descend' | 'return' | 'action' | 'visited' | 'new', title: string, subText: string, onClick: () => void, right?: string): HTMLElement {
+  private bigButton(kind: 'descend' | 'return' | 'action' | 'visited' | 'new' | 'explore', title: string, subText: string, onClick: () => void, right?: string): HTMLElement {
     const sty = {
       descend: ['var(--descend-bg)', 'var(--descend-border)', 'var(--descend-text)', 'var(--descend-sub)'],
       return: ['var(--return-bg)', 'var(--return-border)', 'var(--return-text)', 'var(--return-sub)'],
       action: ['var(--action-bg)', 'var(--action-border)', 'var(--action-text)', 'var(--action-sub)'],
       visited: ['var(--blue-bg)', 'var(--blue-border)', 'var(--blue-light)', '#7FA8D8'],
       new: ['var(--accent-bg)', 'var(--accent)', 'var(--text)', 'var(--gold)'],
+      explore: ['var(--accent-bg)', 'var(--accent)', 'var(--gold)', '#C9A65A'],
     }[kind];
-    return h('button', { class: 'choice', style: { background: sty[0], borderColor: sty[1], color: sty[2], flexDirection: right ? 'row' : 'column', alignItems: right ? 'center' : 'flex-start', minHeight: '60px' }, on: { click: onClick } },
+    return h('button', { class: 'choice', style: { background: sty[0], borderColor: sty[1], color: sty[2], flexDirection: right ? 'row' : 'column', alignItems: right ? 'center' : 'flex-start', justifyContent: 'center', minHeight: '60px' }, on: { click: onClick } },
       h('div', { class: 'col grow', style: { gap: '2px', alignItems: 'flex-start' } }, h('span', { class: 't' }, title), subText ? h('span', { class: 's', style: { color: sty[3] } }, subText) : null),
       right ? h('span', { style: { color: sty[3] } }, right) : null,
       kind === 'new' ? h('i', { class: 'glow' }) : null);
@@ -315,7 +316,8 @@ export class DungeonScreen extends Screen {
     const m = modal(`${run.Floor}층 지도`);
     const can = dungeon.canLeave(run);
     const scr = document.querySelector<HTMLElement>('.screen');
-    const w = Math.min(326, (scr?.clientWidth ?? 390) - 66), hh = Math.min(420, Math.round((scr?.clientHeight ?? 844) * 0.5));
+    // 팝업 안쪽 폭 = 화면 - 바깥 여백 40 - 팝업 안 여백 32 - 지도 테두리·여백 10
+    const w = Math.min(326, (scr?.clientWidth ?? 390) - 84), hh = Math.min(420, Math.round((scr?.clientHeight ?? 844) * 0.5));
     const map = h('div', { class: 'minimap', style: { width: `${w}px`, height: `${hh}px` } });
     this.drawMap(map, w - 8, hh - 8, run, can ? (room) => {
       m.close();
@@ -423,9 +425,9 @@ export class DungeonScreen extends Screen {
   private bossChoice(run: DungeonRun): HTMLElement {
     const last = run.Floor >= B.MaxFloor;
     const card = h('div', { class: 'card', style: { width: '100%', gap: '10px', padding: '18px 16px', background: 'var(--dialog)', borderColor: 'var(--gold)' } },
-      h('b', { class: 'gold center', style: { fontSize: '20px', textAlign: 'center' } }, last ? '던전 정복!' : '보스 처치'),
+      h('b', { class: 'gold center', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : `${run.Floor}층 보스 처치`),
       // 맨 위: 이 층에 남은 방을 더 둘러본다 (보스 방에서 나가면 같은 층을 이어서 탐험)
-      this.bigButton('new', '이 층 탐험', '남은 방을 더 둘러보기', () => {
+      this.bigButton('explore', '이 층 탐험', '남은 방을 더 둘러보기', () => {
         exploringAfterBoss.add(run);
         router.rebuild();
       }),

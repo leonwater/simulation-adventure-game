@@ -256,9 +256,9 @@ describe('아이템 (ItemSkillTests)', () => {
 
   it('강화: 값·비용·확률표', () => {
     const w = createGear('Weapon', 'Common', 10, 'Warrior', 'Vitality');
-    expect(w.BaseValue).toBe(26);
-    expect(valueAt(w, 1)).toBe(27);
-    expect(valueAt(w, 15)).toBe(26 + 16); // 보너스 단계 30 × 2% × 26 = 15.6 → 16
+    expect(w.BaseValue).toBe(31); // (6 + 10 × 2) × 1.2 (v3.1 GearBaseScale)
+    expect(valueAt(w, 1)).toBe(32);
+    expect(valueAt(w, 15)).toBe(31 + 19); // 보너스 단계 30 × 2% × 31 = 18.6 → 19
     expect(goldCost(w)).toBe(60);
     w.Enhance = 2;
     expect(goldSpent(w)).toBe(30 * 1 * 2 + 30 * 2 * 2);

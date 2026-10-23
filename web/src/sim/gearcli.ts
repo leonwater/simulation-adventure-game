@@ -2,7 +2,7 @@ import type { Difficulty, ItemGrade } from '../core/enums';
 import { B } from '../core/balance';
 import { clearRate, winRate } from './gear';
 
-// SET='{"LateHpBonus":0.3,"GradeValueMultiplier":[1,1.1,1.25,1.5,1.9]}' 처럼 밸런스 값을 덮어써 본다
+// SET='{"LateHpBonus":0.3,"GearBaseScale":1.2}' 처럼 밸런스 값을 덮어써 본다
 if (process.env.SET) Object.assign(B, JSON.parse(process.env.SET));
 
 // 환경변수: LV=레벨÷층(기본 1.9) TR=스킬 수련 단계(기본 5)

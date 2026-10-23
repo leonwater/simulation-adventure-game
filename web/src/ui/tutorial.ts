@@ -2,7 +2,8 @@ import type { TutorialStage } from '../core/save';
 import { josa } from '../core/names';
 import { coach } from './coach';
 import { S } from './game';
-import { confirmBox, toast } from './overlay';
+import { button, h, row } from './kit';
+import { modal, toast } from './overlay';
 import { router } from './router';
 import { settings } from './settings';
 
@@ -77,8 +78,26 @@ function doIt(anchor: string, text: string): void {
   coach.action(anchor, text, skipButton());
 }
 
+let skipDim: HTMLElement | null = null;
+/** 건너뛰기 확인 창: 말풍선(코치)보다 위에 띄워 창 밖은 아무것도 눌리지 않게 하고, 빠르게 두 번 눌러도 한 번만 연다. */
 function skip(): void {
-  confirmBox('튜토리얼 건너뛰기', '튜토리얼을 끝낼까요? 설정에서 언제든 다시 볼 수 있습니다.', '건너뛰기', () => S.setTutorial('Done'), '계속 보기');
+  if (skipDim?.isConnected) return;
+  const m = modal('튜토리얼 건너뛰기', false);
+  const dim = m.body.parentElement as HTMLElement;
+  dim.style.zIndex = '90';
+  skipDim = dim;
+  const close = (): void => {
+    skipDim = null;
+    m.close();
+  };
+  m.body.append(
+    h('div', { class: 'body', style: { whiteSpace: 'pre-line', lineHeight: '1.5' } }, '튜토리얼을 끝낼까요? 설정에서 언제든 다시 볼 수 있습니다.'),
+    row(button('계속 보기', close, 'ghost', 'grow'), button('건너뛰기', () => {
+      close();
+      coach.clear();
+      S.setTutorial('Done');
+      router.rebuild();
+    }, 'primary', 'grow')));
 }
 
 // ── 마을 ──

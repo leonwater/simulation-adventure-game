@@ -258,7 +258,9 @@ describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 �
   it('Equipment_GradeGapAndEnhanceGrowth', () => {
     const common = createGear('Weapon', 'Common', 20, 'Warrior', 'Luck');
     const legend = createGear('Weapon', 'Legendary', 20, 'Warrior', 'Luck');
-    expect(Math.abs(legend.BaseValue - Math.round(common.BaseValue * 1.9))).toBeLessThanOrEqual(1); // 전설은 일반의 1.9배 (v2.9)
+    expect(legend.BaseValue - common.BaseValue).toBe(4 * B.GradeStepWeapon); // 같은 레벨이면 등급 한 단계마다 무기 +2 (v3.1)
+    const helm = (g: 'Common' | 'Rare') => createGear('Helmet', g, 20, 'Warrior', 'Luck').BaseValue;
+    expect(helm('Rare') - helm('Common')).toBe(2 * B.GradeStepOther); // 그 밖의 장비는 +1
     common.Enhance = legend.Enhance = 10;
     expect(Math.abs(itemValue(common) - Math.round(common.BaseValue * 1.3))).toBeLessThanOrEqual(1); // 일반 +10 = 보너스 단계 15 × 2% = +30%
     expect(Math.abs(itemValue(legend) - Math.round(legend.BaseValue * 1.6))).toBeLessThanOrEqual(1); // 전설 +10 = 15 × 4% = +60%
@@ -311,7 +313,7 @@ describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 �
     expect(stock).toBeLessThanOrEqual(B.MerchantStockMax);
     expect(buyGood(state, c, potion.Item.Uid, 99).ok).toBe(true);
     expect(countOf(c.Inventory, 'potion'), '남은 수량까지만 산다').toBe(stock);
-    expect(goods.includes(potion), '다 팔리면 목록에서 빠진다').toBe(false);
+    expect(potion.Stock, '다 팔리면 칸은 판매 완료(재고 0)로 남는다 (v3.1)').toBe(0);
     expect(buyGood(state, c, potion.Item.Uid, 1).ok).toBe(false);
   });
 

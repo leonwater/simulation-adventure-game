@@ -7,7 +7,7 @@ import { canBeUsedBy, countOf, sellPrice, statLine } from '../core/items';
 import { skillDef } from '../core/skills';
 import { knowsSkill } from '../core/equipment';
 import { Names } from '../core/names';
-import { buyEquipment, buyGood, reroll, rerollCost, sell, sellMany } from '../core/shop';
+import { buyEquipment, buyGood, reroll, rerollCost, sell, sellMany, isSold, isSoldOut } from '../core/shop';
 import type { ShopGood } from '../core/items';
 import { goodUnlimited } from '../core/items';
 import { jobLine, npcIllustration, townBar } from '../ui/chrome';
@@ -17,6 +17,7 @@ import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemTitl
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
 import { sellCountDialog } from '../ui/sellcount';
 import { tierColor } from '../ui/theme';
+import { soldOut } from '../ui/items';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { tutorial } from '../ui/tutorial';
@@ -90,6 +91,7 @@ export class ShopScreen extends Screen {
       h('span', { class: 'spacer' }),
       h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
     if (!usable) cell.style.opacity = '.55';
+    if (isSold(S.data!.Shop, item.Uid)) return soldOut(cell);
     return cell;
   }
 
@@ -108,8 +110,9 @@ export class ShopScreen extends Screen {
       S.save();
       this.line = `탁월한 선택이야, 손님! ${item.Name}에 어울리는 모험이 기다리겠군.`;
       router.rebuild();
-      // 지금 장비보다 좋으면 바로 착용할지 묻는다
-      if (isBetter(c, item)) offerBetterGear([item], () => router.rebuild());
+      // 지금 장비보다 좋으면 바로 착용할지 묻는다 (가방에 들어간 것은 새 번호를 단 같은 장비)
+      const bought = c.Inventory.Items[c.Inventory.Items.length - 1];
+      if (isBetter(c, bought)) offerBetterGear([bought], () => router.rebuild());
       else toast(`${item.Name} 구매 완료`);
     }, 'primary'));
   }
@@ -136,6 +139,7 @@ export class ShopScreen extends Screen {
       cell.disabled = true;
       cell.style.opacity = '.5';
     }
+    if (isSoldOut(g)) return soldOut(cell);
     return cell;
   }
 

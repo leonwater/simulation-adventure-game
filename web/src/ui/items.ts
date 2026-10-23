@@ -127,25 +127,35 @@ export const gradeTag = (item: ItemInstance): HTMLElement => colored(`[${Names.g
 export const itemTitle = (item: ItemInstance): string =>
   item.Kind === 'SkillBook' && skillDef(item.SkillId) ? skillDef(item.SkillId)!.Name : displayName(item);
 
-/** 가방·창고 4열 격자. 칸마다 종류 색 원 + 종류 · 이름(두 줄까지) · 아래 줄(왼쪽 정보 / 오른쪽 개수). */
+/** 팔린 칸: 누를 수 없게 어둡게 하고 가운데에 '판매 완료' (상점·떠돌이 상인). */
+export function soldOut(cell: HTMLButtonElement): HTMLButtonElement {
+  cell.disabled = true;
+  cell.style.position = 'relative';
+  for (const ch of Array.from(cell.children)) (ch as HTMLElement).style.opacity = '.3';
+  cell.append(h('span', { style: { position: 'absolute', inset: '0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', fontWeight: '700', color: 'var(--body)', background: 'rgba(15,17,21,.55)', borderRadius: 'inherit', pointerEvents: 'none' } }, '판매 완료'));
+  return cell;
+}
+
+/** 가방·창고 3열 격자 (상점 카드와 같은 크기). 칸마다 종류 색 원 + 종류 · 이름(두 줄까지) · 아래 줄(왼쪽 정보 / 오른쪽 개수). */
 export function itemGrid(container: ItemContainer, owner: Character | null, onTap: (item: ItemInstance) => void, opts: { selectedUid?: string | null; showEmpty?: boolean } = {}): HTMLElement {
-  const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' } });
+  // 상점 카드와 같은 크기·배열: 가로 3칸
+  const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } });
   for (const item of container.Items) {
     const sel = item.Uid === opts.selectedUid;
     grid.append(h('button', {
-      class: 'card-btn', style: { height: '96px', padding: '6px 6px 10px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '3px', borderColor: sel ? 'var(--accent)' : 'var(--card-border)', borderWidth: sel ? '2px' : '1px', overflow: 'hidden' },
+      class: 'card-btn', style: { height: '104px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: '0', borderColor: sel ? 'var(--accent)' : 'var(--card-border)', borderWidth: sel ? '2px' : '1px', overflow: 'hidden' },
       on: { click: () => onTap(item) },
     },
     kindLine(item, 12),
-    h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), fontWeight: item.Kind === 'Equipment' ? '700' : '400', wordBreak: 'keep-all' } }, itemTitle(item)),
+    h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item)),
     // 설명(장비는 '착용 레벨 · 능력치 변화')은 이름 바로 아래, 개수(×N)는 맨 아래 줄
     h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', height: '16px', flexShrink: '0' } }, item.Kind === 'Equipment' ? equipLine(owner, item) : infoText(owner, item)),
     h('div', { class: 'spacer' }),
-    h('div', { style: { fontSize: '12px', height: '16px', textAlign: 'right', fontWeight: '700', color: 'var(--text)' } }, item.Count > 1 ? `×${item.Count}` : '')));
+    h('div', { style: { fontSize: '13px', height: '16px', width: '100%', textAlign: 'right', fontWeight: '700', color: 'var(--text)' } }, item.Count > 1 ? `×${item.Count}` : '')));
   }
   if (opts.showEmpty !== false) {
     for (let i = container.Items.length; i < container.Capacity; i++) {
-      grid.append(h('div', { style: { height: '96px', border: '1px solid var(--card-border)', borderRadius: '8px', background: 'var(--bg)', opacity: '.6' } }));
+      grid.append(h('div', { style: { height: '104px', border: '1px solid var(--card-border)', borderRadius: '10px', background: 'var(--bg)', opacity: '.6' } }));
     }
   }
   return grid;

@@ -17,7 +17,7 @@ import { Rng } from '../src/core/rng';
 import { loadGame, MemorySaveStore, repair, SAVE_VERSION } from '../src/core/save';
 import type { SaveData } from '../src/core/save';
 import { GameSession } from '../src/core/session';
-import { buyBag, bagPrice, buyEquipment, buyGood, ensureStocked, reroll, rerollCost, resetRerollCost, sell, sellMany } from '../src/core/shop';
+import { buyBag, bagPrice, buyEquipment, buyGood, ensureStocked, reroll, rerollCost, resetRerollCost, sell, sellMany, isSold } from '../src/core/shop';
 import { newShopState } from '../src/core/shop';
 import { obtainableSkills, skillDef } from '../src/core/skills';
 import { highSkillBook } from '../src/core/loot';
@@ -104,12 +104,14 @@ describe('상점 (TownTests)', () => {
     const gold = c.Gold;
     expect(buyEquipment(shop, c, eq.Uid).ok).toBe(true);
     expect(c.Gold).toBe(gold - eq.Price);
-    expect(shop.Equipment.length).toBe(B.ShopEquipmentSlots - 1);
+    expect(shop.Equipment.length).toBe(B.ShopEquipmentSlots); // v3.1: 산 칸은 '판매 완료'로 남는다
+    expect(isSold(shop, eq.Uid)).toBe(true);
+    expect(buyEquipment(shop, c, eq.Uid).ok).toBe(false);
     const potion = shop.Goods.find((g) => g.Item.TemplateId === 'potion')!;
     expect(buyGood(shop, c, potion.Item.Uid, 5).ok).toBe(true);
     expect(countOf(c.Inventory, 'potion')).toBe(8);
     const before = c.Gold;
-    expect(sell(c, c.Inventory.Items.find((i) => i.Uid === eq.Uid)!.Uid, 1).ok).toBe(true);
+    expect(sell(c, c.Inventory.Items.find((i) => i.Name === eq.Name && i.Kind === 'Equipment')!.Uid, 1).ok).toBe(true);
     expect(c.Gold).toBe(before + sellPrice(eq));
     expect(bagPrice(c)).toBe(500);
     expect(buyBag(c).ok).toBe(true);

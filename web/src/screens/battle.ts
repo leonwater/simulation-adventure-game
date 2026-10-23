@@ -16,6 +16,7 @@ import { button, h, icon, longPress, sub } from '../ui/kit';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { dungeonTheme, tierColor } from '../ui/theme';
+import { Names } from '../core/names';
 import { settings, vibrate } from '../ui/settings';
 import { goDungeon, goResult, goTitle, goToCurrent } from './index';
 
@@ -437,7 +438,9 @@ export class BattleScreen extends Screen {
           this.flashUnit(unit.shape, e.target < 0 ? 'red' : 'white');
           this.setBar(unit, e.hpAfter, e.shield, e.barrier);
         }
-        this.float(e.target, `${e.damage === 'Crit' ? '치명타! ' : ''}${e.amount}`, DAMAGE_COLOR[e.damage], e.damage === 'Crit' ? 26 : 19, true);
+        // 독·출혈·화상처럼 턴마다 들어가는 피해는 이름을 붙여 공격 피해와 헷갈리지 않게 한다
+        if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') this.float(e.target, `${Names.status(e.damage)} ${e.amount}`, DAMAGE_COLOR[e.damage], 15, true);
+        else this.float(e.target, `${e.damage === 'Crit' ? '치명타! ' : ''}${e.amount}`, DAMAGE_COLOR[e.damage], e.damage === 'Crit' ? 26 : 19, true);
         if (e.damage === 'Crit' && e.actor === -1) vibrate();
         if (e.target < 0 && e.actor >= 0) vibrate();
         break;

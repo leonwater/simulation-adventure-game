@@ -42,10 +42,23 @@ export function confirmBox(title: string, message: string, okLabel: string, onOk
 }
 
 let toastTimer = 0;
+/** 다음에 화면을 누르면(어떤 행동이든) 바로 지운다. 아무것도 하지 않으면 원래 시간만큼 남는다. */
+function closeOnNextAction(el: HTMLElement): void {
+  const off = (): void => {
+    el.remove();
+    document.removeEventListener('pointerdown', off, true);
+  };
+  // 지금 이 알림을 띄운 누름이 끝난 뒤부터 듣는다
+  window.setTimeout(() => {
+    if (el.isConnected) document.addEventListener('pointerdown', off, true);
+  }, 0);
+}
+
 export function toast(message: string): void {
   router.layer.querySelectorAll('.toast').forEach((e) => e.remove());
   const el = h('div', { class: 'toast' }, message);
   router.layer.append(el);
+  closeOnNextAction(el);
   window.clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => el.remove(), 2200);
 }
@@ -54,5 +67,6 @@ export function toast(message: string): void {
 export function flash(message: string, color = 'var(--gold)'): void {
   const el = h('div', { class: 'flash', style: { color } }, message);
   router.layer.append(el);
+  closeOnNextAction(el);
   window.setTimeout(() => el.remove(), 800);
 }

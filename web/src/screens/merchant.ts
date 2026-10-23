@@ -8,7 +8,8 @@ import { gold } from '../core/names';
 import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
-import { colored, compareLine, equipLine, infoText, itemTitle, kindLine, nameColor } from '../ui/items';
+import { colored, compareLine, equipLine, infoText, itemTitle, kindLine, nameColor, soldOut } from '../ui/items';
+import { isSoldOut } from '../core/shop';
 import { button, h, icon, row, tabs } from '../ui/kit';
 import { flash, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -75,6 +76,7 @@ export class MerchantScreen extends Screen {
       h('span', { class: 'spacer' }),
       h('b', { style: { fontSize: '14px', color: c.Gold >= price ? 'var(--gold)' : 'var(--red-light)' } }, `${price.toLocaleString('en-US')} G`));
     if (known) cell.style.opacity = '.5';
+    if (isSoldOut(g)) return soldOut(cell);
     return cell;
   }
 

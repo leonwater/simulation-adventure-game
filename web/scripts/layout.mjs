@@ -91,6 +91,15 @@ const CHECK = () => {
     const ox = cs.overflowX, oy = cs.overflowY;
     if (hasText && el.scrollWidth > el.clientWidth + 1 && ox !== 'auto' && ox !== 'scroll' && cs.textOverflow !== 'ellipsis' && el.clientWidth > 0)
       out.push(`가로 잘림: ${desc(el)} (${el.scrollWidth}>${el.clientWidth})`);
+    // 부모 상자 밖으로 삐져나온 것 (예: 지도 팝업에서 지도가 테두리 밖으로) — 일부러 겹쳐 둔 절대 위치 요소는 제외
+    const par = el.parentElement;
+    if (par && !el.classList.contains('modal-x') && cs.position !== 'absolute' && cs.position !== 'fixed' && !el.closest('.stage') && getComputedStyle(par).display !== 'inline') {
+      const pr = par.getBoundingClientRect();
+      if (pr.width > 0 && (r.right > pr.right + 1.5 || r.left < pr.left - 1.5)) out.push(`부모 밖: ${desc(el)} (${Math.round(r.left - pr.left)}~${Math.round(r.right - pr.left)} / 부모 폭 ${Math.round(pr.width)})`);
+    }
+    // 팝업·스크롤 영역 안에서 가로로 넘쳐 옆으로 밀리는 것 (세로 스크롤 영역이 가로로도 스크롤되면 안 된다)
+    if (el.clientWidth > 0 && el.scrollWidth > el.clientWidth + 1 && (ox === 'auto' || ox === 'scroll' || ox === 'hidden') && !el.classList.contains('stagewrap') && !el.classList.contains('screen') && !el.classList.contains('illust') && cs.textOverflow !== 'ellipsis' && !el.closest('.stage'))
+      out.push(`가로 넘침: ${desc(el)} (${el.scrollWidth}>${el.clientWidth})`);
     if (el.scrollHeight > el.clientHeight + 2 && oy === 'hidden' && el.clientHeight > 0 && !el.classList.contains('stagewrap') && !el.classList.contains('screen') && !el.classList.contains('illust') && cs.textOverflow !== 'ellipsis')
       out.push(`세로 잘림: ${desc(el)} (${el.scrollHeight}>${el.clientHeight})`);
   }

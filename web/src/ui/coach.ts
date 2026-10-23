@@ -107,9 +107,7 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
   holder.append(bubble);
   // 건너뛰기는 말풍선이 아니라 화면 오른쪽 위에 작게. 막는 판보다 위라 언제나 눌린다
   if (onSkip) {
-    holder.append(h('button', { style: { position: 'absolute', right: '12px', top: 'calc(17px + env(safe-area-inset-top))', minHeight: '30px', padding: '0 10px', fontSize: '12px', background: 'var(--dialog)', pointerEvents: 'auto' }, on: { click: () => {
-      coach.clear();
-      onSkip();
-    } } }, '건너뛰기'));
+    // 누르면 확인 창만 띄운다 (말풍선은 그대로 두어 '계속 보기'를 고르면 같은 자리에서 이어진다)
+    holder.append(h('button', { style: { position: 'absolute', right: '12px', top: 'calc(17px + env(safe-area-inset-top))', minHeight: '30px', padding: '0 10px', fontSize: '12px', background: 'var(--dialog)', pointerEvents: 'auto' }, on: { click: () => onSkip() } }, '건너뛰기'));
   }
 }
