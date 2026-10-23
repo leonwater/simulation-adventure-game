@@ -2,13 +2,11 @@ import { skillSlots } from '../core/character';
 import { B } from '../core/balance';
 import { RANKS } from '../core/enums';
 import { equipSkill, getSkillState, isSkillEquipped, meetsSkillRequirement, moveEquippedSkill, unequipSkill } from '../core/equipment';
-import { Names } from '../core/names';
 import { skillDef } from '../core/skills';
 import { bottomNav, townBar } from '../ui/chrome';
 import { dragReorder } from '../ui/drag';
 import { showSkillDetail } from '../ui/skilldetail';
 import { skillBrief, skillNameEl } from '../ui/skillinfo';
-import { tierColor } from '../ui/theme';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
 import { button, h, row, sub } from '../ui/kit';
@@ -81,7 +79,7 @@ export class SkillsScreen extends Screen {
     const equipped = isSkillEquipped(c, id);
     const meets = meetsSkillRequirement(c, def);
     const info = h('button', { class: 'grow', style: { border: '0', background: 'transparent', textAlign: 'left', padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '2px', minHeight: '48px' }, on: { click: () => this.detail(id) } },
-      h('span', null, skillNameEl(def, st.Level, 15), colored(` ${Names.tier(def.Tier)}`, tierColor(def.Tier)), this.fresh!.has(id) ? colored(' NEW', '#E38A82') : null),
+      h('span', null, skillNameEl(def, st.Level, 15), this.fresh!.has(id) ? colored(' NEW', '#E38A82') : null),
       h('span', { class: 'sub' }, meets ? `${skillBrief(def, st.Level)} · 재사용 ${def.Cooldown}턴` : `장착 조건 Lv.${def.ReqLevel} · ${def.ReqRank} 등급`));
     let btn: HTMLElement;
     if (equipped) btn = button('해제', () => this.unequip(id), 'outline', 'sm');

@@ -8,7 +8,6 @@ import type { Combatant } from '../core/combatant';
 import { themeIndex } from '../core/monsters';
 import { itemNames, mergeStacks } from '../core/loot';
 import { skillDef } from '../core/skills';
-import { Names } from '../core/names';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
 import { S } from '../ui/game';
@@ -308,7 +307,7 @@ export class BattleScreen extends Screen {
     switch (ch.kind) {
       case 'Skill': {
         const def = skillDef(ch.skillId);
-        return { tag: `스킬${def ? ` · ${Names.tier(def.Tier)}` : ''}`, bar: def ? tierColor(def.Tier) : '#7FA8D8', fill: '#1A2130', border: '#34465C' };
+        return { tag: '스킬', bar: def ? tierColor(def.Tier) : '#7FA8D8', fill: '#1A2130', border: '#34465C' };
       }
       case 'Item': return { tag: '아이템', bar: '#7DB38A', fill: '#1A231E', border: '#34503C' };
       case 'Flee': return { tag: '도주', bar: '#B07A70', fill: '#221C1D', border: '#4A3634' };
@@ -322,6 +321,7 @@ export class BattleScreen extends Screen {
     // 아이템·도주는 추가 설명 없이 (못 쓸 때는 눌렀을 때 알림)
     const plain = ch.kind === 'Item' || ch.kind === 'Flee';
     const right = plain ? (ch.kind === 'Flee' && ch.enabled ? `${Math.round(ch.chance * 100)}%` : '') : ch.enabled ? (ch.kind === 'Wait' ? ch.note : `${Math.round(ch.chance * 100)}%`) : ch.note;
+    const skillColor = ch.kind === 'Skill' && skillDef(ch.skillId) ? tierColor(skillDef(ch.skillId)!.Tier) : null; // 스킬 이름은 등급 색 (등급 글자는 상세 창에서)
     // 여러 번 때리는 스킬의 %는 한 번 때릴 때의 확률
     const perHit = pct && ch.kind === 'Skill' && (skillDef(ch.skillId)?.Hits ?? 1) > 1;
     let label = ch.label;
@@ -335,7 +335,7 @@ export class BattleScreen extends Screen {
     const st = this.kindStyle(ch);
     const el = h('div', { role: 'button', class: 'bchoice', style: { background: st.fill, border: `1px solid ${st.border}`, minHeight: subText ? '60px' : '52px', cursor: 'pointer', opacity: ch.enabled ? '1' : '.5' } },
       h('i', { class: 'kbar', style: { background: st.bar } }),
-      h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name' }, label), subText ? h('span', { class: 'dmg' }, subText) : null),
+      h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name', style: skillColor ? { color: skillColor } : {} }, label), subText ? h('span', { class: 'dmg' }, subText) : null),
       right ? h('div', { class: 'col', style: { alignItems: 'flex-end', gap: '0' } },
         perHit ? h('span', { style: { fontSize: '11px', color: 'var(--sub)' } }, '타격당') : null,
         h('span', { style: { fontSize: pct ? '15px' : '12px', fontWeight: pct ? '700' : '400', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right' } }, right)) : null);

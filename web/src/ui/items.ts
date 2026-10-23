@@ -138,13 +138,10 @@ export function itemGrid(container: ItemContainer, owner: Character | null, onTa
     },
     kindLine(item, 12),
     h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), fontWeight: item.Kind === 'Equipment' ? '700' : '400', wordBreak: 'keep-all' } }, itemTitle(item)),
-    // 장비는 '착용 레벨 · 능력치 변화'를 한 줄에, 그 밖의 물품은 설명 한 줄 + 개수(×N)
+    // 설명(장비는 '착용 레벨 · 능력치 변화')은 이름 바로 아래, 개수(×N)는 맨 아래 줄
+    h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', height: '16px', flexShrink: '0' } }, item.Kind === 'Equipment' ? equipLine(owner, item) : infoText(owner, item)),
     h('div', { class: 'spacer' }),
-    item.Kind === 'Equipment'
-      ? h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', height: '16px' } }, equipLine(owner, item))
-      : h('div', { class: 'row', style: { gap: '4px', fontSize: '12px', color: 'var(--sub)', height: '16px' } },
-        h('span', { class: 'grow', style: { whiteSpace: 'nowrap', textAlign: 'left', overflow: 'hidden', textOverflow: 'ellipsis' } }, infoText(owner, item)),
-        item.Count > 1 ? h('b', { style: { color: 'var(--text)' } }, `×${item.Count}`) : null)));
+    h('div', { style: { fontSize: '12px', height: '16px', textAlign: 'right', fontWeight: '700', color: 'var(--text)' } }, item.Count > 1 ? `×${item.Count}` : '')));
   }
   if (opts.showEmpty !== false) {
     for (let i = container.Items.length; i < container.Capacity; i++) {
