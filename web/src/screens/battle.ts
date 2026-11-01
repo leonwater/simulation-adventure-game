@@ -232,7 +232,7 @@ export class BattleScreen extends Screen {
     if (shield > -2) v.shield = shield;
     if (barrier > -2) v.barrier = barrier;
     const ratio = v.maxHp <= 0 ? 0 : Math.max(0, Math.min(1, hp / v.maxHp));
-    v.bar.style.width = `${ratio * 100}%`;
+    v.bar.style.transform = `scaleX(${ratio})`; // 폭 대신 transform으로 줄인다 (그리기 비용·끊김 감소)
     const el = v.hpText;
     el.replaceChildren(`${v.enemyHp ? '' : 'HP '}${Math.max(0, hp)}/${v.maxHp}`);
     if (hp > 0 && v.shield > 0) el.append(' ', colored(`+${v.shield}`, 'var(--info)'));

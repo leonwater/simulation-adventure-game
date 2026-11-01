@@ -27,7 +27,7 @@ export function goldAndSettings(c: Character): HTMLElement {
   return row(
     icon('gold', 18),
     h('span', { style: { whiteSpace: 'nowrap' } }, goldCompact(c.Gold)),
-    h('button', { class: 'gear', on: { click: () => openSettings() } }, icon('settings', 22)),
+    h('button', { class: 'gear', 'aria-label': '설정', on: { click: () => openSettings() } }, icon('settings', 22)),
   );
 }
 
@@ -43,11 +43,12 @@ export function townHeader(c: Character): HTMLElement {
 }
 
 const NAV = ['nav_town', 'nav_character', 'nav_bag', 'nav_skill'];
+const NAV_LABEL = ['마을', '캐릭터', '가방', '스킬'];
 
 /** 마을 계열 하단 메뉴. 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 */
 export function bottomNav(active: number, go: (index: number) => void): HTMLElement {
   return h('div', { class: 'nav' }, ...NAV.map((name, i) =>
-    h('button', { class: i === active ? 'on' : '', on: { click: () => go(i) } },
+    h('button', { class: i === active ? 'on' : '', 'aria-label': NAV_LABEL[i], 'aria-current': i === active ? 'page' : undefined, on: { click: () => go(i) } },
       icon(name, 28, i === active ? 'var(--gold)' : 'var(--sub)'), i !== active && alerts.nav(i) ? h('span', { class: 'dot' }) : null)));
 }
 

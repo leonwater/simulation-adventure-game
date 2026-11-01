@@ -24,6 +24,8 @@
   --font-display: 'Gowun Batang', var(--font-body);
   --track: #263246; --illust-bg: #121A27; --shade: rgba(6,10,17,.92); --dialogue-bg: rgba(16,24,37,.94); --dim: rgba(0,0,0,.6); --scrim: rgba(0,0,0,.72);
   --toast-bg: rgba(23,34,52,.96); --ink-shadow: #000; --placeholder: #7D7666; --chip-bg: rgba(255,255,255,.12);
+  /* R6 움직임 곡선 (emil-design-eng: UI 등장은 강한 ease-out, 화면 위 이동은 ease-in-out) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
   /* R4 모서리 위계: 바깥 판 14 · 누르는 것 10 · 태그 둥글게 */
   --r-panel: 14px; --r-ctrl: 10px;
   --torch-glow: 0 6px 18px -8px rgba(240,162,59,.6); --torch-rim: inset 0 1px 0 rgba(255,232,190,.32);
@@ -128,7 +130,7 @@ input.text::placeholder { color: var(--placeholder); }
 .minimap { position: relative; width: 334px; height: 204px; margin: 0 auto; }
 .mnode { position: absolute; display: flex; align-items: center; justify-content: center; border-radius: 6px; border: 1px solid; padding: 0; min-height: 0; }
 .medge { position: absolute; background: var(--edge); }
-.intro { position: absolute; inset: 0; background: var(--scrim); z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; animation: introfade 1.3s ease-in forwards; pointer-events: none; }
+.intro { position: absolute; inset: 0; background: var(--scrim); z-index: 40; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; animation: introfade 1.3s var(--ease-out) forwards; pointer-events: none; }
 @keyframes introfade { 0%,60% { opacity: 1; } 100% { opacity: 0; } }
 .etag { border-radius: 14px; min-height: 28px; font-size: 12px; font-weight: 700; padding: 0 10px; }
 .choice .glow { position: absolute; left: 6px; right: 6px; top: 0; height: 6px; background: linear-gradient(to bottom, var(--gold), transparent); animation: blink 1.6s ease-in-out infinite; }
@@ -141,9 +143,9 @@ input.text::placeholder { color: var(--placeholder); }
 .unit-shape > * { position: absolute; }
 .unit-label { position: absolute; text-align: center; white-space: nowrap; pointer-events: none; }
 .hpbar { position: absolute; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; pointer-events: none; }
-.hpbar > i { display: block; height: 100%; transition: width .25s; }
+.hpbar > i { display: block; width: 100%; height: 100%; transform-origin: left center; transition: transform .25s var(--ease-move); }
 .stat-icons { position: absolute; display: flex; gap: 2px; transform: translateX(-50%); pointer-events: none; }
-.floatup { position: absolute; transform: translate(-50%, -50%); font-weight: 700; text-shadow: 0 0 3px var(--ink-shadow), 0 0 3px var(--ink-shadow); pointer-events: none; white-space: nowrap; animation: floatup .95s ease-out forwards; z-index: 5; }
+.floatup { position: absolute; transform: translate(-50%, -50%); font-weight: 700; text-shadow: 0 0 3px var(--ink-shadow), 0 0 3px var(--ink-shadow); pointer-events: none; white-space: nowrap; animation: floatup .95s var(--ease-out) forwards; z-index: 5; }
 @keyframes floatup { from { opacity: 1; transform: translate(-50%, -50%); } to { opacity: 0; transform: translate(-50%, -190%); } }
 .battlelog { background: var(--log); border-bottom: 1px solid var(--line); padding: 8px 12px 8px 16px; height: 74px; display: flex; flex-direction: row; align-items: flex-end; gap: 8px; overflow: hidden; flex-shrink: 0; font-size: 13px; }
 .lower { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px 16px 14px; }
@@ -195,7 +197,7 @@ input.text::placeholder { color: var(--placeholder); }
 
 /* R4 버튼·카드: 모서리 위계, 눌림 반응, 주요 행동만 횃불빛, 비활성은 바탕·글자·커서 세 가지로 */
 .screen { font-variant-numeric: tabular-nums; }
-button { border-radius: var(--r-ctrl); transition: transform .12s ease-out, border-color .15s ease-out, background-color .15s ease-out; touch-action: manipulation; }
+button { border-radius: var(--r-ctrl); transition: transform .14s var(--ease-out), border-color .15s ease-out, background-color .15s ease-out; touch-action: manipulation; }
 button:active:not(:disabled) { transform: scale(.97); }
 button.primary { box-shadow: var(--torch-rim), var(--torch-glow); }
 button.card-btn.on { box-shadow: 0 0 14px -6px rgba(240,162,59,.55); }
@@ -210,3 +212,26 @@ button:disabled, button.disabled { opacity: .55; background: var(--btn); border-
 
 /* R5 하단 메뉴: 선택된 칸 위쪽에 횃불색 막대 */
 .nav button.on::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); box-shadow: 0 2px 10px rgba(240,162,59,.5); }
+
+/* R6 움직임·접근성 */
+html { color-scheme: dark; }
+.modal { overscroll-behavior: contain; }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+button:focus:not(:focus-visible) { outline: none; }
+/* 팝업·알림 등장: 짧게, 강한 ease-out, 아무것도 없는 데서 튀어나오지 않게(scale .97부터) — 전환이라 연달아 열어도 끊기지 않는다 */
+.dim { transition: opacity .16s var(--ease-out); }
+.modal, .toast { transition: opacity .2s var(--ease-out), transform .2s var(--ease-out); }
+@starting-style {
+  .dim { opacity: 0; }
+  .modal { opacity: 0; transform: translateY(8px) scale(.97); }
+  .toast { opacity: 0; transform: translate(-50%, -50%) scale(.97); }
+}
+/* 움직임 줄이기: 움직이는 효과는 끄고, 이해를 돕는 페이드만 남긴다 */
+@media (prefers-reduced-motion: reduce) {
+  .blink, .pad .glow, .choice .glow { animation: none; }
+  .floatup { animation-name: floatfade; }
+  button, .modal, .toast, .hpbar > i { transition-property: opacity, background-color, border-color; }
+  button:active:not(:disabled) { transform: none; }
+  @starting-style { .modal { transform: none; } .toast { transform: translate(-50%, -50%); } }
+}
+@keyframes floatfade { from { opacity: 1; } to { opacity: 0; } }
