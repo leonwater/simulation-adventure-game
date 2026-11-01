@@ -62,9 +62,36 @@ export const artImg = (key: string, size = 32): HTMLElement =>
   h('img', { class: 'item-art', src: ART[key] ?? '', alt: '', width: size, height: size, style: { width: `${size}px`, height: `${size}px` } });
 export const itemArt = (item: ItemInstance, size = 32): HTMLElement => artImg(itemArtKey(item), size);
 
-/** 카드 머리줄: 물품 그림 | 종류 줄 + 이름. */
-export function itemHead(item: ItemInstance, title: HTMLElement): HTMLElement {
-  return h('div', { class: 'item-head' }, itemArt(item), h('div', { class: 'item-head-text' }, kindLine(item, 12), title));
+/** 카드 바닥 줄 가격 (돈이 모자라면 빨강). */
+export const price = (g: number, affordable = true): HTMLElement => h('b', { style: { color: affordable ? 'var(--gold)' : 'var(--red-light)' } }, `${g.toLocaleString('en-US')} G`);
+
+export interface CardOpts {
+  /** 이름 아래 한 줄 (장비 비교·효과·보유 수 등). */
+  info: Child | Child[];
+  /** 맨 아래 줄 (가격 등). 없으면 종류 줄. */
+  foot?: Child | Child[];
+  onClick?: () => void;
+  selected?: boolean;
+  /** 그림 칸 오른쪽 위 표시 (선택 √ 등). */
+  badge?: Child;
+}
+
+/** 물품 카드 (B안 · 등급 배경): 위 = 등급 색 바탕 + 큰 그림(강화 +N · 개수 ×N), 아래 = 이름 · 정보 · 바닥 줄. */
+export function itemCard(item: ItemInstance, o: CardOpts): HTMLButtonElement {
+  const grade = item.Kind === 'Equipment' ? GRADE_COLOR[item.Grade] : 'var(--card-border)';
+  // 스킬서는 스킬 이름만, 강화 수치는 그림 칸에 따로
+  const name = item.Kind === 'SkillBook' ? skillDef(item.SkillId)?.Name ?? item.Name : item.Name;
+  const list = (c: Child | Child[]): Child[] => (Array.isArray(c) ? c : [c]);
+  return h('button', { class: `card-btn icard${o.selected ? ' sel' : ''}`, style: { '--g': grade }, on: o.onClick ? { click: o.onClick } : undefined },
+    h('div', { class: 'icard-top' },
+      itemArt(item, 48),
+      item.Enhance > 0 ? h('b', { class: 'icard-enh' }, `+${item.Enhance}`) : null,
+      item.Count > 1 ? h('b', { class: 'icard-cnt' }, `×${item.Count}`) : null,
+      o.badge ? h('span', { class: 'icard-badge' }, o.badge) : null),
+    h('div', { class: 'icard-body' },
+      h('b', { class: 'icard-name', style: { color: nameColor(item) } }, name),
+      h('div', { class: 'icard-info' }, ...list(o.info)),
+      h('div', { class: 'icard-foot' }, ...(o.foot === undefined ? [kindLine(item, 11)] : list(o.foot)))));
 }
 
 /** 종류 줄: 색 원 + 종류. */
@@ -149,9 +176,6 @@ export function infoText(c: Character | null, item: ItemInstance): Child {
 
 export const gradeTag = (item: ItemInstance): HTMLElement => colored(`[${Names.grade(item.Grade)}]`, GRADE_COLOR[item.Grade]);
 
-/** 이름 (스킬서는 스킬 이름만). */
-export const itemTitle = (item: ItemInstance): string =>
-  item.Kind === 'SkillBook' && skillDef(item.SkillId) ? skillDef(item.SkillId)!.Name : displayName(item);
 
 /** 팔린 칸: 누를 수 없게 어둡게 하고 가운데에 '판매 완료' (상점·떠돌이 상인). */
 export function soldOut(cell: HTMLButtonElement): HTMLButtonElement {
@@ -162,25 +186,16 @@ export function soldOut(cell: HTMLButtonElement): HTMLButtonElement {
   return cell;
 }
 
-/** 가방·창고 3열 격자 (상점 카드와 같은 크기). 칸마다 종류 색 원 + 종류 · 이름(두 줄까지) · 아래 줄(왼쪽 정보 / 오른쪽 개수). */
+/** 가방·창고 3열 격자 (상점 카드와 같은 물품 카드). */
 export function itemGrid(container: ItemContainer, owner: Character | null, onTap: (item: ItemInstance) => void, opts: { selectedUid?: string | null; showEmpty?: boolean } = {}): HTMLElement {
   // 상점 카드와 같은 크기·배열: 가로 3칸
   const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } });
   for (const item of container.Items) {
-    const sel = item.Uid === opts.selectedUid;
-    grid.append(h('button', {
-      class: 'card-btn', style: { height: '104px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: '0', borderColor: sel ? 'var(--accent)' : 'var(--card-border)', borderWidth: sel ? '2px' : '1px', overflow: 'hidden' },
-      on: { click: () => onTap(item) },
-    },
-    itemHead(item, h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item))),
-    // 설명(장비는 '착용 레벨 · 능력치 변화')은 이름 바로 아래, 개수(×N)는 맨 아래 줄
-    h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', height: '16px', flexShrink: '0' } }, item.Kind === 'Equipment' ? equipLine(owner, item) : infoText(owner, item)),
-    h('div', { class: 'spacer' }),
-    h('div', { style: { fontSize: '13px', height: '16px', width: '100%', textAlign: 'right', fontWeight: '700', color: 'var(--text)' } }, item.Count > 1 ? `×${item.Count}` : '')));
+    grid.append(itemCard(item, { info: item.Kind === 'Equipment' ? equipLine(owner, item) : infoText(owner, item), selected: item.Uid === opts.selectedUid, onClick: () => onTap(item) }));
   }
   if (opts.showEmpty !== false) {
     for (let i = container.Items.length; i < container.Capacity; i++) {
-      grid.append(h('div', { style: { height: '104px', border: '1px solid var(--card-border)', borderRadius: '10px', background: 'var(--bg)', opacity: '.6' } }));
+      grid.append(h('div', { class: 'icard-empty' }));
     }
   }
   return grid;

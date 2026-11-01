@@ -8,12 +8,16 @@ import type { Battle } from '../core/battle';
 import type { Combatant } from '../core/combatant';
 import { themeIndex } from '../core/monsters';
 import { itemNames, mergeStacks } from '../core/loot';
-import { skillDef } from '../core/skills';
+import { ALL_SKILLS, skillDef } from '../core/skills';
+import { STATUSES } from '../core/enums';
+import type { StatusType } from '../core/enums';
+import { fxCast, fxCounter, fxDefeat, fxDodge, fxHeal, fxHit, fxShot, fxStatus, fxStyleFor, fxTick, setFxSpeed } from '../ui/fx';
+import type { FxStyle, Spot } from '../ui/fx';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
-import { button, h, icon, longPress, sub } from '../ui/kit';
+import { assetUrl, button, h, icon, longPress, sub } from '../ui/kit';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { dungeonTheme, tierColor } from '../ui/theme';
@@ -34,12 +38,16 @@ interface UnitView {
   enemyHp: boolean;
   center: [number, number];
   size: number;
+  /** 보이는 몸 높이 (그림이면 24칸 × 배율). */
+  body: number;
   maxHp: number;
   hp: number;
   shield: number;
   barrier: number;
 }
 
+/** 상태 이름(사건 문구) → 상태 종류. */
+const STATUS_BY_NAME = new Map<string, StatusType>(STATUSES.map((t) => [Names.status(t), t]));
 const DAMAGE_COLOR: Record<DamageKind, string> = { Normal: '#fff', Crit: 'var(--gold)', Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Heal: '#A8E6A0' };
 const TONE_COLOR: Record<LogTone, string> = { Normal: 'var(--log-ink)', Good: 'var(--gold)', Bad: 'var(--red-light)', System: 'var(--text)' };
 
@@ -70,6 +78,8 @@ export class BattleScreen extends Screen {
   private stage: HTMLElement | null = null;
   private lower: HTMLElement | null = null;
   private units = new Map<number, UnitView>();
+  /** 지금 재생 중인 행동의 이펙트 계열 (행동 사건에서 정하고 이어지는 피해 사건이 쓴다). */
+  private fxStyle: FxStyle = 'slash';
   private timers: number[] = [];
 
   onBack(): boolean {
@@ -181,7 +191,8 @@ export class BattleScreen extends Screen {
     const spriteId = enemy ? c.species?.Id : b.character.Job.toLowerCase();
     const sprite = spriteUrl(spriteId);
     // 이름·HP 막대는 그림(바닥 맞춤, 24칸 × 배율) 위로
-    const top = center[1] + size / 2 - (sprite ? Math.max(size, 24 * spriteScale(size)) : size);
+    const body = sprite ? Math.max(size, 24 * spriteScale(size)) : size;
+    const top = center[1] + size / 2 - body;
     const hp = this.hpBefore?.get(index) ?? c.hp;
     const alive = hp > 0;
     // 보스의 다음 턴 행동 예고는 이름 자리에 주황색으로 (연출 중에는 이름)
@@ -217,7 +228,7 @@ export class BattleScreen extends Screen {
       if (selected) root.append(Object.assign(layer('var(--gold)', -7), { className: 'blink' }));
       root.append(layer(border, 0), layer(fill, borderW));
     }
-    const v: UnitView = { shape: root, bar: barFill, hpText, enemyHp: enemy, center, size, maxHp: c.maxHp, hp, shield: c.kit ? c.kit.shield : -1, barrier: c.kit ? c.kit.barrier : -1 };
+    const v: UnitView = { shape: root, bar: barFill, hpText, enemyHp: enemy, center, size, body, maxHp: c.maxHp, hp, shield: c.kit ? c.kit.shield : -1, barrier: c.kit ? c.kit.barrier : -1 };
     this.setBar(v, hp, c.kit ? c.kit.shield : -1, c.kit ? c.kit.barrier : -1);
     if (alive) {
       // 적: 누르면 대상 선택, 대상을 한 번 더 누르면 상세 · 나: 누르면 캐릭터 정보. 길게 누르면 언제나 상세
@@ -426,6 +437,7 @@ export class BattleScreen extends Screen {
 
   private startPlayback(events: BattleEvent[]): void {
     this.playing = true;
+    setFxSpeed(settings.battleSpeed);
     if (this.lower) this.lower.style.pointerEvents = 'none';
     this.later(50, () => this.playNext(events, 0));
   }
@@ -441,6 +453,10 @@ export class BattleScreen extends Screen {
         const actor = this.units.get(e.actor);
         if (actor) this.dash(actor.shape, e.actor < 0 ? 34 : -28);
         if (e.text) this.float(e.actor, e.text, 'var(--gold)', 13, false);
+        this.fxStyle = e.actor < 0 ? fxStyleFor(this.b!.character.Job, ALL_SKILLS.find((s) => s.Name === e.text)?.Id ?? null) : 'claw';
+        const from = this.spot(e.actor), to = this.spot(e.target);
+        if (from && e.text) fxCast(this.stage, from, this.fxStyle);
+        if (from && to && e.actor < 0) fxShot(this.stage, from, to, this.fxStyle);
         wait = STEP * 0.6;
         break;
       }
@@ -450,6 +466,9 @@ export class BattleScreen extends Screen {
           this.shake(unit.shape, e.damage === 'Crit' ? 10 : 6);
           this.flashUnit(unit.shape, e.target < 0 ? 'red' : 'white');
           this.setBar(unit, e.hpAfter, e.shield, e.barrier);
+          const at = this.spot(e.target)!;
+          if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') fxTick(this.stage, at, e.damage);
+          else fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit');
         }
         // 독·출혈·화상처럼 턴마다 들어가는 피해는 이름을 붙여 공격 피해와 헷갈리지 않게 한다
         if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') this.float(e.target, `${Names.status(e.damage)} ${e.amount}`, DAMAGE_COLOR[e.damage], 15, true);
@@ -458,20 +477,27 @@ export class BattleScreen extends Screen {
         if (e.target < 0 && e.actor >= 0) vibrate();
         break;
       case 'Miss':
+        if (unit) fxDodge(unit.shape, e.target >= 0);
         this.float(e.target, '빗나감', 'var(--sub)', 15, false);
         break;
       case 'Heal':
         this.shown(e.target, e.hpAfter);
-        if (unit) this.setBar(unit, e.hpAfter);
+        if (unit) {
+          this.setBar(unit, e.hpAfter);
+          fxHeal(this.stage, this.spot(e.target)!);
+        }
         this.float(e.target, `+${e.amount}`, DAMAGE_COLOR.Heal, 19, true);
         break;
-      case 'Status':
+      case 'Status': {
+        const type = STATUS_BY_NAME.get(e.text ?? ''), at = this.spot(e.target);
+        if (type && at) fxStatus(this.stage, at, type, assetUrl(`icons/${statusIcon(type)}.png`));
         this.float(e.target, e.text ?? '', 'var(--blue-light)', 13, false);
         wait = STEP * 0.6;
         break;
+      }
       case 'Defeat':
         this.shown(e.target, 0);
-        if (unit) unit.shape.style.opacity = '.3';
+        if (unit) fxDefeat(unit.shape);
         break;
       case 'Spawn':
         // 분열·소환: 그 자리에 새 적을 그린다 (다른 적은 지금 보이는 HP 그대로)
@@ -484,10 +510,22 @@ export class BattleScreen extends Screen {
         // 방어막에 막힘: 남은 횟수를 바로 줄여 보여 준다
         const guarded = this.units.get(e.target);
         if (e.barrier >= 0 && guarded) this.setBar(guarded, guarded.hp, e.shield, e.barrier);
+        // 반격 태세 발동: 이어지는 피해는 플레이어의 기본 공격 계열로 보여 준다
+        if (e.text === '반격!') {
+          const me = this.spot(-1);
+          if (me) fxCounter(this.stage, me);
+          this.fxStyle = fxStyleFor(this.b!.character.Job, null);
+        }
         this.float(e.actor, e.text ?? '', 'var(--gold)', 16, true);
       }
     }
     this.later(wait, () => this.playNext(events, i + 1));
+  }
+
+  private spot(index: number): Spot | null {
+    const u = this.units.get(index);
+    // 그림은 바닥에 맞춰 서 있으므로 보이는 몸통 가운데를 쓴다
+    return u ? { x: u.center[0], y: u.center[1] + u.size / 2 - u.body / 2, size: u.body * 0.8 } : null;
   }
 
   private shown(index: number, hp: number): void {

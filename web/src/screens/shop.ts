@@ -13,7 +13,7 @@ import { goodUnlimited } from '../core/items';
 import { jobLine, npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { offerBetterGear, isBetter } from '../ui/gearoffer';
-import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemTitle, itemHead, levelChip, nameColor } from '../ui/items';
+import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemCard, levelChip, price } from '../ui/items';
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
 import { sellCountDialog } from '../ui/sellcount';
 import { tierColor } from '../ui/theme';
@@ -75,20 +75,16 @@ export class ShopScreen extends Screen {
     ];
   }
 
-  private cardButton(onClick: () => void, ...kids: (Node | string | null)[]): HTMLButtonElement {
-    return h('button', { class: 'card-btn', style: { height: '104px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px' }, on: { click: onClick } }, ...kids);
-  }
-
   /** 장비 카드: 종류 색 원·부위 · 이름(등급 색) · 착용 레벨과 지금 장비 대비 · 가격. */
   private equipCell(item: ItemInstance): HTMLElement {
     const c = S.c;
     const usable = canBeUsedBy(item, c.Job);
-    const cell = this.cardButton(() => this.buyEquipDialog(item),
-      itemHead(item, h('b', { style: { fontSize: '14px', color: nameColor(item), textAlign: 'left' } }, item.Name)),
+    const cell = itemCard(item, {
+      onClick: () => this.buyEquipDialog(item),
       // 착용 레벨 · 능력치 변화(또는 직업 전용)를 한 줄에
-      h('span', { class: 'sub', style: { whiteSpace: 'nowrap' } }, ...(usable ? [equipLine(c, item)] : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, 'var(--red-light)')])),
-      h('span', { class: 'spacer' }),
-      h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
+      info: usable ? equipLine(c, item) : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, 'var(--red-light)')],
+      foot: price(item.Price),
+    });
     if (!usable) cell.style.opacity = '.55';
     if (isSold(S.data!.Shop, item.Uid)) return soldOut(cell);
     return cell;
@@ -128,11 +124,11 @@ export class ShopScreen extends Screen {
     const c = S.c;
     const item = g.Item;
     const known = item.Kind === 'SkillBook' && knowsSkill(c, item.SkillId);
-    const cell = this.cardButton(() => this.buyGoodDialog(g),
-      itemHead(item, h('b', { style: { fontSize: '14px', textAlign: 'left' } }, itemTitle(item))),
-      item.Kind === 'Consumable' ? h('span', { class: 'sub' }, `보유 ${countOf(c.Inventory, item.TemplateId)}`) : known ? colored('이미 배움', 'var(--red-light)') : h('span', { class: 'sub' }, this.skillBookJob(item, 12)),
-      h('span', { class: 'spacer' }),
-      h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
+    const cell = itemCard(item, {
+      onClick: () => this.buyGoodDialog(g),
+      info: item.Kind === 'Consumable' ? `보유 ${countOf(c.Inventory, item.TemplateId)}` : known ? colored('이미 배움', 'var(--red-light)') : this.skillBookJob(item, 11),
+      foot: price(item.Price),
+    });
     if (known) {
       cell.disabled = true;
       cell.style.opacity = '.5';
@@ -239,12 +235,7 @@ export class ShopScreen extends Screen {
   private sellCell(item: ItemInstance): HTMLElement {
     const c = S.c;
     const sel = !!this.selected && this.selected.has(item.Uid);
-    const cell = h('button', { class: 'card-btn', style: { height: '118px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', position: 'relative', background: sel ? 'var(--accent-bg)' : 'var(--card)', borderColor: sel ? 'var(--accent)' : 'var(--card-border)' } },
-      itemHead(item, h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item))),
-      h('div', { class: 'sub', style: { textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)),
-      h('span', { class: 'spacer' }),
-      h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null),
-      sel ? h('span', { class: 'chip' }, '√') : null);
+    const cell = itemCard(item, { info: item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item), foot: price(sellPrice(item)), selected: sel, badge: sel ? h('span', { class: 'chip' }, '√') : undefined });
     longPress(cell, () => {
       if (!this.selected) this.selected = new Set();
       this.selected.add(item.Uid);
