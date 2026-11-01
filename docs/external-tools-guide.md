@@ -13,7 +13,7 @@
 
 1. [설치](#1-설치)
 2. [도구별 사용법](#2-도구별-사용법)
-3. [같이 쓰는 조합과 순서](#3-같이-쓰는-조합과-순서)
+3. [같이 쓰는 조합과 순서](#3-같이-쓰는-조합과-순서) — 새 UI(A) · **기존 UI 수정(A-2)** · 기능 개발(B) · 파악(C) · 역분석(D) · 영상(E)
 4. [한눈에 보는 요약](#4-한눈에-보는-요약)
 5. [이 프로젝트(모험가 키우기)에서 쓸 때](#5-이-프로젝트모험가-키우기에서-쓸-때)
 6. [알려진 한계](#6-알려진-한계)
@@ -211,6 +211,67 @@ powershell -ExecutionPolicy Bypass -File scripts\install_all.ps1
 - **[제안]** hallmark는 시작할 때 프로젝트의 고정된 `design.md`(폰트·팔레트)를 읽는다고 README에 적혀 있습니다. ui-ux-pro-max가 만든 시스템을 `design.md`로 저장해 두면 3단계가 그 기준을 따를 가능성이 있습니다(직접 확인하지 못했습니다).
 - 4·5는 만든 뒤 점검하는 단계라 마지막에 한 번씩만 돌립니다.
 
+### A-2. 기존 UI 수정하기 — 진단 먼저, 수정은 그다음
+
+새로 만드는 것이 아니므로, **수정 없이 현황을 진단하는 단계를 먼저** 둡니다.
+
+#### 공통 첫 단계 (수정 없음)
+
+| 도구 | 하는 일 | 입력 예 |
+|---|---|---|
+| web-design-guidelines | 접근성·포커스·폼·성능 등 빠진 곳을 `file:line`으로 보고 | `/web-design-guidelines src/**` |
+| hallmark audit | 코드를 수정하지 않고 AI 티 나는 구성만 점검 | `/hallmark:hallmark audit ./src/app` |
+
+- **[제안]** 결과를 파일로 저장해 두면 수정 후 비교 기준이 됩니다.
+- 앱이 크면 먼저 `/graphify .`로 구조를 파악하고, query/path로 해당 컴포넌트와 연결 관계를 찾습니다.
+
+#### 경우 1 — 일부만 다듬기 (색·간격·티 나는 부분)
+
+1. web-design-guidelines + hallmark audit으로 진단
+2. hallmark **polish** 모드 (README: polish는 티 나는 부분만 고친다)
+3. 필요한 곳에 emil-design-eng (예: `이 컴포넌트 애니메이션 리뷰해줘`)
+4. web-design-guidelines로 재점검
+
+#### 경우 2 — 전체 리스타일 (분위기는 바꾸고 기능은 유지)
+
+| 순서 | 도구 | 하는 일 |
+|---|---|---|
+| 1 | 진단 | 위의 공통 첫 단계 |
+| 2 | frontend-design | 목표 방향 정하기 (설명: 새로 만들 때뿐 아니라 기존 UI를 바꿀 때도 사용) |
+| 3 | ui-ux-pro-max | 목표 스타일에 맞는 색·폰트 시스템을 뽑아 **기존 토큰에 옮기기** |
+| 4 | hallmark redesign | 내용·연결은 유지하고 시스템과 레이아웃을 바꾸기 |
+| 5 | emil-design-eng | 모션 다듬기 |
+| 6 | web-design-guidelines | 재점검 |
+| 7 | code-review | PR을 올린 뒤 `/code-review` |
+
+**3단계 (ui-ux-pro-max)** — README에 기존 앱 테마 변경용 프롬프트와 체크리스트(감사 → 매핑 → 이전 → 검증)가 있습니다. 핵심은 다음과 같습니다.
+
+- 프레임워크·라우트·컴포넌트·기존 테마 토큰을 먼저 조사한다.
+- 컴포넌트 구조와 동작은 유지한다.
+- 새 테마 체계를 만들지 말고 **기존 의미 토큰**(background, primary, border 등)을 갱신한다.
+- 하드코딩된 스타일은 컴포넌트 하나씩 교체한다.
+- 매 묶음마다 대비·키보드 포커스·반응형·라이트/다크를 확인한다.
+- README는 검색 결과가 앱을 자동으로 고쳐 주지는 않는다고 밝힙니다.
+
+**4단계 (hallmark)** — README는 "이미 있는 디자인은 이름을 지정해야 건드린다"고 적고 있습니다.
+
+- 호출: `/hallmark:hallmark redesign ./src/app`
+- `keep the layout`을 붙이면 스타일만 바꾸고, 안 붙이면 레이아웃까지 바꿉니다.
+- 작업 전에 모든 링크·필드·핸들러·제목을 기록하고, 하나라도 빠지면 실패로 처리하며, 마지막에 전후 비교를 보여 줍니다.
+
+#### 경우 3 — 기능 변경이 함께 있을 때
+
+위 순서 **앞에 superpowers**를 둡니다. 설계 → 계획 → TDD → 작업별 리뷰가 자동으로 진행되고, 디자인 도구는 그 구현 단계 안에서 씁니다. 라이브러리 API는 context7이 최신 문서로 보조합니다.
+
+#### 주의
+
+- frontend-design·ui-ux-pro-max·hallmark는 모두 **방향을 잡는 도구**라 겹칩니다. **[제안]** 방향 확정은 2·3단계에서 하고, hallmark는 진단(audit)과 마무리(polish/redesign)에 씁니다.
+- 위 순서의 연결(진단 결과 저장, 2→3→4 순서)은 작성자의 판단입니다. 각 도구의 동작은 README 기준이지만 이 조합을 실제로 돌려 보지는 못했습니다.
+- hallmark의 브라우저 린트는 `puppeteer-core` + Chrome이 있어야 합니다. 없으면 정적 검사만 실행됩니다.
+- **[제안]** 단계마다 커밋해 두면 되돌리기 쉽습니다.
+
+---
+
 ### B. 기능 개발 — superpowers 중심
 
 | 순서 | 도구 | 하는 일 |
@@ -252,6 +313,8 @@ rea README의 예시 프롬프트가 "이해 → 근거 제시 → 내 프로젝
 | 하고 싶은 일 | 사용 순서 |
 |---|---|
 | 새 UI 디자인 | frontend-design → ui-ux-pro-max → hallmark → emil-design-eng → web-design-guidelines |
+| 기존 UI 일부 다듬기 | web-design-guidelines + hallmark audit(진단) → hallmark polish → (emil-design-eng) → web-design-guidelines(재점검) |
+| 기존 UI 전체 리스타일 | 진단 → frontend-design → ui-ux-pro-max(기존 토큰에 이전) → hallmark redesign → emil-design-eng → web-design-guidelines → code-review |
 | 기능 개발 | (graphify) → superpowers (+ context7, ponytail) → code-review → security-audit |
 | 코드베이스 파악 | graphify → security-audit / ponytail-audit |
 | 앱 역분석 후 구현 | rea → superpowers |
@@ -264,6 +327,7 @@ rea README의 예시 프롬프트가 "이해 → 근거 제시 → 내 프로젝
 > **[제안]** 아래는 이 저장소의 작업 규칙(CLAUDE.md)에 맞춰 덧붙인 내용입니다. 위 도구 문서에는 없는 판단입니다.
 
 - **작업 순서는 CLAUDE.md가 우선**입니다. 도구는 그 순서 안에서 보조로 씁니다. 도구가 요구하는 흐름(예: superpowers의 질문·승인 단계)이 "정해지지 않은 것이 있으면 빌드 보류" 규칙과 부딪히면 CLAUDE.md를 따릅니다.
+- **기존 화면을 고칠 때는 3장 A-2 순서**(진단 먼저, 수정은 그다음)를 따릅니다. 이 앱은 색을 `web/src/ui/app.css`의 `:root` 토큰(`--gold`, `--card` 등)으로 쓰므로, 리스타일은 하드코딩이 아니라 이 토큰을 갱신하는 방식으로 합니다 (ui-ux-pro-max 3단계의 "기존 의미 토큰 갱신"과 같은 방향).
 - **UI(`web/src/ui`, `web/src/screens`)를 바꾼 뒤** 점검: `web-design-guidelines`(접근성·포커스), 애니메이션이 들어가면 `emil-design-eng`. 화면 틀 점검은 기존 도구 `web/scripts/layout.mjs`가 이미 있으므로 먼저 돌립니다.
 - **새 화면 방향**을 정할 때만 `frontend-design` → `ui-ux-pro-max` 순서로 씁니다. 기존 화면의 작은 수정에는 켜지 않습니다 (앱은 어두운 톤·금색 포인트·Pretendard 글꼴로 이미 정해져 있음).
 - **큰 개편 뒤 코드 정리**: `ponytail-review`·`ponytail-audit`. 쓰지 않는 함수·CSS 점검(CLAUDE.md 4번)과 함께 봅니다.
