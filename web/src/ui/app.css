@@ -207,3 +207,6 @@ button:disabled, button.disabled { opacity: .55; background: var(--btn); border-
   button:hover:not(:disabled) { border-color: var(--slot-border); }
   button.primary:hover:not(:disabled), button.outline:hover:not(:disabled) { border-color: var(--gold); }
 }
+
+/* R5 하단 메뉴: 선택된 칸 위쪽에 횃불색 막대 */
+.nav button.on::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); box-shadow: 0 2px 10px rgba(240,162,59,.5); }
