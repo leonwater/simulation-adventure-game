@@ -24,6 +24,9 @@
   --font-display: 'Gowun Batang', var(--font-body);
   --track: #263246; --illust-bg: #121A27; --shade: rgba(6,10,17,.92); --dialogue-bg: rgba(16,24,37,.94); --dim: rgba(0,0,0,.6); --scrim: rgba(0,0,0,.72);
   --toast-bg: rgba(23,34,52,.96); --ink-shadow: #000; --placeholder: #7D7666; --chip-bg: rgba(255,255,255,.12);
+  /* R4 모서리 위계: 바깥 판 14 · 누르는 것 10 · 태그 둥글게 */
+  --r-panel: 14px; --r-ctrl: 10px;
+  --torch-glow: 0 6px 18px -8px rgba(240,162,59,.6); --torch-rim: inset 0 1px 0 rgba(255,232,190,.32);
   --text-scale: 1;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -189,3 +192,18 @@ input.text::placeholder { color: var(--placeholder); }
 
 /* R3 제목 글꼴: 화면 제목·팝업 제목·큰 제목만 명조 (본문은 Pretendard) */
 .bar .title, .modal h3, .display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; }
+
+/* R4 버튼·카드: 모서리 위계, 눌림 반응, 주요 행동만 횃불빛, 비활성은 바탕·글자·커서 세 가지로 */
+.screen { font-variant-numeric: tabular-nums; }
+button { border-radius: var(--r-ctrl); transition: transform .12s ease-out, border-color .15s ease-out, background-color .15s ease-out; touch-action: manipulation; }
+button:active:not(:disabled) { transform: scale(.97); }
+button.primary { box-shadow: var(--torch-rim), var(--torch-glow); }
+button.card-btn.on { box-shadow: 0 0 14px -6px rgba(240,162,59,.55); }
+button:disabled, button.disabled { opacity: .55; background: var(--btn); border-color: var(--line); color: var(--sub); cursor: not-allowed; box-shadow: none; }
+.card, .modal, .pad { border-radius: var(--r-panel); }
+.choice, .pad > *, .ibtn, .bchoice { border-radius: var(--r-ctrl); }
+.etag, .chip { border-radius: 999px; }
+@media (hover: hover) and (pointer: fine) {
+  button:hover:not(:disabled) { border-color: var(--slot-border); }
+  button.primary:hover:not(:disabled), button.outline:hover:not(:disabled) { border-color: var(--gold); }
+}
