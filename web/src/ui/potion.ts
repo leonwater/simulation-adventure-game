@@ -2,7 +2,8 @@ import { maxHp } from '../core/character';
 import type { ItemInstance } from '../core/items';
 import { consumableDef, countOf } from '../core/items';
 import { S } from './game';
-import { button, h, icon } from './kit';
+import { artImg } from './items';
+import { button, h } from './kit';
 import { modal, toast } from './overlay';
 
 /** 가방의 회복 물약을 종류마다 하나씩 (약한 것부터). */
@@ -27,7 +28,7 @@ export function potionButton(use: (item: ItemInstance) => void, className = 'pot
   const potions = healPotions();
   const total = potions.reduce((a, p) => a + countOf(S.c.Inventory, p.TemplateId), 0);
   const b = h('button', { class: className, 'aria-label': '회복 물약', style, on: { click: () => click(use) } },
-    icon('potion', 30), h('span', { class: 's' }, potions.length > 0 ? `×${total}` : '없음'));
+    artImg('potion', 30), h('span', { class: 's' }, potions.length > 0 ? `×${total}` : '없음'));
   if (potions.length === 0 || S.c.CurrentHp >= maxHp(S.c)) b.classList.add('off');
   return b;
 }

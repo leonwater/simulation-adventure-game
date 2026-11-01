@@ -57,9 +57,10 @@ export function itemArtKey(item: ItemInstance): string {
   }
 }
 
-/** 물품 그림 (기본 32px = 2배). */
-export const itemArt = (item: ItemInstance, size = 32): HTMLElement =>
-  h('img', { class: 'item-art', src: ART[itemArtKey(item)] ?? '', alt: '', width: size, height: size, style: { width: `${size}px`, height: `${size}px` } });
+/** 물품 그림 (기본 32px = 2배). key = itemArtKey 값 (예: 'potion'). */
+export const artImg = (key: string, size = 32): HTMLElement =>
+  h('img', { class: 'item-art', src: ART[key] ?? '', alt: '', width: size, height: size, style: { width: `${size}px`, height: `${size}px` } });
+export const itemArt = (item: ItemInstance, size = 32): HTMLElement => artImg(itemArtKey(item), size);
 
 /** 카드 머리줄: 물품 그림 | 종류 줄 + 이름. */
 export function itemHead(item: ItemInstance, title: HTMLElement): HTMLElement {
