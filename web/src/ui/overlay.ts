@@ -56,7 +56,7 @@ function closeOnNextAction(el: HTMLElement): void {
 
 export function toast(message: string): void {
   router.layer.querySelectorAll('.toast').forEach((e) => e.remove());
-  const el = h('div', { class: 'toast' }, message);
+  const el = h('div', { class: 'toast', role: 'status', 'aria-live': 'polite' }, message);
   router.layer.append(el);
   closeOnNextAction(el);
   window.clearTimeout(toastTimer);

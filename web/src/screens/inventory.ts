@@ -83,7 +83,7 @@ export class InventoryScreen extends Screen {
       if (cl) m.body.append(cl);
     }
     const book = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
-    if (book && book.JobRestriction >= 0) m.body.append(jobLine(JOBS[book.JobRestriction], `${Names.job(JOBS[book.JobRestriction])} 전용`, 13, book.JobRestriction === JOBS.indexOf(c.Job) ? 'var(--sub)' : '#E38A82'));
+    if (book && book.JobRestriction >= 0) m.body.append(jobLine(JOBS[book.JobRestriction], `${Names.job(JOBS[book.JobRestriction])} 전용`, 13, book.JobRestriction === JOBS.indexOf(c.Job) ? 'var(--sub)' : 'var(--red-light)'));
     const actions = row();
     m.body.append(actions);
     const act = (label: string, kind: '' | 'primary' | 'ghost', fn: () => void): HTMLButtonElement => {
@@ -102,7 +102,7 @@ export class InventoryScreen extends Screen {
     switch (item.Kind) {
       case 'Equipment': {
         const reason = cannotEquipReason(c, item);
-        if (reason) m.body.insertBefore(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, reason), actions);
+        if (reason) m.body.insertBefore(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, reason), actions);
         const cur = replacedBy(c, item);
         const eq = act(cur ? '교체' : '착용', 'primary', () => {
           const r = equip(c, item.Uid);

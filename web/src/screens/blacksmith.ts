@@ -42,7 +42,7 @@ export class BlacksmithScreen extends Screen {
       npcIllustration('blacksmith', '대장장이', this.line, 260),
       h('div', { class: 'scroll', style: { gap: '8px' } },
         sel ? this.detail(sel) : null,
-        row(h('b', { class: 'grow' }, '장착 장비'), icon('enhance_stone', 22), h('b', { style: { fontSize: '15px' } }, '강화석 ', colored(`${countOf(c.Inventory, ENHANCE_STONE_ID)}개`, '#9EC0E8'))),
+        row(h('b', { class: 'grow' }, '장착 장비'), icon('enhance_stone', 22), h('b', { style: { fontSize: '15px' } }, '강화석 ', colored(`${countOf(c.Inventory, ENHANCE_STONE_ID)}개`, 'var(--blue-light)'))),
         grid(...SLOTS.map((slot, i) => this.cell(c.Equipment.Slots[i], Names.slot(slot), true))),
         h('b', null, '가방 장비'),
         bag.length > 0 ? grid(...bag.map((i) => this.cell(i, Names.gear(i.Gear), false))) : sub('가방에 장비가 없습니다.')));
@@ -83,10 +83,10 @@ export class BlacksmithScreen extends Screen {
         h('div', { class: 'grow', style: { whiteSpace: 'pre-line' } }, `+${item.Enhance} → +${item.Enhance + 1}\n${what} ${itemValue(item)} → `, colored(String(valueAt(item, item.Enhance + 1)), 'var(--green)')),
         h('div', { class: 'col', style: { gap: '2px', alignItems: 'flex-end' } }, h('b', null, `성공률 ${pct(successRate(item))}`), h('b', null, `${goldCost(item).toLocaleString('en-US')} G`))));
     const down = downgradeChance(item);
-    if (down > 0) card.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, `실패하면 ${pct(down)} 확률로 +${item.Enhance - 1}로 내려갑니다.`));
+    if (down > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `실패하면 ${pct(down)} 확률로 +${item.Enhance - 1}로 내려갑니다.`));
     const stones = stoneCost(item);
     const have = countOf(c.Inventory, ENHANCE_STONE_ID);
-    if (stones > 0) card.append(row(icon('enhance_stone', 20), h('b', null, '강화석 ', colored(`${have} / ${stones}`, have >= stones ? 'var(--green)' : '#E38A82'))));
+    if (stones > 0) card.append(row(icon('enhance_stone', 20), h('b', null, '강화석 ', colored(`${have} / ${stones}`, have >= stones ? 'var(--green)' : 'var(--red-light)'))));
     const reason = cannotEnhanceReason(c, item);
     const b = button(reason ?? '강화하기', () => this.doEnhance(item), 'primary');
     b.disabled = reason !== null;

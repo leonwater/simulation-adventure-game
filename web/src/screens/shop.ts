@@ -87,7 +87,7 @@ export class ShopScreen extends Screen {
       kindLine(item, 12),
       h('b', { style: { fontSize: '14px', color: nameColor(item), textAlign: 'left' } }, item.Name),
       // 착용 레벨 · 능력치 변화(또는 직업 전용)를 한 줄에
-      h('span', { class: 'sub', style: { whiteSpace: 'nowrap' } }, ...(usable ? [equipLine(c, item)] : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, '#E38A82')])),
+      h('span', { class: 'sub', style: { whiteSpace: 'nowrap' } }, ...(usable ? [equipLine(c, item)] : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, 'var(--red-light)')])),
       h('span', { class: 'spacer' }),
       h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
     if (!usable) cell.style.opacity = '.55';
@@ -102,7 +102,7 @@ export class ShopScreen extends Screen {
     const cl = compareLine(c, item);
     if (cl) m.body.append(cl);
     const reason = cannotEquipReason(c, item);
-    if (reason) m.body.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, reason));
+    if (reason) m.body.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, reason));
     m.body.append(button(`구매 · ${item.Price.toLocaleString('en-US')}G`, () => {
       const r = buyEquipment(S.data!.Shop, c, item.Uid);
       if (!r.ok) return toast(r.error ?? '');
@@ -122,7 +122,7 @@ export class ShopScreen extends Screen {
     if (!def) return '';
     if (def.JobRestriction < 0) return '모든 직업';
     const job = JOBS[def.JobRestriction];
-    return jobLine(job, `${Names.job(job)} 전용`, size, job === S.c.Job ? 'var(--sub)' : '#E38A82');
+    return jobLine(job, `${Names.job(job)} 전용`, size, job === S.c.Job ? 'var(--sub)' : 'var(--red-light)');
   }
 
   private goodCell(g: ShopGood): HTMLElement {
@@ -132,7 +132,7 @@ export class ShopScreen extends Screen {
     const cell = this.cardButton(() => this.buyGoodDialog(g),
       kindLine(item, 12),
       h('b', { style: { fontSize: '14px', textAlign: 'left' } }, itemTitle(item)),
-      item.Kind === 'Consumable' ? h('span', { class: 'sub' }, `보유 ${countOf(c.Inventory, item.TemplateId)}`) : known ? colored('이미 배움', '#E38A82') : h('span', { class: 'sub' }, this.skillBookJob(item, 12)),
+      item.Kind === 'Consumable' ? h('span', { class: 'sub' }, `보유 ${countOf(c.Inventory, item.TemplateId)}`) : known ? colored('이미 배움', 'var(--red-light)') : h('span', { class: 'sub' }, this.skillBookJob(item, 12)),
       h('span', { class: 'spacer' }),
       h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
     if (known) {
@@ -156,7 +156,7 @@ export class ShopScreen extends Screen {
           h('div', { class: 'row', style: { gap: '6px' } }, h('span', { style: { color: tierColor(def.Tier) } }, `${Names.tier(def.Tier)} 스킬`), this.skillBookJob(item, 14)),
           h('div', null, def.Effect),
           h('div', { class: 'sub' }, `재사용 ${def.Cooldown}턴`)));
-      if (knowsSkill(c, def.Id)) m.body.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, '이미 배운 스킬입니다.'));
+      if (knowsSkill(c, def.Id)) m.body.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, '이미 배운 스킬입니다.'));
     } else m.body.append(h('div', null, statLine(item)));
     let count = 1;
     const countEl = h('div', { style: { minWidth: '64px', textAlign: 'center', fontWeight: '700' } });

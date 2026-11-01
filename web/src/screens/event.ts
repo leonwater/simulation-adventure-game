@@ -40,7 +40,7 @@ export class EventScreen extends Screen {
     const c = S.c;
     const run = S.run;
     const inner = h('div', { class: 'col', style: { gap: '14px' } },
-      h('div', { style: { fontSize: '24px' } }, ev.Title),
+      h('div', { class: 'display', style: { fontSize: '24px' } }, ev.Title),
       h('div', { class: 'body', style: { fontSize: '15px', lineHeight: '1.5', whiteSpace: 'pre-line' } }, eventBody(ev, run, c)));
     if (this.result) {
       inner.append(this.resultBox());

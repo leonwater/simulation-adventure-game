@@ -52,7 +52,7 @@ export class CharacterScreen extends Screen {
       townBar('캐릭터', '마을', () => navigate('town'), c),
       h('div', { class: 'scroll fit', style: { gap: '10px' } },
         row(
-          h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { style: { fontSize: '24px' } }, c.Name), jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level} / ${B.MaxLevel}`, 13)),
+          h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { class: 'display', style: { fontSize: '24px' } }, c.Name), jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level} / ${B.MaxLevel}`, 13)),
           // 경험치: 글자 바로 아래 가로 막대 (마을 머리줄과 같은 모양)
           h('div', { class: 'col', style: { width: '132px', gap: '6px', alignItems: 'stretch' } },
             h('div', { class: 'sub', style: { textAlign: 'right' } }, c.Level >= B.MaxLevel ? '최대 레벨' : `경험치 ${Math.floor(expProgress(c) * 100)}%`),
@@ -73,7 +73,7 @@ export class CharacterScreen extends Screen {
     const c = S.c;
     const st = promotionStatus(c);
     const cond = (label: string, cur: number, req: number): HTMLElement =>
-      h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : '#ECE7DD'));
+      h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : 'var(--text)'));
     return h('div', { class: 'card', style: { gap: '8px', padding: '12px 14px' } },
       row(icon(rankIcon(c.Rank), 32), h('b', { class: 'grow', style: { fontSize: '15px' } }, `${c.Rank} 등급 모험가`), h('span', { class: 'gold', style: { fontSize: '13px' } }, `기본 능력치 +${Math.round(badgeBonus(c.Rank) * 100)}%`)),
       st.isMaxRank

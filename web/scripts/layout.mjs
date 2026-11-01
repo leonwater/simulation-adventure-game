@@ -9,12 +9,14 @@ import path from 'node:path';
 
 const VIEWS = (process.argv[2] ?? '360x640,360x740,390x844,412x915,480x1000').split(',').map((v) => v.split('x').map(Number));
 const PORT = 4230;
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
+// detached: npx 아래 vite 자식까지 한 묶음으로 끝내야 다음 실행이 옛 서버(옛 dist)를 보지 않는다
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore', detached: true });
+const stopServer = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch {} };
 const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
 const dir = fs.readdirSync(root).filter((d) => d.startsWith('chromium-')).sort().pop();
 const exe = [path.join(root, dir, 'chrome-linux64', 'chrome'), path.join(root, dir, 'chrome-linux', 'chrome')].find((p) => fs.existsSync(p));
 let browser;
-const end = async (code) => { try { await browser?.close(); } catch {} server.kill(); process.exit(code); };
+const end = async (code) => { try { await browser?.close(); } catch {} stopServer(); process.exit(code); };
 setTimeout(() => { console.error('시간 초과'); end(2); }, 280000);
 await new Promise((r) => setTimeout(r, 2500));
 browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
@@ -109,6 +111,13 @@ const CHECK = () => {
 const allIssues = [];
 for (const [w, hgt] of VIEWS) {
   const page = await browser.newPage({ viewport: { width: w, height: hgt } });
+  // 비교용 스크린샷이 실행마다 같도록 무작위 값을 고정한다 (화면마다 같은 씨앗으로 다시 시작)
+  await page.addInitScript(() => {
+    let seed = 1;
+    window.__reseed = (n) => { seed = n >>> 0 || 1; };
+    Date.now = () => 1767225600000; // 난수 씨앗에 쓰이는 시각도 고정
+    Math.random = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  });
   page.setDefaultTimeout(1500);
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
@@ -118,6 +127,7 @@ for (const [w, hgt] of VIEWS) {
   await page.waitForTimeout(300);
   for (const [name, code, clicks = []] of STATES) {
     try {
+      await page.evaluate((n) => window.__reseed(n), STATES.findIndex((x) => x[0] === name) + 1);
       await page.evaluate(SETUP);
       await page.evaluate(code);
       await page.waitForTimeout(350);

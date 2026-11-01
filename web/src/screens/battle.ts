@@ -38,8 +38,8 @@ interface UnitView {
   barrier: number;
 }
 
-const DAMAGE_COLOR: Record<DamageKind, string> = { Normal: '#fff', Crit: '#E2B657', Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Heal: '#A8E6A0' };
-const TONE_COLOR: Record<LogTone, string> = { Normal: '#C9C3B7', Good: '#E2B657', Bad: '#E38A82', System: '#ECE7DD' };
+const DAMAGE_COLOR: Record<DamageKind, string> = { Normal: '#fff', Crit: 'var(--gold)', Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Heal: '#A8E6A0' };
+const TONE_COLOR: Record<LogTone, string> = { Normal: 'var(--log-ink)', Good: 'var(--gold)', Bad: 'var(--red-light)', System: 'var(--text)' };
 
 /** 적 자리 = 배열 순서: 왼쪽 열이 전방(0·2), 오른쪽 열이 후방(1·3). */
 function enemyCenters(n: number): [number, number][] {
@@ -160,15 +160,15 @@ export class BattleScreen extends Screen {
   private buildStage(): void {
     const b = this.b!;
     const p = b.player;
-    this.unit(-1, p, [84, 158], 76, 'circle', '#23324A', '#9EC0E8', 3, 130, `HP ${p.hp}/${p.maxHp}`, false);
+    this.unit(-1, p, [84, 158], 76, 'circle', 'var(--unit-player)', 'var(--blue-light)', 3, 130, `HP ${p.hp}/${p.maxHp}`, false);
     const centers = enemyCenters(b.enemies.length);
     b.enemies.forEach((e, i) => {
       const many = b.enemies.length > 1;
       const shape: Shape = e.role === 2 ? 'hexagon' : 'square';
       const size = e.role === 2 ? (many ? 72 : 96) : e.role === 1 ? 62 : 56;
-      const border = e.role === 2 ? '#E0873A' : e.role === 1 ? '#E2B657' : '#8A5A56';
+      const border = e.role === 2 ? 'var(--boss)' : e.role === 1 ? 'var(--gold)' : 'var(--unit-enemy-border)';
       const borderW = e.role === 0 ? 2 : 5;
-      const fill = e.role === 2 ? '#3A1E1A' : '#33242A';
+      const fill = e.role === 2 ? 'var(--unit-boss-bg)' : 'var(--unit-enemy-bg)';
       this.unit(i, e, centers[Math.min(i, centers.length - 1)], size, shape, fill, border, borderW, many ? 94 : 130, e.role === 1 ? `★${e.name}` : e.name, true);
     });
   }
@@ -182,7 +182,7 @@ export class BattleScreen extends Screen {
     // 보스의 다음 턴 행동 예고는 이름 자리에 주황색으로 (연출 중에는 이름)
     const intent = enemy && alive && c.kit && !this.playing && !this.pending ? c.kit.intent : '';
     const warn = !!intent;
-    const name = h('div', { class: 'unit-label', 'data-anchor': warn ? 'battle.intent' : undefined, style: { left: `${center[0] - width / 2}px`, top: `${top - (enemy ? 44 : 30)}px`, width: `${width}px`, fontSize: `${enemy ? 11 : 12}px`, color: warn ? '#FF9A4A' : alive ? 'var(--text)' : 'var(--sub)', fontWeight: !enemy || warn ? '700' : '400' } }, warn ? `! ${intent}` : title);
+    const name = h('div', { class: 'unit-label', 'data-anchor': warn ? 'battle.intent' : undefined, style: { left: `${center[0] - width / 2}px`, top: `${top - (enemy ? 44 : 30)}px`, width: `${width}px`, fontSize: `${enemy ? 11 : 12}px`, color: warn ? 'var(--warn)' : alive ? 'var(--text)' : 'var(--sub)', fontWeight: !enemy || warn ? '700' : '400' } }, warn ? `! ${intent}` : title);
     stage.append(name);
     let hpText = name;
     if (enemy) {
@@ -232,11 +232,11 @@ export class BattleScreen extends Screen {
     if (shield > -2) v.shield = shield;
     if (barrier > -2) v.barrier = barrier;
     const ratio = v.maxHp <= 0 ? 0 : Math.max(0, Math.min(1, hp / v.maxHp));
-    v.bar.style.width = `${ratio * 100}%`;
+    v.bar.style.transform = `scaleX(${ratio})`; // 폭 대신 transform으로 줄인다 (그리기 비용·끊김 감소)
     const el = v.hpText;
     el.replaceChildren(`${v.enemyHp ? '' : 'HP '}${Math.max(0, hp)}/${v.maxHp}`);
-    if (hp > 0 && v.shield > 0) el.append(' ', colored(`+${v.shield}`, '#8FC7FF'));
-    if (hp > 0 && v.barrier > 0) el.append(' ', colored(`◆${v.barrier}`, '#C9B8FF'));
+    if (hp > 0 && v.shield > 0) el.append(' ', colored(`+${v.shield}`, 'var(--info)'));
+    if (hp > 0 && v.barrier > 0) el.append(' ', colored(`◆${v.barrier}`, 'var(--barrier)'));
   }
 
   /** 도형의 상세 정보: 나는 캐릭터 정보 창, 적은 HP·공격력·방어력·보호막·상태 이상. */
@@ -308,12 +308,12 @@ export class BattleScreen extends Screen {
     switch (ch.kind) {
       case 'Skill': {
         const def = skillDef(ch.skillId);
-        return { tag: '스킬', bar: def ? tierColor(def.Tier) : '#7FA8D8', fill: '#1A2130', border: '#34465C' };
+        return { tag: '스킬', bar: def ? tierColor(def.Tier) : 'var(--blue-sub)', fill: 'var(--c-skill-bg)', border: 'var(--c-skill-border)' };
       }
-      case 'Item': return { tag: '아이템', bar: '#7DB38A', fill: '#1A231E', border: '#34503C' };
-      case 'Flee': return { tag: '도주', bar: '#B07A70', fill: '#221C1D', border: '#4A3634' };
-      case 'Attack': return { tag: '기본 공격', bar: '#A9A39A', fill: 'var(--btn)', border: 'var(--btn-border)' };
-      default: return { tag: '대기', bar: '#6A6E78', fill: 'var(--btn)', border: 'var(--btn-border)' };
+      case 'Item': return { tag: '아이템', bar: 'var(--c-item-bar)', fill: 'var(--c-item-bg)', border: 'var(--c-item-border)' };
+      case 'Flee': return { tag: '도주', bar: 'var(--c-flee-bar)', fill: 'var(--c-flee-bg)', border: 'var(--c-flee-border)' };
+      case 'Attack': return { tag: '기본 공격', bar: 'var(--c-attack-bar)', fill: 'var(--btn)', border: 'var(--btn-border)' };
+      default: return { tag: '대기', bar: 'var(--c-wait-bar)', fill: 'var(--btn)', border: 'var(--btn-border)' };
     }
   }
 
@@ -427,7 +427,7 @@ export class BattleScreen extends Screen {
       case 'Act': {
         const actor = this.units.get(e.actor);
         if (actor) this.dash(actor.shape, e.actor < 0 ? 34 : -28);
-        if (e.text) this.float(e.actor, e.text, '#E2B657', 13, false);
+        if (e.text) this.float(e.actor, e.text, 'var(--gold)', 13, false);
         wait = STEP * 0.6;
         break;
       }
@@ -445,7 +445,7 @@ export class BattleScreen extends Screen {
         if (e.target < 0 && e.actor >= 0) vibrate();
         break;
       case 'Miss':
-        this.float(e.target, '빗나감', '#A29E95', 15, false);
+        this.float(e.target, '빗나감', 'var(--sub)', 15, false);
         break;
       case 'Heal':
         this.shown(e.target, e.hpAfter);
@@ -453,7 +453,7 @@ export class BattleScreen extends Screen {
         this.float(e.target, `+${e.amount}`, DAMAGE_COLOR.Heal, 19, true);
         break;
       case 'Status':
-        this.float(e.target, e.text ?? '', '#9EC0E8', 13, false);
+        this.float(e.target, e.text ?? '', 'var(--blue-light)', 13, false);
         wait = STEP * 0.6;
         break;
       case 'Defeat':
@@ -464,14 +464,14 @@ export class BattleScreen extends Screen {
         // 분열·소환: 그 자리에 새 적을 그린다 (다른 적은 지금 보이는 HP 그대로)
         this.shown(e.target, e.hpAfter);
         this.rebuildStage();
-        this.float(e.target, '등장!', '#FF9A4A', 15, true);
+        this.float(e.target, '등장!', 'var(--warn)', 15, true);
         wait = STEP * 0.8;
         break;
       default: {
         // 방어막에 막힘: 남은 횟수를 바로 줄여 보여 준다
         const guarded = this.units.get(e.target);
         if (e.barrier >= 0 && guarded) this.setBar(guarded, guarded.hp, e.shield, e.barrier);
-        this.float(e.actor, e.text ?? '', '#E2B657', 16, true);
+        this.float(e.actor, e.text ?? '', 'var(--gold)', 16, true);
       }
     }
     this.later(wait, () => this.playNext(events, i + 1));
@@ -539,7 +539,7 @@ export class BattleScreen extends Screen {
     const b = this.b!;
     const loot = S.lastLoot;
     const card = h('div', { class: 'card', role: 'button', style: { background: 'var(--accent-bg)', borderColor: 'var(--accent)', gap: '6px', padding: '12px 14px', cursor: 'pointer' }, on: { click: () => this.continue() } },
-      h('div', { class: 'gold', style: { fontSize: '20px' } }, b.isBoss ? '보스를 쓰러뜨렸다!' : '승리!'));
+      h('div', { class: 'gold display', style: { fontSize: '20px' } }, b.isBoss ? '보스를 쓰러뜨렸다!' : '승리!'));
     if (loot) {
       if (loot.Gold !== 0) card.append(h('div', null, `· 골드 +${loot.Gold.toLocaleString('en-US')}`));
       if (loot.Exp !== 0) card.append(h('div', null, `· 경험치 +${loot.Exp.toLocaleString('en-US')}`));

@@ -48,7 +48,7 @@ function finish(): void {
 // 말풍선 강조: 중요한 말은 금색, 좋음 초록, 나쁨 빨강
 const H = (t: string): string => `<span style="color:var(--gold)">${t}</span>`;
 const good = (t: string): string => `<span style="color:var(--green)">${t}</span>`;
-const bad = (t: string): string => `<span style="color:#E38A82">${t}</span>`;
+const bad = (t: string): string => `<span style="color:var(--red-light)">${t}</span>`;
 
 interface Step {
   key: string;

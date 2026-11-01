@@ -7,7 +7,7 @@ v2.5부터 **웹(TypeScript, `web/`)으로 개발하고 Capacitor로 안드로�
 
 - 실행: `cd web && npm install && npm run dev` · 점검 `npm run check` (타입·테스트 195개·빌드) · 실제 클릭 점검 `npm run build && npm run e2e` · 화면 틀 점검 `node scripts/layout.mjs`
 - 받기: main에 푸시하면 Releases `android-latest`(APK, 고정 키 서명이라 덮어 설치됨)·`web-latest`(웹 zip)
-- 글꼴: 프리텐다드 (SIL OFL 1.1) · 직업·스킬 요약: `docs/JOBS_SKILLS.md` · 이식·작업 방법: `docs/WEB_PORT.md`
+- 글꼴: 본문 프리텐다드 · 화면 제목 고운바탕 Bold (둘 다 SIL OFL 1.1, 부분 글꼴) · 직업·스킬 요약: `docs/JOBS_SKILLS.md` · 이식·작업 방법: `docs/WEB_PORT.md`
 
 ## Unity판 (기준용, v2.4까지)
 
@@ -105,6 +105,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 - 머리줄: 던전·시작 화면을 뺀 모든 화면이 높이 64 · 좌우 여백 16으로 같다 (`ScreenKit.BarHeight`). 접수원 대사 상자는 글자 크기에 맞춰 커져 5줄까지 잘리지 않는다.
 - 알림 점: 남은 능력치 포인트, 새 스킬, 완료 퀘스트, 상점 갱신.
 - 앱 아이콘·타이틀 배경 (v3.0): 던전 입구 앞의 모험가 그림(`public/illustrations/title_bg.webp`, 안드로이드 아이콘은 `web/android/app/src/main/res/mipmap-*`, 배경색 #0B182A). 글꼴은 게임에 쓰는 글자 + 완성형 한글 2,350자만 남긴 Pretendard 부분 글꼴 (1.5MB → 0.35MB).
+- 화면 스타일 (v3.2 리스타일): 컨셉 '횃불이 비추는 석실' — 바탕은 푸른 기가 살짝 도는 검정(#11161E), 글자는 양피지색(#F1E8D6), 주요 버튼·선택만 횃불 호박색(#F0A23B) 빛. 화면 제목은 고운바탕 Bold(167KB), 버튼은 누르면 살짝 작아지고 비활성은 색·글자·커서로 구분, 하단 메뉴 선택 칸 위 막대, 팝업·알림 등장 모션, 포커스 링, 기기 '움직임 줄이기' 지원. 색은 모두 `web/src/ui/app.css`의 `:root` 변수. 진단·비교 자료는 `docs/restyle/`.
 - 몬스터 (v3.0): 능력치는 자리가 아니라 종류의 특색(`monsters.json` `Trait`, 방패형 HP↑ 공격↓ · 후방 딜러 HP↓ 공격↑, 보스·튜토리얼 제외). 기본 공격은 명중 +12% 보정으로 적정 스펙에서 보스 외 몬스터에게 90~92% (`BasicAttackBonus`).
 - 일러스트: 마을(`town.webp`)·길드(`guild_receptionist.webp`)·대장간(`blacksmith.webp`)·수련장(`training.webp`)·상점(`shop.webp`) 적용. 나머지는 점선 상자로 표시됩니다.
   그림은 원본 비율을 유지한 채 잘라 채웁니다 (`Assets/Scripts/Editor/AssetImportRules.cs`가 2의 거듭제곱 늘림을 끄고 압축).

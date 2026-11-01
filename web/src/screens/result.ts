@@ -15,7 +15,7 @@ export type ResultKind = 'Death' | 'Hardcore' | 'Return' | 'Clear';
 const num = (n: number): string => n.toLocaleString('en-US');
 
 const heading = (title: string, color: string, subText: string): HTMLElement =>
-  h('div', { class: 'col', style: { gap: '6px', alignItems: 'center' } }, h('div', { style: { fontSize: '32px', color } }, title), h('div', { class: 'sub', style: { fontSize: '14px' } }, subText));
+  h('div', { class: 'col', style: { gap: '6px', alignItems: 'center' } }, h('div', { class: 'display', style: { fontSize: '32px', color } }, title), h('div', { class: 'sub', style: { fontSize: '14px' } }, subText));
 
 /** "고블린 궁수에게 패배" / "독으로 쓰러짐" */
 function cause(killedBy: string | undefined): string {
@@ -33,7 +33,7 @@ const line = (label: string, value: string, last = false): HTMLElement =>
 
 function change(delta: number, unit = ''): HTMLElement {
   if (delta === 0) return colored('-', 'var(--sub)');
-  return delta > 0 ? colored(`+${num(delta)}${unit}`, 'var(--green)') : colored(`-${num(-delta)}${unit}`, '#E38A82');
+  return delta > 0 ? colored(`+${num(delta)}${unit}`, 'var(--green)') : colored(`-${num(-delta)}${unit}`, 'var(--red-light)');
 }
 
 function tableRow(a: string, b: string | HTMLElement, d: string | HTMLElement, head = false, last = false): HTMLElement {
@@ -76,25 +76,25 @@ export class ResultScreen extends Screen {
   private death(body: HTMLElement): void {
     const d = S.lastDeath;
     if (!d) {
-      body.append(heading('패배', '#E38A82', ''));
+      body.append(heading('패배', 'var(--red-light)', ''));
       return;
     }
-    body.append(heading('패배', '#E38A82', `${d.Floor}층 · ${cause(d.KilledBy)}`));
+    body.append(heading('패배', 'var(--red-light)', `${d.Floor}층 · ${cause(d.KilledBy)}`));
     const expBefore = Math.floor(d.ExpPctBefore * 100), expAfter = Math.floor(d.ExpPctAfter * 100);
     body.append(h('div', { class: 'card', 'data-anchor': 'result.panel', style: { gap: '0', padding: '6px 12px' } },
       tableRow('항목', '이전', '변화', true),
       tableRow('골드', num(d.GoldBefore), change(-d.GoldLost)),
       tableRow('경험치', progress(d.ExpPctBefore, 'var(--blue)', 60), change(expAfter - expBefore, '%p')),
       tableRow('가방 아이템', `${d.BagBefore}개`, change(d.BagAfter - d.BagBefore, '개')),
-      tableRow(`${d.Floor}층 진행`, `${d.RoomsExplored}/${d.RoomsTotal}방`, colored('초기화', '#E38A82')),
+      tableRow(`${d.Floor}층 진행`, `${d.RoomsExplored}/${d.RoomsTotal}방`, colored('초기화', 'var(--red-light)')),
       tableRow('장착 장비', `${d.EquippedKept}개`, colored('유지', 'var(--green)')),
       tableRow('길드 창고', `${d.StorageCount}개`, colored('유지', 'var(--green)'), false, true)));
   }
 
   private hardcore(body: HTMLElement): void {
     const d = S.lastDeath;
-    body.append(heading('모험이 끝났다', '#E38A82', `${d?.Floor ?? 0}층 · ${cause(d?.KilledBy)}`));
-    const card = panel('하드코어', '#E38A82', 'var(--red-bg)', 'var(--red-border)');
+    body.append(heading('모험이 끝났다', 'var(--red-light)', `${d?.Floor ?? 0}층 · ${cause(d?.KilledBy)}`));
+    const card = panel('하드코어', 'var(--red-light)', 'var(--red-bg)', 'var(--red-border)');
     card.append(h('div', { style: { padding: '6px 0 14px' } }, '하드코어 난이도에서는 쓰러지면 캐릭터가 초기화됩니다. 새로운 모험가로 다시 도전하세요.'));
     body.append(card);
   }

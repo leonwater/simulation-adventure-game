@@ -30,7 +30,7 @@ import { goBattle, goEvent, goMerchant, goResult, goToCurrent } from './index';
 import { InventoryScreen } from './inventory';
 
 const MAP_W = 334, MAP_H = 204, NODE = 36;
-const CLEARED_ROOM = '#2D4A3B';
+const CLEARED_ROOM = 'var(--room-cleared)';
 const PAD_ARROW = { Up: '↑', Left: '←', Right: '→', Down: '↓' } as const;
 const PAD_NAME = { Up: '위', Left: '왼쪽', Right: '오른쪽', Down: '아래' } as const;
 const ROOM_ICON: Record<string, string> = { Battle: 'room_battle', Boss: 'room_boss', Event: 'room_event', Treasure: 'room_treasure', Rest: 'room_rest', Merchant: 'room_merchant', Return: 'room_return', Start: 'room_start' };
@@ -70,8 +70,8 @@ export class DungeonScreen extends Screen {
     this.choices(dock, run);
     const canReturn = S.canReturn;
     const ibtn = (name: string, label: string, onClick: () => void, style: 'normal' | 'return' | 'locked' = 'normal'): HTMLElement => {
-      const b = h('button', { class: 'ibtn', 'data-anchor': name === 'return' ? 'dungeon.return' : undefined, style: style === 'return' ? { background: 'var(--return-bg)', borderColor: 'var(--return-border)' } : style === 'locked' ? { background: '#221A1B', borderColor: '#4E3838', color: '#8A6E6C' } : {}, on: { click: onClick } },
-        icon(name, 26, style === 'locked' ? '#8A6E6C' : undefined), label);
+      const b = h('button', { class: 'ibtn', 'data-anchor': name === 'return' ? 'dungeon.return' : undefined, style: style === 'return' ? { background: 'var(--return-bg)', borderColor: 'var(--return-border)' } : style === 'locked' ? { background: '#221A1B', borderColor: '#4E3838', color: 'var(--locked-ink)' } : {}, on: { click: onClick } },
+        icon(name, 26, style === 'locked' ? 'var(--locked-ink)' : undefined), label);
       return b;
     };
     const page = h('div', { class: 'page', style: { background: th.bg } },
@@ -107,7 +107,7 @@ export class DungeonScreen extends Screen {
     run.FloorIntroPending = false;
     S.save();
     const el = h('div', { class: 'intro' },
-      h('div', { style: { fontSize: '44px', color: 'var(--gold)' } }, `${run.Floor}층`),
+      h('div', { class: 'display', style: { fontSize: '44px', color: 'var(--gold)' } }, `${run.Floor}층`),
       h('div', { style: { fontSize: '16px', color: dungeonTheme(themeIndex(run.Floor)).accent } }, themeFor(run.Floor).Name + (run.IsTutorial ? ' · 연습' : '')));
     window.setTimeout(() => {
       el.remove();
@@ -178,9 +178,9 @@ export class DungeonScreen extends Screen {
       descend: ['var(--descend-bg)', 'var(--descend-border)', 'var(--descend-text)', 'var(--descend-sub)'],
       return: ['var(--return-bg)', 'var(--return-border)', 'var(--return-text)', 'var(--return-sub)'],
       action: ['var(--action-bg)', 'var(--action-border)', 'var(--action-text)', 'var(--action-sub)'],
-      visited: ['var(--blue-bg)', 'var(--blue-border)', 'var(--blue-light)', '#7FA8D8'],
+      visited: ['var(--blue-bg)', 'var(--blue-border)', 'var(--blue-light)', 'var(--blue-sub)'],
       new: ['var(--accent-bg)', 'var(--accent)', 'var(--text)', 'var(--gold)'],
-      explore: ['var(--accent-bg)', 'var(--accent)', 'var(--gold)', '#C9A65A'],
+      explore: ['var(--accent-bg)', 'var(--accent)', 'var(--gold)', 'var(--gold-sub)'],
     }[kind];
     return h('button', { class: 'choice', style: { background: sty[0], borderColor: sty[1], color: sty[2], flexDirection: right ? 'row' : 'column', alignItems: right ? 'center' : 'flex-start', justifyContent: 'center', minHeight: '60px' }, on: { click: onClick } },
       h('div', { class: 'col grow', style: { gap: '2px', alignItems: 'flex-start' } }, h('span', { class: 't' }, title), subText ? h('span', { class: 's', style: { color: sty[3] } }, subText) : null),
@@ -214,7 +214,7 @@ export class DungeonScreen extends Screen {
     let fill: string, border: string, text: string;
     let glow = false;
     if (!room || !open) {
-      fill = '#1B1813'; border = '#3A3326'; text = '#6E675A';
+      fill = 'var(--pad-off-bg)'; border = 'var(--pad-off-border)'; text = 'var(--pad-off-ink)';
     } else {
       const shown = displayType(room);
       const special = slot.Known && (shown === 'Return' || shown === 'Boss');
@@ -303,7 +303,7 @@ export class DungeonScreen extends Screen {
     const hgt = (scr?.clientHeight ?? 844) < 760 ? 150 : MAP_H;
     const map = h('div', { class: 'minimap', style: { width: `${w}px`, height: `${hgt}px` } });
     this.drawMap(map, w, hgt, run, null);
-    return h('div', { role: 'button', 'data-anchor': 'dungeon.map', style: { background: '#191C23', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
+    return h('div', { role: 'button', 'data-anchor': 'dungeon.map', style: { background: 'var(--well)', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
       map,
       h('div', { class: 'row', style: { gap: '12px', fontSize: '12px', height: '32px' } },
         colored('■ 클리어', 'var(--return-sub)'), colored('■ 현재 위치', 'var(--gold)'), colored('□ 갈 수 있음', 'var(--gold)'), h('span', { class: 'spacer' }),
@@ -325,7 +325,7 @@ export class DungeonScreen extends Screen {
       if (S.teleport(room.Id)) router.rebuild();
     } : null);
     m.body.append(sub(can ? '탐험을 마친 방을 누르면 그곳으로 순간이동합니다.' : '지금 방을 끝내야 이동할 수 있습니다.'),
-      h('div', { style: { background: '#191C23', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '4px' } }, map),
+      h('div', { style: { background: 'var(--well)', border: '1px solid var(--card-border)', borderRadius: '12px', padding: '4px' } }, map),
       h('div', { class: 'row', style: { gap: '12px', fontSize: '12px' } }, colored('■ 클리어', 'var(--return-sub)'), colored('■ 현재 위치', 'var(--gold)'), colored('□ 갈 수 있음', 'var(--gold)')));
   }
 
@@ -366,8 +366,8 @@ export class DungeonScreen extends Screen {
       const known = r.Visited || easy || r.Revealed;
       const chain = r.Chain && !r.Visited;
       // 클리어한 방은 초록빛, 들어갔지만 끝내지 못한 방(도망친 전투)은 회색
-      const fill = isCur ? 'var(--accent)' : r.Visited && r.Cleared ? CLEARED_ROOM : r.Visited ? '#2A2E38' : '#191C23';
-      const border = isCur ? 'var(--accent)' : next ? 'var(--gold)' : chain ? '#E2B657B3' : r.Visited ? line : '#4A5060';
+      const fill = isCur ? 'var(--accent)' : r.Visited && r.Cleared ? CLEARED_ROOM : r.Visited ? 'var(--line)' : 'var(--well)';
+      const border = isCur ? 'var(--accent)' : next ? 'var(--gold)' : chain ? 'var(--chain-border)' : r.Visited ? line : 'var(--slot-border)';
       const tint = isCur ? 'var(--on-accent)' : next ? 'var(--gold)' : r.Visited ? 'var(--text)' : 'var(--sub)';
       const [x, y] = pos(r);
       const tappable = !!onTeleport && !isCur && r.Visited && r.Cleared;
@@ -425,7 +425,7 @@ export class DungeonScreen extends Screen {
   private bossChoice(run: DungeonRun): HTMLElement {
     const last = run.Floor >= B.MaxFloor;
     const card = h('div', { class: 'card', style: { width: '100%', gap: '10px', padding: '18px 16px', background: 'var(--dialog)', borderColor: 'var(--gold)' } },
-      h('b', { class: 'gold center', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : `${run.Floor}층 보스 처치`),
+      h('b', { class: 'gold center display', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : `${run.Floor}층 보스 처치`),
       // 맨 위: 이 층에 남은 방을 더 둘러본다 (보스 방에서 나가면 같은 층을 이어서 탐험)
       this.bigButton('explore', '이 층 탐험', '남은 방을 더 둘러보기', () => {
         exploringAfterBoss.add(run);

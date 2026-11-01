@@ -101,11 +101,11 @@ export function showEnemyInfo(e: Combatant, isTarget: boolean, makeTarget: () =>
   const m = modal(e.name);
   const hpText = `HP ${e.hp}/${e.maxHp}`;
   const k = e.kit;
-  m.body.append(h('b', { style: { fontSize: '13px', color: e.role === 2 ? '#E0873A' : e.role === 1 ? 'var(--gold)' : 'var(--sub)' } }, `${role} 몬스터`),
-    h('div', null, hpText, k && k.shield > 0 ? colored(` · 보호막 ${k.shield}`, '#8FC7FF') : null, k && k.barrier > 0 ? colored(` · 방어막 ${k.barrier}회`, '#C9B8FF') : null),
+  m.body.append(h('b', { style: { fontSize: '13px', color: e.role === 2 ? 'var(--boss)' : e.role === 1 ? 'var(--gold)' : 'var(--sub)' } }, `${role} 몬스터`),
+    h('div', null, hpText, k && k.shield > 0 ? colored(` · 보호막 ${k.shield}`, 'var(--info)') : null, k && k.barrier > 0 ? colored(` · 방어막 ${k.barrier}회`, 'var(--barrier)') : null),
     progress(e.hp / Math.max(1, e.maxHp), 'var(--red)'),
     pair('공격력', String(e.attack), '방어력', String(e.defense)));
-  if (k && k.intent) m.body.append(h('b', { style: { fontSize: '13px' } }, '다음 턴 ', colored(k.intent, '#FF9A4A')));
+  if (k && k.intent) m.body.append(h('b', { style: { fontSize: '13px' } }, '다음 턴 ', colored(k.intent, 'var(--warn)')));
   m.body.append(...section('상태 이상'));
   const list = e.statuses.visible();
   if (list.length === 0) m.body.append(sub('걸린 상태 이상이 없습니다.'));
