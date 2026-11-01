@@ -1,6 +1,6 @@
 # 직업·스킬 요약 (v3.5)
 
-> 빠르게 읽기 위한 요약. 원본은 `web/src/data/jobs.json`·`skills.json`·`balance.json` (웹 JSON이 원본). 바뀌면 이 문서도 함께 고친다.
+> 빠르게 읽기 위한 요약. 원본은 `web/src/core/jobs.ts`(직업)·`web/src/data/skills.json`·`balance.json`. 바뀌면 이 문서도 함께 고친다.
 
 ## 공통 규칙
 

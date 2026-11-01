@@ -26,8 +26,6 @@ import { settings, vibrate } from '../ui/settings';
 import { goDungeon, goResult, goTitle, goToCurrent } from './index';
 
 const STEP = 320;
-type Shape = 'circle' | 'square' | 'hexagon';
-const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%)';
 /** 그림 배율: 혼자 나온 보스는 4배, 나머지 3배 (그림은 24칸 이하) */
 const spriteScale = (size: number): number => (size >= 90 ? 4 : 3);
 
@@ -62,9 +60,9 @@ function enemyCenters(n: number): [number, number][] {
 }
 
 /**
- * 전투: 위쪽 전투 무대(왼쪽 내 원형, 오른쪽 적 최대 4 — 일반 사각형 · 엘리트 굵은 테두리 · 보스 육각형),
+ * 전투: 위쪽 전투 무대(왼쪽 나, 오른쪽 적 최대 4 — 픽셀 그림, 발밑 타원: 보스 보스 색 · 정예 금색 · 일반 그림자),
  * 적을 눌러 대상 선택, 2~3줄 기록, 아래 선택지(성공 확률, 길게 누르면 계산 내역).
- * 행동 결과는 Battle.lastEvents를 차례로 재생한다 (돌진·흔들림·번쩍임·떠오르는 피해 숫자).
+ * 행동 결과는 Battle.lastEvents를 차례로 재생한다 (돌진·흔들림·번쩍임·떠오르는 피해 숫자 + 이펙트 ui/fx.ts).
  */
 export class BattleScreen extends Screen {
   private b: Battle | null = null;
@@ -172,26 +170,25 @@ export class BattleScreen extends Screen {
   private buildStage(): void {
     const b = this.b!;
     const p = b.player;
-    this.unit(-1, p, [84, 158], 76, 'circle', 'var(--unit-player)', 'var(--blue-light)', 3, 130, `HP ${p.hp}/${p.maxHp}`, false);
+    this.unit(-1, p, [84, 158], 76, '', 130, `HP ${p.hp}/${p.maxHp}`, false);
     const centers = enemyCenters(b.enemies.length);
     b.enemies.forEach((e, i) => {
       const many = b.enemies.length > 1;
-      const shape: Shape = e.role === 2 ? 'hexagon' : 'square';
       const size = e.role === 2 ? (many ? 72 : 96) : e.role === 1 ? 62 : 56;
-      const border = e.role === 2 ? 'var(--boss)' : e.role === 1 ? 'var(--gold)' : 'var(--unit-enemy-border)';
-      const borderW = e.role === 0 ? 2 : 5;
-      const fill = e.role === 2 ? 'var(--unit-boss-bg)' : 'var(--unit-enemy-bg)';
-      this.unit(i, e, centers[Math.min(i, centers.length - 1)], size, shape, fill, border, borderW, many ? 94 : 130, e.role === 1 ? `★${e.name}` : e.name, true);
+      // 발밑 타원 색: 보스 = 보스 색, 정예 = 금색, 일반 = 그림자
+      const foot = e.role === 2 ? 'var(--boss)' : e.role === 1 ? 'var(--gold)' : '';
+      this.unit(i, e, centers[Math.min(i, centers.length - 1)], size, foot, many ? 94 : 130, e.role === 1 ? `★${e.name}` : e.name, true);
     });
   }
 
-  private unit(index: number, c: Combatant, center: [number, number], size: number, shape: Shape, fill: string, border: string, borderW: number, width: number, title: string, enemy: boolean): void {
+  /** 유닛: 픽셀 그림(모든 직업·몬스터에 있음) + 발밑 타원 + 이름·HP 막대. footColor가 빈 글자면 그림자. */
+  private unit(index: number, c: Combatant, center: [number, number], size: number, footColor: string, width: number, title: string, enemy: boolean): void {
     const b = this.b!;
     const stage = this.stage!;
     const spriteId = enemy ? c.species?.Id : b.character.Job.toLowerCase();
-    const sprite = spriteUrl(spriteId);
+    const sprite = spriteUrl(spriteId) ?? '';
     // 이름·HP 막대는 그림(바닥 맞춤, 24칸 × 배율) 위로
-    const body = sprite ? Math.max(size, 24 * spriteScale(size)) : size;
+    const body = Math.max(size, 24 * spriteScale(size));
     const top = center[1] + size / 2 - body;
     const hp = this.hpBefore?.get(index) ?? c.hp;
     const alive = hp > 0;
@@ -209,25 +206,14 @@ export class BattleScreen extends Screen {
     const barFill = h('i', { style: { background: enemy ? 'var(--red)' : 'var(--green)' } });
     stage.append(h('div', { class: 'hpbar', style: { left: `${center[0] - barW / 2}px`, top: `${top - 12}px`, width: `${barW}px` } }, barFill));
 
-    // 도형 (선택 표시 → 테두리 → 채움). 도형 안에는 글자를 넣지 않는다
+    // 픽셀 그림: 무대에 정수 배율로 세운다. 선택한 적은 발밑이 금색으로 깜빡임
     const root = h('div', { class: 'unit-shape', style: { left: `${center[0] - size / 2}px`, top: `${center[1] - size / 2}px`, width: `${size}px`, height: `${size}px`, opacity: alive ? '1' : '.3' } });
-    const layer = (color: string, inset: number): HTMLElement => {
-      const el = h('div', { style: { left: `${inset}px`, top: `${inset}px`, right: `${inset}px`, bottom: `${inset}px`, background: color, borderRadius: shape === 'circle' ? '50%' : shape === 'square' ? '8px' : '0', clipPath: shape === 'hexagon' ? HEX : '' } });
-      return el;
-    };
-    const selected = enemy && index === this.target && alive && !b.isOver;
-    if (sprite) {
-      // 픽셀 그림: 테두리 없이 무대에 정수 배율로 세운다. 발밑 타원 = 보스·정예 색(일반은 그림자), 선택하면 금색으로 깜빡임
-      const foot = (color: string): HTMLElement => h('div', { class: 'unit-foot', style: { background: color } });
-      root.append(foot(enemy && c.role > 0 ? border : 'var(--foot-shadow)'));
-      if (selected) root.append(Object.assign(foot('var(--gold)'), { className: 'unit-foot blink' }));
-      const img = h('img', { src: sprite, alt: '', class: 'unit-sprite' }) as HTMLImageElement;
-      img.onload = () => { img.style.width = `${img.naturalWidth * spriteScale(size)}px`; };
-      root.append(img);
-    } else {
-      if (selected) root.append(Object.assign(layer('var(--gold)', -7), { className: 'blink' }));
-      root.append(layer(border, 0), layer(fill, borderW));
-    }
+    const foot = (color: string): HTMLElement => h('div', { class: 'unit-foot', style: { background: color } });
+    root.append(foot(footColor || 'var(--foot-shadow)'));
+    if (enemy && index === this.target && alive && !b.isOver) root.append(Object.assign(foot('var(--gold)'), { className: 'unit-foot blink' }));
+    const img = h('img', { src: sprite, alt: '', class: 'unit-sprite' }) as HTMLImageElement;
+    img.onload = () => { img.style.width = `${img.naturalWidth * spriteScale(size)}px`; };
+    root.append(img);
     const v: UnitView = { shape: root, bar: barFill, hpText, enemyHp: enemy, center, size, body, maxHp: c.maxHp, hp, shield: c.kit ? c.kit.shield : -1, barrier: c.kit ? c.kit.barrier : -1 };
     this.setBar(v, hp, c.kit ? c.kit.shield : -1, c.kit ? c.kit.barrier : -1);
     if (alive) {

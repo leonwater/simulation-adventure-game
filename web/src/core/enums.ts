@@ -1,8 +1,6 @@
 /** C# Enums.cs와 같은 순서·이름. 저장 파일에는 열거형이 이름(문자열)으로 들어간다. */
 export const JOBS = ['Warrior', 'Archer', 'Rogue', 'Mage'] as const;
 export const STATS = ['Vitality', 'Spirit', 'Luck', 'Strength', 'Agility', 'Intelligence'] as const;
-/** v3.5 이전 저장의 능력치 칸 수 (맨 끝 4칸 = 강인함·정밀·기교·주문력) */
-export const OLD_STAT_COUNT = 10;
 export const RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S', 'SS'] as const;
 export const DIFFICULTIES = ['Easy', 'Normal', 'Hard', 'Hardcore'] as const;
 export const GRADES = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'] as const;
