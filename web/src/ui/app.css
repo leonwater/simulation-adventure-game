@@ -70,14 +70,15 @@ button.card-btn.on { background: var(--accent-bg); border-color: var(--accent); 
 .red { color: var(--red-light); }
 .divider { height: 1px; background: var(--line); margin: 4px 0; }
 .ic { display: inline-block; flex-shrink: 0; vertical-align: middle; }
-img.ic { object-fit: contain; }
+img.ic { object-fit: contain; image-rendering: pixelated; }
 span.ic { background-color: currentColor; -webkit-mask: var(--src) center / contain no-repeat; mask: var(--src) center / contain no-repeat; }
 .dot { position: absolute; top: 8px; right: 8px; width: 10px; height: 10px; border-radius: 50%; background: var(--red); }
 .progress { height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
 .progress > i { display: block; height: 100%; background: var(--blue); }
 
 /* 일러스트 + 대사 */
-.illust { position: relative; background: var(--illust-bg) center / cover no-repeat; flex-shrink: 0; }
+.illust { position: relative; background: var(--illust-bg) center / cover no-repeat; flex-shrink: 0; image-rendering: pixelated; }
+.illust > *, .title-bg { image-rendering: pixelated; } /* v3.6 일러스트는 픽셀화한 작은 그림(200px)을 키워 보인다 */
 .illust.round { border-radius: 12px; overflow: hidden; }
 .illust .shade { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(to top, var(--shade), transparent); }
 .dialogue { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--dialogue-bg); border: 1px solid var(--btn-border); border-radius: 12px; padding: 12px 14px; line-height: 1.5; font-size: 15px; }
