@@ -23,9 +23,11 @@ import { goDungeon, goResult, goTitle, goToCurrent } from './index';
 const STEP = 320;
 type Shape = 'circle' | 'square' | 'hexagon';
 const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%)';
-/** public/sprites/ 에 그림이 있는 유닛 (직업은 영문 소문자, 몬스터는 monsters.json Id). art/units.px.js → scripts/sprites.sh */
-const SPRITES = new Set(['warrior', 'slime', 'goblin', 'skeleton']);
-const SPRITE_H = 72;
+/** 유닛 픽셀 그림 (파일 이름 = 직업 영문 소문자 · monsters.json Id). art/units.px.js → scripts/sprites.sh. 없는 종류는 도형 */
+const SPRITES: Record<string, string> = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('../assets/sprites/*.png', { eager: true, import: 'default' })).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -4), url]));
+/** 그림 배율: 혼자 나온 보스는 4배, 나머지 3배 (그림은 24칸 이하) */
+const spriteScale = (size: number): number => (size >= 90 ? 4 : 3);
 
 interface UnitView {
   shape: HTMLElement;
@@ -179,9 +181,9 @@ export class BattleScreen extends Screen {
     const b = this.b!;
     const stage = this.stage!;
     const spriteId = enemy ? c.species?.Id : b.character.Job.toLowerCase();
-    const sprite = !!spriteId && SPRITES.has(spriteId);
-    // 이름·HP 막대는 그림(바닥 맞춤, 최대 24칸 × 3배) 위로
-    const top = center[1] + size / 2 - (sprite ? Math.max(size, SPRITE_H) : size);
+    const spriteUrl = spriteId ? SPRITES[spriteId] : undefined;
+    // 이름·HP 막대는 그림(바닥 맞춤, 24칸 × 배율) 위로
+    const top = center[1] + size / 2 - (spriteUrl ? Math.max(size, 24 * spriteScale(size)) : size);
     const hp = this.hpBefore?.get(index) ?? c.hp;
     const alive = hp > 0;
     // 보스의 다음 턴 행동 예고는 이름 자리에 주황색으로 (연출 중에는 이름)
@@ -205,13 +207,13 @@ export class BattleScreen extends Screen {
       return el;
     };
     const selected = enemy && index === this.target && alive && !b.isOver;
-    if (sprite) {
-      // 픽셀 그림: 테두리 없이 무대에 3배로 세운다. 발밑 타원 = 보스·정예 색(일반은 그림자), 선택하면 금색으로 깜빡임
+    if (spriteUrl) {
+      // 픽셀 그림: 테두리 없이 무대에 정수 배율로 세운다. 발밑 타원 = 보스·정예 색(일반은 그림자), 선택하면 금색으로 깜빡임
       const foot = (color: string): HTMLElement => h('div', { class: 'unit-foot', style: { background: color } });
       root.append(foot(enemy && c.role > 0 ? border : 'var(--foot-shadow)'));
       if (selected) root.append(Object.assign(foot('var(--gold)'), { className: 'unit-foot blink' }));
-      const img = h('img', { src: `sprites/${spriteId}.png`, alt: '', class: 'unit-sprite' }) as HTMLImageElement;
-      img.onload = () => { img.style.width = `${img.naturalWidth * 3}px`; };
+      const img = h('img', { src: spriteUrl, alt: '', class: 'unit-sprite' }) as HTMLImageElement;
+      img.onload = () => { img.style.width = `${img.naturalWidth * spriteScale(size)}px`; };
       root.append(img);
     } else {
       if (selected) root.append(Object.assign(layer('var(--gold)', -7), { className: 'blink' }));
