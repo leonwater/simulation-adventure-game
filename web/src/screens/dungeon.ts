@@ -107,7 +107,7 @@ export class DungeonScreen extends Screen {
     run.FloorIntroPending = false;
     S.save();
     const el = h('div', { class: 'intro' },
-      h('div', { style: { fontSize: '44px', color: 'var(--gold)' } }, `${run.Floor}층`),
+      h('div', { class: 'display', style: { fontSize: '44px', color: 'var(--gold)' } }, `${run.Floor}층`),
       h('div', { style: { fontSize: '16px', color: dungeonTheme(themeIndex(run.Floor)).accent } }, themeFor(run.Floor).Name + (run.IsTutorial ? ' · 연습' : '')));
     window.setTimeout(() => {
       el.remove();
@@ -425,7 +425,7 @@ export class DungeonScreen extends Screen {
   private bossChoice(run: DungeonRun): HTMLElement {
     const last = run.Floor >= B.MaxFloor;
     const card = h('div', { class: 'card', style: { width: '100%', gap: '10px', padding: '18px 16px', background: 'var(--dialog)', borderColor: 'var(--gold)' } },
-      h('b', { class: 'gold center', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : `${run.Floor}층 보스 처치`),
+      h('b', { class: 'gold center display', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : `${run.Floor}층 보스 처치`),
       // 맨 위: 이 층에 남은 방을 더 둘러본다 (보스 방에서 나가면 같은 층을 이어서 탐험)
       this.bigButton('explore', '이 층 탐험', '남은 방을 더 둘러보기', () => {
         exploringAfterBoss.add(run);

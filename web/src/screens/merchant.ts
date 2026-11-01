@@ -46,7 +46,7 @@ export class MerchantScreen extends Screen {
     const body = this.tab === 0 ? grid(room.MerchantGoods.map((g) => this.goodCell(g))) : grid(c.Inventory.Items.map((i) => this.sellCell(i)));
     return h('div', { class: 'page', style: { background: th.bg } },
       dungeonTop(),
-      h('div', { style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', textAlign: 'center', padding: '20px 0 14px', flexShrink: '0' } }, room.MerchantDiscount ? '구해 준 상인' : '떠돌이 상인'),
+      h('div', { class: 'display', style: { fontSize: '22px', fontWeight: '700', color: 'var(--gold)', textAlign: 'center', padding: '20px 0 14px', flexShrink: '0' } }, room.MerchantDiscount ? '구해 준 상인' : '떠돌이 상인'),
       tabs(['구매', '판매'], this.tab, (i) => {
         this.tab = i;
         router.rebuild();

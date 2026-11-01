@@ -27,7 +27,7 @@ export class TownScreen extends Screen {
       // 한 화면에 맞춤: 일러스트가 남는 높이만큼만 차지한다 (작은 폰에서는 줄어든다)
       h('div', { class: 'scroll fit', style: { gap: '14px' } },
         h('div', { class: 'illust round', style: { flex: '1 1 0', minHeight: '90px', maxHeight: '220px', backgroundImage: `url(${assetUrl('illustrations/town.webp')})` } }),
-        row(h('b', { class: 'grow', style: { fontSize: '22px' } }, '라브 마을'), h('b', { style: { color: DIFFICULTY_COLOR[S.difficulty], fontSize: '14px' } }, Names.difficulty(S.difficulty))),
+        row(h('b', { class: 'grow display', style: { fontSize: '22px' } }, '라브 마을'), h('b', { style: { color: DIFFICULTY_COLOR[S.difficulty], fontSize: '14px' } }, Names.difficulty(S.difficulty))),
         c.UnspentPoints > 0
           ? h('button', { class: 'card-btn on', style: { minHeight: '44px', color: 'var(--gold)', fontSize: '13px' }, on: { click: () => navigate('character') } }, `능력치 포인트 ${c.UnspentPoints} — 캐릭터 화면에서 배분하세요`)
           : null,

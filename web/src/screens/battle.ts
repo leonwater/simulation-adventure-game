@@ -539,7 +539,7 @@ export class BattleScreen extends Screen {
     const b = this.b!;
     const loot = S.lastLoot;
     const card = h('div', { class: 'card', role: 'button', style: { background: 'var(--accent-bg)', borderColor: 'var(--accent)', gap: '6px', padding: '12px 14px', cursor: 'pointer' }, on: { click: () => this.continue() } },
-      h('div', { class: 'gold', style: { fontSize: '20px' } }, b.isBoss ? '보스를 쓰러뜨렸다!' : '승리!'));
+      h('div', { class: 'gold display', style: { fontSize: '20px' } }, b.isBoss ? '보스를 쓰러뜨렸다!' : '승리!'));
     if (loot) {
       if (loot.Gold !== 0) card.append(h('div', null, `· 골드 +${loot.Gold.toLocaleString('en-US')}`));
       if (loot.Exp !== 0) card.append(h('div', null, `· 경험치 +${loot.Exp.toLocaleString('en-US')}`));

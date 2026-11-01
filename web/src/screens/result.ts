@@ -15,7 +15,7 @@ export type ResultKind = 'Death' | 'Hardcore' | 'Return' | 'Clear';
 const num = (n: number): string => n.toLocaleString('en-US');
 
 const heading = (title: string, color: string, subText: string): HTMLElement =>
-  h('div', { class: 'col', style: { gap: '6px', alignItems: 'center' } }, h('div', { style: { fontSize: '32px', color } }, title), h('div', { class: 'sub', style: { fontSize: '14px' } }, subText));
+  h('div', { class: 'col', style: { gap: '6px', alignItems: 'center' } }, h('div', { class: 'display', style: { fontSize: '32px', color } }, title), h('div', { class: 'sub', style: { fontSize: '14px' } }, subText));
 
 /** "고블린 궁수에게 패배" / "독으로 쓰러짐" */
 function cause(killedBy: string | undefined): string {

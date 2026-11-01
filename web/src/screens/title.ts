@@ -21,7 +21,7 @@ export class TitleScreen extends Screen {
       h('div', { class: 'spacer', style: { flex: '1.2' } }),
       col(
         h('div', { style: { color: 'var(--accent)', fontSize: '14px', textAlign: 'center' } }, '─  ◆  ─'),
-        h('div', { style: { color: 'var(--gold)', fontSize: '40px', textAlign: 'center', fontWeight: '700' } }, '모험가 키우기'),
+        h('div', { class: 'display', style: { color: 'var(--gold)', fontSize: '40px', textAlign: 'center', fontWeight: '700' } }, '모험가 키우기'),
       ),
       h('div', { class: 'spacer' }),
       col(
