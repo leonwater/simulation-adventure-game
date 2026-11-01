@@ -16,6 +16,14 @@ const SETUP = `(() => {
   S.newGame('아주긴이름모험가', 'Warrior', 'Normal');
   S.setTutorial('Done');
   const c = S.c; c.Level = 24; c.Gold = 1234567; c.HighestFloorCleared = 12; c.UnspentPoints = 6; S.selectFloor(13);
+  // 물품 칸의 모든 경우: 강화 없음 · +5 · +12, 개수 1 · 99, 긴 이름, 장비·소모품·재료·스킬서·강화석
+  const I = window.__items, add = (i) => I.addItem(c.Inventory, i);
+  c.Inventory.Capacity = 30;
+  const g = (gear, grade, lv, enh) => { const i = I.createGear(gear, grade, lv, 'Warrior', 'Strength'); i.Enhance = enh; return i; };
+  [g('Weapon', 'Legendary', 30, 12), g('Armor', 'Epic', 40, 5), g('Helmet', 'Rare', 20, 0), g('Ring', 'Uncommon', 50, 15), g('Necklace', 'Common', 9, 9)].forEach(add);
+  add(I.createConsumable('potion', 99)); add(I.createConsumable('potion_hi', 3)); add(I.createConsumable('bandage', 12));
+  add(I.createMaterial('mat_slime', 7)); add(I.createMaterial('mat_ancient_core', 1)); add(I.createEnhanceStone(150)); add(I.createSkillBook('m_apocalypse', 2));
+  I.addItem(c.Storage, g('Boots', 'Legendary', 60, 10)); I.addItem(c.Storage, I.createMaterial('mat_reaper', 3));
   S.save();
 })()`;
 const enterDungeon = `(() => { const S = window.__S; if (!S.inDungeon) S.enterDungeon(); S.run.FloorIntroPending = false; window.__go(); })()`;
@@ -92,6 +100,23 @@ const CHECK = () => {
       out.push(`가로 넘침: ${desc(el)} (${el.scrollWidth}>${el.clientWidth})`);
     if (el.scrollHeight > el.clientHeight + 2 && oy === 'hidden' && el.clientHeight > 0 && !el.classList.contains('stagewrap') && !el.classList.contains('screen') && !el.classList.contains('illust') && cs.textOverflow !== 'ellipsis')
       out.push(`세로 잘림: ${desc(el)} (${el.scrollHeight}>${el.clientHeight})`);
+  }
+  // (5) 어색한 줄바꿈: 짧은 글(10자 이하)이 두 줄로 갈림 ('SS / 등급'), ' · '로 나눈 한 마디가 두 줄로 갈림 ('빠른 / 재사용')
+  const lines = (node, from, to) => {
+    const rg = document.createRange(); rg.setStart(node, from); rg.setEnd(node, to);
+    return new Set([...rg.getClientRects()].filter((r) => r.width > 0.5).map((r) => Math.round(r.top / 4))).size;
+  };
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    const t = n.textContent, el = n.parentElement;
+    if (!t.trim() || !el || !el.closest('.screen, .layer') || el.closest('.floatup, .flash, .toast, .intro, .stage')) continue;
+    const short = t.trim().length <= 10;
+    if (short && lines(n, 0, t.length) > 1) { out.push(`줄바꿈: ${desc(el)}`); continue; }
+    let at = 0;
+    for (const part of t.split(' · ')) {
+      if (part.trim().length > 1 && part.trim().length <= 16 && lines(n, at, at + part.length) > 1) out.push(`줄바꿈(마디): ${desc(el)} 「${part.trim()}」`);
+      at += part.length + 3;
+    }
   }
   return [...new Set(out)];
 };

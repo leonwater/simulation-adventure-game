@@ -1,6 +1,5 @@
-@font-face { font-family: 'Pretendard'; font-weight: 400; src: url('/fonts/Pretendard-Regular.woff2') format('woff2'); font-display: swap; }
-@font-face { font-family: 'Gowun Batang'; font-weight: 700; src: url('/fonts/GowunBatang-Bold.woff2') format('woff2'); font-display: swap; } /* R3 제목 글꼴 (OFL, 게임에 쓰는 글자 + 완성형 2,350자만) */
-@font-face { font-family: 'Pretendard'; font-weight: 700; src: url('/fonts/Pretendard-Bold.woff2') format('woff2'); font-display: swap; }
+@font-face { font-family: 'Galmuri11'; font-weight: 400; src: url('/fonts/Galmuri11.woff2') format('woff2'); font-display: swap; } /* v3.6 픽셀 글꼴 갈무리 (OFL, 게임에 쓰는 글자 + 완성형 2,350자만) */
+@font-face { font-family: 'Galmuri11'; font-weight: 700; src: url('/fonts/Galmuri11-Bold.woff2') format('woff2'); font-display: swap; }
 :root {
   /* R2 글자·강조: 양피지색 글자, 횃불 호박색 강조 (v3.2) */
   /* R1 바탕·카드: 푸른 기가 살짝 도는 검정 (v3.2 리스타일, 검정과 아이콘 남색의 중간) */
@@ -20,8 +19,8 @@
   /* 전투 */
   --c-skill-bg: #182235; --c-skill-border: #344663; --c-item-bar: #7DB38A; --c-item-bg: #1A231E; --c-item-border: #34503C; --c-flee-bar: #B07A70; --c-flee-bg: #221C1D; --c-flee-border: #4A3634; --c-attack-bar: #A9A39A; --c-wait-bar: #6A6E78;
   /* 겹침·글꼴 */
-  --font-body: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
-  --font-display: 'Gowun Batang', var(--font-body);
+  --font-body: 'Galmuri11', 'Noto Sans KR', system-ui, sans-serif;
+  --font-display: var(--font-body);
   --track: #28303F; --illust-bg: #161C26; --shade: rgba(8,10,16,0.92); --dialogue-bg: rgba(24,30,40,0.94); --dim: rgba(0,0,0,.6); --foot-shadow: rgba(0,0,0,.35); --scrim: rgba(0,0,0,.72);
   --toast-bg: rgba(32,38,52,0.96); --ink-shadow: #000; --placeholder: #7D7666; --chip-bg: rgba(255,255,255,.12);
   /* R6 움직임 곡선 (emil-design-eng: UI 등장은 강한 ease-out, 화면 위 이동은 ease-in-out) */
@@ -33,7 +32,7 @@
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; height: 100%; background: var(--page); color: var(--text);
-  font-family: var(--font-body); word-break: keep-all; overflow-wrap: anywhere; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
+  font-family: var(--font-body); word-break: keep-all; overflow-wrap: anywhere; text-wrap: pretty; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
 #app { height: var(--app-h, 100%); display: flex; justify-content: center; }
 /* 세로 모바일 화면(390×844 비율)을 브라우저 높이에 맞춘다. 폰에서는 화면 전체 */
 .screen { position: relative; width: 100%; max-width: 480px; height: 100%; background: var(--bg);
@@ -214,7 +213,7 @@ input.text::placeholder { color: var(--placeholder); }
   -webkit-mask-image: radial-gradient(closest-side, var(--ink-shadow) 50%, transparent 100%); mask-image: radial-gradient(closest-side, var(--ink-shadow) 50%, transparent 100%); }
 .title-bg ~ * { position: relative; }
 
-/* R3 제목 글꼴: 화면 제목·팝업 제목·큰 제목만 명조 (본문은 Pretendard) */
+/* 제목: 같은 픽셀 글꼴 굵게 */
 .bar .title, .modal h3, .display { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; }
 
 /* R4 버튼·카드: 모서리 위계, 눌림 반응, 주요 행동만 횃불빛, 비활성은 바탕·글자·커서 세 가지로 */
