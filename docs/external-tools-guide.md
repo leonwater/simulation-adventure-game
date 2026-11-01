@@ -348,7 +348,7 @@ rea README의 예시 프롬프트가 "이해 → 근거 제시 → 내 프로젝
 - **큰 개편 뒤 코드 정리**: `ponytail-review`·`ponytail-audit`. 쓰지 않는 함수·CSS 점검(CLAUDE.md 4번)과 함께 봅니다.
 - **릴리스 전 보안 감사**는 `security-audit`. 이 프로젝트는 서명 키·비밀번호를 저장소에 넣지 않는 규칙이 있으니, 보고서에 키 관련 항목이 나오면 우선 확인합니다.
 - **코드 구조 질문**(예: 전투 계산이 어디서 시작하는지)에는 `graphify`를 쓸 수 있습니다. 결과 폴더 `graphify-out/`는 저장소에 넣지 않습니다.
-- **전투 유닛 픽셀 그림**은 `claude-pxl`. 모두 오른쪽을 보게 그리고 몬스터는 `flip: "x"`로 뒤집는다(플레이어와 마주 봄). 원본은 `web/art/units.px.js`, 그리기는 `bash web/scripts/sprites.sh`(claude-pxl을 고정 커밋으로 `web/.pxl/`에 받아 빌드 → `web/public/sprites/`). 새 그림은 `web/src/screens/battle.ts`의 `SPRITES` 목록에 이름(직업은 영문 소문자, 몬스터는 `monsters.json` Id)을 추가해야 게임에 나옵니다. 그림 높이는 24칸 이하(게임에서 3배). 클라우드 세션에서 실행이 막히면 저장소 `.claude/settings.json`의 허용 규칙을 확인합니다.
+- **게임의 모든 픽셀 그림은 `claude-pxl`** (그림체 통일, v3.6): 전투 유닛 `web/art/units.px.js`, 물품 `web/art/items.px.js`(14×14 + 테두리 = 16×16), UI 아이콘 `web/art/icons.px.js`(16×16, 8배로 저장), 게시판·의뢰서 `web/art/ui.px.js`. 모두 같은 색표를 쓴다. 그리기는 `bash web/scripts/sprites.sh`(claude-pxl을 고정 커밋으로 `web/.pxl/`에 받아 빌드 → `web/src/assets/{sprites,items,ui}/`, 아이콘은 `web/public/icons/`). 유닛은 오른쪽을 보게 그리고 몬스터는 `flip: "x"`. 유닛 높이는 24칸 이하(게임에서 3배), 물품은 2배. 클라우드 세션에서 실행이 막히면 저장소 `.claude/settings.json`의 허용 규칙을 확인합니다.
 - 이 프로젝트에서 쓸 일이 거의 없는 도구: `hyperframes`(영상), `rea`(역분석), `context7`(필요할 때만 Vite·Capacitor·Playwright 등 라이브러리 문서 확인).
 
 ---
