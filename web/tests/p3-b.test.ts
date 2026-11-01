@@ -428,7 +428,7 @@ describe('V19Tests (기본 공격 명중·스킬 등급·강화 +15·보스 체�
 
   it('BossTraits_ChangeBodyStats', () => {
     expect(createBoss(18, 'Normal', 1)).toBeTruthy();
-    const sp = monster('mushroom')!;
+    const sp = monster('maneater')!;
     const plain = createEnemy(sp, 20, 'Normal', 2);
     const boss = createEnemy(sp, 20, 'Normal', 2);
     equipBossTraits(boss, 20);

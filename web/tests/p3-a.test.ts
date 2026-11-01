@@ -69,20 +69,10 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     expect(hits).toBe(7); // 폭풍 사격 7회 각각 판정
   });
 
-  it('기습: 첫 턴 확정 치명타, 연막: 다음 스킬 확정 치명타', () => {
+  it('기습: 첫 턴 확정 치명타', () => {
     const { b } = setup12('Rogue', 'r_ambush', 1);
     b.execute(choice12(b, 'r_ambush'));
     expect(b.lastEvents.some((e) => e.damage === 'Crit')).toBe(true);
-
-    const { b: s, c } = setup12('Rogue', 'r_smoke', 1);
-    learnSkill(c, 'r_venom');
-    equipSkill(c, 'r_venom');
-    s.execute(choice12(s, 'r_smoke'));
-    expect(s.nextSkillCrit).toBe(true);
-    expect(s.player.statuses.has('Swift')).toBe(true);
-    s.execute(choice12(s, 'r_venom'));
-    expect(s.lastEvents.some((e) => e.damage === 'Crit')).toBe(true);
-    expect(s.nextSkillCrit).toBe(false);
   });
 
   it('암살: HP 낮은 대상 처형', () => {
@@ -270,22 +260,22 @@ describe('상태 이상 지속 턴 v2.1.1 (V21Tests)', () => {
 
 // (id, 등급, 재사용, 성공률 보정) — 기획서 스킬 표
 const TABLE: [string, SkillTier, number, number][] = [
-  ['w_bash', 'Low', 4, -0.10], ['w_warcry', 'Low', 6, 0], ['w_ram', 'Low', 3, -0.04],
+  ['w_bash', 'Low', 4, -0.10], ['w_warcry', 'Low', 6, 0], ['w_riposte', 'Low', 5, 0],
   ['w_shield', 'Mid', 5, -0.04], ['w_guard', 'Mid', 6, 0], ['w_will', 'Mid', 7, 0],
   ['w_whirl', 'High', 6, -0.08], ['w_roar', 'High', 7, -0.04],
   ['w_earth', 'Top', 8, -0.12], ['w_strike', 'Top', 8, -0.12],
   ['a_aim', 'Low', 1, -0.03], ['a_double', 'Low', 2, -0.03], ['a_scatter', 'Low', 3, -0.08],
-  ['a_poison', 'Mid', 2, -0.03], ['a_flash', 'Mid', 3, -0.04], ['a_weak', 'Mid', 4, -0.04],
+  ['a_wind', 'Mid', 5, 0], ['a_flash', 'Mid', 3, -0.04], ['a_weak', 'Mid', 4, -0.04],
   ['a_rain', 'High', 3, -0.08], ['a_pierce', 'High', 3, -0.04],
   ['a_storm', 'Top', 4, -0.08], ['a_volley', 'Top', 5, -0.12],
   ['r_ambush', 'Low', 2, -0.04], ['r_venom', 'Low', 3, -0.03], ['r_keen', 'Low', 5, 0], ['r_shuriken', 'Low', 3, -0.08],
-  ['r_vital', 'Mid', 4, -0.08], ['r_smoke', 'Mid', 5, 0],
+  ['r_vital', 'Mid', 4, -0.08], ['r_shadow', 'Mid', 4, -0.08],
   ['r_storm', 'High', 5, -0.08], ['r_cruel', 'High', 6, 0],
   ['r_assassin', 'Top', 6, -0.12], ['r_dance', 'Top', 7, -0.12],
-  ['m_fireball', 'Low', 2, -0.04], ['m_bolt', 'Low', 1, -0.03], ['m_shard', 'Low', 3, -0.08],
-  ['m_ice', 'Mid', 3, -0.04], ['m_chain', 'Mid', 3, -0.04], ['m_silence', 'Mid', 4, -0.04],
-  ['m_meteor', 'High', 5, -0.10], ['m_prison', 'High', 5, -0.06],
-  ['m_overload', 'Top', 6, -0.12], ['m_apocalypse', 'Top', 8, -0.12],
+  ['m_fireball', 'Low', 3, -0.04], ['m_bolt', 'Low', 2, -0.03], ['m_shard', 'Low', 4, -0.08],
+  ['m_ice', 'Mid', 4, -0.04], ['m_chain', 'Mid', 4, -0.04], ['m_silence', 'Mid', 5, -0.04],
+  ['m_meteor', 'High', 6, -0.10], ['m_prison', 'High', 6, -0.06],
+  ['m_overload', 'Top', 8, -0.12], ['m_apocalypse', 'Top', 10, -0.12],
 ];
 
 function setup22(job: Job, skill: string, enemies: number, seed: number) {
@@ -332,6 +322,7 @@ describe('스킬 40개 v2.2 (V22Tests)', () => {
     let weakened = 0;
     for (let seed = 0; seed < 30; seed++) {
       const { b } = setup22('Warrior', 'w_roar', 3, seed);
+      b.player.counter = 0; // 적 차례의 반격 피해는 빼고 본다
       const ch = b.getChoices().find((x) => x.skillId === 'w_roar');
       expect(ch).toBeDefined();
       b.execute(ch!);

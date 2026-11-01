@@ -3,7 +3,6 @@ import type { Difficulty, EquipSlot, GearType, ItemGrade, Job, Rank, RoomType, S
 /** 열거형의 한국어 표시 이름 (C# Names). */
 const STAT: Record<Stat, string> = {
   Vitality: '체력', Spirit: '정신', Luck: '행운', Strength: '힘', Agility: '민첩', Intelligence: '지능',
-  Toughness: '강인함', Precision: '정밀', Finesse: '기교', SpellPower: '주문력',
 };
 const JOB: Record<Job, string> = { Warrior: '전사', Archer: '궁수', Rogue: '도적', Mage: '마법사' };
 const DIFF: Record<Difficulty, string> = { Easy: '쉬움', Normal: '보통', Hard: '어려움', Hardcore: '하드코어' };
@@ -12,7 +11,7 @@ const GEAR: Record<GearType, string> = { Helmet: '투구', Armor: '갑옷', Pant
 const SLOT: Record<EquipSlot, string> = { Helmet: '투구', Armor: '갑옷', Pants: '바지', Boots: '신발', Necklace: '목걸이', Ring1: '반지 1', Ring2: '반지 2', Weapon: '무기' };
 const TIER: Record<SkillTier, string> = { Low: '하급', Mid: '중급', High: '상급', Top: '최상급' };
 const STATUS: Record<StatusType, string> = {
-  Empower: '강화', Fortify: '철벽', Regen: '재생', Focus: '집중', Swift: '날렵함', Keen: '예리함', Cruel: '잔혹함',
+  Empower: '강화', Fortify: '철벽', Regen: '재생', Focus: '집중', Swift: '날렵함', Keen: '예리함', Cruel: '잔혹함', Riposte: '반격 태세',
   Poison: '독', Bleed: '출혈', Burn: '화상', Weaken: '약화', Vulnerable: '취약', Stun: '기절', Silence: '침묵', Blind: '실명', Fear: '공포',
 };
 const ROOM: Record<RoomType, string> = { Start: '시작', Battle: '전투', Event: '이벤트', Treasure: '보물', Rest: '휴식', Merchant: '상인', Return: '귀환', Boss: '보스' };

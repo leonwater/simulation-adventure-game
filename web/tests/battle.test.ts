@@ -332,13 +332,13 @@ describe('보스 특성 (BossTests)', () => {
 
   it('수치는 층이 깊을수록 커진다', () => {
     expect(mkBoss('rat', 2).kit!.barrier).toBe(1);
-    expect(mkBoss('rat', 2).kit!.barrier).toBeLessThan(mkBoss('turtle', 28).kit!.barrier);
+    expect(mkBoss('rat', 2).kit!.barrier).toBeLessThan(mkBoss('living_armor', 28).kit!.barrier);
     const low = mkBoss('orc_shaman', 11);
     const high = mkBoss('eye', 29);
     expect(low.kit!.maxShield / low.maxHp).toBeLessThan(high.kit!.maxShield / high.maxHp);
     expect(mkBoss('goblin_archer', 3).kit!.flurryHits).toBeLessThan(mkBoss('snake', 27).kit!.flurryHits);
     expect(mkBoss('orc', 12).kit!.smashMult).toBeLessThan(mkBoss('imp', 28).kit!.smashMult);
-    expect(mkBoss('wisp', 21).kit!.ritualUses).toBeLessThan(mkBoss('wisp', 29).kit!.ritualUses);
+    expect(mkBoss('blood_leech', 21).kit!.ritualUses).toBeLessThan(mkBoss('blood_leech', 29).kit!.ritualUses);
     expect(mkBoss('slime', 2).kit!.splitCount).toBeLessThan(mkBoss('slime', 9).kit!.splitCount);
   });
 
@@ -368,7 +368,7 @@ describe('보스 특성 (BossTests)', () => {
   });
 
   it('가시 비늘은 반사하지만 쓰러뜨리지 않는다', () => {
-    const { b, boss } = fight('mushroom', 25, 3);
+    const { b, boss } = fight('maneater', 25, 3);
     boss.statuses.apply('Stun', 1, 99);
     let reflected = 0;
     for (let i = 0; i < 20 && !b.isOver; i++) {
@@ -452,7 +452,7 @@ describe('보스 특성 (BossTests)', () => {
   });
 
   it('재생 의식: 영창 뒤 회복', () => {
-    const { b, boss } = fight('wisp', 22, 7);
+    const { b, boss } = fight('blood_leech', 22, 7);
     boss.hp = Math.floor(boss.maxHp * 0.25);
     boss.defense = 100000;
     hit(b);

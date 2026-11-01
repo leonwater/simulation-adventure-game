@@ -30,7 +30,6 @@ export interface SkillDef {
   CritChance: number;
   GuaranteedCrit: boolean;
   FirstTurnCrit: boolean;
-  GrantsNextCrit: boolean;
   ExecuteThreshold: number;
   ExecuteMult: number;
   Statuses: StatusApply[];

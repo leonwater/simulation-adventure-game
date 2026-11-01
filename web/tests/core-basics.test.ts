@@ -3,7 +3,7 @@ import { B, expToNext } from '../src/core/balance';
 import {
   AllocationDraft, addExp, allocate, applyDeathExpLoss, armorDefense, attack, autoAllocate, createCharacter, evasion,
   maxHp, ownStat, promotionStatus, recalculateCapacities, skillSlots, storageCapacity, totalStat, tryPromote, equipped,
-  setEquipped, damageReduction,
+  setEquipped, 
 } from '../src/core/character';
 import { JOBS, RANKS } from '../src/core/enums';
 import type { Job } from '../src/core/enums';
@@ -37,7 +37,7 @@ describe('캐릭터 (CharacterTests)', () => {
       expect(maxHp(c)).toBe(hp[j]);
       expect(c.CurrentHp).toBe(hp[j]);
       expect(c.Gold).toBe(200);
-      expect(getStat(c.BaseStats, 'Toughness')).toBe(j === 'Warrior' ? 10 : 5);
+      expect(c.BaseStats.Values.length).toBe(6);
     }
   });
 
@@ -86,7 +86,7 @@ describe('캐릭터 (CharacterTests)', () => {
     const c = createCharacter('a', 'Warrior');
     c.UnspentPoints = 5;
     expect(allocate(c, 'Strength', 2)).toBe(true);
-    expect(allocate(c, 'Precision')).toBe(false);
+    expect(allocate(c, 'Intelligence')).toBe(false);
     expect(allocate(c, 'Strength', 4)).toBe(false);
     setStat(c.BaseStats, 'Strength', 99);
     expect(allocate(c, 'Strength')).toBe(false);
@@ -125,9 +125,7 @@ describe('캐릭터 (CharacterTests)', () => {
     const c = createCharacter('a', 'Warrior');
     expect(attack(c)).toBe(12 * 5 + itemValue(equipped(c, 'Weapon')!));
     const r = createCharacter('r', 'Rogue');
-    expect(evasion(r)).toBeCloseTo((12 + 12) * 0.005, 9);
-    setStat(c.BaseStats, 'Toughness', 99);
-    expect(damageReduction(c)).toBeCloseTo(0.3, 9);
+    expect(evasion(r)).toBeCloseTo(12 * 0.005, 9);
   });
 
   it('배지는 자체 능력치에만 곱한다', () => {

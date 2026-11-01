@@ -1,7 +1,7 @@
 import { B, clamp, roundEven } from './balance';
 import { BossKit, createMinion, splitChild } from './bosskit';
 import type { Character } from './character';
-import { attack, defense, evasion, damageReduction, resist, maxHp, precisionBonus, skillDamageBonus, totalStat } from './character';
+import { attack, defense, evasion, jobPerk, resist, maxHp, skillDamageBonus, totalStat } from './character';
 import { Combatant } from './combatant';
 import { getSkillState, powerMultiplier } from './equipment';
 import { findItem, takeItem, consumableDef } from './items';
@@ -66,12 +66,13 @@ const MAX_ENEMY_SLOTS = 4;
 const pct = (v: number): string => (v >= 0 ? '+' : '-') + roundEven(Math.abs(v) * 1000) / 10 + '%';
 const r100 = (v: number): number => roundEven(v * 100);
 
-/** 피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 - 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함) */
+/** 피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 - 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함). 도적의 치명타는 방어력 일부(관통)를 무시 */
 export function damage(attacker: Combatant, target: Combatant, mult: number, crit: boolean): number {
   const a = attacker.statuses;
   const t = target.statuses;
   const atk = attacker.attack * mult * (1 + a.value('Empower') / 100 - a.value('Weaken') / 100);
-  let dmg = (atk * B.DefenseConstant) / (B.DefenseConstant + Math.max(0, target.defense));
+  const def = Math.max(0, target.defense) * (crit ? 1 - attacker.critPierce : 1);
+  let dmg = (atk * B.DefenseConstant) / (B.DefenseConstant + def);
   dmg *= 1 - target.damageReduction;
   dmg *= 1 - t.value('Fortify') / 100 + t.value('Vulnerable') / 100;
   if (crit) dmg *= attacker.critDamage + a.value('Cruel') / 100;
@@ -102,8 +103,6 @@ export class Battle {
   lastEvents: BattleEvent[] = [];
   /** 처치한 적 (보상·퀘스트 처리용). */
   readonly defeated: Combatant[] = [];
-  /** 연막: 다음에 쓰는 공격 스킬이 확정 치명타. */
-  nextSkillCrit = false;
   /** 난이도 (보스가 부르는 졸개의 수치). */
   difficulty = 'Normal';
   /** 드롭률 배율 (저주 0.5). */
@@ -130,7 +129,10 @@ export class Battle {
     p.attack = attack(character);
     p.defense = defense(character);
     p.evasion = evasion(character);
-    p.damageReduction = damageReduction(character);
+    const perk = jobPerk(character);
+    if (character.Job === 'Warrior') p.counter = perk;
+    if (character.Job === 'Archer') p.dodge = perk;
+    if (character.Job === 'Rogue') p.critPierce = perk;
     p.resist = resist(character);
     this.player = p;
     opts.setup?.(this);
@@ -181,10 +183,10 @@ export class Battle {
     return bonus;
   }
 
-  /** 공격 성공률 = 기본 + (주 공격 능력치 - 적 요구치) × 1% + 정밀 + 버프 + 스킬 보정. */
+  /** 공격 성공률 = 기본 + (주 공격 능력치 - 적 요구치) × 1% + 버프 + 스킬 보정. */
   hitChance(target: Combatant, skillBonus = 0): number {
     const stat = totalStat(this.character, jobData(this.character.Job).attackStat);
-    return clamp(B.BaseHit + (stat - target.requirement) * B.HitPerStatPoint + precisionBonus(this.character) + this.statusBonus(false) + skillBonus, B.MinHit, B.MaxHit);
+    return clamp(B.BaseHit + (stat - target.requirement) * B.HitPerStatPoint + this.statusBonus(false) + skillBonus, B.MinHit, B.MaxHit);
   }
 
   /** 도주 = 67% + 회피 + 날렵함 + 집중 - 실명 (공포는 영향 없음), 최대 87%. 보스전은 불가. */
@@ -205,8 +207,6 @@ export class Battle {
     const stat = totalStat(this.character, jobData(this.character.Job).attackStat);
     const parts = [`기본 ${r100(B.BaseHit)}%`];
     parts.push(`${Names.stat(jobData(this.character.Job).attackStat)} ${stat} vs 요구치 ${roundEven(target.requirement * 10) / 10}: ${pct((stat - target.requirement) * B.HitPerStatPoint)}`);
-    const prec = precisionBonus(this.character);
-    if (prec > 0) parts.push(`정밀 ${pct(prec)}`);
     const s = this.player.statuses;
     if (s.has('Focus')) parts.push(`집중 ${pct(s.value('Focus') / 100)}`);
     if (s.has('Blind')) parts.push(`실명 ${pct(-s.value('Blind') / 100)}`);
@@ -289,7 +289,7 @@ export class Battle {
     return baseMult * powerMultiplier(def, state?.Level ?? 0) * (1 + skillDamageBonus(this.character));
   }
   private sureCrit(def: SkillDef): boolean {
-    return this.nextSkillCrit || def.GuaranteedCrit || (def.FirstTurnCrit && this.turn === 1);
+    return def.GuaranteedCrit || (def.FirstTurnCrit && this.turn === 1);
   }
   /** 공격 스킬의 치명타 확률 = 스킬 치명타 + 예리함. */
   private critChance(def: SkillDef): number {
@@ -318,7 +318,6 @@ export class Battle {
       parts.push('자신');
       if (def.HealRatio > 0) parts.push(`HP 약 ${roundEven(this.player.maxHp * def.HealRatio * powerMultiplier(def, getSkillState(this.character, def.Id)?.Level ?? 0))} 회복`);
       for (const s of def.Statuses) parts.push(`${Names.status(s.Type)} ${this.turnsOf(def, s)}턴`);
-      if (def.GrantsNextCrit) parts.push('다음 스킬 확정 치명타');
       return parts.join(' · ');
     }
     parts.push(areaName(def) ?? '단일');
@@ -381,13 +380,12 @@ export class Battle {
       if (areaName(def)) lines.push(`${areaName(def)}: 적마다 따로 판정 (적마다 방어력에 따라 피해가 다름)`);
       if (def.Target === 'ChainEnemies') lines.push(`연쇄 배율 ${def.ChainMults.map((m) => `${r100(m)}%`).join(' → ')}`);
       lines.push('');
-      if (this.sureCrit(def)) lines.push(`치명타 확정 (치명타 피해량 ${r100(this.critNow)}%)${this.nextSkillCrit ? ' — 연막 효과' : def.FirstTurnCrit ? ' — 첫 턴' : ''}`);
+      if (this.sureCrit(def)) lines.push(`치명타 확정 (치명타 피해량 ${r100(this.critNow)}%)${def.FirstTurnCrit ? ' — 첫 턴' : ''}`);
       else if (this.critChance(def) > 0) lines.push(`치명타 확률 ${r100(Math.min(1, this.critChance(def)))}% (치명타 피해량 ${r100(this.critNow)}%)`);
       else lines.push('치명타 없음');
       if (def.ExecuteThreshold > 0) lines.push(`처형: HP ${r100(def.ExecuteThreshold)}% 이하 적에게 피해 ×${def.ExecuteMult}`);
     }
     if (def.HealRatio > 0) lines.push(`회복: 최대 HP ${r100(def.HealRatio)}%`);
-    if (def.GrantsNextCrit) lines.push('다음 공격 스킬은 확정 치명타');
     if (def.Statuses.length > 0) {
       lines.push('');
       lines.push('부가 효과');
@@ -485,7 +483,7 @@ export class Battle {
     switch (c.kind) {
       case 'Attack':
         this.event('Act', -1, c.target);
-        this.playerHits(this.enemies[c.target], jobData(this.character.Job).basicAttackMultiplier, 1, B.BasicAttackBonus, null, false);
+        this.playerHits(this.enemies[c.target], jobData(this.character.Job).basicAttackMultiplier, 1, B.BasicAttackBonus, null);
         break;
       case 'Skill':
         this.useSkill(c);
@@ -543,10 +541,6 @@ export class Battle {
       this.event('Text', -1, -1, { text: def.Name });
       if (def.HealRatio > 0) this.heal(this.player, roundEven(this.player.maxHp * def.HealRatio * power));
       for (const s of statuses) this.applyStatus(this.player, this.player, s);
-      if (def.GrantsNextCrit) {
-        this.nextSkillCrit = true;
-        this.add('다음 스킬은 확정 치명타!', 'Good');
-      }
       return;
     }
     if (!def.IsAttack) {
@@ -564,20 +558,18 @@ export class Battle {
       }
       return;
     }
-    const forcedCrit = this.nextSkillCrit;
-    this.nextSkillCrit = false;
     const targets = this.skillTargets(def, c.target);
     this.event('Act', -1, targets.length > 0 ? this.indexOf(targets[0]) : -1, { text: def.Name });
     const bonus = 1 + skillDamageBonus(this.character);
     const baseMult = def.DamageMult * power * bonus;
     for (let i = 0; i < targets.length; i++) {
       const mult = def.Target === 'ChainEnemies' ? def.ChainMults[i] * power * bonus : baseMult;
-      this.playerHits(targets[i], mult, def.Hits, def.SuccessBonus, def, forcedCrit);
+      this.playerHits(targets[i], mult, def.Hits, def.SuccessBonus, def);
     }
   }
 
   /** 플레이어의 타격. 타격마다 명중을 따로 판정하고, 치명타는 스킬에서만 난다. */
-  private playerHits(target: Combatant, mult: number, hits: number, successBonus: number, skill: SkillDef | null, forcedCrit: boolean): void {
+  private playerHits(target: Combatant, mult: number, hits: number, successBonus: number, skill: SkillDef | null): void {
     if (!target.alive) return;
     const ti = this.indexOf(target);
     let landed = 0, total = 0, blocked = 0;
@@ -587,7 +579,7 @@ export class Battle {
         this.event('Miss', -1, ti, { hpAfter: target.hp });
         continue;
       }
-      const crit = skill != null && (forcedCrit || this.sureCrit(skill) || this.rng.chance(this.critChance(skill)));
+      const crit = skill != null && (this.sureCrit(skill) || this.rng.chance(this.critChance(skill)));
       if (this.blockedByBarrier(target)) {
         blocked++;
         continue;
@@ -653,13 +645,12 @@ export class Battle {
       this.event('Miss', ei, -1, { hpAfter: this.player.hp });
       return;
     }
-    const dmg = damage(e, this.player, skill?.DamageMult ?? 1, false);
-    this.player.hp = Math.max(0, this.player.hp - dmg);
-    this.add(`${e.name}의 ${what}. ${dmg} 피해`, 'Bad');
-    this.event('Damage', ei, -1, { amount: dmg, hpAfter: this.player.hp });
+    const dmg = this.hitPlayer(e, skill?.DamageMult ?? 1, what);
+    if (dmg < 0) return;
     if (skill?.Status && this.player.alive) this.applyStatus(e, skill.Status.OnSelf ? e : this.player, skill.Status);
     if (!this.player.alive) this.killedBy = e.name;
     else this.drainLife(e, dmg);
+    this.riposte(e);
   }
 
   private applyStatus(source: Combatant, target: Combatant, s: StatusApply): void {
@@ -845,16 +836,56 @@ export class Battle {
         this.event('Miss', ei, -1, { hpAfter: this.player.hp });
         continue;
       }
-      const dmg = damage(e, this.player, mult, false);
-      this.player.hp = Math.max(0, this.player.hp - dmg);
+      const dmg = this.hitPlayer(e, mult, '');
+      if (dmg < 0) continue;
       total += dmg;
       landed++;
-      this.event('Damage', ei, -1, { amount: dmg, hpAfter: this.player.hp });
     }
     if (landed === 0) this.add('모두 피했다!');
     else this.add(`${total} 피해${hits > 1 ? ` (${landed}/${hits}회 명중)` : ''}`, 'Bad');
     if (!this.player.alive) this.killedBy = e.name;
     else this.drainLife(e, total);
+    this.riposte(e);
+  }
+
+  private pendingRiposte = false;
+
+  /**
+   * 명중한 적 공격 한 번: 궁수는 회피 확률로 완전히 피하고(-1), 전사는 반격 확률로 피해를 절반으로 줄인 뒤 그 적의 행동이 끝나면 반격한다.
+   * what이 있으면 로그 한 줄을 남긴다. 받은 피해를 돌려준다.
+   */
+  private hitPlayer(e: Combatant, mult: number, what: string): number {
+    const ei = this.indexOf(e);
+    if (this.player.dodge > 0 && this.rng.chance(this.player.dodge)) {
+      if (what) this.add(`${e.name}의 ${what}. 회피!`, 'Good');
+      this.event('Miss', ei, -1, { hpAfter: this.player.hp });
+      return -1;
+    }
+    let dmg = damage(e, this.player, mult, false);
+    const counter = this.player.counter > 0 ? this.player.counter + this.player.statuses.value('Riposte') / 100 : 0;
+    if (counter > 0 && this.player.alive && this.rng.chance(counter)) {
+      dmg = Math.max(1, roundEven(dmg / 2));
+      this.pendingRiposte = true;
+    }
+    this.player.hp = Math.max(0, this.player.hp - dmg);
+    if (what) this.add(`${e.name}의 ${what}. ${dmg} 피해${this.pendingRiposte ? ' (막아냄)' : ''}`, 'Bad');
+    this.event('Damage', ei, -1, { amount: dmg, hpAfter: this.player.hp });
+    return dmg;
+  }
+
+  /** 전사의 반격: 막아낸 적에게 기본 공격 피해 (명중 판정 없음, 방어막·보호막은 적용). */
+  private riposte(e: Combatant): void {
+    if (!this.pendingRiposte) return;
+    this.pendingRiposte = false;
+    if (!this.player.alive || !e.alive) return;
+    const ei = this.indexOf(e);
+    this.event('Text', -1, ei, { text: '반격!' });
+    if (this.blockedByBarrier(e)) return;
+    const dmg = damage(this.player, e, B.RiposteDamage * jobData(this.character.Job).basicAttackMultiplier, false);
+    e.hp = Math.max(0, e.hp - absorbShield(e, dmg));
+    this.add(`반격! ${e.name}에게 ${dmg} 피해`, 'Good');
+    this.event('Damage', -1, ei, { amount: dmg, damage: 'Normal', hpAfter: e.hp });
+    if (!e.alive) this.onEnemyDown(e);
   }
 
   /** 흡혈: 준 피해의 일부만큼 회복. */

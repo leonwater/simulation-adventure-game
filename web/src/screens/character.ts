@@ -1,11 +1,11 @@
 import { B } from '../core/balance';
 import {
-  AllocationDraft, attack, badgeBonus, damageReduction, dropBonus, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
+  AllocationDraft, attack, badgeBonus, dropBonus, jobPerk, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
   percent, promotionStatus, resist, totalStat, weaponAttack, defense,
 } from '../core/character';
 import type { Stat } from '../core/enums';
 import { STATS } from '../core/enums';
-import { jobData } from '../core/jobs';
+import { jobData, PERKS } from '../core/jobs';
 import { Names } from '../core/names';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
@@ -27,11 +27,6 @@ function statEffect(s: Stat): string {
     case 'Strength': return `전사의 공격력 (1당 +${B.AttackPerMainStat})`;
     case 'Agility': return '궁수·도적의 공격력, 적 공격 회피';
     case 'Intelligence': return `마법사의 공격력 (1당 +${B.AttackPerMainStat})`;
-    // 1당 0.35%는 소수점이 생기므로 100당으로 적는다
-    case 'Toughness': return `받는 피해 감소 (100당 ${Math.round(B.ReductionPerToughness * 10000)}%, 최대 ${Math.round(B.MaxReduction * 100)}%)`;
-    case 'Precision': return '공격·스킬 성공률 증가';
-    case 'Finesse': return '도적의 회피 증가 (최대 40%)';
-    case 'SpellPower': return `스킬 피해 증가 (100당 +${Math.round(B.SkillDamagePerSpellPower * 10000)}%)`;
   }
 }
 
@@ -119,7 +114,7 @@ export class CharacterScreen extends Screen {
       line('공격력', h('span', null, String(attack(c)), colored(` (${Names.stat(jobData(c.Job).attackStat)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)})`, 'var(--sub)'))),
       line('방어력', String(defense(c))),
       line('회피', percent(evasion(c))),
-      line('받는 피해 감소', percent(damageReduction(c))),
+      line(`${PERKS[c.Job].name} (등급 전용)`, PERKS[c.Job].text(percent(jobPerk(c)))),
       line('상태 이상 저항', percent(resist(c))),
       ...(c.Job === 'Rogue' ? [line('치명타', `도적 스킬 전용 · 치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`)] : []),
       line('드롭률', `+${percent(dropBonus(c) - 1)}`),

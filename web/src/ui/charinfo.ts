@@ -1,12 +1,12 @@
 import type { Combatant } from '../core/combatant';
 import {
-  attack, damageReduction, defense, evasion, expProgress, maxHp, percent, resist, skillDamageBonus,
+  attack, defense, jobPerk, evasion, expProgress, maxHp, percent, resist, skillDamageBonus,
 } from '../core/character';
 import { describeActive, explainStatus } from '../core/statustext';
 import type { StatusType } from '../core/enums';
 import { effectDescribe, effectName, effectRemaining } from '../core/explore';
 import { isQuestComplete, progressText } from '../core/guild';
-import { jobData } from '../core/jobs';
+import { jobData, PERKS } from '../core/jobs';
 import { gold, Names } from '../core/names';
 import type { StatusInstance } from '../core/status';
 import { isDebuff } from '../core/status';
@@ -59,7 +59,7 @@ export function showCharacterInfo(battle: Battle | null = null): void {
     h('div', { class: 'sub' }, `골드 ${gold(c.Gold)}`, c.UnspentPoints > 0 ? colored(` · 포인트 ${c.UnspentPoints}`, 'var(--gold)') : null),
     ...section('전투 능력치'),
     pair('공격력', String(me?.attack ?? attack(c)), '방어력', String(defense(c))),
-    pair('회피', percent(evasion(c)), '받는 피해 감소', percent(damageReduction(c))),
+    pair('회피', percent(evasion(c)), PERKS[c.Job].name, percent(jobPerk(c))),
     pair('상태 이상 저항', percent(resist(c)), '스킬 피해', `+${percent(skillDamageBonus(c))}`),
     ...section('상태 이상'));
   const active = me?.statuses.visible() ?? [];

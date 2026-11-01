@@ -140,15 +140,12 @@ export const defense = (c: Character): number => armorDefense(c);
 
 export function evasion(c: Character): number {
   let e = totalStat(c, 'Agility') * B.EvasionPerAgility;
-  if (canAllocate(jobData(c.Job), 'Finesse')) e += totalStat(c, 'Finesse') * B.EvasionPerFinesse;
   return Math.min(B.MaxEvasion, e);
 }
-export const damageReduction = (c: Character): number => Math.min(B.MaxReduction, totalStat(c, 'Toughness') * B.ReductionPerToughness);
 export const resist = (c: Character): number => Math.min(B.MaxResist, totalStat(c, 'Spirit') * B.ResistPerSpirit);
-export const skillDamageBonus = (c: Character): number => totalStat(c, 'SpellPower') * B.SkillDamagePerSpellPower;
-/** 정밀은 궁수만 배분하지만 장신구로 오른 정밀도 적용된다. */
-export const precisionBonus = (c: Character): number =>
-  canAllocate(jobData(c.Job), 'Precision') || equipmentBonus(c, 'Precision') > 0 ? totalStat(c, 'Precision') * B.SuccessPerPrecision : 0;
+/** 직업 고유 능력치 (모험가 등급으로만 오른다): 전사 반격 확률, 궁수 회피 확률, 도적 치명타 방어 무시 비율, 마법사 스킬 피해 증폭. */
+export const jobPerk = (c: Character): number => B.JobPerk[c.Job][ord(RANKS, c.Rank)];
+export const skillDamageBonus = (c: Character): number => (c.Job === 'Mage' ? jobPerk(c) : 0);
 export const dropBonus = (c: Character): number => 1 + totalStat(c, 'Luck') * B.DropBonusPerLuck;
 export const eventLuckBonus = (c: Character): number => totalStat(c, 'Luck') * B.EventBonusPerLuck;
 
@@ -167,10 +164,6 @@ export function effectLabel(c: Character, stat: Stat): string {
     case 'Strength':
     case 'Intelligence': return atk === stat ? `공격력 ${attack(c)}` : '-';
     case 'Agility': return atk === stat ? `공격력 ${attack(c)} · 회피 ${percent(evasion(c))}` : `회피 ${percent(evasion(c))}`;
-    case 'Toughness': return `받는 피해 -${percent(damageReduction(c))}`;
-    case 'Precision': return `성공률 +${percent(precisionBonus(c))}`;
-    case 'Finesse': return `회피 ${percent(evasion(c))}`;
-    case 'SpellPower': return `스킬 피해 +${percent(skillDamageBonus(c))}`;
   }
 }
 

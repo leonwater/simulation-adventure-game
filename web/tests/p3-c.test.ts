@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { B, enemyDefense, enemyHp, expToNext, lateRamp, roundEven } from '../src/core/balance';
 import { Battle } from '../src/core/battle';
 import {
-  addExp, attack, autoAllocate, createCharacter, damageReduction, defense, equipmentBonus, equipped, maxChallengeFloor, maxHp, setEquipped,
+  addExp, attack, autoAllocate, createCharacter, defense, equipmentBonus, equipped, maxChallengeFloor, maxHp, setEquipped,
   storageCapacity, totalStat, weaponAttack,
 } from '../src/core/character';
 import type { Character } from '../src/core/character';
@@ -19,7 +19,6 @@ import { generateFloor, rollRoomTypes, violations } from '../src/core/generator'
 import { deposit, withdraw } from '../src/core/guild';
 import { addItem, baseValue, createDrop, createGear, valueAt } from '../src/core/items';
 import type { ItemInstance } from '../src/core/items';
-import { setStat } from '../src/core/jobs';
 import { getRoom } from '../src/core/map';
 import { monster } from '../src/core/monsters';
 import { Rng } from '../src/core/rng';
@@ -231,14 +230,6 @@ describe('기획서 v2.4 (V24Tests)', () => {
       for (const l of getRoom(map, map.StartId)!.Links) expect(getRoom(map, l)!.Type, '시작 방 바로 옆에는 휴식 방이 없다').not.toBe('Rest');
     }
     expect(bad, '규칙을 어긴 층은 거의 없다 (방 종류가 모자란 드문 경우만)').toBeLessThanOrEqual(floors / 100);
-  });
-
-  it('강인함: 피해 감소는 낮아지고 상한이 있다', () => {
-    const w = createCharacter('a', 'Warrior');
-    setStat(w.BaseStats, 'Toughness', 40);
-    expect(damageReduction(w), '강인함 40 = 14%').toBeCloseTo(0.14, 9);
-    setStat(w.BaseStats, 'Toughness', 99);
-    expect(damageReduction(w), '최대 30%').toBeCloseTo(0.3, 9);
   });
 
   it('비전투 스킬 수련 (v2.6): 2단계, 단계당 600G, 지속 +1 → 재사용 -1, 재사용은 늘 지속보다 1턴 이상 길다', () => {

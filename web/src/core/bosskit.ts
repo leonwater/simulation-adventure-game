@@ -52,7 +52,7 @@ const BY_SPECIES: Record<string, BossTrait[]> = {
   goblin_king: ['Smash', 'Summon'],
   orc: ['Smash'], skeleton: ['Barrier'], zombie: ['Revive'], ghoul: ['Lifesteal'], orc_shaman: ['Shield'], ghost: ['Barrier'],
   reaper: ['Shield', 'Summon', 'Ritual'],
-  mushroom: ['Thorns'], snake: ['Flurry'], turtle: ['Barrier'], wisp: ['Ritual'], imp: ['Smash'], eye: ['Shield'],
+  maneater: ['Thorns'], snake: ['Flurry'], living_armor: ['Barrier'], blood_leech: ['Ritual'], imp: ['Smash'], eye: ['Shield'],
   ancient_golem: ['Enrage', 'Ritual', 'Smash'],
 };
 

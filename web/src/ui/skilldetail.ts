@@ -1,5 +1,5 @@
 import { B, clamp, enemyDefense, enemyRequirement } from '../core/balance';
-import { attack, maxChallengeFloor, precisionBonus, skillDamageBonus, totalStat } from '../core/character';
+import { attack, maxChallengeFloor, skillDamageBonus, totalStat } from '../core/character';
 import { cannotEquipSkillReason, getSkillState, isSkillEquipped, maxSkillLevel, powerMultiplier, trainingEffect } from '../core/equipment';
 import { jobData } from '../core/jobs';
 import { Names } from '../core/names';
@@ -36,7 +36,7 @@ export function showSkillDetail(id: string, actions: { equip: (id: string) => vo
     let hit = 1;
     if (def.Target === 'Self') m.body.append(line('성공률', '100%'));
     else {
-      hit = clamp(B.BaseHit + (totalStat(c, jobData(c.Job).attackStat) - enemyRequirement(floor)) * B.HitPerStatPoint + precisionBonus(c) + def.SuccessBonus, B.MinHit, B.MaxHit);
+      hit = clamp(B.BaseHit + (totalStat(c, jobData(c.Job).attackStat) - enemyRequirement(floor)) * B.HitPerStatPoint + def.SuccessBonus, B.MinHit, B.MaxHit);
       m.body.append(line(def.Hits > 1 ? '타격당 성공률' : '성공률', `${Math.round(hit * 100)}%`));
     }
     if (def.IsAttack) {

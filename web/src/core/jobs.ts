@@ -8,33 +8,40 @@ export interface JobData {
   name: string;
   mainStats: Stat[];
   attackStat: Stat;
-  specialStat: Stat;
-  /** 레벨업 포인트를 줄 수 있는 능력치 (체력·공격·특화·정신·행운). */
+  /** 레벨업 포인트를 줄 수 있는 능력치 (체력·공격·정신·행운). 고유 능력치는 모험가 등급으로만 오른다. */
   allocatable: Stat[];
   /** 자동 배분 비율 (allocatable 순서, 합 100). */
   autoRatio: number[];
   hpPerVitality: number;
   basicAttackMultiplier: number;
-  /** Lv.1 능력치: 체력, 공격, 특화, 정신, 행운. */
+  /** Lv.1 능력치: 체력, 공격, 정신, 행운. */
   start: number[];
 }
 
-function make(job: Job, name: string, attack: Stat, special: Stat, start: number[], ratio: number[], hp: number, basic: number): JobData {
+function make(job: Job, name: string, attack: Stat, start: number[], ratio: number[], hp: number, basic: number): JobData {
   return {
-    job, name, attackStat: attack, specialStat: special, mainStats: ['Vitality', attack, special],
-    allocatable: ['Vitality', attack, special, 'Spirit', 'Luck'], autoRatio: ratio, hpPerVitality: hp,
+    job, name, attackStat: attack, mainStats: ['Vitality', attack],
+    allocatable: ['Vitality', attack, 'Spirit', 'Luck'], autoRatio: ratio, hpPerVitality: hp,
     basicAttackMultiplier: basic, start,
   };
 }
 
 const ALL: JobData[] = [
-  make('Warrior', '전사', 'Strength', 'Toughness', [16, 12, 10, 5, 5], [30, 40, 20, 0, 10], 12, 1.0),
-  make('Archer', '궁수', 'Agility', 'Precision', [10, 13, 10, 6, 8], [30, 40, 20, 0, 10], 10, 1.0),
-  make('Rogue', '도적', 'Agility', 'Finesse', [10, 12, 12, 5, 9], [25, 40, 25, 0, 10], 9, 1.0),
-  make('Mage', '마법사', 'Intelligence', 'SpellPower', [8, 14, 10, 9, 6], [30, 40, 20, 10, 0], 8, B.MageBasicAttack),
+  make('Warrior', '전사', 'Strength', [16, 12, 5, 5], [30, 40, 15, 15], 12, 1.0),
+  make('Archer', '궁수', 'Agility', [10, 13, 6, 8], [30, 40, 15, 15], 10, 1.0),
+  make('Rogue', '도적', 'Agility', [10, 12, 5, 9], [30, 40, 15, 15], 9, 1.0),
+  make('Mage', '마법사', 'Intelligence', [8, 14, 9, 6], [35, 40, 25, 0], 8, B.MageBasicAttack),
 ];
 
 export const jobData = (job: Job): JobData => ALL[ord(JOBS, job)];
+
+/** 직업 고유 능력치 표시 정보. 값은 B.JobPerk[직업][등급] (모험가 등급으로만 오름). */
+export const PERKS: Record<Job, { name: string; icon: string; text: (v: string) => string }> = {
+  Warrior: { name: '반격', icon: 'perk_counter', text: (v) => `맞을 때 ${v} 확률로 피해 절반 + 즉시 반격` },
+  Archer: { name: '회피', icon: 'perk_dodge', text: (v) => `${v} 확률로 적의 공격을 완전히 피함` },
+  Rogue: { name: '관통', icon: 'perk_pierce', text: (v) => `치명타가 적 방어력의 ${v}를 무시` },
+  Mage: { name: '증폭', icon: 'perk_amplify', text: (v) => `스킬 피해 +${v} (대신 재사용 대기가 김)` },
+};
 
 export const canAllocate = (j: JobData, stat: Stat): boolean => j.allocatable.includes(stat);
 
@@ -46,7 +53,7 @@ export function rollItemJob(own: Job, rng: Rng): Job {
   return JOBS[other >= o ? other + 1 : other];
 }
 
-/** 능력치 10종 묶음 (저장 모양: { Values: number[] }, 순서는 STATS). */
+/** 능력치 묶음 (저장 모양: { Values: number[] }, 순서는 STATS). */
 export interface StatBlock {
   Values: number[];
 }

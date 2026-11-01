@@ -6,7 +6,7 @@
       "Tier": 0,
       "HpMul": 1,
       "AttackMul": 0.8,
-      "DefenseMul": 0.6,
+      "DefenseMul": 1.38,
       "RequirementMul": 1,
       "MaterialId": "mat_slime",
       "MaterialName": "점액",
@@ -28,8 +28,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.4,
-        "Atk": 0.7
+        "Hp": 1.61,
+        "Atk": 0.66
       }
     },
     {
@@ -38,7 +38,7 @@
       "Tier": 0,
       "HpMul": 1,
       "AttackMul": 1,
-      "DefenseMul": 1,
+      "DefenseMul": 1.04,
       "RequirementMul": 1,
       "MaterialId": "mat_goblin",
       "MaterialName": "고블린 귀",
@@ -47,8 +47,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.15,
-        "Atk": 0.9
+        "Hp": 1.07,
+        "Atk": 0.95
       }
     },
     {
@@ -57,7 +57,7 @@
       "Tier": 0,
       "HpMul": 0.75,
       "AttackMul": 1.1,
-      "DefenseMul": 1,
+      "DefenseMul": 0.81,
       "RequirementMul": 1,
       "MaterialId": "mat_goblin",
       "MaterialName": "고블린 귀",
@@ -79,8 +79,8 @@
       "RegenPercent": 0,
       "Line": "Back",
       "Trait": {
-        "Hp": 0.7,
-        "Atk": 1.25
+        "Hp": 0.75,
+        "Atk": 1.23
       }
     },
     {
@@ -89,7 +89,7 @@
       "Tier": 0,
       "HpMul": 0.8,
       "AttackMul": 0.9,
-      "DefenseMul": 1,
+      "DefenseMul": 0.7,
       "RequirementMul": 1.15,
       "MaterialId": "mat_bat",
       "MaterialName": "박쥐 날개",
@@ -98,8 +98,8 @@
       "RegenPercent": 0,
       "Line": "Back",
       "Trait": {
-        "Hp": 0.65,
-        "Atk": 1.2
+        "Hp": 0.64,
+        "Atk": 1.18
       }
     },
     {
@@ -108,7 +108,7 @@
       "Tier": 0,
       "HpMul": 1,
       "AttackMul": 1,
-      "DefenseMul": 1.3,
+      "DefenseMul": 0.92,
       "RequirementMul": 1,
       "MaterialId": "mat_kobold",
       "MaterialName": "쥐 꼬리",
@@ -117,8 +117,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.3,
-        "Atk": 0.8
+        "Hp": 0.91,
+        "Atk": 0.9
       }
     },
     {
@@ -127,7 +127,7 @@
       "Tier": 0,
       "HpMul": 0.9,
       "AttackMul": 1,
-      "DefenseMul": 1,
+      "DefenseMul": 1.15,
       "RequirementMul": 1,
       "MaterialId": "mat_spider",
       "MaterialName": "거미 독샘",
@@ -149,8 +149,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 0.95,
-        "Atk": 1.05
+        "Hp": 1.07,
+        "Atk": 1.0
       }
     },
     {
@@ -159,7 +159,7 @@
       "Tier": 0,
       "HpMul": 1,
       "AttackMul": 1.15,
-      "DefenseMul": 1,
+      "DefenseMul": 0.92,
       "RequirementMul": 1,
       "MaterialId": "mat_wolf",
       "MaterialName": "늑대 가죽",
@@ -181,8 +181,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 0.9,
-        "Atk": 1.15
+        "Hp": 1.02,
+        "Atk": 1.19
       }
     },
     {
@@ -231,7 +231,7 @@
       "Tier": 1,
       "HpMul": 1.2,
       "AttackMul": 1.1,
-      "DefenseMul": 1,
+      "DefenseMul": 1.36,
       "RequirementMul": 1,
       "MaterialId": "mat_orc",
       "MaterialName": "오크 송곳니",
@@ -240,8 +240,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.1,
-        "Atk": 0.95
+        "Hp": 1.15,
+        "Atk": 1.06
       }
     },
     {
@@ -259,8 +259,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.2,
-        "Atk": 0.9
+        "Hp": 0.96,
+        "Atk": 0.92
       }
     },
     {
@@ -269,7 +269,7 @@
       "Tier": 1,
       "HpMul": 1.4,
       "AttackMul": 0.9,
-      "DefenseMul": 1,
+      "DefenseMul": 0.86,
       "RequirementMul": 0.85,
       "MaterialId": "mat_zombie",
       "MaterialName": "썩은 살점",
@@ -291,8 +291,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.4,
-        "Atk": 0.75
+        "Hp": 1.65,
+        "Atk": 0.69
       }
     },
     {
@@ -301,7 +301,7 @@
       "Tier": 1,
       "HpMul": 1,
       "AttackMul": 1.1,
-      "DefenseMul": 1,
+      "DefenseMul": 0.98,
       "RequirementMul": 1,
       "MaterialId": "mat_ghoul",
       "MaterialName": "구울 손톱",
@@ -323,8 +323,8 @@
       "RegenPercent": 0,
       "Line": "Back",
       "Trait": {
-        "Hp": 0.8,
-        "Atk": 1.2
+        "Hp": 0.91,
+        "Atk": 1.15
       }
     },
     {
@@ -333,7 +333,7 @@
       "Tier": 1,
       "HpMul": 0.8,
       "AttackMul": 1.2,
-      "DefenseMul": 1,
+      "DefenseMul": 0.98,
       "RequirementMul": 1,
       "MaterialId": "mat_charm",
       "MaterialName": "주술 부적",
@@ -367,8 +367,8 @@
       "RegenPercent": 0,
       "Line": "Back",
       "Trait": {
-        "Hp": 0.7,
-        "Atk": 1.3
+        "Hp": 0.75,
+        "Atk": 1.2
       }
     },
     {
@@ -377,7 +377,7 @@
       "Tier": 1,
       "HpMul": 1.1,
       "AttackMul": 1,
-      "DefenseMul": 1.6,
+      "DefenseMul": 1.4,
       "RequirementMul": 1,
       "MaterialId": "mat_stone",
       "MaterialName": "영혼 조각",
@@ -386,8 +386,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.3,
-        "Atk": 0.85
+        "Hp": 0.85,
+        "Atk": 0.92
       }
     },
     {
@@ -447,22 +447,35 @@
       }
     },
     {
-      "Id": "mushroom",
-      "Name": "독버섯",
+      "Id": "maneater",
+      "Name": "식인꽃",
       "Tier": 2,
       "HpMul": 1,
       "AttackMul": 1.1,
-      "DefenseMul": 1,
+      "DefenseMul": 1.24,
       "RequirementMul": 1,
       "MaterialId": "mat_scale",
-      "MaterialName": "버섯 포자",
-      "Skills": [],
+      "MaterialName": "식인꽃 가시",
+      "Skills": [
+        {
+          "Name": "가시 덩굴",
+          "DamageMult": 0.9,
+          "UseChance": 0.3,
+          "Status": {
+            "Type": "Bleed",
+            "Value": 30,
+            "Turns": 2,
+            "OnSelf": false,
+            "Chance": 1
+          }
+        }
+      ],
       "UniqueBoss": false,
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.1,
-        "Atk": 0.95
+        "Hp": 1.25,
+        "Atk": 0.97
       }
     },
     {
@@ -471,7 +484,7 @@
       "Tier": 2,
       "HpMul": 1.1,
       "AttackMul": 1.2,
-      "DefenseMul": 1,
+      "DefenseMul": 0.98,
       "RequirementMul": 1.1,
       "MaterialId": "mat_wyvern",
       "MaterialName": "독사 송곳니",
@@ -493,23 +506,23 @@
       "RegenPercent": 0,
       "Line": "Back",
       "Trait": {
-        "Hp": 0.75,
+        "Hp": 0.81,
         "Atk": 1.25
       }
     },
     {
-      "Id": "turtle",
-      "Name": "바위 거북",
+      "Id": "living_armor",
+      "Name": "빈 갑옷",
       "Tier": 2,
       "HpMul": 1.6,
       "AttackMul": 0.9,
-      "DefenseMul": 2,
+      "DefenseMul": 1.4,
       "RequirementMul": 0.8,
       "MaterialId": "mat_core",
-      "MaterialName": "거북 등껍질",
+      "MaterialName": "녹슨 갑옷 조각",
       "Skills": [
         {
-          "Name": "껍질 내려찍기",
+          "Name": "갑옷 내려찍기",
           "DamageMult": 1.3,
           "UseChance": 0.2,
           "Status": {
@@ -525,27 +538,40 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.35,
-        "Atk": 0.8
+        "Hp": 1.22,
+        "Atk": 0.77
       }
     },
     {
-      "Id": "wisp",
-      "Name": "도깨비불",
+      "Id": "blood_leech",
+      "Name": "피의 거머리",
       "Tier": 2,
       "HpMul": 1.5,
       "AttackMul": 1.1,
-      "DefenseMul": 1,
+      "DefenseMul": 0.86,
       "RequirementMul": 1,
       "MaterialId": "mat_troll",
-      "MaterialName": "꺼지지 않는 불씨",
-      "Skills": [],
+      "MaterialName": "거머리 송곳니",
+      "Skills": [
+        {
+          "Name": "피 빨기",
+          "DamageMult": 0.8,
+          "UseChance": 0.3,
+          "Status": {
+            "Type": "Weaken",
+            "Value": 20,
+            "Turns": 2,
+            "OnSelf": false,
+            "Chance": 1
+          }
+        }
+      ],
       "UniqueBoss": false,
       "RegenPercent": 5,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.2,
-        "Atk": 0.9
+        "Hp": 1.12,
+        "Atk": 0.87
       }
     },
     {
@@ -554,7 +580,7 @@
       "Tier": 2,
       "HpMul": 1.3,
       "AttackMul": 1.3,
-      "DefenseMul": 1,
+      "DefenseMul": 1.12,
       "RequirementMul": 1,
       "MaterialId": "mat_horn",
       "MaterialName": "임프 뿔",
@@ -576,8 +602,8 @@
       "RegenPercent": 0,
       "Line": "Front",
       "Trait": {
-        "Hp": 1.0,
-        "Atk": 1.05
+        "Hp": 0.76,
+        "Atk": 1.25
       }
     },
     {
@@ -586,7 +612,7 @@
       "Tier": 2,
       "HpMul": 0.9,
       "AttackMul": 1.2,
-      "DefenseMul": 1,
+      "DefenseMul": 1.4,
       "RequirementMul": 1.15,
       "MaterialId": "mat_silk",
       "MaterialName": "눈알 수정체",
@@ -620,8 +646,8 @@
       "RegenPercent": 0,
       "Line": "Back",
       "Trait": {
-        "Hp": 0.7,
-        "Atk": 1.3
+        "Hp": 1.02,
+        "Atk": 1.11
       }
     },
     {
@@ -768,10 +794,10 @@
     {
       "Name": "고대 유적",
       "SpeciesIds": [
-        "mushroom",
+        "maneater",
         "snake",
-        "turtle",
-        "wisp",
+        "living_armor",
+        "blood_leech",
         "imp",
         "eye"
       ],

@@ -45,7 +45,13 @@
     55,
     80
   ],
-  "GradeValueMultiplier": [1, 1.1, 1.25, 1.5, 1.9],
+  "GradeValueMultiplier": [
+    1,
+    1.1,
+    1.25,
+    1.5,
+    1.9
+  ],
   "GradeMinStepWeapon": 2,
   "GradeMinStepOther": 1,
   "GradePriceMultiplier": [
@@ -69,7 +75,23 @@
     0.035,
     0.04
   ],
-  "EnhanceStepWeight": [1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3],
+  "EnhanceStepWeight": [
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3
+  ],
   "EnhanceSuccess": [
     0,
     1,
@@ -138,13 +160,8 @@
   "EventBonusPerLuck": 0.005,
   "AttackPerMainStat": 5,
   "EvasionPerAgility": 0.005,
-  "EvasionPerFinesse": 0.005,
-  "ReductionPerToughness": 0.0035,
-  "SuccessPerPrecision": 0.005,
-  "SkillDamagePerSpellPower": 0.005,
   "CritMultiplier": 2.3,
   "MaxEvasion": 0.4,
-  "MaxReduction": 0.3,
   "MaxResist": 0.75,
   "LevelUpHealRatio": 0.3,
   "DeathGoldLoss": 0.3,
@@ -202,8 +219,8 @@
   "EarlyBoostHp": 25,
   "EarlyBoostAttack": 3.5,
   "LateFloorStart": 20,
-  "LateHpBonus": 0.45,
-  "LateAttackBonus": 0.45,
+  "LateHpBonus": 0.52,
+  "LateAttackBonus": 0.52,
   "EliteHp": 1.6,
   "EliteAttack": 1.25,
   "EliteReward": 2,
@@ -248,5 +265,48 @@
   "MerchantBookChance": 0.25,
   "PotionPricePerFloor": 0.03,
   "StonePriceBase": 300,
-  "StonePricePerFloor": 15
+  "StonePricePerFloor": 15,
+  "JobPerk": {
+    "Warrior": [
+      0.06,
+      0.07,
+      0.08,
+      0.09,
+      0.11,
+      0.12,
+      0.14,
+      0.16
+    ],
+    "Archer": [
+      0.04,
+      0.05,
+      0.06,
+      0.07,
+      0.08,
+      0.09,
+      0.11,
+      0.12
+    ],
+    "Rogue": [
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.57,
+      0.63,
+      0.7
+    ],
+    "Mage": [
+      0.15,
+      0.2,
+      0.26,
+      0.32,
+      0.38,
+      0.45,
+      0.52,
+      0.6
+    ]
+  },
+  "RiposteDamage": 1.0
 }

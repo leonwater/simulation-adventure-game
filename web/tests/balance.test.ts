@@ -16,8 +16,6 @@ describe('밸런스 공식 (C#과 같은 값)', () => {
     expect(eventChance(0, 100, 0)).toBeCloseTo(0.30);
   });
   it('내보낸 상수가 C# 값과 같다 (강인함 v2.4, 창고 v2.3)', () => {
-    expect(B.ReductionPerToughness).toBeCloseTo(0.0035);
-    expect(B.MaxReduction).toBeCloseTo(0.30);
     expect(B.StorageBase).toBe(4);
     expect(B.MaxConsumable).toBe(99);
   });
