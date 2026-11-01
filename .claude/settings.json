@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node .pxl/bin/pxl.js:*)",
+      "Bash(node web/.pxl/bin/pxl.js:*)",
+      "Bash(git clone https://github.com/crsolver/claude-pxl:*)"
+    ]
+  }
+}

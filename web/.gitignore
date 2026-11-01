@@ -7,3 +7,5 @@ android/local.properties
 shots
 .sim
 .hallmark/
+.pxl/
+art/out/
