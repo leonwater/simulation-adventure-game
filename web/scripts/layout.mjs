@@ -9,12 +9,14 @@ import path from 'node:path';
 
 const VIEWS = (process.argv[2] ?? '360x640,360x740,390x844,412x915,480x1000').split(',').map((v) => v.split('x').map(Number));
 const PORT = 4230;
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore' });
+// detached: npx 아래 vite 자식까지 한 묶음으로 끝내야 다음 실행이 옛 서버(옛 dist)를 보지 않는다
+const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore', detached: true });
+const stopServer = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch {} };
 const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
 const dir = fs.readdirSync(root).filter((d) => d.startsWith('chromium-')).sort().pop();
 const exe = [path.join(root, dir, 'chrome-linux64', 'chrome'), path.join(root, dir, 'chrome-linux', 'chrome')].find((p) => fs.existsSync(p));
 let browser;
-const end = async (code) => { try { await browser?.close(); } catch {} server.kill(); process.exit(code); };
+const end = async (code) => { try { await browser?.close(); } catch {} stopServer(); process.exit(code); };
 setTimeout(() => { console.error('시간 초과'); end(2); }, 280000);
 await new Promise((r) => setTimeout(r, 2500));
 browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
