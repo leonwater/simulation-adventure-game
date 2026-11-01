@@ -4,7 +4,7 @@ set -e
 cd "$(dirname "$0")/.."
 PXL_COMMIT=21fee41f7ecce00bc868d7567f24ffd0f3acc8fa
 if [ ! -d .pxl ]; then git clone -q https://github.com/crsolver/claude-pxl .pxl && git -C .pxl checkout -q $PXL_COMMIT; fi
-for kind in units:sprites items:items; do
+for kind in units:sprites items:items ui:ui; do
   src=${kind%%:*}; dst=${kind##*:}
   rm -rf art/out/$src
   node .pxl/bin/pxl.js build art/$src.px.js --out art/out/$src

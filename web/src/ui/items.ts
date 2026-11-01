@@ -67,14 +67,25 @@ export const price = (g: number, affordable = true): HTMLElement => h('b', { sty
 
 export interface CardOpts {
   /** 이름 아래 한 줄 (장비 비교·효과·보유 수 등). */
-  info: Child | Child[];
+  info?: Child | Child[];
   /** 맨 아래 줄 (가격 등). 없으면 종류 줄. */
   foot?: Child | Child[];
   onClick?: () => void;
   selected?: boolean;
   /** 그림 칸 오른쪽 위 표시 (선택 √ 등). */
   badge?: Child;
+  /** 작은 카드: 그림 + 이름 한 줄 (장착 칸·대장간). info·foot은 쓰지 않는다. */
+  mini?: boolean;
+  /** 그림 칸 오른쪽 위 (장비는 착용 레벨 — owner를 주면 모자랄 때 빨강, 상인 물건은 재고). */
+  corner?: Child;
+  owner?: Character | null;
 }
+
+/** 카드 격자: 모든 카드 화면은 가로 4칸. */
+export const cardGrid = (...cells: Child[]): HTMLElement => h('div', { class: 'cards4' }, ...cells);
+
+/** 빈 칸 (장착 칸 이름 등). */
+export const emptyCard = (label = '', mini = false): HTMLElement => h('div', { class: `icard-empty${mini ? ' mini' : ''}` }, label);
 
 /** 물품 카드 (B안 · 등급 배경): 위 = 등급 색 바탕 + 큰 그림(강화 +N · 개수 ×N), 아래 = 이름 · 정보 · 바닥 줄. */
 export function itemCard(item: ItemInstance, o: CardOpts): HTMLButtonElement {
@@ -82,24 +93,28 @@ export function itemCard(item: ItemInstance, o: CardOpts): HTMLButtonElement {
   // 스킬서는 스킬 이름만, 강화 수치는 그림 칸에 따로
   const name = item.Kind === 'SkillBook' ? skillDef(item.SkillId)?.Name ?? item.Name : item.Name;
   const list = (c: Child | Child[]): Child[] => (Array.isArray(c) ? c : [c]);
-  return h('button', { class: `card-btn icard${o.selected ? ' sel' : ''}`, style: { '--g': grade }, on: o.onClick ? { click: o.onClick } : undefined },
+  return h('button', { class: `card-btn icard${o.selected ? ' sel' : ''}${o.mini ? ' mini' : ''}`, style: { '--g': grade }, on: o.onClick ? { click: o.onClick } : undefined },
     h('div', { class: 'icard-top' },
-      itemArt(item, 48),
+      itemArt(item),
       item.Enhance > 0 ? h('b', { class: 'icard-enh' }, `+${item.Enhance}`) : null,
       item.Count > 1 ? h('b', { class: 'icard-cnt' }, `×${item.Count}`) : null,
+      o.corner !== undefined ? h('span', { class: 'icard-corner' }, o.corner) : o.owner !== undefined && !o.mini ? h('span', { class: 'icard-corner' }, levelChip(o.owner, item)) : null,
       o.badge ? h('span', { class: 'icard-badge' }, o.badge) : null),
-    h('div', { class: 'icard-body' },
-      h('b', { class: 'icard-name', style: { color: nameColor(item) } }, name),
-      h('div', { class: 'icard-info' }, ...list(o.info)),
-      h('div', { class: 'icard-foot' }, ...(o.foot === undefined ? [kindLine(item, 11)] : list(o.foot)))));
+    o.mini
+      ? h('div', { class: 'icard-body' }, h('b', { class: 'icard-name', style: { color: nameColor(item) } }, name))
+      : h('div', { class: 'icard-body' },
+        h('b', { class: 'icard-name', style: { color: nameColor(item) } }, name),
+        h('div', { class: 'icard-info' }, ...list(o.info ?? '')),
+        h('div', { class: 'icard-foot' }, ...(o.foot === undefined ? [kindLine(item, 11, true)] : list(o.foot)))));
 }
 
 /** 종류 줄: 색 원 + 종류. */
-export function kindLine(item: ItemInstance, size = 12): HTMLElement {
+export function kindLine(item: ItemInstance, size = 12, short = false): HTMLElement {
   const cat = category(item);
-  // 스킬서는 등급까지: '하급 스킬서'
+  // 스킬서는 등급까지: '하급 스킬서' (좁은 카드에서는 '하급'만)
   const book = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
-  return h('div', { class: 'row', style: { gap: '4px', fontSize: `${size}px`, color: 'var(--body)', height: `${Math.round(size * 1.4)}px`, whiteSpace: 'nowrap' } }, circle(CAT_COLOR[cat], size * 0.8), book ? `${Names.tier(book.Tier)} ${CAT_NAME[cat]}` : CAT_NAME[cat]);
+  const text = book ? (short ? Names.tier(book.Tier) : `${Names.tier(book.Tier)} ${CAT_NAME[cat]}`) : CAT_NAME[cat];
+  return h('div', { class: 'row', style: { gap: '4px', fontSize: `${size}px`, color: 'var(--body)', height: `${Math.round(size * 1.4)}px`, whiteSpace: 'nowrap' } }, circle(CAT_COLOR[cat], size * 0.8), text);
 }
 
 export const delta = (d: number): string => (d > 0 ? `+${d}` : d < 0 ? `-${-d}` : '0');
@@ -143,15 +158,6 @@ export function levelChip(c: Character | null, item: ItemInstance): Child {
   return c && c.Level < item.LevelReq ? colored(`Lv.${item.LevelReq}`, RED) : `Lv.${item.LevelReq}`;
 }
 
-/** 장비 카드 한 줄: 착용 레벨 먼저, 이어서 지금 장비 대비 능력치 변화 ('Lv.26 방어 +6'). */
-export function equipLine(c: Character | null, item: ItemInstance): HTMLElement {
-  const el = h('span', { style: { whiteSpace: 'nowrap' } }, levelChip(c, item));
-  const cmp = c ? compareChip(c, item) : '';
-  if (typeof cmp === 'string' && cmp !== '') el.append(' ', cmp);
-  else if (cmp instanceof Node) el.append(' ', cmp);
-  return el;
-}
-
 /** 소모품 효과 한 줄: 'HP 30% 회복', '독 해제'. */
 function shortConsumable(id: string): string {
   const d = consumableDef(id);
@@ -165,7 +171,7 @@ export function infoText(c: Character | null, item: ItemInstance): Child {
   // 능력치 증감이 없는 물품은 짧은 설명 (소모품 효과 · 재료 · 강화석)
   if (item.Kind === 'Consumable') return shortConsumable(item.TemplateId);
   if (item.Kind === 'Material') return '퀘스트 재료';
-  if (item.Kind === 'EnhanceStone') return '+6 이상 강화 재료';
+  if (item.Kind === 'EnhanceStone') return '강화 재료';
   const def = item.Kind === 'SkillBook' ? skillDef(item.SkillId) : null;
   if (!def) return '';
   if (def.JobRestriction < 0) return '공용';
@@ -186,16 +192,15 @@ export function soldOut(cell: HTMLButtonElement): HTMLButtonElement {
   return cell;
 }
 
-/** 가방·창고 3열 격자 (상점 카드와 같은 물품 카드). */
+/** 가방·창고 4열 격자 (상점 카드와 같은 물품 카드). */
 export function itemGrid(container: ItemContainer, owner: Character | null, onTap: (item: ItemInstance) => void, opts: { selectedUid?: string | null; showEmpty?: boolean } = {}): HTMLElement {
-  // 상점 카드와 같은 크기·배열: 가로 3칸
-  const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } });
+  const grid = cardGrid();
   for (const item of container.Items) {
-    grid.append(itemCard(item, { info: item.Kind === 'Equipment' ? equipLine(owner, item) : infoText(owner, item), selected: item.Uid === opts.selectedUid, onClick: () => onTap(item) }));
+    grid.append(itemCard(item, { info: infoText(owner, item), owner, selected: item.Uid === opts.selectedUid, onClick: () => onTap(item) }));
   }
   if (opts.showEmpty !== false) {
     for (let i = container.Items.length; i < container.Capacity; i++) {
-      grid.append(h('div', { class: 'icard-empty' }));
+      grid.append(emptyCard());
     }
   }
   return grid;

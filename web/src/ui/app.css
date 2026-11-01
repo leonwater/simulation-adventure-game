@@ -77,7 +77,7 @@ span.ic { background-color: currentColor; -webkit-mask: var(--src) center / cont
 .progress > i { display: block; height: 100%; background: var(--blue); }
 
 /* 일러스트 + 대사 */
-.illust { position: relative; background: var(--illust-bg) center / cover no-repeat; flex-shrink: 0; image-rendering: pixelated; }
+.illust { position: relative; overflow: hidden; background: var(--illust-bg) center / cover no-repeat; flex-shrink: 0; image-rendering: pixelated; }
 .illust > *, .title-bg { image-rendering: pixelated; } /* v3.6 일러스트는 픽셀화한 작은 그림(200px)을 키워 보인다 */
 .illust.round { border-radius: 12px; overflow: hidden; }
 .illust .shade { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(to top, var(--shade), transparent); }
@@ -142,26 +142,51 @@ input.text::placeholder { color: var(--placeholder); }
 .unit-shape { position: absolute; transform-origin: center; cursor: pointer; }
 .unit-shape > * { position: absolute; }
 .unit-sprite { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); image-rendering: pixelated; pointer-events: none; }
-.icard { display: flex; flex-direction: column; height: 122px; padding: 0; border-radius: 12px; overflow: hidden; min-width: 0; position: relative; }
+/* v3.6 의뢰 게시판: 나무 바탕 + 의뢰서 종이(등급별 테두리 · 압정) 2열 */
+.qboard { --qink: #3a2a1a; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 14px 10px 12px; border: 3px solid #4a2e22; border-radius: 4px; background: #6e4630 0 0 / 64px 32px repeat; image-rendering: pixelated; }
+.qnote { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 4px; color: var(--qink); cursor: pointer; border: 6px solid transparent; border-image-slice: 3 fill; border-image-width: 6px; border-image-repeat: stretch; image-rendering: pixelated; box-shadow: 2px 3px 0 rgba(0,0,0,.35); text-align: left; }
+.qnote::before { content: ''; position: absolute; top: -7px; left: 50%; width: 6px; height: 6px; margin-left: -3px; background: var(--pin); box-shadow: 0 0 0 2px #1a1420, inset -2px -2px 0 rgba(0,0,0,.3); }
+.qnote.iron { --pin: #9aa4b4; } .qnote.bronze { --pin: #e0975e; } .qnote.silver { --pin: #f4f6fb; } .qnote.gold { --pin: #f6d070; }
+.qnote.active { transform: rotate(-1deg); }
+.qhead { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.qtitle { font-size: 12px; line-height: 14px; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.qpic { height: 52px; display: grid; place-items: center; background: rgba(110,70,48,.12); }
+.qpic img.item-art { width: 32px; height: 32px; }
+.qpic-unit { height: 48px; image-rendering: pixelated; }
+.qline { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; font-size: 11px; line-height: 14px; }
+.qgold { color: #8a5a12; }
+.qnote > button { margin-top: 2px; min-height: 30px; }
+.qstamp { position: absolute; right: -2px; top: -2px; padding: 1px 4px; font-size: 10px; color: #f4f6fb; background: #3f80c0; transform: rotate(6deg); }
+.qstamp.done { background: #c8963a; }
+.qempty { grid-column: 1 / -1; padding: 10px; font-size: 12px; color: #f1e8d6; text-align: center; }
+.sticky-top { position: sticky; top: 0; z-index: 3; box-shadow: 0 6px 10px -6px var(--ink-shadow); }
+.cards4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+/* v3.6 물품 카드: 가로 4칸, 그림 2배(32px) — 모든 물품의 픽셀 1칸 크기가 같다 */
+.icard { display: flex; flex-direction: column; height: 118px; padding: 0; border-radius: 10px; overflow: hidden; min-width: 0; position: relative; }
+.icard.mini { height: 72px; }
 .icard.sel { border: 2px solid var(--accent); }
-.icard-top { position: relative; flex-shrink: 0; height: 62px; display: grid; place-items: center; background: var(--card); background: linear-gradient(160deg, color-mix(in srgb, var(--g) 50%, var(--card)), var(--card)); }
-.icard-enh, .icard-cnt { position: absolute; font-size: 12px; text-shadow: 0 1px 2px var(--ink-shadow), 0 0 2px var(--ink-shadow); }
-.icard-enh { left: 6px; top: 3px; color: var(--gold); }
-.icard-cnt { right: 6px; bottom: 2px; color: var(--text); }
-.icard-badge { position: absolute; right: 4px; top: 4px; }
-.icard-badge .chip { position: static; }
-.icard-body { display: flex; flex-direction: column; gap: 2px; flex: 1; width: 100%; min-width: 0; padding: 6px 8px 7px; }
+.icard-top { position: relative; flex-shrink: 0; height: 44px; display: grid; place-items: center; background: var(--card); background: linear-gradient(160deg, color-mix(in srgb, var(--g) 50%, var(--card)), var(--card)); }
+.icard-enh, .icard-cnt { position: absolute; font-size: 11px; text-shadow: 0 1px 0 var(--ink-shadow), 1px 0 0 var(--ink-shadow), -1px 0 0 var(--ink-shadow), 0 -1px 0 var(--ink-shadow); }
+.icard-enh { left: 4px; top: 2px; color: var(--gold); }
+.icard-cnt { right: 4px; bottom: 1px; color: var(--text); }
+.icard-badge { position: absolute; left: 3px; bottom: 3px; }
+.icard-corner { position: absolute; right: 4px; top: 2px; font-size: 10px; color: var(--body); text-shadow: 0 1px 0 var(--ink-shadow), 1px 0 0 var(--ink-shadow), -1px 0 0 var(--ink-shadow), 0 -1px 0 var(--ink-shadow); }
+.icard-badge .chip { position: static; width: 18px; height: 18px; font-size: 12px; }
+.icard-body { display: flex; flex-direction: column; gap: 2px; flex: 1; width: 100%; min-width: 0; padding: 5px 6px 6px; }
 .icard-body > * { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.icard-name { font-size: 13px; }
+.icard-name { font-size: 12px; line-height: 13px; }
+.icard:not(.mini) .icard-name { white-space: normal; height: 26px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .icard-info { font-size: 11px; color: var(--sub); }
-.icard-foot { margin-top: auto; display: flex; justify-content: space-between; gap: 4px; font-size: 12px; }
-.icard-empty { height: 122px; border: 1px dashed var(--card-border); border-radius: 12px; background: var(--bg); opacity: .6; }
+.icard-foot { margin-top: auto; display: flex; justify-content: space-between; gap: 4px; font-size: 11px; }
+.icard-empty { height: 118px; display: grid; place-items: center; font-size: 11px; color: var(--sub); border: 1px dashed var(--card-border); border-radius: 10px; background: var(--bg); opacity: .7; }
+.icard-empty.mini { height: 72px; }
 .item-art { width: 32px; height: 32px; flex-shrink: 0; image-rendering: pixelated; }
+.nw { white-space: nowrap; }
 .job-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .job-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; min-height: 150px; text-align: center; }
 .job-sprite { width: 60px; height: auto; image-rendering: pixelated; }
-.job-pro { font-size: 12px; color: var(--green); line-height: 1.3; }
-.job-con { font-size: 12px; color: var(--orange); line-height: 1.3; }
+.job-pro { font-size: 12px; color: var(--green); line-height: 1.3; white-space: nowrap; }
+.job-con { font-size: 12px; color: var(--orange); line-height: 1.3; white-space: nowrap; }
 .unit-foot { left: 2px; right: 2px; bottom: -5px; height: 10px; border-radius: 50%; }
 .unit-label { position: absolute; text-align: center; white-space: nowrap; pointer-events: none; }
 .hpbar { position: absolute; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; pointer-events: none; }
@@ -235,7 +260,24 @@ button:disabled, button.disabled { opacity: .55; background: var(--btn); border-
 /* R5 하단 메뉴: 선택된 칸 위쪽에 횃불색 막대 */
 .nav button.on::before { content: ''; position: absolute; top: 0; left: 30%; right: 30%; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); box-shadow: 0 2px 10px var(--torch-soft); }
 
-/* R6 움직임·접근성 */
+/* v3.6 픽셀풍: 각진 모서리(3~4px) · 2px 테두리 · 블록 버튼(아래쪽 그림자, 누르면 한 칸 내려감) · 번지는 빛 대신 단단한 그림자 */
+:root { --r-panel: 4px; --r-ctrl: 3px; --px-shade: inset 0 -3px 0 rgba(0,0,0,.3), inset 0 2px 0 rgba(255,255,255,.07); }
+button, input.text, .toast, .dialogue, .gear, .ibtn, .choice, .bchoice, .pad > *, .battle-potion, .icard, .icard-empty, .illust.round, .mnode { border-radius: var(--r-ctrl); }
+.card, .modal, .pad, .dialogue { border-radius: var(--r-panel); }
+button:not(.tabs button):not(.nav button):not(.modal-x) { border-width: 2px; box-shadow: var(--px-shade); }
+button.primary { box-shadow: var(--px-shade), 0 0 0 1px var(--accent-dark, #8a5a12); }
+button.card-btn.on { box-shadow: var(--px-shade), 0 0 0 1px var(--accent); }
+button:active:not(:disabled) { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(0,0,0,.3); }
+button:disabled, button.disabled { box-shadow: none; }
+.card, .modal { border-width: 2px; box-shadow: 0 3px 0 rgba(0,0,0,.35); }
+.dialogue { border-width: 2px; }
+.dialogue .name, .etag, .chip, .qstamp { border-radius: 2px; }
+.dot { border-radius: 0; width: 8px; height: 8px; box-shadow: 0 0 0 2px var(--bg); }
+.progress, .hpbar, .progress > *, .hpbar > i { border-radius: 0; }
+.nav button.on::before { border-radius: 0; box-shadow: none; }
+.bchoice .kbar { border-radius: 0; }
+
+
 html { color-scheme: dark; }
 .modal { overscroll-behavior: contain; }
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

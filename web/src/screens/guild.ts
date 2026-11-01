@@ -1,6 +1,7 @@
 import { B } from '../core/balance';
 import { badgeBonus, promotionStatus, skillSlots, storageCapacity } from '../core/character';
 import { RANKS } from '../core/enums';
+import type { Rank } from '../core/enums';
 import type { Quest } from '../core/guild';
 import {
   abandonQuest, acceptQuest, cannotAcceptReason, deposit, goalText, isQuestComplete, maxQuestRank, minQuestRank, progressText, storageFee,
@@ -9,7 +10,13 @@ import {
 import { displayName, statLine } from '../core/items';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { colored, itemGrid } from '../ui/items';
+import { artImg, colored, itemGrid } from '../ui/items';
+import { spriteUrl } from '../ui/sprites';
+import WOOD from '../assets/ui/wood.png';
+import paperIron from '../assets/ui/paper_iron.png';
+import paperBronze from '../assets/ui/paper_bronze.png';
+import paperSilver from '../assets/ui/paper_silver.png';
+import paperGold from '../assets/ui/paper_gold.png';
 import { button, divider, h, icon, row, sub, tabs } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -20,6 +27,10 @@ import { navigate } from './nav';
 const num = (n: number): string => n.toLocaleString('en-US');
 
 /** 길드: 접수원 일러스트 + 대사, 탭(퀘스트·등급·창고). */
+/** 의뢰서 종이 테두리: 등급 묶음별 (F·E 쇠 · D·C 구리 · B·A 은 · S·SS 금) */
+const PAPER_TIER: Record<Rank, 'iron' | 'bronze' | 'silver' | 'gold'> = { F: 'iron', E: 'iron', D: 'bronze', C: 'bronze', B: 'silver', A: 'silver', S: 'gold', SS: 'gold' };
+const PAPER = { iron: paperIron, bronze: paperBronze, silver: paperSilver, gold: paperGold };
+
 export class GuildScreen extends Screen {
   private tab = 0;
   /** 창고 탭: false = 보관(기본), true = 출고. */
@@ -42,7 +53,7 @@ export class GuildScreen extends Screen {
     const line = this.tab === 2 ? `맡기실 때마다 수수료 ${storageFee(c)}G를 받아요. 찾으실 때는 무료예요. 맡긴 물건은 던전에서 쓰러져도 안전해요.` : this.line;
     return h('div', { class: 'page' },
       townBar('길드', '마을', () => navigate('town'), c),
-      npcIllustration('guild_receptionist', '길드 접수원', line, 260),
+      npcIllustration('guild_receptionist', '길드 접수원', line, 200),
       tabs(['퀘스트', '등급', '창고'], this.tab, (i) => {
         this.tab = i;
         router.rebuild();
@@ -61,33 +72,34 @@ export class GuildScreen extends Screen {
     const g = S.data!.Guild;
     return [
       row(h('div', { class: 'sub grow' }, `진행 중 ${g.Active.length}/${B.MaxActiveQuests}`), sub('수락 가능'), icon(rankIcon(minQuestRank(c.Rank)), 18), sub('~'), icon(rankIcon(maxQuestRank(c.Rank)), 18)),
-      h('div', { class: 'col', style: { gap: '6px' } },
+      // 나무 게시판에 의뢰서 카드 (진행 중 먼저)
+      h('div', { class: 'qboard', style: { backgroundImage: `url(${WOOD})` } },
         ...g.Active.map((q) => this.questCard(q, true)),
-        g.Board.length === 0 ? sub('게시판이 비었습니다. 던전에 다녀오면 새 의뢰가 붙습니다.') : null,
-        ...g.Board.map((q) => this.questCard(q, false))),
+        ...g.Board.map((q) => this.questCard(q, false)),
+        g.Board.length === 0 ? h('div', { class: 'qempty' }, '게시판이 비었습니다. 던전에 다녀오면 새 의뢰가 붙습니다.') : null),
     ];
   }
 
+  /** 의뢰서 카드: 등급별 종이 테두리·압정 + 관련 몬스터/재료 그림 + 목표·보수 + 수락/포기/보고. */
   private questCard(q: Quest, active: boolean): HTMLElement {
     const c = S.c;
     const done = active && isQuestComplete(q, c);
-    const small = (label: string, fn: () => void, kind: '' | 'primary' | 'outline' | 'ghost', enabled = true): HTMLElement => {
-      const b = button(label, (e?: unknown) => {
-        void e;
-        fn();
-      }, kind, 'sm');
-      b.style.cssText += ';width:52px;min-height:36px;padding:0;flex-shrink:0';
+    const tier = PAPER_TIER[q.Rank];
+    const act = (label: string, fn: () => void, kind: '' | 'primary' | 'outline' | 'ghost', enabled = true): HTMLElement => {
+      const b = button(label, fn, kind, 'sm');
       b.disabled = !enabled;
       b.addEventListener('click', (ev) => ev.stopPropagation());
       return b;
     };
-    const right = done ? small('보고', () => this.turnIn(q), 'primary') : active ? small('포기', () => this.abandon(q), 'ghost') : small('수락', () => this.accept(q), 'outline', cannotAcceptReason(S.data!.Guild, c, q) === null);
-    return h('div', { class: 'row', role: 'button', style: { minHeight: '66px', padding: '6px 10px', borderRadius: '10px', cursor: 'pointer', background: active ? 'var(--blue-bg)' : 'var(--card)', border: `${active ? 2 : 1}px solid ${done ? 'var(--accent)' : active ? 'var(--blue)' : 'var(--card-border)'}` }, on: { click: () => this.detail(q, active) } },
-      icon(rankIcon(q.Rank), 28),
-      h('div', { class: 'col grow', style: { gap: '1px' } },
-        h('b', null, q.Title),
-        h('div', { style: { fontSize: '12px', color: done ? 'var(--gold)' : 'var(--sub)' } }, active ? `목표 ${q.TargetFloor}층 · 진행 중 ${progressText(q, c)}` : `목표 ${q.TargetFloor}층 · ${goalText(q)}`),
-        h('div', { class: 'body', style: { fontSize: '12px' } }, '보상 ', colored(`${num(q.RewardGold)}G`, 'var(--gold)'), ' · ', colored(`경험치 ${num(q.RewardExp)}`, 'var(--info)'))),
+    const right = done ? act('보고', () => this.turnIn(q), 'primary') : active ? act('포기', () => this.abandon(q), 'ghost') : act('수락', () => this.accept(q), 'outline', cannotAcceptReason(S.data!.Guild, c, q) === null);
+    const sprite = q.Kind === 'Collect' ? null : spriteUrl(q.SpeciesId);
+    const pic = q.Kind === 'Collect' ? artImg(q.MaterialId) : sprite ? h('img', { class: 'qpic-unit', src: sprite, alt: '' }) : icon('room_boss', 32, 'var(--qink)');
+    return h('div', { class: `qnote ${tier}${active ? ' active' : ''}`, role: 'button', style: { borderImageSource: `url(${PAPER[tier]})` }, on: { click: () => this.detail(q, active) } },
+      active ? h('span', { class: `qstamp${done ? ' done' : ''}` }, done ? '완료' : '진행 중') : null,
+      h('div', { class: 'qhead' }, icon(rankIcon(q.Rank), 22), h('b', { class: 'qtitle' }, q.Title)),
+      h('div', { class: 'qpic' }, pic),
+      h('div', { class: 'qline' }, h('span', { class: 'nw' }, `목표 ${q.TargetFloor}층`), ' · ', h('span', { class: 'nw' }, active ? progressText(q, c) : goalText(q))),
+      h('div', { class: 'qline' }, icon('gold', 14), h('b', { class: 'nw qgold' }, `${num(q.RewardGold)}G`), ' ', h('span', { class: 'nw' }, `경험치 ${num(q.RewardExp)}`)),
       right);
   }
 
@@ -169,7 +181,7 @@ export class GuildScreen extends Screen {
         sub('세 조건을 모두 채우면 자동으로 승급합니다.'));
     } else card.append(h('div', { class: 'gold' }, '최고 등급에 도달했습니다.'));
     // 등급표: 열 머리글(스킬 · 창고 · 능력치)과 숫자만. 지금 등급은 금색 글자로만 표시한다
-    const COLS = ['58px', '58px', '64px'];
+    const COLS = ['48px', '48px', '56px'];
     const cell = (text: string, w: string, color: string, bold = false): HTMLElement => h('div', { style: { width: w, textAlign: 'center', flexShrink: '0', color, fontWeight: bold ? '700' : '400', fontSize: '15px' } }, text);
     const table = h('div', { class: 'card', style: { gap: '0', padding: '14px 14px 6px' } },
       h('b', { style: { fontSize: '16px', marginBottom: '8px' } }, '모험가 등급표'),
@@ -178,7 +190,7 @@ export class GuildScreen extends Screen {
       ...RANKS.map((rank, r) => {
         const color = c.Rank === rank ? 'var(--gold)' : 'var(--body)';
         return h('div', { class: 'row', style: { minHeight: '52px', gap: '8px', padding: '4px 0', borderBottom: r < RANKS.length - 1 ? '1px solid var(--line-soft)' : '' } },
-          h('div', { class: 'row grow', style: { gap: '10px' } }, icon(rankIcon(rank), 36), h('b', { style: { fontSize: '16px', color: c.Rank === rank ? 'var(--gold)' : 'var(--text)' } }, `${rank} 등급`)),
+          h('div', { class: 'row grow', style: { gap: '8px', minWidth: '0' } }, icon(rankIcon(rank), 32), h('b', { class: 'nw', style: { fontSize: '16px', color: c.Rank === rank ? 'var(--gold)' : 'var(--text)' } }, `${rank} 등급`)),
           cell(`${skillSlots(rank)}`, COLS[0], color), cell(`${storageCapacity(rank)}`, COLS[1], color), cell(`+${Math.round(B.BadgeBonus[r] * 100)}%`, COLS[2], color, true));
       }));
     return [card, table];

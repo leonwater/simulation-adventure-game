@@ -37,18 +37,18 @@ export class SkillsScreen extends Screen {
     }
     const slots = skillSlots(c.Rank);
     const cells: HTMLElement[] = [];
-    const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } });
-    // 슬롯은 처음부터 6칸(3×2): 지금 등급에서 열린 칸은 빈 슬롯, 아직 닫힌 칸은 어두운 칸에 '○ 등급에 열림'
+    const grid = h('div', { class: 'cards4' });
+    // 슬롯은 처음부터 6칸: 지금 등급에서 열린 칸은 빈 슬롯, 아직 닫힌 칸은 어두운 칸에 '○ 등급에 열림'
     for (let i = 0; i < MAX_SLOTS; i++) {
       if (i >= slots) {
         grid.append(h('div', { style: { height: '84px', border: '1px dashed var(--slot-locked)', borderRadius: '10px', background: 'var(--bg)', padding: '8px', opacity: '.55', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' } },
-          h('b', { class: 'sub', style: { fontSize: '14px' } }, '잠김'), h('span', { class: 'spacer' }), sub(`${unlockRank(i + 1)} 등급에 열림`)));
+          h('b', { class: 'sub', style: { fontSize: '14px' } }, '잠김'), h('span', { class: 'spacer' }), sub(`${unlockRank(i + 1)} 등급에`), sub('열림')));
       } else if (i < c.Skills.Equipped.length) {
         const id = c.Skills.Equipped[i];
         const def = skillDef(id)!;
         const st = getSkillState(c, id)!;
         const cell = h('button', { class: 'card-btn on', style: { height: '84px', padding: '8px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', minWidth: '0' }, on: { click: () => this.detail(id) } },
-          skillNameEl(def, st.Level), h('span', { class: 'spacer' }), h('span', { class: 'sub', style: { fontSize: '12px', textAlign: 'left', whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' } }, skillBrief(def, st.Level)), sub(`재사용 ${def.Cooldown}턴`));
+          skillNameEl(def, st.Level), h('span', { class: 'spacer' }), h('span', { class: 'sub', style: { fontSize: '12px', textAlign: 'left', whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' } }, skillBrief(def, st.Level)), h('span', { class: 'sub nw', style: { fontSize: '11px' } }, `재사용 ${def.Cooldown}턴`));
         cells.push(cell);
         grid.append(cell);
       } else {

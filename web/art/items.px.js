@@ -218,17 +218,17 @@ sprite("potion_hi", { outline: "k" }, `
   ..............`, glow("p", { r: 1, strength: 0.3 }))
 sprite("bandage", { outline: "k" }, `
   ..............
-  ....bbbbbb....
-  ...bBBBBBBb...
-  ..bBbbbbbbBb..
-  ..bBbBBBBbBb..
-  ..bBbBccBbBb..
-  ..bBbBccBbBb..
-  ..bBbBBBBbBb..
-  ..bBbbbbbbBb..
-  ...bBBBBBBbbb.
-  ....bbbbbbbBbb
-  .........bbBbb
+  ..............
+  ..............
+  ...bbbbbbbb...
+  ..bBBbbbbbbb..
+  .bBccBbbbbbbb.
+  .bBcbBbrbbbbb.
+  .bBcbBrrrbbbb.
+  .bBccBbrbbbbb.
+  ..bBBbbbbbbbb.
+  ...bbbbbbbbbbb
+  ..........bbBb
   ...........bbb
   ..............`)
 sprite("salve", { outline: "k" }, `

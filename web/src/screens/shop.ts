@@ -13,7 +13,7 @@ import { goodUnlimited } from '../core/items';
 import { jobLine, npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { offerBetterGear, isBetter } from '../ui/gearoffer';
-import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemCard, levelChip, price } from '../ui/items';
+import { cardGrid, colored, compareLine, gearText, gradeTag, infoText, itemCard, price } from '../ui/items';
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
 import { sellCountDialog } from '../ui/sellcount';
 import { tierColor } from '../ui/theme';
@@ -45,7 +45,7 @@ export class ShopScreen extends Screen {
     const c = S.c;
     return h('div', { class: 'page' },
       townBar('상점', '마을', () => navigate('town'), c),
-      npcIllustration('shop', '상점 주인', this.line, 260),
+      npcIllustration('shop', '상점 주인', this.line, 200),
       tabs(['구매', '판매'], this.tab, (i) => {
         this.tab = i;
         this.selected = null;
@@ -61,9 +61,10 @@ export class ShopScreen extends Screen {
 
   private buyTab(): HTMLElement[] {
     const shop = S.data!.Shop;
-    const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...cells);
+    const grid = cardGrid;
     return [
-      h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '6px 8px 6px 12px' } },
+      // 물건 갱신 줄은 스크롤해도 위에 붙어 있다
+      h('div', { class: 'card sticky-top', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '6px 8px 6px 12px' } },
         h('b', { class: 'grow', style: { fontSize: '15px' } }, '물건 갱신'),
         h('b', { class: 'gold', style: { fontSize: '13px' } }, `${rerollCost(shop).toLocaleString('en-US')}G`),
         (() => { const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm'); b.style.width = '64px'; b.style.minHeight = '34px'; b.style.height = '34px'; return b; })()),
@@ -82,7 +83,8 @@ export class ShopScreen extends Screen {
     const cell = itemCard(item, {
       onClick: () => this.buyEquipDialog(item),
       // 착용 레벨 · 능력치 변화(또는 직업 전용)를 한 줄에
-      info: usable ? equipLine(c, item) : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, 'var(--red-light)')],
+      info: usable ? infoText(c, item) : colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, 'var(--red-light)'),
+      owner: c,
       foot: price(item.Price),
     });
     if (!usable) cell.style.opacity = '.55';
@@ -112,12 +114,14 @@ export class ShopScreen extends Screen {
     }, 'primary'));
   }
 
-  private skillBookJob(item: ItemInstance, size: number): HTMLElement | string {
+  /** 스킬서 직업 줄. 좁은 카드(icon=false)는 글자만 */
+  private skillBookJob(item: ItemInstance, size: number, withIcon = true): HTMLElement | string {
     const def = skillDef(item.SkillId);
     if (!def) return '';
     if (def.JobRestriction < 0) return '모든 직업';
     const job = JOBS[def.JobRestriction];
-    return jobLine(job, `${Names.job(job)} 전용`, size, job === S.c.Job ? 'var(--sub)' : 'var(--red-light)');
+    const color = job === S.c.Job ? 'var(--sub)' : 'var(--red-light)';
+    return withIcon ? jobLine(job, `${Names.job(job)} 전용`, size, color) : colored(`${Names.job(job)} 전용`, color);
   }
 
   private goodCell(g: ShopGood): HTMLElement {
@@ -126,7 +130,7 @@ export class ShopScreen extends Screen {
     const known = item.Kind === 'SkillBook' && knowsSkill(c, item.SkillId);
     const cell = itemCard(item, {
       onClick: () => this.buyGoodDialog(g),
-      info: item.Kind === 'Consumable' ? `보유 ${countOf(c.Inventory, item.TemplateId)}` : known ? colored('이미 배움', 'var(--red-light)') : this.skillBookJob(item, 11),
+      info: item.Kind === 'Consumable' ? `보유 ${countOf(c.Inventory, item.TemplateId)}` : known ? colored('이미 배움', 'var(--red-light)') : this.skillBookJob(item, 11, false),
       foot: price(item.Price),
     });
     if (known) {
@@ -228,14 +232,14 @@ export class ShopScreen extends Screen {
       out.push(sub('가방이 비어 있습니다.'));
       return out;
     }
-    out.push(h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...c.Inventory.Items.map((i) => this.sellCell(i))));
+    out.push(cardGrid(...c.Inventory.Items.map((i) => this.sellCell(i))));
     return out;
   }
 
   private sellCell(item: ItemInstance): HTMLElement {
     const c = S.c;
     const sel = !!this.selected && this.selected.has(item.Uid);
-    const cell = itemCard(item, { info: item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item), foot: price(sellPrice(item)), selected: sel, badge: sel ? h('span', { class: 'chip' }, '√') : undefined });
+    const cell = itemCard(item, { info: infoText(c, item), owner: c, foot: price(sellPrice(item)), selected: sel, badge: sel ? h('span', { class: 'chip' }, '√') : undefined });
     longPress(cell, () => {
       if (!this.selected) this.selected = new Set();
       this.selected.add(item.Uid);

@@ -36,6 +36,11 @@ const forceRoom = (type, extra = '') => `(() => { const S = window.__S; if (!S.i
 const STATES = [
   ['title', `window.__screens.goTitle()`],
   ['settings', `window.__screens.goTitle()`, ['button:text-is("설정")']],
+  ['register-name', `window.__register(0)`],
+  ['register-job', `window.__register(1)`],
+  ['register-job-confirm', `window.__register(1)`, ['.job-card >> nth=2']],
+  ['register-difficulty', `window.__register(2)`],
+  ['register-confirm', `(() => { window.__register(3); })()`],
   ['town', `window.__screens.goTown()`],
   ['character', `window.__nav('character')`],
   ['character-detail', `window.__nav('character')`, ['button:has-text("상세 능력치")']],
@@ -109,7 +114,7 @@ const CHECK = () => {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     const t = n.textContent, el = n.parentElement;
-    if (!t.trim() || !el || !el.closest('.screen, .layer') || el.closest('.floatup, .flash, .toast, .intro, .stage')) continue;
+    if (!t.trim() || !el || !el.closest('.screen, .layer') || el.closest('.floatup, .flash, .toast, .intro, .stage, .icard-name, .qtitle')) continue; // 이름 칸은 두 줄까지 단어 단위로 접히게 만든 것
     const short = t.trim().length <= 10;
     if (short && lines(n, 0, t.length) > 1) { out.push(`줄바꿈: ${desc(el)}`); continue; }
     let at = 0;
@@ -118,6 +123,9 @@ const CHECK = () => {
       at += part.length + 3;
     }
   }
+  // (6) 스크롤해야 보이는 행동 버튼 (다음·확인 등. 물품·의뢰 목록 카드는 목록이라 제외)
+  const hidden = [...document.querySelectorAll('.screen .scroll button:not(.card-btn):not(.qnote button)')].filter((b) => b.getBoundingClientRect().top > innerHeight - 4 && getComputedStyle(b).visibility !== 'hidden');
+  if (hidden.length) out.push(`스크롤 필요 버튼 ${hidden.length}개: ${desc(hidden[0])}`);
   return [...new Set(out)];
 };
 

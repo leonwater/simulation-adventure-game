@@ -11,11 +11,10 @@ import { bagPrice, buyBag, canBuyBag, sell } from '../core/shop';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
-import { button, h, icon, row, sub } from '../ui/kit';
-import { compareLine, gearText, gradeTag, itemArt, itemGrid, kindLine } from '../ui/items';
+import { button, h, icon, row } from '../ui/kit';
+import { cardGrid, compareLine, emptyCard, gearText, gradeTag, itemCard, itemGrid, kindLine } from '../ui/items';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
-import { GRADE_COLOR } from '../ui/theme';
 import { goToCurrent } from './index';
 import { navigate } from './nav';
 
@@ -45,10 +44,9 @@ export class InventoryScreen extends Screen {
       bar,
       h('div', { class: 'scroll', style: { gap: '10px' } },
         h('b', null, '장착 장비'),
-        h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' } }, ...SLOTS.map((s) => this.slotCell(s))),
+        cardGrid(...SLOTS.map((s) => this.slotCell(s))),
         row(h('b', { class: 'grow' }, '가방 ', h('span', { class: 'sub', style: { fontSize: '14px' } }, `${c.Inventory.Items.length} / ${c.Inventory.Capacity}`)), this.fromDungeon ? null : expand),
-        itemGrid(c.Inventory, c, (item) => this.showItem(item, null)),
-        sub('사망하면 장착하지 않은 아이템을 모두 잃습니다. 길드 창고에 맡겨 두세요.')),
+        itemGrid(c.Inventory, c, (item) => this.showItem(item, null))),
       this.fromDungeon
         ? h('div', { style: { padding: '8px 16px', background: 'var(--bar)', borderTop: '1px solid var(--line)', flexShrink: '0' } }, button('던전으로 돌아가기', () => this.back(), 'primary', 'lg'))
         : bottomNav(2, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
@@ -57,12 +55,8 @@ export class InventoryScreen extends Screen {
   private slotCell(slot: EquipSlot): HTMLElement {
     const c = S.c;
     const item = c.Equipment.Slots[SLOTS.indexOf(slot)];
-    const cell = h('button', {
-      class: 'card-btn', style: { height: '66px', padding: '8px 6px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', background: item ? 'var(--card)' : 'var(--bg)', borderColor: item ? GRADE_COLOR[item.Grade] : 'var(--card-border)' },
-      on: { click: () => item && this.showItem(item, slot) },
-    }, item ? h('div', { class: 'row', style: { width: '100%', gap: '4px' } }, h('span', { class: 'sub grow' }, Names.slot(slot)), itemArt(item, 24)) : h('span', { class: 'sub' }, Names.slot(slot)), h('span', { class: 'spacer' }),
-    item ? h('span', { style: { fontSize: '12px', color: GRADE_COLOR[item.Grade], textAlign: 'left' } }, displayName(item)) : sub('비어 있음'));
-    return cell;
+    // 장착 칸: 작은 카드 (그림 + 이름), 비어 있으면 부위 이름
+    return item ? itemCard(item, { mini: true, onClick: () => this.showItem(item, slot) }) : emptyCard(Names.slot(slot), true);
   }
 
   /** 아이템 팝업: 이름·종류·수치·지금 장비와 비교, 착용·해제·사용·습득·판매/버리기. */

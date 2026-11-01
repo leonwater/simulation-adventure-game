@@ -47,7 +47,7 @@ export class CharacterScreen extends Screen {
       townBar('캐릭터', '마을', () => navigate('town'), c),
       h('div', { class: 'scroll fit', style: { gap: '10px' } },
         row(
-          h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { class: 'display', style: { fontSize: '24px' } }, c.Name), jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level} / ${B.MaxLevel}`, 13)),
+          h('div', { class: 'col grow', style: { gap: '2px' } }, h('b', { class: 'display nw', style: { fontSize: '24px', overflow: 'hidden', textOverflow: 'ellipsis' } }, c.Name), jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level} / ${B.MaxLevel}`, 13)),
           // 경험치: 글자 바로 아래 가로 막대 (마을 머리줄과 같은 모양)
           h('div', { class: 'col', style: { width: '132px', gap: '6px', alignItems: 'stretch' } },
             h('div', { class: 'sub', style: { textAlign: 'right' } }, c.Level >= B.MaxLevel ? '최대 레벨' : `경험치 ${Math.floor(expProgress(c) * 100)}%`),
@@ -74,7 +74,7 @@ export class CharacterScreen extends Screen {
       // 직업 고유 능력치: 포인트로는 못 올리고 모험가 등급으로만 오른다
       row(icon(PERKS[c.Job].icon, 28), h('div', { class: 'col grow', style: { gap: '1px' } },
         h('b', null, `${PERKS[c.Job].name} ${percent(jobPerk(c))}`, st.isMaxRank ? null : colored(` → ${st.next} 등급 ${percent(B.JobPerk[c.Job][RANKS.indexOf(st.next)])}`, 'var(--sub)')),
-        h('div', { class: 'sub', style: { fontSize: '12px' } }, PERKS[c.Job].text(percent(jobPerk(c))), ' · 등급 전용'))),
+        h('div', { class: 'sub', style: { fontSize: '12px' } }, PERKS[c.Job].text(percent(jobPerk(c))), ' · ', h('span', { class: 'nw' }, '등급 전용')))),
       st.isMaxRank
         ? sub('최고 등급입니다')
         : h('div', { class: 'col', style: { gap: '8px' } }, sub(`${st.next} 등급 승급 조건 · 모두 채우면 자동 승급`),
@@ -112,7 +112,8 @@ export class CharacterScreen extends Screen {
   private details(): void {
     const c = S.c;
     const m = modal('상세 능력치');
-    const line = (k: string, v: string | HTMLElement): HTMLElement => row(h('div', { class: 'grow', style: { height: '30px', lineHeight: '30px' } }, k), h('div', { style: { textAlign: 'right' } }, v));
+    // 이름은 한 줄 그대로, 긴 값만 오른쪽에서 접힌다
+    const line = (k: string, v: string | HTMLElement): HTMLElement => row(h('div', { class: 'nw', style: { minHeight: '30px', lineHeight: '30px', flexShrink: '0' } }, k), h('div', { class: 'grow', style: { textAlign: 'right', minWidth: '0' } }, v));
     m.body.append(
       line('최대 HP', String(maxHp(c))),
       line('공격력', h('span', null, String(attack(c)), colored(` (${Names.stat(jobData(c.Job).attackStat)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)})`, 'var(--sub)'))),
@@ -132,7 +133,7 @@ export class CharacterScreen extends Screen {
           icon(statIcon(s), 28),
           h('div', { class: 'col grow', style: { gap: '2px' } },
             h('b', null, `${Names.stat(s)} `, colored(`${ownStat(c, s)}${eq > 0 ? `(+${eq})` : ''}`, 'var(--gold)'), eq > 0 ? colored(` · 합계 ${totalStat(c, s)}`, 'var(--sub)') : null, colored(` · 최대 ${B.StatCap}`, 'var(--sub)')),
-            h('div', { class: 'sub' }, statEffect(s) + (mine ? '' : ' · 이 직업은 배분 불가'))));
+            h('div', { class: 'sub' }, statEffect(s), ...(mine ? [] : [' · ', h('span', { class: 'nw' }, '이 직업은 배분 불가')]))));
       }),
       sub(`등급 효과(+${Math.round(badgeBonus(c.Rank) * 100)}%)는 장비·버프를 제외한 캐릭터 자체 능력치에만 곱합니다.`));
   }

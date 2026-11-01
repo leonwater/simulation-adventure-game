@@ -1,11 +1,11 @@
 import type { Difficulty, Job } from '../core/enums';
 import { DIFFICULTIES, JOBS } from '../core/enums';
 import { jobData } from '../core/jobs';
-import { Names } from '../core/names';
+import { Names, josa } from '../core/names';
 import { jobLine, npcIllustration, topBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { button, h, row, sub } from '../ui/kit';
-import { toast } from '../ui/overlay';
+import { button, h, phrases, row, sub } from '../ui/kit';
+import { confirmBox, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { DIFFICULTY_COLOR } from '../ui/theme';
 import { spriteUrl } from '../ui/sprites';
@@ -15,18 +15,19 @@ import { TitleScreen } from './title';
 const PITCH = ['초보자에게 추천', '일반적인 모험가에게 추천', '숙련된 모험가에게 추천', '목숨 1개로 던전 격파'];
 
 /** 길드 등록: 접수원 대사와 함께 이름 → 직업 → 난이도 → 최종 확인. 각 단계에서 이전으로 돌아갈 수 있다. */
-/** 직업 선택 칸의 한 줄 장점 · 단점 */
-const JOB_PITCH: Record<Job, [string, string]> = {
-  Warrior: ['맞으면 반격 · 높은 HP', '치명타·회피 없음'],
-  Archer: ['적 공격을 회피 · 빠른 재사용', '낮은 HP'],
-  Rogue: ['치명타가 방어를 꿰뚫음', '낮은 HP · 운에 좌우'],
-  Mage: ['가장 높은 스킬 피해', '긴 재사용 대기 · 약한 기본 공격'],
+/** 직업 선택 칸의 장점 · 단점: 다른 직업과 비교하지 않는 그 직업만의 특색, 각각 한 줄 */
+const JOB_PITCH: Record<Job, [string[], string[]]> = {
+  Warrior: [['반격', '튼튼함'], ['느린 스킬']],
+  Archer: [['회피', '잦은 스킬'], ['약한 몸']],
+  Rogue: [['방어 관통 치명타'], ['운에 좌우']],
+  Mage: [['강력한 스킬'], ['긴 재사용 대기']],
 };
 
 export class RegistrationScreen extends Screen {
   private step = 0;
   private name = '';
-  private job: Job = 'Warrior';
+  /** 처음엔 아무 직업도 고르지 않은 상태 (누르면 확인 창) */
+  private job: Job | null = null;
   private difficulty: Difficulty = 'Normal';
 
   onBack(): boolean {
@@ -60,7 +61,8 @@ export class RegistrationScreen extends Screen {
     const body = [this.nameStep, this.jobStep, this.difficultyStep, this.confirmStep][this.step].call(this) as HTMLElement;
     return h('div', { class: 'page' },
       topBar('모험가 길드', this.step === 0 ? '처음으로' : '이전', () => this.prev(), `등록 ${this.step + 1}/4`),
-      npcIllustration('guild_receptionist', '길드 접수원', this.line(), 290),
+      // 직업 고르기는 네 칸이 한 화면에 들어가게 그림을 낮춘다
+      npcIllustration('guild_receptionist', '길드 접수원', this.line(), this.step === 1 ? 200 : 290),
       body);
   }
 
@@ -79,8 +81,9 @@ export class RegistrationScreen extends Screen {
       }, 'primary', 'lg'));
   }
 
+  /** 직업: 누르면 확인 창 → 정하면 다음 단계 (아래 이전·다음 버튼 없음, 스크롤 없이 한 화면) */
   private jobStep(): HTMLElement {
-    return h('div', { class: 'scroll' },
+    return h('div', { class: 'scroll fit' },
       row(h('b', { class: 'grow' }, '직업 선택'), h('span', { class: 'red', style: { fontSize: '12px' } }, '이후 변경 불가')),
       h('div', { class: 'job-grid' }, ...JOBS.map((j) => {
         const on = j === this.job;
@@ -88,13 +91,13 @@ export class RegistrationScreen extends Screen {
         return h('button', { class: `card-btn job-card ${on ? 'on' : ''}`, 'aria-pressed': String(on), on: { click: () => {
           this.job = j;
           router.rebuild();
+          confirmBox(`${josa(jobData(j).name, '으로/로')} 정할까요?`, '직업은 등록한 뒤에 바꿀 수 없습니다.', '정하기', () => this.next());
         } } },
         h('img', { class: 'job-sprite', src: spriteUrl(j.toLowerCase()) ?? '', alt: '' }),
         h('b', { style: { fontSize: '16px', color: on ? 'var(--gold)' : 'var(--text)' } }, jobData(j).name),
-        h('span', { class: 'job-pro' }, `+ ${pro}`),
-        h('span', { class: 'job-con' }, `− ${con}`));
-      })),
-      this.nav('다음'));
+        h('span', { class: 'job-pro' }, '+ ', ...phrases(pro)),
+        h('span', { class: 'job-con' }, '− ', ...phrases(con)));
+      })));
   }
 
   private difficultyStep(): HTMLElement {
@@ -117,11 +120,11 @@ export class RegistrationScreen extends Screen {
     return h('div', { class: 'scroll' },
       h('div', { class: 'card', style: { borderColor: 'var(--accent)', gap: '8px', padding: '16px 14px' } },
         h('b', { style: { fontSize: '22px' } }, this.name),
-        line('직업', jobLine(this.job, jobData(this.job).name, 14, 'var(--text)')),
+        line('직업', jobLine(this.job!, jobData(this.job!).name, 14, 'var(--text)')),
         line('난이도', h('span', { style: { color: DIFFICULTY_COLOR[this.difficulty] } }, Names.difficulty(this.difficulty))),
         sub('직업과 난이도는 등록 후 바꿀 수 없습니다.')),
       row(button('이전', () => this.prev(), 'ghost', 'grow'), button('등록하기', () => {
-        S.newGame(this.name, this.job, this.difficulty);
+        S.newGame(this.name, this.job!, this.difficulty);
         goTown();
       }, 'primary', 'grow')));
   }

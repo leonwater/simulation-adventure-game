@@ -8,7 +8,7 @@ import { gold } from '../core/names';
 import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
-import { colored, compareLine, equipLine, infoText, itemCard, price, soldOut } from '../ui/items';
+import { cardGrid, colored, compareLine, infoText, itemCard, price, soldOut } from '../ui/items';
 import { isSoldOut } from '../core/shop';
 import { button, h, icon, row, tabs } from '../ui/kit';
 import { flash, modal, toast } from '../ui/overlay';
@@ -42,7 +42,7 @@ export class MerchantScreen extends Screen {
     const c = S.c;
     const room = dungeon.currentRoom(run);
     const th = dungeonTheme(themeIndex(run.Floor));
-    const grid = (cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...cells);
+    const grid = (cells: HTMLElement[]): HTMLElement => cardGrid(...cells);
     const body = this.tab === 0 ? grid(room.MerchantGoods.map((g) => this.goodCell(g))) : grid(c.Inventory.Items.map((i) => this.sellCell(i)));
     return h('div', { class: 'page', style: { background: th.bg } },
       dungeonTop(),
@@ -66,7 +66,10 @@ export class MerchantScreen extends Screen {
     const cell = itemCard(item, {
       onClick: () => this.buyDialog(g),
       // 소모품은 보유·재고를 색으로 구분해 눈에 띄게 (보유 = 파랑 · 재고 = 금색)
-      info: item.Kind === 'Consumable' ? [colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, 'var(--info)'), ' · ', colored(`재고 ${g.Stock}`, 'var(--gold)')] : item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item),
+      // 소모품: 보유는 정보 줄(파랑), 재고는 그림 칸 오른쪽 위(금색, 무제한이면 표시 안 함)
+      info: item.Kind === 'Consumable' ? colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, 'var(--info)') : infoText(c, item),
+      owner: c,
+      corner: item.Kind === 'Consumable' && g.Stock >= 0 ? colored(`재고 ${g.Stock}`, 'var(--gold)') : undefined,
       foot: price(cost, c.Gold >= cost),
     });
     if (known) cell.style.opacity = '.5';
@@ -97,7 +100,7 @@ export class MerchantScreen extends Screen {
 
   private sellCell(item: ItemInstance): HTMLElement {
     const c = S.c;
-    return itemCard(item, { onClick: () => this.sellDialog(item), info: item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item), foot: price(sellPrice(item)) });
+    return itemCard(item, { onClick: () => this.sellDialog(item), info: infoText(c, item), owner: c, foot: price(sellPrice(item)) });
   }
 
   private sellDialog(item: ItemInstance): void {

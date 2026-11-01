@@ -7,7 +7,7 @@ import { ENHANCE_STONE_ID, countOf, displayName, goldCost, isAccessory, isWeapon
 import { Names } from '../core/names';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { artImg, colored, compareLine, gearText, gradeTag, itemArt } from '../ui/items';
+import { artImg, cardGrid, colored, compareLine, emptyCard, gearText, gradeTag, itemArt, itemCard } from '../ui/items';
 import { button, h, row, sub } from '../ui/kit';
 import { flash, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -35,42 +35,36 @@ export class BlacksmithScreen extends Screen {
       this.selected = first ? first.Uid : bag.length > 0 ? bag[0].Uid : null;
     }
     const sel = this.selected ? findGear(c, this.selected) : null;
-    // 장비 선택은 가방의 장착 장비 칸과 같은 4열 칸: 장착 장비(8칸 모두) → 가방 장비
-    const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' } }, ...cells);
+    // 장비 선택은 가방의 장착 장비 칸과 같은 4열 작은 카드: 장착 장비(8칸 모두) → 가방 장비
+    const grid = cardGrid;
     return h('div', { class: 'page' },
       townBar('대장간', '마을', () => navigate('town'), c),
-      npcIllustration('blacksmith', '대장장이', this.line, 260),
+      npcIllustration('blacksmith', '대장장이', this.line, 220),
       h('div', { class: 'scroll', style: { gap: '8px' } },
         sel ? this.detail(sel) : null,
         row(h('b', { class: 'grow' }, '장착 장비'), artImg('enhance_stone', 32), h('b', { style: { fontSize: '15px' } }, '강화석 ', colored(`${countOf(c.Inventory, ENHANCE_STONE_ID)}개`, 'var(--blue-light)'))),
-        grid(...SLOTS.map((slot, i) => this.cell(c.Equipment.Slots[i], Names.slot(slot), true))),
+        grid(...SLOTS.map((slot, i) => this.cell(c.Equipment.Slots[i], Names.slot(slot)))),
         h('b', null, '가방 장비'),
-        bag.length > 0 ? grid(...bag.map((i) => this.cell(i, Names.gear(i.Gear), false))) : sub('가방에 장비가 없습니다.')));
+        bag.length > 0 ? grid(...bag.map((i) => this.cell(i, Names.gear(i.Gear)))) : sub('가방에 장비가 없습니다.')));
   }
 
   afterShow(): void {
     tutorial.onFacility('blacksmith');
   }
 
-  /** 장비 칸: 위 부위 이름 · 아래 이름(등급 색, 강화 단계 포함). */
-  private cell(item: ItemInstance | null, part: string, equipped: boolean): HTMLElement {
-    if (!item) {
-      return h('div', { style: { height: '66px', border: '1px solid var(--card-border)', borderRadius: '10px', background: 'var(--bg)', padding: '8px 6px', display: 'flex', flexDirection: 'column' } }, sub(part), h('span', { class: 'spacer' }), sub('비어 있음'));
-    }
-    const sel = item.Uid === this.selected;
-    return h('button', {
-      class: 'card-btn', style: { height: '66px', padding: '8px 6px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', background: sel ? 'var(--accent-bg)' : 'var(--card)', borderColor: equipped ? GRADE_COLOR[item.Grade] : sel ? 'var(--accent)' : 'var(--card-border)' },
-      on: { click: () => {
-        this.selected = item.Uid;
-        router.rebuild();
-      } },
-    }, h('div', { class: 'row', style: { width: '100%', gap: '4px' } }, h('span', { class: 'sub grow' }, part), itemArt(item, 24)), h('span', { class: 'spacer' }), h('span', { style: { fontSize: '12px', color: GRADE_COLOR[item.Grade], textAlign: 'left', maxHeight: '2.4em', overflow: 'hidden' } }, displayName(item)));
+  /** 장비 칸: 작은 카드 (그림·강화 단계·이름), 비어 있으면 부위 이름. 고른 장비는 금색 테두리 */
+  private cell(item: ItemInstance | null, part: string): HTMLElement {
+    if (!item) return emptyCard(part, true);
+    return itemCard(item, { mini: true, selected: item.Uid === this.selected, onClick: () => {
+      this.selected = item.Uid;
+      router.rebuild();
+    } });
   }
 
   private detail(item: ItemInstance): HTMLElement {
     const c = S.c;
     const card = h('div', { class: 'card', 'data-anchor': 'smith.detail', style: { background: 'var(--btn)', borderColor: 'var(--btn-border)', gap: '6px', padding: '12px 14px' } },
-      row(h('b', { class: 'grow', style: { fontSize: '16px', color: GRADE_COLOR[item.Grade] } }, displayName(item)), h('span', { style: { fontSize: '12px' } }, gradeTag(item), ' ', colored(gearText(item), 'var(--sub)'))));
+      row(itemArt(item), h('b', { class: 'grow', style: { fontSize: '16px', color: GRADE_COLOR[item.Grade] } }, displayName(item)), h('span', { class: 'nw', style: { fontSize: '12px' } }, gradeTag(item), ' ', colored(gearText(item), 'var(--sub)'))));
     const cl = compareLine(c, item);
     if (cl && !findEquipped(c, item.Uid)) card.append(cl);
     if (item.Enhance >= B.MaxEnhance) {
@@ -80,7 +74,7 @@ export class BlacksmithScreen extends Screen {
     const what = isWeapon(item) ? '공격력' : isAccessory(item) ? Names.stat(item.BonusStat) : '방어력';
     card.append(
       row(
-        h('div', { class: 'grow', style: { whiteSpace: 'pre-line' } }, `+${item.Enhance} → +${item.Enhance + 1}\n${what} ${itemValue(item)} → `, colored(String(valueAt(item, item.Enhance + 1)), 'var(--green)')),
+        h('div', { class: 'col grow', style: { gap: '2px' } }, h('span', { class: 'nw' }, `+${item.Enhance} → +${item.Enhance + 1}`), h('span', { class: 'nw' }, `${what} ${itemValue(item)} → `, colored(String(valueAt(item, item.Enhance + 1)), 'var(--green)'))),
         h('div', { class: 'col', style: { gap: '2px', alignItems: 'flex-end' } }, h('b', null, `성공률 ${pct(successRate(item))}`), h('b', null, `${goldCost(item).toLocaleString('en-US')} G`))));
     const down = downgradeChance(item);
     if (down > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `실패하면 ${pct(down)} 확률로 +${item.Enhance - 1}로 내려갑니다.`));
@@ -88,7 +82,8 @@ export class BlacksmithScreen extends Screen {
     const have = countOf(c.Inventory, ENHANCE_STONE_ID);
     if (stones > 0) card.append(row(artImg('enhance_stone', 32), h('b', null, '강화석 ', colored(`${have} / ${stones}`, have >= stones ? 'var(--green)' : 'var(--red-light)'))));
     const reason = cannotEnhanceReason(c, item);
-    const b = button(reason ?? '강화하기', () => this.doEnhance(item), 'primary');
+    // 강화 버튼에도 강화할 장비 그림
+    const b = button([itemArt(item), reason ?? `강화하기 +${item.Enhance} → +${item.Enhance + 1}`], () => this.doEnhance(item), 'primary', 'row');
     b.disabled = reason !== null;
     card.append(b);
     return card;

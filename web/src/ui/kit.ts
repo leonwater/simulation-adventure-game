@@ -73,3 +73,7 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
   el.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
+/** 여러 마디를 ' · '로 잇되, 마디 안에서는 줄을 바꾸지 않는다 ('빠른 / 재사용'처럼 갈리지 않게). */
+export function phrases(parts: readonly string[], sep = ' · '): Child[] {
+  return parts.flatMap((p, i) => (i ? [sep, h('span', { class: 'nw' }, p)] : [h('span', { class: 'nw' }, p)]));
+}
