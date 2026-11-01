@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { B, enemyAttack, enemyHp, expToNext } from '../src/core/balance';
-import { Battle, damage } from '../src/core/battle';
+import { Battle, ENERGY_BALL, damage } from '../src/core/battle';
 import type { BattleChoice } from '../src/core/battle';
 import { addExp, autoAllocate, createCharacter, maxHp } from '../src/core/character';
 import type { Character } from '../src/core/character';
@@ -48,25 +48,44 @@ const choice12 = (b: Battle, skill: string, target = 0): BattleChoice =>
   b.getChoices().find((x) => x.skillId === skill && (x.target === target || x.target < 0))!;
 
 describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
-  it('기본 공격은 치명타가 없고 마법사는 60% 피해', () => {
+  it('기본 공격은 치명타가 없다', () => {
     const { b } = setup12('Warrior', null, 1);
-    const { b: m, c: mage } = setup12('Mage', null, 1);
     for (let i = 0; i < 30; i++) {
       b.execute(b.getChoices().find((x) => x.kind === 'Attack')!);
       for (const ev of b.lastEvents) expect(ev.damage).not.toBe('Crit');
     }
-    const target = { defense: 0, damageReduction: 0, statuses: m.enemies[0].statuses } as Combatant;
-    target.statuses.clear();
-    const full = damage(m.player, target, 1.0, false);
-    const basic = damage(m.player, target, jobData(mage.Job).basicAttackMultiplier, false);
-    expect(Math.abs(Math.round(full * 0.6) - basic)).toBeLessThanOrEqual(1);
+  });
+
+  it('마법사 (v3.7): 기본 공격 자리는 에너지 볼(재사용 2턴), 쓸 공격이 없으면 마력 폭주로 쏘고 약해진다', () => {
+    const { b } = setup12('Mage', 'm_fireball', 1);
+    const attack = () => b.getChoices().find((x) => x.kind === 'Attack')!;
+    expect(attack().label.startsWith('에너지 볼')).toBe(true);
+    b.execute(attack());
+    expect(b.cooldown(ENERGY_BALL)).toBe(B.EnergyBallCooldown);
+    expect(attack().enabled).toBe(false); // 화염구가 남아 있으면 에너지 볼은 기다린다
+    b.execute(choice12(b, 'm_fireball'));
+    // 에너지 볼·화염구 모두 재사용 대기 → 마력 폭주
+    expect(attack().enabled).toBe(true);
+    expect(attack().label.startsWith('마력 폭주')).toBe(true);
+    b.execute(attack());
+    expect(b.player.statuses.has('Overload')).toBe(true);
+    // 재사용 대기는 다음 전투로 넘길 수 있다
+    expect(b.cooldownState()[ENERGY_BALL]).toBeGreaterThan(0);
   });
 
   it('여러 번 때리는 스킬은 타격마다 판정', () => {
-    const { b } = setup12('Archer', 'a_storm', 1);
-    b.execute(choice12(b, 'a_storm'));
+    const { b } = setup12('Archer', 'a_flash', 1);
+    b.execute(choice12(b, 'a_flash'));
     const hits = b.lastEvents.filter((ev) => ev.actor === -1 && (ev.kind === 'Damage' || ev.kind === 'Miss')).length;
-    expect(hits).toBe(7); // 폭풍 사격 7회 각각 판정
+    expect(hits).toBe(2); // 섬광 화살 2회 각각 판정
+  });
+
+  it('궁수 (v3.7): 속사는 기본 공격을 2회 맞히고, 매의 눈은 기본 공격 피해를 올린다', () => {
+    const { b } = setup12('Archer', 'a_double', 1);
+    b.execute(choice12(b, 'a_double'));
+    b.execute(b.getChoices().find((x) => x.kind === 'Attack')!);
+    const hits = b.lastEvents.filter((ev) => ev.actor === -1 && (ev.kind === 'Damage' || ev.kind === 'Miss')).length;
+    expect(hits).toBe(2);
   });
 
   it('기습: 첫 턴 확정 치명타', () => {
@@ -264,10 +283,11 @@ const TABLE: [string, SkillTier, number, number][] = [
   ['w_shield', 'Mid', 5, -0.04], ['w_guard', 'Mid', 6, 0], ['w_will', 'Mid', 7, 0],
   ['w_whirl', 'High', 6, -0.08], ['w_roar', 'High', 7, -0.04],
   ['w_earth', 'Top', 8, -0.12], ['w_strike', 'Top', 8, -0.12],
-  ['a_aim', 'Low', 1, -0.03], ['a_double', 'Low', 2, -0.03], ['a_scatter', 'Low', 3, -0.08],
-  ['a_wind', 'Mid', 5, 0], ['a_flash', 'Mid', 3, -0.04], ['a_weak', 'Mid', 4, -0.04],
-  ['a_rain', 'High', 3, -0.08], ['a_pierce', 'High', 3, -0.04],
-  ['a_storm', 'Top', 4, -0.08], ['a_volley', 'Top', 5, -0.12],
+  // v3.7 궁수: 기본 공격 강화(자신) + 광역, 재사용 보통
+  ['a_aim', 'Low', 4, 0], ['a_double', 'Low', 5, 0], ['a_scatter', 'Low', 3, -0.08],
+  ['a_wind', 'Mid', 5, 0], ['a_flash', 'Mid', 4, -0.04], ['a_weak', 'Mid', 4, -0.04],
+  ['a_rain', 'High', 4, -0.08], ['a_pierce', 'High', 4, -0.04],
+  ['a_storm', 'Top', 7, 0], ['a_volley', 'Top', 6, -0.12],
   ['r_ambush', 'Low', 2, -0.04], ['r_venom', 'Low', 3, -0.03], ['r_keen', 'Low', 5, 0], ['r_shuriken', 'Low', 3, -0.08],
   ['r_vital', 'Mid', 4, -0.08], ['r_shadow', 'Mid', 4, -0.08],
   ['r_storm', 'High', 5, -0.08], ['r_cruel', 'High', 6, 0],
@@ -445,7 +465,7 @@ describe('보스·스킬 설명 (BossTests · ItemSkillTests)', () => {
     expect(skillDef('w_whirl')!.Description).toBe('전체 광역 180% · 재사용 6턴');
     expect(skillDef('w_bash')!.SuccessText).toBe('성공률 -10%');
     expect(skillDef('w_shield')!.SuccessText).toBe('성공률 -4%');
-    expect(skillDef('a_aim')!.SuccessText).toBe('성공률 -3%');
+    expect(skillDef('a_scatter')!.SuccessText).toBe('성공률 -8%');
     expect(skillDef('w_guard')!.SuccessText).toBe('성공률 100%');
   });
 });

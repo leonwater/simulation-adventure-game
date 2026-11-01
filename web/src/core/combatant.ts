@@ -20,8 +20,10 @@ export class Combatant {
   critDamage: number = B.CritMultiplier;
   /** 플레이어 직업 고유: 전사 반격 확률, 궁수 완전 회피 확률, 도적 치명타의 방어 무시 비율 (모험가 등급으로 오름). */
   counter = 0;
-  dodge = 0;
-  critPierce = 0;
+  /** 궁수: 기본 공격이 무시하는 방어 비율 (등급 고유 능력치 '관통'). */
+  basicPierce = 0;
+  /** 도적: 스킬 치명타 확률 보너스 (등급 고유 능력치 '급소'). */
+  critBonus = 0;
   regenPercent = 0;
   readonly statuses = new StatusContainer();
   // 적 전용

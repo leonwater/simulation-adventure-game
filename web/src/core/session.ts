@@ -305,6 +305,7 @@ export class GameSession {
     const run = this.data!.Run!;
     this.battle = new Battle(this.c, floor > 0 ? floor : run.Floor, enemies, boss, this.rng, {
       ambush,
+      cooldowns: run.Cooldowns,
       setup: (b) => {
         b.fleeAllowed = fleeAllowed;
         b.difficulty = this.difficulty;
@@ -326,6 +327,7 @@ export class GameSession {
     const d = this.data!;
     b.syncHp();
     const run = d.Run!;
+    run.Cooldowns = b.cooldownState();
     const battleRoom = dungeon.currentRoom(run).Type === 'Battle';
     if (b.outcome !== 'Defeat') afterBattleEffects(run.Effects, battleRoom);
     switch (b.outcome) {

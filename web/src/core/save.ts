@@ -232,6 +232,7 @@ export function repair(d: SaveData): void {
   for (const i of [...c.Inventory.Items, ...c.Storage.Items]) if (i.Kind === 'Material') i.Name = materialDef(i.TemplateId)?.Name ?? i.Name;
   if (d.Run && (!d.Run.Map || d.Run.Map.Rooms.length === 0 || !d.Run.Map.Rooms[d.Run.CurrentRoomId])) d.Run = null;
   if (d.Run === undefined) d.Run = null;
+  if (d.Run && !d.Run.Cooldowns) d.Run.Cooldowns = {}; // v3.7: 재사용 대기가 던전 안에서 이어짐
   d.SelectedFloor = clamp(d.SelectedFloor ?? 1, 1, maxChallengeFloor(c));
   d.Version = SAVE_VERSION;
 }

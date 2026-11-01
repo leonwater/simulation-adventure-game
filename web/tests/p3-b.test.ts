@@ -250,9 +250,10 @@ describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 �
     e.requirement = -1000;
     const b = new Battle(c, 1, [e], false, new Rng(3));
     const detail = () => b.getChoices().find((x: BattleChoice) => x.skillId === 'r_venom')!.detail;
-    expect(detail()).toContain('치명타 확률 20%');
+    // F 등급 도적 급소 +2% (v3.7)
+    expect(detail()).toContain('치명타 확률 22%');
     b.player.statuses.apply('Keen', 25, 3);
-    expect(detail()).toContain('치명타 확률 45%');
+    expect(detail()).toContain('치명타 확률 47%');
   });
 
   it('Equipment_GradeGapAndEnhanceGrowth', () => {

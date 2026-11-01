@@ -1,7 +1,8 @@
 import { B, clamp, roundEven } from './balance';
 import { BossKit, createMinion, splitChild } from './bosskit';
 import type { Character } from './character';
-import { attack, defense, evasion, jobPerk, resist, maxHp, skillDamageBonus, totalStat } from './character';
+import { attack, defense, equipped, evasion, jobPerk, resist, maxHp, skillDamageBonus, totalStat, weaponAttack } from './character';
+import { GRADES, ord } from './enums';
 import { Combatant } from './combatant';
 import { getSkillState, powerMultiplier } from './equipment';
 import { findItem, takeItem, consumableDef } from './items';
@@ -63,18 +64,24 @@ const choice = (p: Partial<BattleChoice> & Pick<BattleChoice, 'kind' | 'label'>)
 });
 
 const MAX_ENEMY_SLOTS = 4;
+/** 마법사 에너지 볼의 재사용 대기 칸 이름. */
+export const ENERGY_BALL = 'mage_ball';
 const pct = (v: number): string => (v >= 0 ? '+' : '-') + roundEven(Math.abs(v) * 1000) / 10 + '%';
 const r100 = (v: number): number => roundEven(v * 100);
 
-/** 피해 = 공격력 × 배율 × (강화·약화) × 400/(400+방어력) × (1 - 감소율) × (철벽·취약) × 치명타(×2.3 + 잔혹함). 도적의 치명타는 방어력 일부(관통)를 무시 */
-export function damage(attacker: Combatant, target: Combatant, mult: number, crit: boolean): number {
+/**
+ * 피해 = 공격력 × 배율 × (강화·약화·마력 폭주) × 400/(400+방어력) × (1 - 감소율) × (철벽·취약·마력 폭주) × 치명타(×2.3 + 잔혹함).
+ * basic: 기본 공격 — 궁수는 방어력 일부(관통 + 관통 화살)를 무시한다.
+ */
+export function damage(attacker: Combatant, target: Combatant, mult: number, crit: boolean, basic = false): number {
   const a = attacker.statuses;
   const t = target.statuses;
-  const atk = attacker.attack * mult * (1 + a.value('Empower') / 100 - a.value('Weaken') / 100);
-  const def = Math.max(0, target.defense) * (crit ? 1 - attacker.critPierce : 1);
+  const atk = attacker.attack * mult * (1 + a.value('Empower') / 100 - a.value('Weaken') / 100 - a.value('Overload') / 100);
+  const pierce = basic ? Math.min(0.9, attacker.basicPierce + a.value('Piercing') / 100) : 0;
+  const def = Math.max(0, target.defense) * (1 - pierce);
   let dmg = (atk * B.DefenseConstant) / (B.DefenseConstant + def);
   dmg *= 1 - target.damageReduction;
-  dmg *= 1 - t.value('Fortify') / 100 + t.value('Vulnerable') / 100;
+  dmg *= 1 - t.value('Fortify') / 100 + t.value('Vulnerable') / 100 + t.value('Overload') / 100;
   if (crit) dmg *= attacker.critDamage + a.value('Cruel') / 100;
   return Math.max(1, roundEven(dmg));
 }
@@ -109,6 +116,7 @@ export class Battle {
   dropMultiplier = 1;
   /** 보스전이어도 도주할 수 있다 (시련의 문). */
   fleeAllowed = false;
+  /** 스킬(·마법사 에너지 볼) 재사용 대기. 같은 던전 안에서는 다음 전투로 이어진다 (cooldownState). */
   private readonly cooldowns = new Map<string, number>();
   private acting: Combatant | null = null;
 
@@ -119,8 +127,9 @@ export class Battle {
     readonly enemies: Combatant[],
     readonly isBoss: boolean,
     readonly rng: Rng,
-    opts: { ambush?: boolean; setup?: (b: Battle) => void } = {},
+    opts: { ambush?: boolean; setup?: (b: Battle) => void; cooldowns?: Record<string, number> } = {},
   ) {
+    for (const [k, v] of Object.entries(opts.cooldowns ?? {})) if (v > 0) this.cooldowns.set(k, v);
     const p = new Combatant();
     p.name = character.Name;
     p.isPlayer = true;
@@ -131,8 +140,11 @@ export class Battle {
     p.evasion = evasion(character);
     const perk = jobPerk(character);
     if (character.Job === 'Warrior') p.counter = perk;
-    if (character.Job === 'Archer') p.dodge = perk;
-    if (character.Job === 'Rogue') p.critPierce = perk;
+    if (character.Job === 'Archer') p.basicPierce = perk;
+    if (character.Job === 'Rogue') {
+      p.critBonus = perk;
+      p.critDamage += perk * B.RogueCritDamageRatio;
+    }
     p.resist = resist(character);
     this.player = p;
     opts.setup?.(this);
@@ -154,6 +166,10 @@ export class Battle {
   }
   cooldown(id: string): number {
     return this.cooldowns.get(id) ?? 0;
+  }
+  /** 남은 재사용 대기 (던전 진행에 저장해 다음 전투로 넘긴다). */
+  cooldownState(): Record<string, number> {
+    return Object.fromEntries([...this.cooldowns].filter(([, v]) => v > 0));
   }
   indexOf(c: Combatant): number {
     return c.isPlayer ? -1 : this.enemies.indexOf(c);
@@ -235,16 +251,8 @@ export class Battle {
       return list;
     }
     const alive = this.aliveEnemies();
-    const basic = jobData(this.character.Job).basicAttackMultiplier;
-    for (const e of alive) {
-      const d = damage(this.player, e, basic, false);
-      list.push(choice({
-        kind: 'Attack', label: `공격 · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus),
-        damageNote: `피해 약 ${d}${guardNote(e)}`,
-        detail: `기본 공격 — 피해 ${r100(basic)}%, 치명타 없음\n\n${this.damageFormula(basic, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, B.BasicAttackBonus, true)}`,
-      }));
-    }
     const silenced = this.player.statuses.has('Silence');
+    list.push(...this.basicChoices(alive, silenced));
     for (const id of this.character.Skills.Equipped) {
       const def = skillDef(id);
       if (!def) continue;
@@ -293,7 +301,7 @@ export class Battle {
   }
   /** 공격 스킬의 치명타 확률 = 스킬 치명타 + 예리함. */
   private critChance(def: SkillDef): number {
-    return def.CritChance + this.player.statuses.value('Keen') / 100;
+    return def.CritChance + this.player.critBonus + this.player.statuses.value('Keen') / 100;
   }
   /** 지금 치명타 배율 = 기본 ×2.3 + 잔혹함. */
   private get critNow(): number {
@@ -472,8 +480,61 @@ export class Battle {
 
   private tickCooldowns(used: BattleChoice): void {
     for (const [k, v] of [...this.cooldowns]) {
+      // 이번 턴에 쓴 것은 다음 턴부터 줄어든다
       if (used.kind === 'Skill' && used.skillId === k && v === this.cooldownOf(skillDef(k)!)) continue;
+      if (used.kind === 'Attack' && k === ENERGY_BALL && v === B.EnergyBallCooldown) continue;
       this.cooldowns.set(k, Math.max(0, v - 1));
+    }
+  }
+
+  // ── 기본 공격 (마법사는 에너지 볼) ──────────────────────
+
+  /** 기본 공격 배율: 궁수는 매의 눈만큼 커지고, 마법사 에너지 볼은 무기 공격력·등급에 비례. */
+  private basicMult(): number {
+    if (this.character.Job !== 'Mage') return jobData(this.character.Job).basicAttackMultiplier * (1 + this.player.statuses.value('Hawk') / 100);
+    // 에너지 볼 = 공격력 × (기본 + 무기 등급당 보너스) + 무기 공격력 × 배율 → 무기 공격력·등급이 높을수록 세다
+    const w = equipped(this.character, 'Weapon');
+    const atk = Math.max(1, this.player.attack);
+    const base = atk * (B.EnergyBallBase + (w ? ord(GRADES, w.Grade) : 0) * B.EnergyBallPerGrade) + weaponAttack(this.character) * B.EnergyBallWeapon;
+    return base / atk;
+  }
+  private basicHits(): number {
+    return 1 + this.player.statuses.value('Rapid');
+  }
+  /** 마법사가 지금 쓸 수 있는 공격(에너지 볼·스킬)이 하나도 없는지 → 마력 폭주. */
+  private mageStuck(silenced: boolean): boolean {
+    if (this.character.Job !== 'Mage' || this.cooldown(ENERGY_BALL) <= 0) return false;
+    return silenced || this.character.Skills.Equipped.every((id) => this.cooldown(id) > 0);
+  }
+
+  private basicChoices(alive: Combatant[], silenced: boolean): BattleChoice[] {
+    const mage = this.character.Job === 'Mage';
+    const stuck = this.mageStuck(silenced);
+    const mult = this.basicMult();
+    const hits = this.basicHits();
+    const cd = mage ? this.cooldown(ENERGY_BALL) : 0;
+    const name = !mage ? '공격' : stuck ? '마력 폭주' : '에너지 볼';
+    const pierce = Math.min(0.9, this.player.basicPierce + this.player.statuses.value('Piercing') / 100);
+    const what = !mage ? `기본 공격 — 피해 ${r100(mult)}%${hits > 1 ? ` × ${hits}회` : ''}${pierce > 0 ? ` · 방어 ${r100(pierce)}% 무시` : ''}, 치명타 없음`
+      : stuck ? `마력 폭주 — 쓸 수 있는 공격이 없어 에너지 볼을 억지로 쏜다. 이후 ${B.OverloadTurns}턴 동안 주는 피해 -${B.OverloadValue}% · 받는 피해 +${B.OverloadValue}%`
+        : `에너지 볼 — 무기 공격력·등급에 비례하는 단일 공격, 재사용 ${B.EnergyBallCooldown}턴`;
+    return alive.map((e) => choice({
+      kind: 'Attack', label: `${name} · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus),
+      enabled: !mage || stuck || cd <= 0, note: mage && !stuck && cd > 0 ? `${cd}턴 후 사용 가능` : '',
+      damageNote: `피해 약 ${damage(this.player, e, mult, false, true)}${hits > 1 ? ` × ${hits}회` : ''}${guardNote(e)}`,
+      detail: `${what}\n\n${this.damageFormula(mult, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, B.BasicAttackBonus, true)}`,
+    }));
+  }
+
+  private basicAttack(c: BattleChoice): void {
+    const stuck = this.mageStuck(this.player.statuses.has('Silence'));
+    this.event('Act', -1, c.target, { text: this.character.Job === 'Mage' ? (stuck ? '마력 폭주' : '에너지 볼') : null });
+    this.playerHits(this.enemies[c.target], this.basicMult(), this.basicHits(), B.BasicAttackBonus, null, true);
+    if (this.character.Job !== 'Mage') return;
+    this.cooldowns.set(ENERGY_BALL, B.EnergyBallCooldown);
+    if (stuck) {
+      this.add('마력이 폭주한다! 한동안 약해진다.', 'Bad');
+      this.applyStatus(this.player, this.player, { Type: 'Overload', Value: B.OverloadValue, Turns: B.OverloadTurns, OnSelf: true, Chance: 1 });
     }
   }
 
@@ -482,8 +543,7 @@ export class Battle {
     if (!this.player.alive) return;
     switch (c.kind) {
       case 'Attack':
-        this.event('Act', -1, c.target);
-        this.playerHits(this.enemies[c.target], jobData(this.character.Job).basicAttackMultiplier, 1, B.BasicAttackBonus, null);
+        this.basicAttack(c);
         break;
       case 'Skill':
         this.useSkill(c);
@@ -569,7 +629,7 @@ export class Battle {
   }
 
   /** 플레이어의 타격. 타격마다 명중을 따로 판정하고, 치명타는 스킬에서만 난다. */
-  private playerHits(target: Combatant, mult: number, hits: number, successBonus: number, skill: SkillDef | null): void {
+  private playerHits(target: Combatant, mult: number, hits: number, successBonus: number, skill: SkillDef | null, basic = false): void {
     if (!target.alive) return;
     const ti = this.indexOf(target);
     let landed = 0, total = 0, blocked = 0;
@@ -586,7 +646,7 @@ export class Battle {
       }
       let m = mult;
       if (skill && skill.ExecuteThreshold > 0 && target.hpRatio <= skill.ExecuteThreshold) m *= skill.ExecuteMult;
-      const dmg = damage(this.player, target, m, crit);
+      const dmg = damage(this.player, target, m, crit, basic);
       target.hp = Math.max(0, target.hp - absorbShield(target, dmg));
       total += dmg;
       landed++;
@@ -594,7 +654,7 @@ export class Battle {
       this.event('Damage', -1, ti, { amount: dmg, damage: crit ? 'Crit' : 'Normal', hpAfter: target.hp });
       this.afterEnemyHit(target, dmg, true);
     }
-    const what = skill ? skill.Name : '공격';
+    const what = skill ? skill.Name : this.character.Job === 'Mage' ? '에너지 볼' : '공격';
     const guard = blocked > 0 ? ` (방어막이 ${blocked}회 막음${target.kit!.barrier > 0 ? `, ${target.kit!.barrier}회 남음` : ', 방어막 깨짐'})` : '';
     if (landed === 0) this.add(`${target.name}에게 ${what} — ${blocked > 0 ? `막혔다.${guard}` : '빗나갔다.'}`);
     else {
@@ -851,16 +911,11 @@ export class Battle {
   private pendingRiposte = false;
 
   /**
-   * 명중한 적 공격 한 번: 궁수는 회피 확률로 완전히 피하고(-1), 전사는 반격 확률로 피해를 절반으로 줄인 뒤 그 적의 행동이 끝나면 반격한다.
+   * 명중한 적 공격 한 번: 전사는 반격 확률로 피해를 절반으로 줄인 뒤 그 적의 행동이 끝나면 반격한다.
    * what이 있으면 로그 한 줄을 남긴다. 받은 피해를 돌려준다.
    */
   private hitPlayer(e: Combatant, mult: number, what: string): number {
     const ei = this.indexOf(e);
-    if (this.player.dodge > 0 && this.rng.chance(this.player.dodge)) {
-      if (what) this.add(`${e.name}의 ${what}. 회피!`, 'Good');
-      this.event('Miss', ei, -1, { hpAfter: this.player.hp });
-      return -1;
-    }
     let dmg = damage(e, this.player, mult, false);
     const counter = this.player.counter > 0 ? this.player.counter + this.player.statuses.value('Riposte') / 100 : 0;
     if (counter > 0 && this.player.alive && this.rng.chance(counter)) {

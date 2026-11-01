@@ -307,6 +307,71 @@ sprite("status_fear", { outline: "k" }, `
   ..xxffffffxx..
   ....xxxxxx....`)
 
+pal({ f: "#c8963a", x: "#7ab8f0" })
+sprite("status_hawk", { outline: "k" }, `
+  ....xxxxxx....
+  ..xxffffffxx..
+  .xffffffffffx.
+  .xffffWfffffx.
+  xffffWWWfffffx
+  xfffWWWWWffffx
+  xffWWfWWfWfffx
+  xfffffWWfffffx
+  xfffffWWfffffx
+  xffffWWWWffffx
+  .xffWffffWffx.
+  .xffffffffffx.
+  ..xxffffffxx..
+  ....xxxxxx....`)
+pal({ f: "#3fa8a0", x: "#7ab8f0" })
+sprite("status_rapid", { outline: "k" }, `
+  ....xxxxxx....
+  ..xxffffffxx..
+  .xffffffffffx.
+  .xffffffWfffx.
+  xffffffffWfffx
+  xffWWWWWWWWffx
+  xffffffffWfffx
+  xfffffffWffffx
+  xffffWfffffffx
+  xfffWffffffffx
+  .xfWWWWWWWWfx.
+  .xffffffffffx.
+  ..xxffffffxx..
+  ....xxxxxx....`)
+pal({ f: "#5a7aa8", x: "#7ab8f0" })
+sprite("status_piercing", { outline: "k" }, `
+  ....xxxxxx....
+  ..xxffffffxx..
+  .xffffffffffx.
+  .xfWWfffffffx.
+  xfffWWffWffffx
+  xffffWWWWffffx
+  xfffffWWfffffx
+  xffffWWWWffffx
+  xffffWffWWfffx
+  xffffffffWWffx
+  .xffffffffWfx.
+  .xffffffffffx.
+  ..xxffffffxx..
+  ....xxxxxx....`)
+pal({ f: "#6a3a9a", x: "#f07060" })
+sprite("status_overload", { outline: "k" }, `
+  ....xxxxxx....
+  ..xxffffffxx..
+  .xffffffffffx.
+  .xffffWWffffx.
+  xffffWffWffffx
+  xfffWfWWfWfffx
+  xffWfWffWfWffx
+  xffWfWffWfWffx
+  xfffWfWWfWfffx
+  xffffWffWffffx
+  .xffffWWffffx.
+  .xffffffffffx.
+  ..xxffffffxx..
+  ....xxxxxx....`)
+
 // ── 모험가 등급 8종: 방패 + 글자 ──
 pal({ f: "#8a8070", x: "#d3d8e2" })
 sprite("rank_f", { outline: "k" }, `
@@ -430,6 +495,20 @@ sprite("rank_ss", { outline: "k" }, `
   ....xxxx....`)
 
 // ── 흰 아이콘 (메뉴·방·직업·조작) ──
+sprite("enhance", {}, `
+  ..W.......W...
+  ...W.....W....
+  ......W.......
+  ..WWWWWW......
+  .WWWWWWWW.....
+  .WWWWWWWW.....
+  ..WWWWWW......
+  .....WW.......
+  ......WW......
+  .......WW.....
+  ........WW....
+  .........WW...
+  ..........WW..`)
 sprite("nav_town", {}, `
   .......WW.......
   ......WWWW......
@@ -906,19 +985,20 @@ sprite("perk_counter", { outline: "k" }, `
   ..AaaAM...M...
   ...AAD.....y..
   ....D.......y.`)
-sprite("perk_dodge", { outline: "k" }, `
-  ..............
-  ....tttttt....
-  ..ttTTTTTTt...
-  .......TTttt..
-  ..ttttt...Ttt.
-  .tTTTTTtt..Tt.
-  .......TTtt.t.
-  ..tttttt..Tt..
-  .tTTTTTTtt....
-  ........TTt...
-  ...ttttt..t...
-  ..tTTTTTt.....`)
+sprite("perk_vital", { outline: "k" }, `
+  ....rrrrrr....
+  ..rrRRRRRRrr..
+  .rRRrrrrrrRRr.
+  .rRrrRRRRrrRr.
+  rRrrRRrrRRrrRr
+  rRrRRrWWrRRrRr
+  rRrRrWmmWrRrRr
+  rRrRRrWWrRRrRr
+  rRrrRRrrRRrrRr
+  .rRrrRRRRrrRr.
+  .rRRrrrrrrRRr.
+  ..rrRRRRRRrr..
+  ....rrrrrr....`)
 sprite("perk_pierce", { outline: "k" }, `
   .........yyy..
   ........yyY...

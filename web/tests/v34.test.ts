@@ -59,12 +59,13 @@ describe('v3.5 직업 고유 능력치·저장 변환', () => {
     expect(d.Character.Skills.Equipped).toContain('w_riposte');
   });
 
-  it('도적 관통: 치명타는 방어력을 관통 비율만큼 무시한다 (치명타가 아니면 그대로)', () => {
-    const a = new Combatant(); a.attack = 100; a.critDamage = 1; a.critPierce = 1;
+  it('궁수 관통 (v3.7): 기본 공격만 방어력을 관통 비율만큼 무시하고, 치명타는 방어를 무시하지 않는다', () => {
+    const a = new Combatant(); a.attack = 100; a.critDamage = 1; a.basicPierce = 0.5;
     const t = new Combatant(); t.defense = 400;
-    const noDef = new Combatant();
-    expect(damage(a, t, 1, true)).toBe(damage(a, noDef, 1, true));
-    expect(damage(a, t, 1, false)).toBeLessThan(damage(a, noDef, 1, false));
+    const half = new Combatant(); half.defense = 200;
+    expect(damage(a, t, 1, false, true)).toBe(damage(a, half, 1, false));
+    expect(damage(a, t, 1, false)).toBeLessThan(damage(a, t, 1, false, true));
+    expect(damage(a, t, 1, true)).toBe(damage(a, t, 1, false));
   });
 
   it('고유 능력치는 모험가 등급으로만 오른다', () => {

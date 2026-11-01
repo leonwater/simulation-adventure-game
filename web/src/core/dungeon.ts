@@ -34,11 +34,13 @@ export interface DungeonRun {
   Effects: ExploreEffect[];
   /** 시련의 문에서 고른 보스 층 (전투 중에만, 아니면 0). */
   TrialFloor: number;
+  /** 스킬·에너지 볼 재사용 대기 (전투가 끝나도 같은 던전 안에서는 이어지고, 마을로 돌아가면 사라진다). */
+  Cooldowns: Record<string, number>;
 }
 
 export const newRun = (floor: number, map: FloorMap): DungeonRun => ({
   Floor: floor, Map: map, CurrentRoomId: map.StartId, PreviousRoomId: map.StartId, BossDefeated: false, GoldEarned: 0, ExpEarned: 0,
-  EnemiesDefeated: 0, Loot: [], IsTutorial: false, FloorIntroPending: true, Effects: [], TrialFloor: 0,
+  EnemiesDefeated: 0, Loot: [], IsTutorial: false, FloorIntroPending: true, Effects: [], TrialFloor: 0, Cooldowns: {},
 });
 
 export const currentRoom = (run: DungeonRun): Room => getRoom(run.Map, run.CurrentRoomId)!;

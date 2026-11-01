@@ -17,8 +17,8 @@ export const FX_COLOR: Record<FxStyle, string> = {
   ice: '#8FD3F4', bolt: '#FFE066', quake: '#C8A06A', shout: '#F6C063', claw: '#E0524A',
 };
 export const STATUS_COLOR: Record<StatusType, string> = {
-  Empower: '#F6C063', Fortify: '#8FB3D9', Regen: '#7BC86F', Focus: '#8FD3F4', Swift: '#A8E6A0', Keen: '#F6C063', Cruel: '#E0524A', Riposte: '#F6C063',
-  Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Weaken: '#B48CFF', Vulnerable: '#E06B4E', Stun: '#FFE066', Silence: '#9AA7B8', Blind: '#7A8494', Fear: '#B48CFF',
+  Empower: '#F6C063', Fortify: '#8FB3D9', Regen: '#7BC86F', Focus: '#8FD3F4', Swift: '#A8E6A0', Keen: '#F6C063', Cruel: '#E0524A', Riposte: '#F6C063', Hawk: '#E8D4A0', Rapid: '#A8E6A0', Piercing: '#C9D3E0',
+  Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Weaken: '#B48CFF', Vulnerable: '#E06B4E', Stun: '#FFE066', Silence: '#9AA7B8', Blind: '#7A8494', Fear: '#B48CFF', Overload: '#B48CFF',
 };
 const HEAL = '#A8E6A0';
 

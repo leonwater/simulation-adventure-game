@@ -254,7 +254,6 @@
   "BaseFlee": 0.67,
   "MaxFlee": 0.87,
   "BossFleeChance": 0,
-  "MageBasicAttack": 0.6,
   "EventBase": 0.62,
   "EventPerStatPoint": 0.01,
   "EventMin": 0.3,
@@ -278,24 +277,24 @@
       0.16
     ],
     "Archer": [
+      0.2,
+      0.24,
+      0.28,
+      0.32,
+      0.36,
+      0.41,
+      0.45,
+      0.5
+    ],
+    "Rogue": [
+      0.02,
+      0.03,
       0.04,
       0.05,
       0.06,
       0.07,
       0.08,
-      0.09,
-      0.11,
-      0.12
-    ],
-    "Rogue": [
-      0.3,
-      0.35,
-      0.4,
-      0.45,
-      0.5,
-      0.57,
-      0.63,
-      0.7
+      0.1
     ],
     "Mage": [
       0.15,
@@ -308,5 +307,13 @@
       0.6
     ]
   },
-  "RiposteDamage": 1.0
+  "RiposteDamage": 1.0,
+  "RogueCritDamageRatio": 2.5,
+  "EnergyBallCooldown": 2,
+  "EnergyBallPerGrade": 0.1,
+  "OverloadValue": 25,
+  "OverloadTurns": 2,
+  "ArcherBasicAttack": 0.9,
+  "EnergyBallBase": 0.8,
+  "EnergyBallWeapon": 1.0
 }

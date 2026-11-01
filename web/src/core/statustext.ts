@@ -12,6 +12,9 @@ export function describeStatus(s: string, value: number): string {
     case 'Keen': return `스킬 치명타 확률 +${value}%`;
     case 'Cruel': return `치명타 피해량 +${value}%`;
     case 'Riposte': return `반격 확률 +${value}%`;
+    case 'Hawk': return `기본 공격 피해 +${value}%`;
+    case 'Rapid': return `기본 공격 ${value + 1}회 타격`;
+    case 'Piercing': return `기본 공격이 방어 ${value}% 더 무시`;
     case 'Poison': return `턴마다 최대 HP ${value}% 피해`;
     case 'Bleed': return `행동할 때마다 공격력 ${value}% 피해`;
     case 'Burn': return `턴마다 공격력 ${value}% 피해, 받는 회복 -50%`;
@@ -21,6 +24,7 @@ export function describeStatus(s: string, value: number): string {
     case 'Silence': return '스킬 사용 불가';
     case 'Blind': return `성공률 -${value}%`;
     case 'Fear': return `도주 외 성공률 -${value}%`;
+    case 'Overload': return `주는 피해 -${value}%, 받는 피해 +${value}%`;
     default: return '';
   }
 }
@@ -28,9 +32,11 @@ export function describeStatus(s: string, value: number): string {
 const EXPLAIN: Record<StatusType, string> = {
   Empower: '공격력이 오른다.', Fortify: '받는 피해가 줄어든다.', Regen: '내 턴이 시작될 때 최대 HP의 일부를 회복한다.', Focus: '모든 선택지의 성공률이 오른다.',
   Swift: '회피가 올라 적의 공격을 더 잘 피한다.', Keen: '공격 스킬의 치명타 확률이 오른다.', Cruel: '치명타로 주는 피해가 커진다.', Riposte: '맞을 때 반격할 확률이 오른다.',
+  Hawk: '기본 공격 피해가 커진다.', Rapid: '기본 공격이 여러 번 맞힌다.', Piercing: '기본 공격이 적 방어력을 더 무시한다.',
   Poison: '턴이 시작될 때마다 최대 HP의 일부만큼 피해. 해독제로 풀린다.', Bleed: '행동할 때마다 정해진 피해. 붕대로 풀린다.',
   Burn: '턴마다 정해진 피해, 받는 회복이 절반. 화상 연고로 풀린다.', Weaken: '공격력이 내려간다.', Vulnerable: '받는 피해가 늘어난다.',
   Stun: '다음 행동을 할 수 없다.', Silence: '스킬을 쓸 수 없다 (기본 공격·아이템은 가능).', Blind: '모든 선택지의 성공률이 내려간다.', Fear: '도주를 뺀 선택지의 성공률이 내려간다.',
+  Overload: '쓸 수 있는 공격이 없어 마력을 억지로 끌어 썼다. 주는 피해가 줄고 받는 피해가 는다.',
 };
 /** 상태 이상 안내 (수치 없이 일반 설명). */
 export const explainStatus = (t: StatusType): string => EXPLAIN[t];

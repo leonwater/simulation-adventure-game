@@ -31,7 +31,7 @@ describe('캐릭터 (CharacterTests)', () => {
   });
 
   it('생성: 직업별 시작 능력치·HP', () => {
-    const hp: Record<Job, number> = { Warrior: 50 + 16 * 12, Archer: 50 + 10 * 10, Rogue: 50 + 10 * 9, Mage: 50 + 8 * 8 };
+    const hp: Record<Job, number> = { Warrior: 50 + 16 * 12, Archer: 50 + 10 * 10, Rogue: 50 + 10 * 10, Mage: 50 + 8 * 8 };
     for (const j of JOBS) {
       const c = createCharacter('a', j);
       expect(maxHp(c)).toBe(hp[j]);
