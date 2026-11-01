@@ -7,7 +7,7 @@ import { ENHANCE_STONE_ID, countOf, displayName, goldCost, isAccessory, isWeapon
 import { Names } from '../core/names';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { colored, compareLine, gearText, gradeTag } from '../ui/items';
+import { colored, compareLine, gearText, gradeTag, itemArt } from '../ui/items';
 import { button, h, icon, row, sub } from '../ui/kit';
 import { flash, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -64,7 +64,7 @@ export class BlacksmithScreen extends Screen {
         this.selected = item.Uid;
         router.rebuild();
       } },
-    }, h('span', { class: 'sub' }, part), h('span', { class: 'spacer' }), h('span', { style: { fontSize: '12px', color: GRADE_COLOR[item.Grade], textAlign: 'left', maxHeight: '2.4em', overflow: 'hidden' } }, displayName(item)));
+    }, h('div', { class: 'row', style: { width: '100%', gap: '4px' } }, h('span', { class: 'sub grow' }, part), itemArt(item, 24)), h('span', { class: 'spacer' }), h('span', { style: { fontSize: '12px', color: GRADE_COLOR[item.Grade], textAlign: 'left', maxHeight: '2.4em', overflow: 'hidden' } }, displayName(item)));
   }
 
   private detail(item: ItemInstance): HTMLElement {

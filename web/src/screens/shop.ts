@@ -13,7 +13,7 @@ import { goodUnlimited } from '../core/items';
 import { jobLine, npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { offerBetterGear, isBetter } from '../ui/gearoffer';
-import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemTitle, kindLine, levelChip, nameColor } from '../ui/items';
+import { colored, compareLine, equipLine, gearText, gradeTag, infoText, itemTitle, itemHead, levelChip, nameColor } from '../ui/items';
 import { button, h, longPress, row, sub, tabs } from '../ui/kit';
 import { sellCountDialog } from '../ui/sellcount';
 import { tierColor } from '../ui/theme';
@@ -61,7 +61,7 @@ export class ShopScreen extends Screen {
 
   private buyTab(): HTMLElement[] {
     const shop = S.data!.Shop;
-    const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } }, ...cells);
+    const grid = (...cells: HTMLElement[]): HTMLElement => h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...cells);
     return [
       h('div', { class: 'card', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '6px 8px 6px 12px' } },
         h('b', { class: 'grow', style: { fontSize: '15px' } }, '물건 갱신'),
@@ -84,8 +84,7 @@ export class ShopScreen extends Screen {
     const c = S.c;
     const usable = canBeUsedBy(item, c.Job);
     const cell = this.cardButton(() => this.buyEquipDialog(item),
-      kindLine(item, 12),
-      h('b', { style: { fontSize: '14px', color: nameColor(item), textAlign: 'left' } }, item.Name),
+      itemHead(item, h('b', { style: { fontSize: '14px', color: nameColor(item), textAlign: 'left' } }, item.Name)),
       // 착용 레벨 · 능력치 변화(또는 직업 전용)를 한 줄에
       h('span', { class: 'sub', style: { whiteSpace: 'nowrap' } }, ...(usable ? [equipLine(c, item)] : [levelChip(c, item), ' ', colored(`${Names.job(JOBS[item.JobRestriction])} 전용`, 'var(--red-light)')])),
       h('span', { class: 'spacer' }),
@@ -130,8 +129,7 @@ export class ShopScreen extends Screen {
     const item = g.Item;
     const known = item.Kind === 'SkillBook' && knowsSkill(c, item.SkillId);
     const cell = this.cardButton(() => this.buyGoodDialog(g),
-      kindLine(item, 12),
-      h('b', { style: { fontSize: '14px', textAlign: 'left' } }, itemTitle(item)),
+      itemHead(item, h('b', { style: { fontSize: '14px', textAlign: 'left' } }, itemTitle(item))),
       item.Kind === 'Consumable' ? h('span', { class: 'sub' }, `보유 ${countOf(c.Inventory, item.TemplateId)}`) : known ? colored('이미 배움', 'var(--red-light)') : h('span', { class: 'sub' }, this.skillBookJob(item, 12)),
       h('span', { class: 'spacer' }),
       h('b', { class: 'gold', style: { fontSize: '14px' } }, `${item.Price.toLocaleString('en-US')} G`));
@@ -234,7 +232,7 @@ export class ShopScreen extends Screen {
       out.push(sub('가방이 비어 있습니다.'));
       return out;
     }
-    out.push(h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } }, ...c.Inventory.Items.map((i) => this.sellCell(i))));
+    out.push(h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } }, ...c.Inventory.Items.map((i) => this.sellCell(i))));
     return out;
   }
 
@@ -242,8 +240,7 @@ export class ShopScreen extends Screen {
     const c = S.c;
     const sel = !!this.selected && this.selected.has(item.Uid);
     const cell = h('button', { class: 'card-btn', style: { height: '118px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', position: 'relative', background: sel ? 'var(--accent-bg)' : 'var(--card)', borderColor: sel ? 'var(--accent)' : 'var(--card-border)' } },
-      kindLine(item, 12),
-      h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item)),
+      itemHead(item, h('div', { style: { fontSize: '13px', lineHeight: '1.05', maxHeight: '2.2em', overflow: 'hidden', color: nameColor(item), textAlign: 'left' } }, itemTitle(item))),
       h('div', { class: 'sub', style: { textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' } }, item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)),
       h('span', { class: 'spacer' }),
       h('div', { class: 'row', style: { width: '100%', fontSize: '12px' } }, h('span', { class: 'grow gold', style: { textAlign: 'left' } }, `${sellPrice(item).toLocaleString('en-US')} G`), item.Count > 1 ? h('b', null, `×${item.Count}`) : null),

@@ -4,7 +4,7 @@ import {
   percent, promotionStatus, resist, totalStat, weaponAttack, defense,
 } from '../core/character';
 import type { Stat } from '../core/enums';
-import { STATS } from '../core/enums';
+import { RANKS, STATS } from '../core/enums';
 import { jobData, PERKS } from '../core/jobs';
 import { Names } from '../core/names';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
@@ -71,6 +71,10 @@ export class CharacterScreen extends Screen {
       h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : 'var(--text)'));
     return h('div', { class: 'card', style: { gap: '8px', padding: '12px 14px' } },
       row(icon(rankIcon(c.Rank), 32), h('b', { class: 'grow', style: { fontSize: '15px' } }, `${c.Rank} 등급 모험가`), h('span', { class: 'gold', style: { fontSize: '13px' } }, `기본 능력치 +${Math.round(badgeBonus(c.Rank) * 100)}%`)),
+      // 직업 고유 능력치: 포인트로는 못 올리고 모험가 등급으로만 오른다
+      row(icon(PERKS[c.Job].icon, 28), h('div', { class: 'col grow', style: { gap: '1px' } },
+        h('b', null, `${PERKS[c.Job].name} ${percent(jobPerk(c))}`, st.isMaxRank ? null : colored(` → ${st.next} 등급 ${percent(B.JobPerk[c.Job][RANKS.indexOf(st.next)])}`, 'var(--sub)')),
+        h('div', { class: 'sub', style: { fontSize: '12px' } }, PERKS[c.Job].text(percent(jobPerk(c))), ' · 등급 전용'))),
       st.isMaxRank
         ? sub('최고 등급입니다')
         : h('div', { class: 'col', style: { gap: '8px' } }, sub(`${st.next} 등급 승급 조건 · 모두 채우면 자동 승급`),

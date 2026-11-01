@@ -37,7 +37,7 @@ export class SkillsScreen extends Screen {
     }
     const slots = skillSlots(c.Rank);
     const cells: HTMLElement[] = [];
-    const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' } });
+    const grid = h('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px' } });
     // 슬롯은 처음부터 6칸(3×2): 지금 등급에서 열린 칸은 빈 슬롯, 아직 닫힌 칸은 어두운 칸에 '○ 등급에 열림'
     for (let i = 0; i < MAX_SLOTS; i++) {
       if (i >= slots) {

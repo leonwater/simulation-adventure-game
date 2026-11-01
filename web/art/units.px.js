@@ -1,4 +1,4 @@
-// 모험가 키우기 전투 유닛 — 옆모습 (v3.4)
+// 모험가 키우기 전투 유닛 — 옆모습 (v3.4, v3.5 전사 양손검·새 몬스터)
 // 모두 오른쪽을 보게 그리고, 몬스터는 flip: "x" 로 뒤집어 플레이어와 마주 보게 한다.
 // 참고: DawnLike 16x16 (DragonDePlatino, CC-BY-SA 3.0)의 실루엣·자세만 참고하고 그림은 새로 그렸다.
 // 빌드: bash scripts/sprites.sh  (claude-pxl → src/assets/sprites/)
@@ -29,26 +29,25 @@ ramps("kQRr", "kunSs", "knMmw", "kYy", "kEDd", "ktGgl", "kfe", "kcBb", "koPp", "
 
 // ─────────────── 직업 (오른쪽을 본다) ───────────────
 
-// 전사: 투구, 흉갑, 앞쪽 방패 + 뒤로 든 검
+// 전사: 투구, 흉갑 + 두 손으로 앞으로 겨눈 양손검 (방패 없음)
 sprite("warrior", { outline: "k" }, `
-  .w..................
-  .m......nnnn........
-  .m.....nMmmmn.......
-  .m....nMmmmmwn......
-  .m....nMmnnnnn......
-  .m....nMmsskss......
-  .m....nMmsssss......
-  .m.....nMmSSu.......
-  Yyy...MMmmmmRR......
-  .D...MmmmmwRRr.RRRR.
-  .D..sMmmmmmRrrRrrrrR
-  ......nMmmmRrrRryyrR
-  ......nMmmmRrrRryyrR
-  ......YyyyyYrrRrrrrR
-  ......nMmm.Mm..RrrR.
-  ......nMm..Mm...RR..
-  ......nMm...Mm......
-  .....nnn....nnn.....`)
+  ........nnnn........
+  .......nMmmmn......w
+  ......nMmmmmwn....wm
+  ......nMmnnnnn...wm.
+  ......nMmsskss..wm..
+  ......nMmsssss.wm...
+  .......nMmSSu.wm....
+  .....MMmmmmRRwm.....
+  ....MmmmmwRRym......
+  ....MmmmmmRssY......
+  ....nMmmmRrsy.......
+  .....nMmmRrrD.......
+  .....YyyyyYD........
+  .....nMmm.Mm........
+  .....nMm..Mm........
+  .....nMm...Mm.......
+  ....nnn....nnn......`)
 
 // 궁수: 초록 두건 + 앞으로 겨눈 활
 sprite("archer", { outline: "k" }, `
@@ -109,7 +108,7 @@ sprite("mage", { outline: "k" }, `
 
 // ─────────────── 몬스터 (오른쪽으로 그리고 flip 으로 왼쪽을 보게) ───────────────
 
-// 슬라임: 위가 둥근 반원, 눈은 앞쪽
+// 슬라임: 위가 둥근 반원, 치켜뜬 붉은 눈과 이빨
 sprite("_slime", { mx: true }, `
   ......ggg
   ....ggggg
@@ -127,11 +126,11 @@ sprite("slime", { w: 18, h: 11, outline: "k", flip: "x" },
   grid(4, 1, `
   ll
   lw`),
-  grid(10, 4, `
-  k..k
-  w..w
-  ....
-  .kk.`))
+  grid(9, 3, `
+  kk..kk
+  .xk.xk
+  ......
+  kwkwkw`))
 
 // 고블린: 뒤로 뻗은 큰 귀, 앞으로 든 단검
 sprite("_goblin", {}, `
@@ -324,7 +323,7 @@ sprite("ghoul", { w: 16, h: 15, outline: "k", flip: "x", swap: { 1: "p", 2: "P",
   b.
   .b`))
 
-// 유령: 둥근 머리, 물결치는 아랫단
+// 유령: 둥근 머리, 물결치는 아랫단, 텅 빈 눈과 이빨
 sprite("_ghost", { mx: true }, `
   .....666
   ...66666
@@ -340,11 +339,12 @@ sprite("_ghost", { mx: true }, `
   7.776.66`)
 sprite("ghost", { w: 16, h: 12, outline: "k", flip: "x" },
   stamp("_ghost", 0, 0),
-  grid(9, 3, `
-  k..k
-  k..k
-  ....
-  .kk.`),
+  grid(8, 3, `
+  kk..kk
+  .kx.kx
+  ......
+  kwkwkk
+  .kkkk.`),
   grid(14, 6, `
   66
   6.`))
@@ -369,28 +369,22 @@ sprite("reaper", { outline: "k", flip: "x" }, `
   ZNNNNNNNNNNNN...E...
   ZZNZNZNZNZNZZ.......`, glow("x", { r: 2, strength: 0.6 }))
 
-// 독버섯: 흰 점 박힌 빨간 갓, 앞을 보는 얼굴
-sprite("_mushroom", { mx: true }, `
-  ....rrrr
-  ..rrrrrr
-  .rrwwrrr
-  rrrwwrrr
-  rrrrrrrr
-  RRRRRRRR
-  ....bbbb
-  ....bbbb
-  ....bbbb
-  ....Bbbb
-  ...BBbbb`)
-sprite("mushroom", { w: 16, h: 11, outline: "k", flip: "x" },
-  stamp("_mushroom", 0, 0),
-  grid(11, 2, `
-  ww
-  ww`),
-  grid(8, 7, `
-  k.k
-  ...
-  .k.`))
+// 식인꽃: 앞으로 벌린 이빨 달린 꽃 입, 초록 줄기·잎
+sprite("maneater", { outline: "k", flip: "x" }, `
+  ....RRRR........
+  ..RRrrrrRR......
+  .RrryrrrrrR.....
+  RrrrrrkkkkR.....
+  RrrrrkwkwkwR....
+  Rrrrrk.....R....
+  Rrrrrkwkwkwk....
+  .RrrrrkkkkR.....
+  ..RRrrrrRR......
+  ....GgG.........
+  ..gg.gG.gg......
+  .gGg.gG.gGg.....
+  ..g..gG..g......
+  ...GGGGGGG......`)
 
 // 독사: 똬리 틀고 고개를 든 옆모습
 sprite("snake", { outline: "k", flip: "x" }, `
@@ -407,39 +401,36 @@ sprite("snake", { outline: "k", flip: "x" }, `
   vVyyyyyyyyVv..
   .VVVVVVVVVV...`)
 
-// 바위 거북: 바위 등껍질 + 앞으로 내민 머리
-sprite("turtle", { outline: "k", flip: "x" }, `
-  ......5555.......
-  ....55444455.....
-  ...5444554445....
-  ..544445444445...
-  .54454444544445..
-  .544544445444455.
-  55555555555555vvv
-  .vv..vv....vvvvkv
-  .vv..vv....vv.vv.`)
+// 빈 갑옷: 속이 빈 녹슨 갑옷, 투구 틈의 붉은 눈빛 + 큰 검
+sprite("living_armor", { outline: "k", flip: "x" }, `
+  ......nnnn.....m.
+  .....nMMMMn....m.
+  ....nMmmmmMn...m.
+  ....nMnnnnnn...m.
+  ....nMkkxkkx...m.
+  ....nMmmmmmn...m.
+  ...MMnnnnnnMM..m.
+  ..MmmMMmmMMmmM.m.
+  ..MmMmmmmmmMmMyYy
+  ..nM.MmmmmmM.MsY.
+  ..nn.MMmmMMM..sD.
+  .....nMm.nMm.....
+  .....nMm..nMm....
+  ....nnnn..nnnn...`, glow("x", { r: 2, strength: 0.6 }))
 
-// 도깨비불: 흔들리는 불꽃 몸, 앞쪽 얼굴
-sprite("_wisp", { mx: true }, `
-  .......H
-  ......HH
-  .....HHx
-  ....HHxx
-  ...HHxyy
-  ...Hxyyy
-  ..HHxyzz
-  ..Hxyyzz
-  ..Hxyyzz
-  ..HHxyyy
-  ...HHxxy
-  ....HHHx`)
-sprite("wisp", { w: 16, h: 12, outline: "k", flip: "x" },
-  stamp("_wisp", 0, 0),
-  grid(9, 6, `
-  k.k
-  ...
-  .k.`),
-  glow("zy", { r: 2, strength: 0.4 }))
+// 피의 거머리: 몸을 세운 마디진 거머리 + 이빨 둘린 빨판 입
+sprite("blood_leech", { outline: "k", flip: "x" }, `
+  ..........QQQ.
+  .........QRrRQ
+  ........QRkwkR
+  ........QRwkwR
+  .........QRRQ.
+  ........QRrQ..
+  .......QRrRQ..
+  ..QQQQQRrRQ...
+  .QRrRrRrRQ....
+  QRrRrRrRrQ....
+  .QQQQQQQQ.....`)
 
 // 임프: 작은 붉은 악마, 뿔·날개·꼬리 + 삼지창
 sprite("imp", { outline: "k", flip: "x" }, `

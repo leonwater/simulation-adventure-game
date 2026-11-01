@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createCharacter } from '../src/core/character';
+import { B } from '../src/core/balance';
+import { damage } from '../src/core/battle';
+import { createCharacter, jobPerk } from '../src/core/character';
+import { Combatant } from '../src/core/combatant';
 import { addItem, createMaterial } from '../src/core/items';
 import { ALL_SPECIES, monster, themeFor } from '../src/core/monsters';
 import { newSaveData, repair } from '../src/core/save';
@@ -39,5 +42,37 @@ describe('v3.5 몬스터 상성 없음', () => {
         expect(sp.DefenseMul, sp.Id).toBeLessThanOrEqual(1.4);
       }
     }
+  });
+});
+
+describe('v3.5 직업 고유 능력치·저장 변환', () => {
+  it('예전 특수 능력치 칸: 찍은 포인트를 돌려주고 칸을 없앤다, 바뀐 스킬은 새 Id로', () => {
+    const d = newSaveData('Normal', createCharacter('테스트', 'Warrior'), 'Done');
+    d.Character.BaseStats.Values = [16, 5, 5, 12, 5, 5, 30, 5, 5, 5]; // 강인함 Lv.1 값 10 → 30 (20점 찍음)
+    d.Character.UnspentPoints = 1;
+    d.Character.Skills.Learned.push({ SkillId: 'w_ram', Level: 2 } as never);
+    d.Character.Skills.Equipped.push('w_ram');
+    repair(d);
+    expect(d.Character.BaseStats.Values.length).toBe(6);
+    expect(d.Character.UnspentPoints).toBe(21);
+    expect(d.Character.Skills.Learned.some((s) => s.SkillId === 'w_riposte' && s.Level === 2)).toBe(true);
+    expect(d.Character.Skills.Equipped).toContain('w_riposte');
+  });
+
+  it('도적 관통: 치명타는 방어력을 관통 비율만큼 무시한다 (치명타가 아니면 그대로)', () => {
+    const a = new Combatant(); a.attack = 100; a.critDamage = 1; a.critPierce = 1;
+    const t = new Combatant(); t.defense = 400;
+    const noDef = new Combatant();
+    expect(damage(a, t, 1, true)).toBe(damage(a, noDef, 1, true));
+    expect(damage(a, t, 1, false)).toBeLessThan(damage(a, noDef, 1, false));
+  });
+
+  it('고유 능력치는 모험가 등급으로만 오른다', () => {
+    const c = createCharacter('a', 'Archer');
+    const f = jobPerk(c);
+    c.Rank = 'SS';
+    expect(jobPerk(c)).toBeGreaterThan(f);
+    c.Level = 50;
+    expect(jobPerk(c)).toBe(B.JobPerk.Archer[7]);
   });
 });

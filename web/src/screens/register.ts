@@ -4,16 +4,25 @@ import { jobData } from '../core/jobs';
 import { Names } from '../core/names';
 import { jobLine, npcIllustration, topBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { button, h, icon, row, sub } from '../ui/kit';
+import { button, h, row, sub } from '../ui/kit';
 import { toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
-import { DIFFICULTY_COLOR, jobIcon } from '../ui/theme';
+import { DIFFICULTY_COLOR } from '../ui/theme';
+import { spriteUrl } from '../ui/sprites';
 import { goTown } from './index';
 import { TitleScreen } from './title';
 
 const PITCH = ['초보자에게 추천', '일반적인 모험가에게 추천', '숙련된 모험가에게 추천', '목숨 1개로 던전 격파'];
 
 /** 길드 등록: 접수원 대사와 함께 이름 → 직업 → 난이도 → 최종 확인. 각 단계에서 이전으로 돌아갈 수 있다. */
+/** 직업 선택 칸의 한 줄 장점 · 단점 */
+const JOB_PITCH: Record<Job, [string, string]> = {
+  Warrior: ['맞으면 반격 · 높은 HP', '치명타·회피 없음'],
+  Archer: ['적 공격을 회피 · 빠른 재사용', '낮은 HP'],
+  Rogue: ['치명타가 방어를 꿰뚫음', '낮은 HP · 운에 좌우'],
+  Mage: ['가장 높은 스킬 피해', '긴 재사용 대기 · 약한 기본 공격'],
+};
+
 export class RegistrationScreen extends Screen {
   private step = 0;
   private name = '';
@@ -73,13 +82,18 @@ export class RegistrationScreen extends Screen {
   private jobStep(): HTMLElement {
     return h('div', { class: 'scroll' },
       row(h('b', { class: 'grow' }, '직업 선택'), h('span', { class: 'red', style: { fontSize: '12px' } }, '이후 변경 불가')),
-      ...JOBS.map((j) => {
+      h('div', { class: 'job-grid' }, ...JOBS.map((j) => {
         const on = j === this.job;
-        return h('button', { class: `card-btn ${on ? 'on' : ''} row`, style: { height: '60px', gap: '10px' }, on: { click: () => {
+        const [pro, con] = JOB_PITCH[j];
+        return h('button', { class: `card-btn job-card ${on ? 'on' : ''}`, 'aria-pressed': String(on), on: { click: () => {
           this.job = j;
           router.rebuild();
-        } } }, icon(jobIcon(j), 28, on ? 'var(--gold)' : 'var(--text)'), h('b', { style: { fontSize: '17px', color: on ? 'var(--gold)' : 'var(--text)' } }, jobData(j).name));
-      }),
+        } } },
+        h('img', { class: 'job-sprite', src: spriteUrl(j.toLowerCase()) ?? '', alt: '' }),
+        h('b', { style: { fontSize: '16px', color: on ? 'var(--gold)' : 'var(--text)' } }, jobData(j).name),
+        h('span', { class: 'job-pro' }, `+ ${pro}`),
+        h('span', { class: 'job-con' }, `− ${con}`));
+      })),
       this.nav('다음'));
   }
 

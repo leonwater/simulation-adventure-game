@@ -3,6 +3,7 @@ import { findEquipped } from '../core/character';
 import { compare, replacedBy, summary } from '../core/equipment';
 import type { ItemInstance, ItemContainer } from '../core/items';
 import { consumableDef, displayName, isAccessory, isWeapon } from '../core/items';
+import { JOBS } from '../core/enums';
 import { Names } from '../core/names';
 import { skillDef } from '../core/skills';
 import type { Child } from './kit';
@@ -40,6 +41,30 @@ export function gearText(item: ItemInstance): string {
 export const nameColor = (item: ItemInstance): string => (item.Kind === 'Equipment' ? GRADE_COLOR[item.Grade] : 'var(--text)');
 
 const circle = (color: string, size: number): HTMLElement => h('i', { style: { display: 'inline-block', width: `${size}px`, height: `${size}px`, borderRadius: '50%', background: color, flexShrink: '0' } });
+
+/** 물품 픽셀 그림 (art/items.px.js → scripts/sprites.sh). 파일 이름 = 부위·무기 직업·소모품 Id·종류 */
+const ART: Record<string, string> = Object.fromEntries(
+  Object.entries(import.meta.glob<string>('../assets/items/*.png', { eager: true, import: 'default' })).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -4), url]));
+const CONSUMABLE_ART = ['potion', 'potion_hi', 'antidote', 'bandage', 'salve'];
+
+export function itemArtKey(item: ItemInstance): string {
+  switch (item.Kind) {
+    case 'Equipment': return item.Gear === 'Weapon' ? `weapon_${JOBS[Math.max(0, item.JobRestriction)].toLowerCase()}` : item.Gear.toLowerCase();
+    case 'Consumable': return CONSUMABLE_ART.includes(item.TemplateId) ? item.TemplateId : 'potion';
+    case 'Material': return 'material';
+    case 'SkillBook': return 'skillbook';
+    default: return 'enhance_stone';
+  }
+}
+
+/** 물품 그림 (기본 32px = 2배). */
+export const itemArt = (item: ItemInstance, size = 32): HTMLElement =>
+  h('img', { class: 'item-art', src: ART[itemArtKey(item)] ?? '', alt: '', width: size, height: size, style: { width: `${size}px`, height: `${size}px` } });
+
+/** 카드 머리줄: 물품 그림 | 종류 줄 + 이름. */
+export function itemHead(item: ItemInstance, title: HTMLElement): HTMLElement {
+  return h('div', { class: 'item-head' }, itemArt(item), h('div', { class: 'item-head-text' }, kindLine(item, 12), title));
+}
 
 /** 종류 줄: 색 원 + 종류. */
 export function kindLine(item: ItemInstance, size = 12): HTMLElement {
@@ -146,8 +171,7 @@ export function itemGrid(container: ItemContainer, owner: Character | null, onTa
       class: 'card-btn', style: { height: '104px', padding: '10px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px', minWidth: '0', borderColor: sel ? 'var(--accent)' : 'var(--card-border)', borderWidth: sel ? '2px' : '1px', overflow: 'hidden' },
       on: { click: () => onTap(item) },
     },
-    kindLine(item, 12),
-    h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item)),
+    itemHead(item, h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item))),
     // 설명(장비는 '착용 레벨 · 능력치 변화')은 이름 바로 아래, 개수(×N)는 맨 아래 줄
     h('div', { style: { fontSize: '12px', color: 'var(--sub)', textAlign: 'left', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', height: '16px', flexShrink: '0' } }, item.Kind === 'Equipment' ? equipLine(owner, item) : infoText(owner, item)),
     h('div', { class: 'spacer' }),

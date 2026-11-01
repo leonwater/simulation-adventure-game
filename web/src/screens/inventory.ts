@@ -12,7 +12,7 @@ import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { dungeonTop } from '../ui/dungeonbar';
 import { S } from '../ui/game';
 import { button, h, icon, row, sub } from '../ui/kit';
-import { compareLine, gearText, gradeTag, itemGrid, kindLine } from '../ui/items';
+import { compareLine, gearText, gradeTag, itemArt, itemGrid, kindLine } from '../ui/items';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { GRADE_COLOR } from '../ui/theme';
@@ -60,7 +60,7 @@ export class InventoryScreen extends Screen {
     const cell = h('button', {
       class: 'card-btn', style: { height: '66px', padding: '8px 6px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', background: item ? 'var(--card)' : 'var(--bg)', borderColor: item ? GRADE_COLOR[item.Grade] : 'var(--card-border)' },
       on: { click: () => item && this.showItem(item, slot) },
-    }, h('span', { class: 'sub' }, Names.slot(slot)), h('span', { class: 'spacer' }),
+    }, item ? h('div', { class: 'row', style: { width: '100%', gap: '4px' } }, h('span', { class: 'sub grow' }, Names.slot(slot)), itemArt(item, 24)) : h('span', { class: 'sub' }, Names.slot(slot)), h('span', { class: 'spacer' }),
     item ? h('span', { style: { fontSize: '12px', color: GRADE_COLOR[item.Grade], textAlign: 'left' } }, displayName(item)) : sub('비어 있음'));
     return cell;
   }
