@@ -45,19 +45,19 @@ const circle = (color: string, size: number): HTMLElement => h('i', { style: { d
 /** 물품 픽셀 그림 (art/items.px.js → scripts/sprites.sh). 파일 이름 = 부위·무기 직업·소모품 Id·종류 */
 const ART: Record<string, string> = Object.fromEntries(
   Object.entries(import.meta.glob<string>('../assets/items/*.png', { eager: true, import: 'default' })).map(([path, url]) => [path.slice(path.lastIndexOf('/') + 1, -4), url]));
-const CONSUMABLE_ART = ['potion', 'potion_hi', 'antidote', 'bandage', 'salve'];
 
 export function itemArtKey(item: ItemInstance): string {
   switch (item.Kind) {
     case 'Equipment': return item.Gear === 'Weapon' ? `weapon_${JOBS[Math.max(0, item.JobRestriction)].toLowerCase()}` : item.Gear.toLowerCase();
-    case 'Consumable': return CONSUMABLE_ART.includes(item.TemplateId) ? item.TemplateId : 'potion';
-    case 'Material': return 'material';
+    // 소모품·재료는 TemplateId(=그림 파일 이름)별 그림, 없으면 대표 그림
+    case 'Consumable': return ART[item.TemplateId] ? item.TemplateId : 'potion';
+    case 'Material': return ART[item.TemplateId] ? item.TemplateId : 'mat_bone';
     case 'SkillBook': return 'skillbook';
     default: return 'enhance_stone';
   }
 }
 
-/** 물품 그림 (기본 32px = 2배). key = itemArtKey 값 (예: 'potion'). */
+/** 물품 그림 (16×16, 기본 32px = 2배). key = itemArtKey 값 (예: 'potion'). */
 export const artImg = (key: string, size = 32): HTMLElement =>
   h('img', { class: 'item-art', src: ART[key] ?? '', alt: '', width: size, height: size, style: { width: `${size}px`, height: `${size}px` } });
 export const itemArt = (item: ItemInstance, size = 32): HTMLElement => artImg(itemArtKey(item), size);

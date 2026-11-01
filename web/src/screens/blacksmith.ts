@@ -7,8 +7,8 @@ import { ENHANCE_STONE_ID, countOf, displayName, goldCost, isAccessory, isWeapon
 import { Names } from '../core/names';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { colored, compareLine, gearText, gradeTag, itemArt } from '../ui/items';
-import { button, h, icon, row, sub } from '../ui/kit';
+import { artImg, colored, compareLine, gearText, gradeTag, itemArt } from '../ui/items';
+import { button, h, row, sub } from '../ui/kit';
 import { flash, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { GRADE_COLOR } from '../ui/theme';
@@ -42,7 +42,7 @@ export class BlacksmithScreen extends Screen {
       npcIllustration('blacksmith', '대장장이', this.line, 260),
       h('div', { class: 'scroll', style: { gap: '8px' } },
         sel ? this.detail(sel) : null,
-        row(h('b', { class: 'grow' }, '장착 장비'), icon('enhance_stone', 22), h('b', { style: { fontSize: '15px' } }, '강화석 ', colored(`${countOf(c.Inventory, ENHANCE_STONE_ID)}개`, 'var(--blue-light)'))),
+        row(h('b', { class: 'grow' }, '장착 장비'), artImg('enhance_stone', 32), h('b', { style: { fontSize: '15px' } }, '강화석 ', colored(`${countOf(c.Inventory, ENHANCE_STONE_ID)}개`, 'var(--blue-light)'))),
         grid(...SLOTS.map((slot, i) => this.cell(c.Equipment.Slots[i], Names.slot(slot), true))),
         h('b', null, '가방 장비'),
         bag.length > 0 ? grid(...bag.map((i) => this.cell(i, Names.gear(i.Gear), false))) : sub('가방에 장비가 없습니다.')));
@@ -86,7 +86,7 @@ export class BlacksmithScreen extends Screen {
     if (down > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `실패하면 ${pct(down)} 확률로 +${item.Enhance - 1}로 내려갑니다.`));
     const stones = stoneCost(item);
     const have = countOf(c.Inventory, ENHANCE_STONE_ID);
-    if (stones > 0) card.append(row(icon('enhance_stone', 20), h('b', null, '강화석 ', colored(`${have} / ${stones}`, have >= stones ? 'var(--green)' : 'var(--red-light)'))));
+    if (stones > 0) card.append(row(artImg('enhance_stone', 32), h('b', null, '강화석 ', colored(`${have} / ${stones}`, have >= stones ? 'var(--green)' : 'var(--red-light)'))));
     const reason = cannotEnhanceReason(c, item);
     const b = button(reason ?? '강화하기', () => this.doEnhance(item), 'primary');
     b.disabled = reason !== null;

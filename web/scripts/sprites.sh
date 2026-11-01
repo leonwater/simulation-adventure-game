@@ -11,3 +11,11 @@ for kind in units:sprites items:items; do
   mkdir -p src/assets/$dst && rm -f src/assets/$dst/*.png && cp art/out/$src/sprites/*.png src/assets/$dst/
   echo "$dst: $(ls src/assets/$dst | wc -l)장"
 done
+# 물품은 모두 16×16 판에 맞춘다 (같은 배율이면 모든 물품의 픽셀 1칸 크기가 같다)
+python3 - <<'PY'
+from PIL import Image; import glob
+for f in glob.glob('src/assets/items/*.png'):
+    im = Image.open(f).convert('RGBA')
+    if im.size != (16, 16):
+        c = Image.new('RGBA', (16, 16)); c.paste(im, ((16 - im.width) // 2, (16 - im.height) // 2)); c.save(f)
+PY
