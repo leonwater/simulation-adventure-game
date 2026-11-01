@@ -102,6 +102,7 @@ battle.ts:337, battle.ts:541, dungeon.ts:306, guild.ts:85 - div role=button: 키
 
 ## 5. 비교 자료
 
+- `r1-variant.patch` — R1 수정안(검정과 남색의 중간값). 고르면 `git apply`로 적용.
 - `compare/index.html` — 항목별(R1~R6) "앞 단계 → 그 항목 적용" 사진과 전체 34화면 수정 전·후. 같은 저장 데이터·같은 난수로 찍어 내용은 같고 스타일만 다르다.
 - 사진은 390×844, webp. 수정 전은 main(a9513a6), 단계별은 각 커밋을 따로 빌드해서 찍었다.
 - 찍는 도중 `scripts/*.mjs`가 끝날 때 vite 미리보기 서버(npx 자식)를 못 끄는 버그를 찾아 고쳤다 — 남은 서버가 다음 실행에서 옛 화면을 보여 주던 문제.
