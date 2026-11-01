@@ -169,9 +169,25 @@ function onDungeon(): void {
   });
 }
 
+/** 직업별 전투 안내 (v3.7 규칙). */
+function jobTip(): string {
+  const cd = `스킬 ${H('재사용 대기')}는 전투가 끝나도 ${H('같은 던전 안에서 이어지고')}, 마을에 돌아오면 풀려요.`;
+  switch (S.c.Job) {
+    case 'Warrior': return `전사는 맞을 때 ${H('반격')} 확률만큼 피해를 절반으로 막고 바로 되받아쳐요. ${cd}`;
+    case 'Archer': return `궁수는 ${H('기본 공격')}이 주력이에요. ${H('관통')}으로 적 방어를 일부 무시하고, 스킬로 기본 공격을 강화하거나 여러 적을 쏴요. ${cd}`;
+    case 'Rogue': return `도적은 ${H('스킬 치명타')}가 주력이에요. ${H('급소')}로 치명타 확률과 피해가 조금씩 올라요. ${cd}`;
+    default: return `마법사의 기본 공격 자리는 ${H('에너지 볼')}(재사용 2턴)이에요. 쓸 수 있는 공격이 하나도 없으면 ${bad('마력 폭주')}로 억지로 쏘고 잠시 약해져요. ${cd}`;
+  }
+}
+
 function onBattle(): void {
-  if (stage() !== 'FirstDungeon') return;
-  run([info('bat.2', 'battle.choices', '전투', `오른쪽 숫자는 지금 대상에게 ${H('맞을 확률')}, 아래 줄은 ${H('예상 피해')}예요. 적을 누르면 대상이 바뀌고, 선택지를 ${H('길게 누르면')} 자세한 계산을 볼 수 있어요.`)], () => {
+  // 튜토리얼을 마친 예전 모험가에게도 v3.7 직업 변경을 한 번 알려 준다
+  if (stage() !== 'FirstDungeon') {
+    if (S.hasGame && !S.tipShown('tip.v37') && document.querySelector('[data-anchor="battle.choices"]')) coach.info('battle.choices', '직업 전투 방식', jobTip(), () => S.markTip('tip.v37'));
+    return;
+  }
+  run([info('bat.2', 'battle.choices', '전투', `오른쪽 숫자는 지금 대상에게 ${H('맞을 확률')}, 아래 줄은 ${H('예상 피해')}예요. 적을 누르면 대상이 바뀌고, 선택지를 ${H('길게 누르면')} 자세한 계산을 볼 수 있어요.`),
+    info('tip.v37', 'battle.choices', '직업 전투 방식', jobTip())], () => {
     if (S.tipShown('bat.3') || !document.querySelector('[data-anchor="battle.choice0"]')) return;
     S.markTip('bat.3');
     doIt('battle.choice0', `${H('공격')}을 골라 보세요!`);

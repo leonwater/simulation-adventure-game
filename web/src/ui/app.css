@@ -35,7 +35,7 @@ html, body { margin: 0; height: 100%; background: var(--page); color: var(--text
   font-family: var(--font-body); word-break: keep-all; overflow-wrap: anywhere; text-wrap: pretty; overscroll-behavior: none; user-select: none; -webkit-user-select: none; }
 #app { height: var(--app-h, 100%); display: flex; justify-content: center; }
 /* 세로 모바일 화면(390×844 비율)을 브라우저 높이에 맞춘다. 폰에서는 화면 전체 */
-.screen { position: relative; width: 100%; max-width: 480px; height: 100%; background: var(--bg);
+.screen { position: relative; width: 100%; max-width: 480px; height: 100%; background: var(--bg) url('../assets/ui/bg_stone.png') 0 0 / 32px 32px; image-rendering: pixelated; /* v3.7 바탕: 어두운 돌벽 픽셀 무늬 */
   display: flex; flex-direction: column; overflow: hidden; font-size: calc(14px * var(--text-scale));
   padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
 @media (min-width: 600px) { .screen { max-width: calc(100vh * 390 / 844); } }
@@ -143,23 +143,31 @@ input.text::placeholder { color: var(--placeholder); }
 .unit-shape > * { position: absolute; }
 .unit-sprite { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); image-rendering: pixelated; pointer-events: none; }
 /* v3.6 의뢰 게시판: 나무 바탕 + 의뢰서 종이(등급별 테두리 · 압정) 2열 */
-.qboard { --qink: #3a2a1a; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 14px 10px 12px; border: 3px solid #4a2e22; border-radius: 4px; background: #6e4630 0 0 / 64px 32px repeat; image-rendering: pixelated; }
+.qboard { --qink: #2a1e12; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 10px; padding: 14px 10px 12px; border: 3px solid #2a1810; border-radius: 4px; background: #3a2418 0 0 / 64px 32px repeat; image-rendering: pixelated; }
 .qnote { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 4px; color: var(--qink); cursor: pointer; border: 6px solid transparent; border-image-slice: 3 fill; border-image-width: 6px; border-image-repeat: stretch; image-rendering: pixelated; box-shadow: 2px 3px 0 rgba(0,0,0,.35); text-align: left; }
 .qnote::before { content: ''; position: absolute; top: -7px; left: 50%; width: 6px; height: 6px; margin-left: -3px; background: var(--pin); box-shadow: 0 0 0 2px #1a1420, inset -2px -2px 0 rgba(0,0,0,.3); }
 .qnote.iron { --pin: #9aa4b4; } .qnote.bronze { --pin: #e0975e; } .qnote.silver { --pin: #f4f6fb; } .qnote.gold { --pin: #f6d070; }
 .qnote.active { transform: rotate(-1deg); }
 .qhead { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .qtitle { font-size: 12px; line-height: 14px; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.qpic { height: 52px; display: grid; place-items: center; background: rgba(110,70,48,.12); }
+.qpic { height: 52px; display: grid; place-items: center; background: rgba(42,24,16,.18); }
 .qpic img.item-art { width: 32px; height: 32px; }
 .qpic-unit { height: 48px; image-rendering: pixelated; }
 .qline { display: flex; flex-wrap: wrap; align-items: center; gap: 0 2px; font-size: 11px; line-height: 14px; }
-.qgold { color: #8a5a12; }
+.qgold { color: #6a4208; }
 .qnote > button { margin-top: 2px; min-height: 30px; }
+/* 의뢰서 위 버튼: 종이와 구분되게 진한 색 (수락 = 짙은 갈색, 포기 = 붉은 갈색, 보고 = 금색) */
+.qnote > button.outline { background: #4a2e1e; border-color: #2a1810; color: #f1e8d6; }
+.qnote > button.ghost { background: #7a2a20; border-color: #4a1610; color: #f1e8d6; }
+.qnote > button:disabled { background: #8a7a5a; border-color: #6a5a40; color: #3a2e1e; opacity: .7; }
+/* 끌어서 옮길 수 있는 칸: 오른쪽 아래 점 손잡이 (2열 × 3줄) */
+.grip::after { content: ''; position: absolute; right: 6px; bottom: 8px; width: 8px; height: 12px; opacity: .7; background: conic-gradient(var(--sub) 25%, transparent 0) 0 0 / 4px 4px; background-size: 4px 4px; clip-path: inset(0 0 0 0); }
 .qstamp { position: absolute; right: -2px; top: -2px; padding: 1px 4px; font-size: 10px; color: #f4f6fb; background: #3f80c0; transform: rotate(6deg); }
 .qstamp.done { background: #c8963a; }
 .qempty { grid-column: 1 / -1; padding: 10px; font-size: 12px; color: #f1e8d6; text-align: center; }
-.sticky-top { position: sticky; top: 0; z-index: 3; box-shadow: 0 6px 10px -6px var(--ink-shadow); }
+/* 화면 아래 고정 줄 (상점 물건 갱신 등): 목록 스크롤 밖이라 다른 것이 겹치지 않는다 */
+.footbar { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 8px 16px; background: var(--bar); border-top: 2px solid var(--line); }
+.cards3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .cards4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 /* v3.6 물품 카드: 가로 4칸, 그림 2배(32px) — 모든 물품의 픽셀 1칸 크기가 같다 */
 .icard { display: flex; flex-direction: column; height: 118px; padding: 0; border-radius: 10px; overflow: hidden; min-width: 0; position: relative; }
@@ -182,6 +190,10 @@ input.text::placeholder { color: var(--placeholder); }
 .icard-empty.mini { height: 72px; }
 .item-art { width: 32px; height: 32px; flex-shrink: 0; image-rendering: pixelated; }
 .nw { white-space: nowrap; }
+.job-diff { font-size: 11px; line-height: 1.2; }
+.perk-table { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.perk-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; font-size: 11px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: 3px; min-width: 0; }
+.perk-cell.on { border-color: var(--gold); color: var(--gold); }
 .job-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .job-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; min-height: 150px; text-align: center; }
 .job-sprite { width: 60px; height: auto; image-rendering: pixelated; }

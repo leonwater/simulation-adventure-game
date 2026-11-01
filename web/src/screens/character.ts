@@ -9,6 +9,7 @@ import { jobData, PERKS } from '../core/jobs';
 import { Names } from '../core/names';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
+import { showJobInfo } from '../ui/jobinfo';
 import { button, divider, h, icon, progress, row, sub } from '../ui/kit';
 import { colored } from '../ui/items';
 import { modal, toast } from '../ui/overlay';
@@ -69,7 +70,8 @@ export class CharacterScreen extends Screen {
     const st = promotionStatus(c);
     const cond = (label: string, cur: number, req: number): HTMLElement =>
       h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : 'var(--text)'));
-    return h('div', { class: 'card', style: { gap: '8px', padding: '12px 14px' } },
+    // 등급 카드를 누르면 직업 정보 (고유 능력치의 등급별 값)
+    return h('div', { class: 'card', role: 'button', style: { gap: '8px', padding: '12px 14px', cursor: 'pointer' }, on: { click: () => showJobInfo(c.Job, c.Rank) } },
       row(icon(rankIcon(c.Rank), 32), h('b', { class: 'grow', style: { fontSize: '15px' } }, `${c.Rank} 등급 모험가`), h('span', { class: 'gold', style: { fontSize: '13px' } }, `기본 능력치 +${Math.round(badgeBonus(c.Rank) * 100)}%`)),
       // 직업 고유 능력치: 포인트로는 못 올리고 모험가 등급으로만 오른다
       row(icon(PERKS[c.Job].icon, 28), h('div', { class: 'col grow', style: { gap: '1px' } },

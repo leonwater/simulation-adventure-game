@@ -52,7 +52,18 @@ export class ShopScreen extends Screen {
         router.rebuild();
       }),
       h('div', { class: 'scroll', style: { gap: '14px' } }, ...(this.tab === 0 ? this.buyTab() : this.sellTab())),
+      this.tab === 0 ? this.rerollBar() : null,
       this.selected ? this.sellBar() : null);
+  }
+
+  /** 물건 갱신: 화면 아래 고정 줄 (목록 스크롤과 겹치지 않는다). */
+  private rerollBar(): HTMLElement {
+    const shop = S.data!.Shop;
+    const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm');
+    b.style.width = '72px';
+    return h('div', { class: 'footbar' },
+      h('b', { class: 'grow', style: { fontSize: '15px' } }, '물건 갱신'),
+      h('b', { class: 'gold', style: { fontSize: '13px' } }, `${rerollCost(shop).toLocaleString('en-US')}G`), b);
   }
 
   afterShow(): void {
@@ -63,11 +74,6 @@ export class ShopScreen extends Screen {
     const shop = S.data!.Shop;
     const grid = cardGrid;
     return [
-      // 물건 갱신 줄은 스크롤해도 위에 붙어 있다
-      h('div', { class: 'card sticky-top', style: { flexDirection: 'row', alignItems: 'center', gap: '8px', borderRadius: '10px', padding: '6px 8px 6px 12px' } },
-        h('b', { class: 'grow', style: { fontSize: '15px' } }, '물건 갱신'),
-        h('b', { class: 'gold', style: { fontSize: '13px' } }, `${rerollCost(shop).toLocaleString('en-US')}G`),
-        (() => { const b = button('갱신', () => this.confirmReroll(), 'outline', 'sm'); b.style.width = '64px'; b.style.minHeight = '34px'; b.style.height = '34px'; return b; })()),
       h('div', { class: 'col', 'data-anchor': 'shop.equip' },
         h('b', null, '장비'),
         shop.Equipment.length === 0 ? sub("장비가 모두 팔렸습니다. '갱신'으로 새 물건을 들여올 수 있어요.") : null,
@@ -209,8 +215,9 @@ export class ShopScreen extends Screen {
     if (!this.selected) {
       const multi = button('선택 판매', () => this.setSelecting(true), 'outline', 'sm');
       multi.disabled = !any;
+      // 늘 누를 수 있게 두고, 팔 것이 없으면 이유를 알려 준다
       const junk = button('일괄 판매', () => this.sellMaterials(), 'ghost', 'sm');
-      junk.disabled = !c.Inventory.Items.some((i) => i.Kind === 'Material');
+      junk.disabled = !any;
       head.append(multi, junk);
       out.push(head);
     } else {
@@ -295,7 +302,8 @@ export class ShopScreen extends Screen {
     const c = S.c;
     const sellable = (i: ItemInstance): boolean => i.Kind === 'Material' && !S.data!.Guild.Active.some((q) => q.MaterialId === i.TemplateId);
     const total = c.Inventory.Items.filter(sellable).reduce((a, i) => a + sellPrice(i) * i.Count, 0);
-    confirmBox('일괄 판매', `진행 중인 퀘스트에 필요한 것을 빼고 기타 아이템을 모두 팝니다. (${total.toLocaleString('en-US')}G)`, '판매', () => {
+    if (total === 0) return toast(c.Inventory.Items.some((i) => i.Kind === 'Material') ? '진행 중인 퀘스트에 필요한 재료만 있습니다' : '일괄 판매할 퀘스트 재료가 없습니다');
+    confirmBox('일괄 판매', `진행 중인 퀘스트에 필요한 것을 빼고 퀘스트 재료를 모두 팝니다. (${total.toLocaleString('en-US')}G)`, '판매', () => {
       for (const i of [...c.Inventory.Items].filter(sellable)) sell(c, i.Uid, i.Count);
       S.save();
       router.rebuild();

@@ -8,7 +8,7 @@ import { Names } from '../core/names';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { artImg, cardGrid, colored, compareLine, emptyCard, gearText, gradeTag, itemArt, itemCard } from '../ui/items';
-import { button, h, row, sub } from '../ui/kit';
+import { button, h, icon, row, sub } from '../ui/kit';
 import { flash, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { GRADE_COLOR } from '../ui/theme';
@@ -82,27 +82,27 @@ export class BlacksmithScreen extends Screen {
     const have = countOf(c.Inventory, ENHANCE_STONE_ID);
     if (stones > 0) card.append(row(artImg('enhance_stone', 32), h('b', null, '강화석 ', colored(`${have} / ${stones}`, have >= stones ? 'var(--green)' : 'var(--red-light)'))));
     const reason = cannotEnhanceReason(c, item);
-    // 강화 버튼에도 강화할 장비 그림
-    const b = button([itemArt(item), reason ?? `강화하기 +${item.Enhance} → +${item.Enhance + 1}`], () => this.doEnhance(item), 'primary', 'row');
+    // 강화 버튼: 망치 아이콘 (장비 그림은 위 이름 줄에), 결과 연출은 이 버튼에서 시작
+    const b: HTMLButtonElement = button([icon('enhance', 20, 'var(--on-accent)'), reason ?? `강화하기 +${item.Enhance} → +${item.Enhance + 1}`], () => this.doEnhance(item, b), 'primary', 'row');
     b.disabled = reason !== null;
     card.append(b);
     return card;
   }
 
-  private doEnhance(item: ItemInstance): void {
+  private doEnhance(item: ItemInstance, from: HTMLElement): void {
     const r = enhance(S.c, item.Uid, S.rng);
     switch (r.result) {
       case 'Success':
         this.line = `좋아, 잘 붙었군! ${displayName(item)} 완성이다.`;
-        flash('강화 성공', 'var(--green)');
+        flash('강화 성공', 'var(--green)', from);
         break;
       case 'Failed':
         this.line = '쯧, 이번엔 안 됐네. 장비는 멀쩡하니 다시 해 보게.';
-        flash('강화 실패', 'var(--sub)');
+        flash('강화 실패', 'var(--sub)', from);
         break;
       case 'Downgraded':
         this.line = '이런, 손이 미끄러졌군. 한 단계 깎였지만 부서지진 않았네.';
-        flash('등급 하락', 'var(--red-light)');
+        flash('등급 하락', 'var(--red-light)', from);
         break;
       default:
         return toast(r.error ?? '');

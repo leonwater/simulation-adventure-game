@@ -28,7 +28,7 @@ pal({
 })
 ramps("kQRr", "kunSs", "knMmw", "kYy", "kEDd", "ktGgl", "kfe", "kcBb", "koPp", "kOAa", "kjIi", "kVv", "kTq", "kZN", "k21", "k54", "k76")
 
-pal({ w: "#efe0b8", v: "#d8c290" })  // 양피지
+pal({ w: "#c9b48a", v: "#a8936a", D: "#3a2418", d: "#4a2e1e", E: "#2a1810" })  // 바랜 양피지 · 어두운 나무 (다른 화면과 밝기를 맞춤)
 sprite("wood", {}, `
   DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
   ddddddddddddDdddddddddddddddddEd
@@ -158,3 +158,23 @@ sprite("paper_gold", {}, `
   xvvwwwwwwwwwwwwwwwwwwwwvvx
   .xvvvvvvvvvvvvvvvvvvvvvvx.
   ..xxxxxxxxxxxxxxxxxxxxxx..`)
+
+// 화면 바탕: 아주 어두운 돌벽 (글자를 방해하지 않게 바탕색과 거의 같은 세 가지 색)
+pal({ a: "#11161e", b: "#0d1118", c: "#141a23" })
+sprite("bg_stone", {}, `
+  bbbbbbbbbbbbbbbb
+  aacaaaaabaaaaaaa
+  aaaaaaaabaaaacaa
+  aaaaacaabaaaaaaa
+  aaaaaaaabaaaaaaa
+  aaaaaaaabaaaaaaa
+  aaaaaaaabaacaaaa
+  aaaaaaaabaaaaaaa
+  bbbbbbbbbbbbbbbb
+  aaaabaaaaaaaaaaa
+  aaaabaaaaaacaaaa
+  acaabaaaaaaaaaaa
+  aaaabaaaaaaaaaaa
+  aaaabaacaaaaaaaa
+  aaaabaaaaaaaaaca
+  aaaabaaaaaaaaaaa`)

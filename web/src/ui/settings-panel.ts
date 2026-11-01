@@ -12,23 +12,27 @@ import { TEXT_SIZE_NAMES, settings } from './settings';
 /** 모드: 시작 화면에서는 모험 정보와 아래 버튼을 보이지 않는다. 화면 이동은 goto()가 맡는다. */
 export function openSettings(fromTitle = false): void {
   const m = modal('설정');
-  const reopen = (): void => {
-    m.close();
-    router.rebuild();
-    openSettings(fromTitle);
-  };
-  const choice = (label: string, options: string[], active: number, onSelect: (i: number) => void, line = true): HTMLElement =>
+  // 고른 값은 창을 닫지 않고 그 자리에서 바꾼다 (예전에는 창을 닫고 화면을 다시 그려 깜빡였다).
+  // 화면에 보이는 값(전투 속도·글자 크기)이 바뀌면 뒤 화면만 다시 그린다
+  const card = h('div', { class: 'card', style: { padding: '6px 12px', gap: '0' } });
+  const choice = (label: string, options: string[], active: number, onSelect: (i: number) => void, line = true, redraw = false): HTMLElement =>
     h('div', { class: 'row', style: { minHeight: '52px', borderBottom: line ? '1px solid var(--line-soft)' : '' } },
       h('div', { class: 'grow' }, label),
       ...options.map((o, i) => button(o, () => {
+        if (i === active) return;
         onSelect(i);
-        reopen();
+        fill();
+        if (redraw) router.rebuild();
       }, i === active ? 'primary' : 'ghost', 'sm')));
-  m.body.append(h('div', { class: 'card', style: { padding: '6px 12px', gap: '0' } },
-    choice('전투 속도', ['1×', '2×'], settings.battleSpeed - 1, (i) => (settings.battleSpeed = i + 1)),
-    choice('대사 한 글자씩', ['끄기', '켜기'], settings.typewriter ? 1 : 0, (i) => (settings.typewriter = i === 1)),
-    choice('진동', ['끄기', '켜기'], settings.vibration ? 1 : 0, (i) => (settings.vibration = i === 1)),
-    choice('글자 크기', TEXT_SIZE_NAMES, settings.textSize, (i) => (settings.textSize = i), false)));
+  const fill = (): void => {
+    card.replaceChildren(
+      choice('전투 속도', ['1×', '2×'], settings.battleSpeed - 1, (i) => (settings.battleSpeed = i + 1), true, true),
+      choice('대사 한 글자씩', ['끄기', '켜기'], settings.typewriter ? 1 : 0, (i) => (settings.typewriter = i === 1)),
+      choice('진동', ['끄기', '켜기'], settings.vibration ? 1 : 0, (i) => (settings.vibration = i === 1)),
+      choice('글자 크기', TEXT_SIZE_NAMES, settings.textSize, (i) => (settings.textSize = i), false, true));
+  };
+  fill();
+  m.body.append(card);
   if (!fromTitle && S.hasGame) {
     const c = S.c;
     const line = (k: string, v: string): HTMLElement => row(h('div', { class: 'sub grow' }, k), h('span', null, v));

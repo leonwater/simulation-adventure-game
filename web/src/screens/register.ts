@@ -5,7 +5,8 @@ import { Names, josa } from '../core/names';
 import { jobLine, npcIllustration, topBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { button, h, phrases, row, sub } from '../ui/kit';
-import { confirmBox, toast } from '../ui/overlay';
+import { modal, toast } from '../ui/overlay';
+import { JOB_DIFFICULTY, jobInfo } from '../ui/jobinfo';
 import { Screen, router } from '../ui/router';
 import { DIFFICULTY_COLOR } from '../ui/theme';
 import { spriteUrl } from '../ui/sprites';
@@ -18,9 +19,9 @@ const PITCH = ['초보자에게 추천', '일반적인 모험가에게 추천', 
 /** 직업 선택 칸의 장점 · 단점: 다른 직업과 비교하지 않는 그 직업만의 특색, 각각 한 줄 */
 const JOB_PITCH: Record<Job, [string[], string[]]> = {
   Warrior: [['반격', '튼튼함'], ['느린 스킬']],
-  Archer: [['회피', '잦은 스킬'], ['약한 몸']],
-  Rogue: [['방어 관통 치명타'], ['운에 좌우']],
-  Mage: [['강력한 스킬'], ['긴 재사용 대기']],
+  Archer: [['관통 사격', '높은 명중'], ['약한 한 방']],
+  Rogue: [['치명타 한 방'], ['운에 좌우']],
+  Mage: [['강력한 스킬'], ['마력 관리']],
 };
 
 export class RegistrationScreen extends Screen {
@@ -91,10 +92,17 @@ export class RegistrationScreen extends Screen {
         return h('button', { class: `card-btn job-card ${on ? 'on' : ''}`, 'aria-pressed': String(on), on: { click: () => {
           this.job = j;
           router.rebuild();
-          confirmBox(`${josa(jobData(j).name, '으로/로')} 정할까요?`, '직업은 등록한 뒤에 바꿀 수 없습니다.', '정하기', () => this.next());
+          // 확인 창에 직업 상세 (고유 능력치·등급별 값·주요 능력치)
+          const m = modal(`${josa(jobData(j).name, '으로/로')} 정할까요?`);
+          m.body.append(jobInfo(j), sub('직업은 등록한 뒤에 바꿀 수 없습니다.'),
+            row(button('취소', m.close, 'ghost', 'grow'), button('정하기', () => {
+              m.close();
+              this.next();
+            }, 'primary', 'grow')));
         } } },
         h('img', { class: 'job-sprite', src: spriteUrl(j.toLowerCase()) ?? '', alt: '' }),
         h('b', { style: { fontSize: '16px', color: on ? 'var(--gold)' : 'var(--text)' } }, jobData(j).name),
+        h('span', { class: 'job-diff', style: { color: JOB_DIFFICULTY[j][1] } }, `난이도 ${JOB_DIFFICULTY[j][0]}`),
         h('span', { class: 'job-pro' }, '+ ', ...phrases(pro)),
         h('span', { class: 'job-con' }, '− ', ...phrases(con)));
       })));

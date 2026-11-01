@@ -15,6 +15,7 @@ const SETUP = `(() => {
   const S = window.__S;
   S.newGame('아주긴이름모험가', 'Warrior', 'Normal');
   S.setTutorial('Done');
+  S.markTip('tip.v37'); // v3.7 직업 안내는 따로 확인 (전투 화면 클릭을 막지 않게)
   const c = S.c; c.Level = 24; c.Gold = 1234567; c.HighestFloorCleared = 12; c.UnspentPoints = 6; S.selectFloor(13);
   // 물품 칸의 모든 경우: 강화 없음 · +5 · +12, 개수 1 · 99, 긴 이름, 장비·소모품·재료·스킬서·강화석
   const I = window.__items, add = (i) => I.addItem(c.Inventory, i);
@@ -44,6 +45,7 @@ const STATES = [
   ['town', `window.__screens.goTown()`],
   ['character', `window.__nav('character')`],
   ['character-detail', `window.__nav('character')`, ['button:has-text("상세 능력치")']],
+  ['character-jobinfo', `window.__nav('character')`, ['.card[role="button"]']],
   ['inventory', `window.__nav('inventory')`],
   ['inventory-item', `window.__nav('inventory')`, ['.scroll .card-btn >> nth=0']],
   ['skills', `window.__nav('skills')`],
@@ -114,7 +116,7 @@ const CHECK = () => {
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
     const t = n.textContent, el = n.parentElement;
-    if (!t.trim() || !el || !el.closest('.screen, .layer') || el.closest('.floatup, .flash, .toast, .intro, .stage, .icard-name, .qtitle')) continue; // 이름 칸은 두 줄까지 단어 단위로 접히게 만든 것
+    if (!t.trim() || !el || !el.closest('.screen, .layer') || el.closest('.floatup, .flash, .toast, .intro, .stage, .icard-name, .qtitle, .coach')) continue; // 이름 칸은 두 줄까지 단어 단위로 접히게 만든 것
     const short = t.trim().length <= 10;
     if (short && lines(n, 0, t.length) > 1) { out.push(`줄바꿈: ${desc(el)}`); continue; }
     let at = 0;

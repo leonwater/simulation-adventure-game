@@ -7,6 +7,7 @@ import { bottomNav, townBar } from '../ui/chrome';
 import { dragReorder } from '../ui/drag';
 import { showSkillDetail } from '../ui/skilldetail';
 import { skillBrief, skillNameEl } from '../ui/skillinfo';
+import { tierColor } from '../ui/theme';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
 import { button, h, row, sub } from '../ui/kit';
@@ -37,7 +38,8 @@ export class SkillsScreen extends Screen {
     }
     const slots = skillSlots(c.Rank);
     const cells: HTMLElement[] = [];
-    const grid = h('div', { class: 'cards4' });
+    // 슬롯은 3×2 (스킬 장착 칸만 카드 4칸 규칙의 예외)
+    const grid = h('div', { class: 'cards3' });
     // 슬롯은 처음부터 6칸: 지금 등급에서 열린 칸은 빈 슬롯, 아직 닫힌 칸은 어두운 칸에 '○ 등급에 열림'
     for (let i = 0; i < MAX_SLOTS; i++) {
       if (i >= slots) {
@@ -47,8 +49,12 @@ export class SkillsScreen extends Screen {
         const id = c.Skills.Equipped[i];
         const def = skillDef(id)!;
         const st = getSkillState(c, id)!;
-        const cell = h('button', { class: 'card-btn on', style: { height: '84px', padding: '8px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', minWidth: '0' }, on: { click: () => this.detail(id) } },
-          skillNameEl(def, st.Level), h('span', { class: 'spacer' }), h('span', { class: 'sub', style: { fontSize: '12px', textAlign: 'left', whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' } }, skillBrief(def, st.Level)), h('span', { class: 'sub nw', style: { fontSize: '11px' } }, `재사용 ${def.Cooldown}턴`));
+        const cell = h('button', { class: `card-btn on${c.Skills.Equipped.length > 1 ? ' grip' : ''}`, style: { position: 'relative', height: '84px', padding: '8px', borderRadius: '10px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px', minWidth: '0' }, on: { click: () => this.detail(id) } },
+          // 이름이 길면 이름만 말줄임, 강화 단계(+N)는 늘 카드 안에 보인다
+          h('div', { class: 'row', style: { width: '100%', gap: '2px', minWidth: '0' } },
+            h('b', { style: { color: tierColor(def.Tier), fontSize: '14px', minWidth: '0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } }, def.Name),
+            h('span', { style: { color: 'var(--gold)', fontSize: '12px', flexShrink: '0' } }, `+${st.Level}`)),
+          h('span', { class: 'spacer' }), h('span', { class: 'sub', style: { fontSize: '12px', textAlign: 'left', whiteSpace: 'nowrap', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' } }, skillBrief(def, st.Level)), h('span', { class: 'sub nw', style: { fontSize: '11px' } }, `재사용 ${def.Cooldown}턴`));
         cells.push(cell);
         grid.append(cell);
       } else {

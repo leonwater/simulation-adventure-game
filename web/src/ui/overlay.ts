@@ -64,8 +64,14 @@ export function toast(message: string): void {
 }
 
 /** 화면 가운데에 잠깐 떴다 사라지는 글자 (구매·강화 결과). */
-export function flash(message: string, color = 'var(--gold)'): void {
+/** 짧게 떠오르는 결과 글자. from을 주면 그 요소(누른 버튼)에서 떠오른다. */
+export function flash(message: string, color = 'var(--gold)', from?: HTMLElement): void {
   const el = h('div', { class: 'flash', style: { color } }, message);
+  if (from) {
+    const r = from.getBoundingClientRect(), l = router.layer.getBoundingClientRect();
+    el.style.left = `${r.left + r.width / 2 - l.left}px`;
+    el.style.top = `${r.top + r.height / 2 - l.top}px`;
+  }
   router.layer.append(el);
   closeOnNextAction(el);
   window.setTimeout(() => el.remove(), 800);
