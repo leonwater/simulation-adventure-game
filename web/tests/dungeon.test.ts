@@ -215,7 +215,7 @@ describe('탐험 (DungeonTests)', () => {
   });
 
   it('하드코어 사망은 초기화 표시', () => {
-    expect(die(createCharacter('a', 'Warrior'), null, 'Hardcore', '드래곤').HardcoreReset).toBe(true);
+    expect(die(createCharacter('a', 'Warrior'), null, 'Hardcore', '고대 골렘').HardcoreReset).toBe(true);
   });
 
   it('상황 설명', () => {

@@ -122,7 +122,7 @@ export class ResultScreen extends Screen {
 
   private clear(body: HTMLElement): void {
     const c = S.c;
-    body.append(heading('게임 클리어', 'var(--gold)', `${B.MaxFloor}층 · 드래곤 처치`));
+    body.append(heading('게임 클리어', 'var(--gold)', `${B.MaxFloor}층 · 고대 골렘 처치`));
     const card = panel('기록', 'var(--gold)', 'var(--accent-bg)', 'var(--accent)');
     const sec = S.data!.PlaySeconds;
     card.append(h('div', { style: { fontSize: '15px', lineHeight: '1.5', padding: '0 0 10px' } }, `${josa(c.Name, '은/는')} 마침내 던전 최하층의 주인을 쓰러뜨렸다. 라브 마을의 사람들은 오래도록 그 이름을 이야기할 것이다.`),

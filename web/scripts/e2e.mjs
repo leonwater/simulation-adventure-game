@@ -1,19 +1,8 @@
 // 실제 마우스 클릭으로 새 게임 → 튜토리얼 → 던전 → 전투 → 귀환을 끝까지 돌린다. 가려져 눌리지 않는 UI·멈춤·콘솔 오류를 잡는다.
 // 실행: npm run e2e   (먼저 npm run build)
-import { chromium } from 'playwright-core';
-import { spawn } from 'node:child_process';
+import { start } from './_browser.mjs';
 import fs from 'node:fs';
-import path from 'node:path';
-const server = spawn('npx', ['vite', 'preview', '--port', '4180', '--strictPort'], { stdio: 'ignore', detached: true });
-const stopServer = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch {} };
-const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
-const dir = fs.readdirSync(root).filter((d) => d.startsWith('chromium-')).sort().pop();
-const exe = [path.join(root, dir, 'chrome-linux64', 'chrome'), path.join(root, dir, 'chrome-linux', 'chrome')].find((p) => fs.existsSync(p));
-let browser;
-const end = async (code) => { try { await browser?.close(); } catch {} stopServer(); process.exit(code); };
-setTimeout(() => { console.error('시간 초과'); end(2); }, 100000);
-await new Promise((r) => setTimeout(r, 2500));
-browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+const { browser, end } = await start(4180, 100000);
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e.stack ?? e).split('\n').slice(0, 60).join('\n')));

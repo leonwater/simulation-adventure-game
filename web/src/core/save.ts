@@ -6,8 +6,9 @@ import type { Difficulty } from './enums';
 import { SLOTS, STATS } from './enums';
 import type { GuildState } from './guild';
 import { newGuildState } from './guild';
-import { baseValue, newContainer } from './items';
+import { baseValue, materialDef, newContainer } from './items';
 import { getStat, setStat, startingStats } from './jobs';
+import { monster } from './monsters';
 import type { ShopState } from './shop';
 import { newShopState, toTicks } from './shop';
 import { skillDef } from './skills';
@@ -144,6 +145,12 @@ function convertSkillOverhaul(d: SaveData): void {
   c.Gold += refund * B.SkillBookPrice[0];
 }
 
+/** v3.4에서 단순한 몬스터로 바뀐 종류 (예전 Id → 새 Id) */
+const RENAMED_SPECIES: Record<string, string> = {
+  kobold: 'rat', gargoyle: 'ghost', lich: 'reaper', lizardman: 'mushroom', wyvern: 'snake',
+  golem: 'turtle', troll: 'wisp', minotaur: 'imp', dark_elf: 'eye', dragon: 'ancient_golem',
+};
+
 /** 예전 버전 저장이나 일부가 빠진 저장을 쓸 수 있게 고친다. */
 export function repair(d: SaveData): void {
   const c = d.Character;
@@ -181,6 +188,13 @@ export function repair(d: SaveData): void {
   // v1.7 이전 저장: 스킬서는 1권만
   for (const g of d.Shop.Goods) if (g.Item?.Kind === 'SkillBook') g.Stock = 1;
   if (!d.Guild) d.Guild = newGuildState();
+  // 바뀐 몬스터: 의뢰의 종류 Id·제목, 재료 이름을 지금 표에 맞춘다
+  for (const q of [...d.Guild.Board, ...d.Guild.Active]) {
+    const sp = monster(q.SpeciesId = RENAMED_SPECIES[q.SpeciesId] ?? q.SpeciesId);
+    if (sp && q.Kind === 'Hunt') q.Title = `${sp.Name} 토벌`;
+    if (sp && q.Kind === 'Collect') q.Title = `${sp.MaterialName} 채집`;
+  }
+  for (const i of [...c.Inventory.Items, ...c.Storage.Items]) if (i.Kind === 'Material') i.Name = materialDef(i.TemplateId)?.Name ?? i.Name;
   if (d.Run && (!d.Run.Map || d.Run.Map.Rooms.length === 0 || !d.Run.Map.Rooms[d.Run.CurrentRoomId])) d.Run = null;
   if (d.Run === undefined) d.Run = null;
   d.SelectedFloor = clamp(d.SelectedFloor ?? 1, 1, maxChallengeFloor(c));

@@ -48,19 +48,19 @@ export class BossKit {
 
 /** 종족별 우두머리 특성. 고유 보스는 2~3개 조합. */
 const BY_SPECIES: Record<string, BossTrait[]> = {
-  slime: ['Split'], goblin: ['Enrage'], goblin_archer: ['Flurry'], bat: ['Lifesteal'], kobold: ['Barrier'], spider: ['Summon'], wolf: ['Flurry'],
+  slime: ['Split'], goblin: ['Enrage'], goblin_archer: ['Flurry'], bat: ['Lifesteal'], rat: ['Barrier'], spider: ['Summon'], wolf: ['Flurry'],
   goblin_king: ['Smash', 'Summon'],
-  orc: ['Smash'], skeleton: ['Barrier'], zombie: ['Revive'], ghoul: ['Lifesteal'], orc_shaman: ['Shield'], gargoyle: ['Barrier'],
-  lich: ['Shield', 'Summon', 'Ritual'],
-  lizardman: ['Thorns'], wyvern: ['Flurry'], golem: ['Barrier'], troll: ['Ritual'], minotaur: ['Smash'], dark_elf: ['Shield'],
-  dragon: ['Enrage', 'Ritual', 'Smash'],
+  orc: ['Smash'], skeleton: ['Barrier'], zombie: ['Revive'], ghoul: ['Lifesteal'], orc_shaman: ['Shield'], ghost: ['Barrier'],
+  reaper: ['Shield', 'Summon', 'Ritual'],
+  mushroom: ['Thorns'], snake: ['Flurry'], turtle: ['Barrier'], wisp: ['Ritual'], imp: ['Smash'], eye: ['Shield'],
+  ancient_golem: ['Enrage', 'Ritual', 'Smash'],
 };
 
 /** 부하 소환: 보스 → (졸개 종족, 이름, HP 배율) */
 const MINION: Record<string, { id: string; name: string; hp: number }> = {
   spider: { id: 'spider', name: '새끼 거미', hp: 0.6 },
   goblin_king: { id: 'goblin', name: '고블린 졸개', hp: 0.8 },
-  lich: { id: 'skeleton', name: '해골 병사', hp: 0.8 },
+  reaper: { id: 'skeleton', name: '해골 병사', hp: 0.8 },
 };
 
 export const traitsFor = (speciesId: string | null | undefined): BossTrait[] => (speciesId ? BY_SPECIES[speciesId] ?? [] : []);

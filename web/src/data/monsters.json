@@ -103,15 +103,15 @@
       }
     },
     {
-      "Id": "kobold",
-      "Name": "코볼트",
+      "Id": "rat",
+      "Name": "큰 쥐",
       "Tier": 0,
       "HpMul": 1,
       "AttackMul": 1,
       "DefenseMul": 1.3,
       "RequirementMul": 1,
       "MaterialId": "mat_kobold",
-      "MaterialName": "코볼트 이빨",
+      "MaterialName": "쥐 꼬리",
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
@@ -372,15 +372,15 @@
       }
     },
     {
-      "Id": "gargoyle",
-      "Name": "가고일",
+      "Id": "ghost",
+      "Name": "유령",
       "Tier": 1,
       "HpMul": 1.1,
       "AttackMul": 1,
       "DefenseMul": 1.6,
       "RequirementMul": 1,
       "MaterialId": "mat_stone",
-      "MaterialName": "석상 파편",
+      "MaterialName": "영혼 조각",
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
@@ -391,15 +391,15 @@
       }
     },
     {
-      "Id": "lich",
-      "Name": "리치",
+      "Id": "reaper",
+      "Name": "저승사자",
       "Tier": 1,
       "HpMul": 1,
       "AttackMul": 1.1,
       "DefenseMul": 1,
       "RequirementMul": 1,
-      "MaterialId": "mat_bone",
-      "MaterialName": "뼛조각",
+      "MaterialId": "mat_reaper",
+      "MaterialName": "저승 낫 조각",
       "Skills": [
         {
           "Name": "공포의 속삭임",
@@ -414,7 +414,7 @@
           }
         },
         {
-          "Name": "봉인",
+          "Name": "영혼 봉인",
           "DamageMult": 0.6,
           "UseChance": 0.2,
           "Status": {
@@ -426,7 +426,7 @@
           }
         },
         {
-          "Name": "영혼 불꽃",
+          "Name": "저승 불꽃",
           "DamageMult": 1.3,
           "UseChance": 0.25,
           "Status": {
@@ -447,15 +447,15 @@
       }
     },
     {
-      "Id": "lizardman",
-      "Name": "리자드맨",
+      "Id": "mushroom",
+      "Name": "독버섯",
       "Tier": 2,
       "HpMul": 1,
       "AttackMul": 1.1,
       "DefenseMul": 1,
       "RequirementMul": 1,
       "MaterialId": "mat_scale",
-      "MaterialName": "도마뱀 비늘",
+      "MaterialName": "버섯 포자",
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 0,
@@ -466,18 +466,18 @@
       }
     },
     {
-      "Id": "wyvern",
-      "Name": "와이번",
+      "Id": "snake",
+      "Name": "독사",
       "Tier": 2,
       "HpMul": 1.1,
       "AttackMul": 1.2,
       "DefenseMul": 1,
       "RequirementMul": 1.1,
       "MaterialId": "mat_wyvern",
-      "MaterialName": "와이번 날개막",
+      "MaterialName": "독사 송곳니",
       "Skills": [
         {
-          "Name": "독침 꼬리",
+          "Name": "독 뱉기",
           "DamageMult": 1,
           "UseChance": 0.3,
           "Status": {
@@ -498,18 +498,18 @@
       }
     },
     {
-      "Id": "golem",
-      "Name": "골렘",
+      "Id": "turtle",
+      "Name": "바위 거북",
       "Tier": 2,
       "HpMul": 1.6,
       "AttackMul": 0.9,
       "DefenseMul": 2,
       "RequirementMul": 0.8,
       "MaterialId": "mat_core",
-      "MaterialName": "골렘 핵",
+      "MaterialName": "거북 등껍질",
       "Skills": [
         {
-          "Name": "대지 강타",
+          "Name": "껍질 내려찍기",
           "DamageMult": 1.3,
           "UseChance": 0.2,
           "Status": {
@@ -530,15 +530,15 @@
       }
     },
     {
-      "Id": "troll",
-      "Name": "트롤",
+      "Id": "wisp",
+      "Name": "도깨비불",
       "Tier": 2,
       "HpMul": 1.5,
       "AttackMul": 1.1,
       "DefenseMul": 1,
       "RequirementMul": 1,
       "MaterialId": "mat_troll",
-      "MaterialName": "트롤 피",
+      "MaterialName": "꺼지지 않는 불씨",
       "Skills": [],
       "UniqueBoss": false,
       "RegenPercent": 5,
@@ -549,18 +549,18 @@
       }
     },
     {
-      "Id": "minotaur",
-      "Name": "미노타우로스",
+      "Id": "imp",
+      "Name": "임프",
       "Tier": 2,
       "HpMul": 1.3,
       "AttackMul": 1.3,
       "DefenseMul": 1,
       "RequirementMul": 1,
       "MaterialId": "mat_horn",
-      "MaterialName": "미노타우로스 뿔",
+      "MaterialName": "임프 뿔",
       "Skills": [
         {
-          "Name": "돌진",
+          "Name": "삼지창 돌진",
           "DamageMult": 1.5,
           "UseChance": 0.25,
           "Status": {
@@ -581,18 +581,18 @@
       }
     },
     {
-      "Id": "dark_elf",
-      "Name": "다크 엘프",
+      "Id": "eye",
+      "Name": "떠다니는 눈알",
       "Tier": 2,
       "HpMul": 0.9,
       "AttackMul": 1.2,
       "DefenseMul": 1,
       "RequirementMul": 1.15,
       "MaterialId": "mat_silk",
-      "MaterialName": "어둠 비단",
+      "MaterialName": "눈알 수정체",
       "Skills": [
         {
-          "Name": "그림자 가루",
+          "Name": "현혹의 시선",
           "DamageMult": 0.6,
           "UseChance": 0.25,
           "Status": {
@@ -604,7 +604,7 @@
           }
         },
         {
-          "Name": "독칼",
+          "Name": "부식 광선",
           "DamageMult": 1,
           "UseChance": 0.25,
           "Status": {
@@ -687,18 +687,18 @@
       "Line": "Front"
     },
     {
-      "Id": "dragon",
-      "Name": "드래곤",
+      "Id": "ancient_golem",
+      "Name": "고대 골렘",
       "Tier": 2,
       "HpMul": 1.2,
       "AttackMul": 1.15,
       "DefenseMul": 1.3,
       "RequirementMul": 1,
-      "MaterialId": "mat_scale",
-      "MaterialName": "도마뱀 비늘",
+      "MaterialId": "mat_ancient_core",
+      "MaterialName": "고대의 핵",
       "Skills": [
         {
-          "Name": "화염 숨결",
+          "Name": "용암 분출",
           "DamageMult": 1.5,
           "UseChance": 0.3,
           "Status": {
@@ -710,7 +710,7 @@
           }
         },
         {
-          "Name": "포효",
+          "Name": "대지의 포효",
           "DamageMult": 0.3,
           "UseChance": 0.2,
           "Status": {
@@ -722,7 +722,7 @@
           }
         },
         {
-          "Name": "꼬리 후리기",
+          "Name": "바위 팔 휘두르기",
           "DamageMult": 1.2,
           "UseChance": 0.2,
           "Status": {
@@ -747,7 +747,7 @@
         "goblin",
         "goblin_archer",
         "bat",
-        "kobold",
+        "rat",
         "spider",
         "wolf"
       ],
@@ -761,21 +761,21 @@
         "zombie",
         "ghoul",
         "orc_shaman",
-        "gargoyle"
+        "ghost"
       ],
-      "UniqueBossId": "lich"
+      "UniqueBossId": "reaper"
     },
     {
-      "Name": "용의 둥지",
+      "Name": "고대 유적",
       "SpeciesIds": [
-        "lizardman",
-        "wyvern",
-        "golem",
-        "troll",
-        "minotaur",
-        "dark_elf"
+        "mushroom",
+        "snake",
+        "turtle",
+        "wisp",
+        "imp",
+        "eye"
       ],
-      "UniqueBossId": "dragon"
+      "UniqueBossId": "ancient_golem"
     }
   ]
 }

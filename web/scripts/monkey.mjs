@@ -1,23 +1,12 @@
 // 무작위 클릭 점검: 새 게임(튜토리얼 끝, 골드 많이)에서 눈에 보이는 눌 수 있는 것을 무작위로 눌러 오류·멈춤·눌러도 반응 없는 화면을 찾는다.
 // 실행: npm run build && node scripts/monkey.mjs [횟수=1500] [시드=1]
-import { chromium } from 'playwright-core';
-import { spawn } from 'node:child_process';
+import { start } from './_browser.mjs';
 import fs from 'node:fs';
-import path from 'node:path';
 const N = parseInt(process.argv[2] ?? '1500', 10);
 const SEED = parseInt(process.argv[3] ?? '1', 10);
 let seed = SEED;
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-const server = spawn('npx', ['vite', 'preview', '--port', String(4180 + SEED), '--strictPort'], { stdio: 'ignore', detached: true });
-const stopServer = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch {} };
-const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
-const dir = fs.readdirSync(root).filter((d) => d.startsWith('chromium-')).sort().pop();
-const exe = [path.join(root, dir, 'chrome-linux64', 'chrome'), path.join(root, dir, 'chrome-linux', 'chrome')].find((p) => fs.existsSync(p));
-let browser;
-const end = async (code) => { try { await browser?.close(); } catch {} stopServer(); process.exit(code); };
-setTimeout(() => { console.error('시간 초과'); end(2); }, 110000);
-await new Promise((r) => setTimeout(r, 2500));
-browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+const { browser, end } = await start(4180 + SEED, 110000);
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 page.setDefaultTimeout(1500);
 await page.addInitScript(() => { Error.stackTraceLimit = 40; });

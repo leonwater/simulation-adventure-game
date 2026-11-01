@@ -94,8 +94,8 @@ describe('적 생성', () => {
   });
   it('10·20·30층은 고유 보스', () => {
     expect(createBoss(10, 'Normal', 1)[0].name).toBe('고블린 왕');
-    expect(createBoss(20, 'Normal', 1)[0].name).toBe('리치');
-    expect(createBoss(30, 'Normal', 1)[0].name).toBe('드래곤');
+    expect(createBoss(20, 'Normal', 1)[0].name).toBe('저승사자');
+    expect(createBoss(30, 'Normal', 1)[0].name).toBe('고대 골렘');
     expect(createBoss(7, 'Normal', 1)[0].name.endsWith('우두머리')).toBe(true);
   });
   it('난이도 배율', () => {
@@ -331,14 +331,14 @@ describe('보스 특성 (BossTests)', () => {
   });
 
   it('수치는 층이 깊을수록 커진다', () => {
-    expect(mkBoss('kobold', 2).kit!.barrier).toBe(1);
-    expect(mkBoss('kobold', 2).kit!.barrier).toBeLessThan(mkBoss('golem', 28).kit!.barrier);
+    expect(mkBoss('rat', 2).kit!.barrier).toBe(1);
+    expect(mkBoss('rat', 2).kit!.barrier).toBeLessThan(mkBoss('turtle', 28).kit!.barrier);
     const low = mkBoss('orc_shaman', 11);
-    const high = mkBoss('dark_elf', 29);
+    const high = mkBoss('eye', 29);
     expect(low.kit!.maxShield / low.maxHp).toBeLessThan(high.kit!.maxShield / high.maxHp);
-    expect(mkBoss('goblin_archer', 3).kit!.flurryHits).toBeLessThan(mkBoss('wyvern', 27).kit!.flurryHits);
-    expect(mkBoss('orc', 12).kit!.smashMult).toBeLessThan(mkBoss('minotaur', 28).kit!.smashMult);
-    expect(mkBoss('troll', 21).kit!.ritualUses).toBeLessThan(mkBoss('troll', 29).kit!.ritualUses);
+    expect(mkBoss('goblin_archer', 3).kit!.flurryHits).toBeLessThan(mkBoss('snake', 27).kit!.flurryHits);
+    expect(mkBoss('orc', 12).kit!.smashMult).toBeLessThan(mkBoss('imp', 28).kit!.smashMult);
+    expect(mkBoss('wisp', 21).kit!.ritualUses).toBeLessThan(mkBoss('wisp', 29).kit!.ritualUses);
     expect(mkBoss('slime', 2).kit!.splitCount).toBeLessThan(mkBoss('slime', 9).kit!.splitCount);
   });
 
@@ -368,7 +368,7 @@ describe('보스 특성 (BossTests)', () => {
   });
 
   it('가시 비늘은 반사하지만 쓰러뜨리지 않는다', () => {
-    const { b, boss } = fight('lizardman', 25, 3);
+    const { b, boss } = fight('mushroom', 25, 3);
     boss.statuses.apply('Stun', 1, 99);
     let reflected = 0;
     for (let i = 0; i < 20 && !b.isOver; i++) {
@@ -401,7 +401,7 @@ describe('보스 특성 (BossTests)', () => {
 
   it('연속 공격은 여러 번 때린다', () => {
     for (let seed = 0; seed < 30; seed++) {
-      const { b, boss } = fight('wyvern', 25, seed);
+      const { b, boss } = fight('snake', 25, seed);
       for (let i = 0; i < 8 && !b.isOver; i++) {
         boss.hp = boss.maxHp;
         hit(b);
@@ -452,7 +452,7 @@ describe('보스 특성 (BossTests)', () => {
   });
 
   it('재생 의식: 영창 뒤 회복', () => {
-    const { b, boss } = fight('troll', 22, 7);
+    const { b, boss } = fight('wisp', 22, 7);
     boss.hp = Math.floor(boss.maxHp * 0.25);
     boss.defense = 100000;
     hit(b);
@@ -478,7 +478,7 @@ describe('보스 특성 (BossTests)', () => {
   });
 
   it('부하 소환: 졸개는 보스와 함께 흩어진다', () => {
-    const { b, boss } = fight('lich', 20, 9);
+    const { b, boss } = fight('reaper', 20, 9);
     boss.kit!.shield = 0;
     boss.kit!.ritualUses = 0;
     for (let i = 0; i < 12 && boss.kit!.minions.length === 0; i++) {

@@ -2,24 +2,12 @@
 //  (1) 화면 밖으로 나간 요소  (2) 가로로 잘린 글자(말줄임 없음)  (3) 고정 높이 칸에서 세로로 잘린 내용  (4) 콘솔 오류
 // 를 찾아 목록으로 보여 주고 화면마다 스크린샷(shots/layout/)을 남긴다.
 // 실행: npm run build && node scripts/layout.mjs [360x640,390x844,...]
-import { chromium } from 'playwright-core';
-import { spawn } from 'node:child_process';
+import { start } from './_browser.mjs';
 import fs from 'node:fs';
-import path from 'node:path';
 
 const VIEWS = (process.argv[2] ?? '360x640,360x740,390x844,412x915,480x1000').split(',').map((v) => v.split('x').map(Number));
 const PORT = 4230;
-// detached: npx 아래 vite 자식까지 한 묶음으로 끝내야 다음 실행이 옛 서버(옛 dist)를 보지 않는다
-const server = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], { stdio: 'ignore', detached: true });
-const stopServer = () => { try { process.kill(-server.pid, 'SIGTERM'); } catch {} };
-const root = process.env.PLAYWRIGHT_BROWSERS_PATH ?? '/opt/pw-browsers';
-const dir = fs.readdirSync(root).filter((d) => d.startsWith('chromium-')).sort().pop();
-const exe = [path.join(root, dir, 'chrome-linux64', 'chrome'), path.join(root, dir, 'chrome-linux', 'chrome')].find((p) => fs.existsSync(p));
-let browser;
-const end = async (code) => { try { await browser?.close(); } catch {} stopServer(); process.exit(code); };
-setTimeout(() => { console.error('시간 초과'); end(2); }, 280000);
-await new Promise((r) => setTimeout(r, 2500));
-browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
+const { browser, end } = await start(PORT, 280000);
 fs.mkdirSync('shots/layout', { recursive: true });
 
 // 게임 준비: 긴 이름·중간 레벨·골드 넉넉·아이템 몇 개

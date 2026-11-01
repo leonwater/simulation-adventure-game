@@ -11,7 +11,7 @@ const make = (id: string) => createEnemy(monster(id)!, 5, 'Normal', 0);
 
 describe('v2.6 진형 (왼쪽 열 전방 · 오른쪽 열 후방) · v3.0 능력치는 종류가 정한다', () => {
   it('후방을 좋아하는 종족은 후방 칸(1·3)에 선다', () => {
-    const out = arrange([make('goblin_archer'), make('goblin'), make('bat'), make('kobold')]);
+    const out = arrange([make('goblin_archer'), make('goblin'), make('bat'), make('rat')]);
     expect(out[1].species!.Line).toBe('Back');
     expect(out[3].species!.Line).toBe('Back');
   });
@@ -20,10 +20,10 @@ describe('v2.6 진형 (왼쪽 열 전방 · 오른쪽 열 후방) · v3.0 능력
     const slime = make('slime'), archer = make('goblin_archer');
     const base = (id: string) => createEnemy(monster(id)!, 5, 'Normal', 0);
     // 자리를 바꿔도 값은 그대로
-    const before = [base('kobold').maxHp, base('kobold').attack];
-    arrange([base('kobold'), base('goblin')]);
-    arrange([base('goblin'), base('kobold')]);
-    expect([base('kobold').maxHp, base('kobold').attack]).toEqual(before);
+    const before = [base('rat').maxHp, base('rat').attack];
+    arrange([base('rat'), base('goblin')]);
+    arrange([base('goblin'), base('rat')]);
+    expect([base('rat').maxHp, base('rat').attack]).toEqual(before);
     expect(monster('slime')!.Trait!.Hp).toBeGreaterThan(1);
     expect(monster('slime')!.Trait!.Atk).toBeLessThan(1);
     expect(monster('goblin_archer')!.Trait!.Hp).toBeLessThan(1);
