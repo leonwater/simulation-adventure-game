@@ -72,7 +72,7 @@ export class MerchantScreen extends Screen {
       h('b', { style: { fontSize: '14px', textAlign: 'left', color: nameColor(item), maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } }, itemTitle(item)),
       // 소모품은 보유·재고를 색으로 구분해 눈에 띄게 (보유 = 파랑 · 재고 = 금색)
       h('span', { class: 'sub', style: { textAlign: 'left', fontSize: '12px', maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
-        ...(item.Kind === 'Consumable' ? [colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, '#8FC7FF'), ' · ', colored(`재고 ${g.Stock}`, 'var(--gold)')] : [item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)])),
+        ...(item.Kind === 'Consumable' ? [colored(`보유 ${countOf(c.Inventory, item.TemplateId)}`, 'var(--info)'), ' · ', colored(`재고 ${g.Stock}`, 'var(--gold)')] : [item.Kind === 'Equipment' ? equipLine(c, item) : infoText(c, item)])),
       h('span', { class: 'spacer' }),
       h('b', { style: { fontSize: '14px', color: c.Gold >= price ? 'var(--gold)' : 'var(--red-light)' } }, `${price.toLocaleString('en-US')} G`));
     if (known) cell.style.opacity = '.5';
@@ -88,7 +88,7 @@ export class MerchantScreen extends Screen {
     const cl = item.Kind === 'Equipment' ? compareLine(c, item) : null;
     if (cl) m.body.append(cl);
     const reason = item.Kind === 'Equipment' ? cannotEquipReason(c, item) : null;
-    if (reason) m.body.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, reason));
+    if (reason) m.body.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, reason));
     m.body.append(button(`구매 · ${S.merchantPrice(item).toLocaleString('en-US')}G`, () => {
       const r = S.buyFromMerchant(item.Uid, 1);
       if (!r.ok) return toast(r.error ?? '');

@@ -87,7 +87,7 @@ export class GuildScreen extends Screen {
       h('div', { class: 'col grow', style: { gap: '1px' } },
         h('b', null, q.Title),
         h('div', { style: { fontSize: '12px', color: done ? 'var(--gold)' : 'var(--sub)' } }, active ? `목표 ${q.TargetFloor}층 · 진행 중 ${progressText(q, c)}` : `목표 ${q.TargetFloor}층 · ${goalText(q)}`),
-        h('div', { class: 'body', style: { fontSize: '12px' } }, '보상 ', colored(`${num(q.RewardGold)}G`, 'var(--gold)'), ' · ', colored(`경험치 ${num(q.RewardExp)}`, '#8FC7FF'))),
+        h('div', { class: 'body', style: { fontSize: '12px' } }, '보상 ', colored(`${num(q.RewardGold)}G`, 'var(--gold)'), ' · ', colored(`경험치 ${num(q.RewardExp)}`, 'var(--info)'))),
       right);
   }
 
@@ -113,7 +113,7 @@ export class GuildScreen extends Screen {
       return;
     }
     const reason = cannotAcceptReason(S.data!.Guild, c, q);
-    if (reason) m.body.append(h('div', { style: { color: '#E38A82', fontSize: '13px' } }, reason));
+    if (reason) m.body.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, reason));
     const accept = button('수락', () => {
       m.close();
       this.accept(q);

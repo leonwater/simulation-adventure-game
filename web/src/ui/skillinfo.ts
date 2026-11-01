@@ -44,8 +44,8 @@ export function areaDiagram(def: SkillDef, caption = true): HTMLElement {
   };
   const cell = (i: number): HTMLElement => {
     const k = hit(i);
-    const bg = k === 'target' ? 'var(--gold)' : k === 'hit' ? '#D9823B' : k === 'maybe' ? '#5A4A2A' : 'var(--btn)';
-    return h('div', { style: { width: '26px', height: '26px', borderRadius: '6px', background: bg, border: '1px solid var(--btn-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: '#1B1813' } }, k === 'maybe' ? '?' : '');
+    const bg = k === 'target' ? 'var(--gold)' : k === 'hit' ? 'var(--area-hit)' : k === 'maybe' ? 'var(--area-maybe)' : 'var(--btn)';
+    return h('div', { style: { width: '26px', height: '26px', borderRadius: '6px', background: bg, border: '1px solid var(--btn-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', color: 'var(--pad-off-bg)' } }, k === 'maybe' ? '?' : '');
   };
   const n = def.Target === 'RandomEnemies' ? def.TargetCount : def.Target === 'ChainEnemies' ? def.ChainMults.length : 0;
   return h('div', { class: 'row', style: { gap: '10px', alignItems: 'center' } },

@@ -41,7 +41,7 @@ export class SkillsScreen extends Screen {
     // 슬롯은 처음부터 6칸(3×2): 지금 등급에서 열린 칸은 빈 슬롯, 아직 닫힌 칸은 어두운 칸에 '○ 등급에 열림'
     for (let i = 0; i < MAX_SLOTS; i++) {
       if (i >= slots) {
-        grid.append(h('div', { style: { height: '84px', border: '1px dashed #3C4250', borderRadius: '10px', background: 'var(--bg)', padding: '8px', opacity: '.55', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' } },
+        grid.append(h('div', { style: { height: '84px', border: '1px dashed var(--slot-locked)', borderRadius: '10px', background: 'var(--bg)', padding: '8px', opacity: '.55', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' } },
           h('b', { class: 'sub', style: { fontSize: '14px' } }, '잠김'), h('span', { class: 'spacer' }), sub(`${unlockRank(i + 1)} 등급에 열림`)));
       } else if (i < c.Skills.Equipped.length) {
         const id = c.Skills.Equipped[i];
@@ -52,7 +52,7 @@ export class SkillsScreen extends Screen {
         cells.push(cell);
         grid.append(cell);
       } else {
-        grid.append(h('div', { style: { height: '84px', border: '1px solid #4A5060', borderRadius: '10px', background: 'var(--bg)', padding: '8px' } }, sub('빈 슬롯')));
+        grid.append(h('div', { style: { height: '84px', border: '1px solid var(--slot-border)', borderRadius: '10px', background: 'var(--bg)', padding: '8px' } }, sub('빈 슬롯')));
       }
     }
     queueMicrotask(() => dragReorder(cells, (from, to) => {
@@ -79,7 +79,7 @@ export class SkillsScreen extends Screen {
     const equipped = isSkillEquipped(c, id);
     const meets = meetsSkillRequirement(c, def);
     const info = h('button', { class: 'grow', style: { border: '0', background: 'transparent', textAlign: 'left', padding: '8px 0', display: 'flex', flexDirection: 'column', gap: '2px', minHeight: '48px' }, on: { click: () => this.detail(id) } },
-      h('span', null, skillNameEl(def, st.Level, 15), this.fresh!.has(id) ? colored(' NEW', '#E38A82') : null),
+      h('span', null, skillNameEl(def, st.Level, 15), this.fresh!.has(id) ? colored(' NEW', 'var(--red-light)') : null),
       h('span', { class: 'sub' }, meets ? `${skillBrief(def, st.Level)} · 재사용 ${def.Cooldown}턴` : `장착 조건 Lv.${def.ReqLevel} · ${def.ReqRank} 등급`));
     let btn: HTMLElement;
     if (equipped) btn = button('해제', () => this.unequip(id), 'outline', 'sm');

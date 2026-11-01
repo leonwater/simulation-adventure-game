@@ -109,6 +109,13 @@ const CHECK = () => {
 const allIssues = [];
 for (const [w, hgt] of VIEWS) {
   const page = await browser.newPage({ viewport: { width: w, height: hgt } });
+  // 비교용 스크린샷이 실행마다 같도록 무작위 값을 고정한다 (화면마다 같은 씨앗으로 다시 시작)
+  await page.addInitScript(() => {
+    let seed = 1;
+    window.__reseed = (n) => { seed = n >>> 0 || 1; };
+    Date.now = () => 1767225600000; // 난수 씨앗에 쓰이는 시각도 고정
+    Math.random = () => { seed = (seed + 0x6D2B79F5) >>> 0; let t = seed; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  });
   page.setDefaultTimeout(1500);
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e).slice(0, 200)));
@@ -118,6 +125,7 @@ for (const [w, hgt] of VIEWS) {
   await page.waitForTimeout(300);
   for (const [name, code, clicks = []] of STATES) {
     try {
+      await page.evaluate((n) => window.__reseed(n), STATES.findIndex((x) => x[0] === name) + 1);
       await page.evaluate(SETUP);
       await page.evaluate(code);
       await page.waitForTimeout(350);

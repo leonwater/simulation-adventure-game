@@ -73,7 +73,7 @@ export class CharacterScreen extends Screen {
     const c = S.c;
     const st = promotionStatus(c);
     const cond = (label: string, cur: number, req: number): HTMLElement =>
-      h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : '#ECE7DD'));
+      h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : 'var(--text)'));
     return h('div', { class: 'card', style: { gap: '8px', padding: '12px 14px' } },
       row(icon(rankIcon(c.Rank), 32), h('b', { class: 'grow', style: { fontSize: '15px' } }, `${c.Rank} 등급 모험가`), h('span', { class: 'gold', style: { fontSize: '13px' } }, `기본 능력치 +${Math.round(badgeBonus(c.Rank) * 100)}%`)),
       st.isMaxRank
