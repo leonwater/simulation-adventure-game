@@ -23,6 +23,8 @@ import { goDungeon, goResult, goTitle, goToCurrent } from './index';
 const STEP = 320;
 type Shape = 'circle' | 'square' | 'hexagon';
 const HEX = 'polygon(25% 3%, 75% 3%, 100% 50%, 75% 97%, 25% 97%, 0% 50%)';
+/** public/sprites/ 에 그림이 있는 유닛 (직업은 영문 소문자, 몬스터는 monsters.json Id). scripts/sprites.py 로 만든다 */
+const SPRITES = new Set(['warrior', 'slime', 'goblin', 'skeleton']);
 
 interface UnitView {
   shape: HTMLElement;
@@ -204,6 +206,14 @@ export class BattleScreen extends Screen {
     root.append(layer(border, 0));
     const fillEl = layer(fill, borderW);
     root.append(fillEl);
+    // 픽셀 그림이 있으면 도형 안에 정수 배율로 (그림이 없는 종류는 도형만)
+    const spriteId = enemy ? c.species?.Id : b.character.Job.toLowerCase();
+    if (spriteId && SPRITES.has(spriteId)) {
+      const scale = Math.max(1, Math.floor((size - borderW * 2) / 22));
+      const img = h('img', { src: `sprites/${spriteId}.png`, alt: '', class: 'unit-sprite' }) as HTMLImageElement;
+      img.onload = () => { img.style.width = `${img.naturalWidth * scale}px`; };
+      fillEl.append(img);
+    }
     const v: UnitView = { shape: root, fill: fillEl, bar: barFill, hpText, enemyHp: enemy, center, size, maxHp: c.maxHp, hp, shield: c.kit ? c.kit.shield : -1, barrier: c.kit ? c.kit.barrier : -1 };
     this.setBar(v, hp, c.kit ? c.kit.shield : -1, c.kit ? c.kit.barrier : -1);
     if (alive) {
