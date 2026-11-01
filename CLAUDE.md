@@ -14,7 +14,7 @@ Unity 프로젝트(`Assets/`)는 `unity-v2.4` 태그로 고정된 기준용이�
 7. main에 푸시한다 → GitHub Actions "웹 앱 빌드"가 웹 zip(`web-latest`)과 APK(`android-latest`)를 Releases에 올린다. 끝나면 링크와 크기를 알린다.
 
 외부 도구 규칙:
-- frontend-design · ui-ux-pro-max · hallmark · emil-design-eng · web-design-guidelines · context7 · code-review · superpowers · ponytail · security-audit · graphify · hyperframes · rea를 쓸 때는 먼저 `docs/external-tools-guide.md`를 읽고 그 문서의 사용법·순서·주의를 따른다. 위 작업 순서(1~7)와 부딪히면 이 파일의 순서가 우선이다.
+- frontend-design · ui-ux-pro-max · hallmark · emil-design-eng · web-design-guidelines · context7 · code-review · superpowers · ponytail · security-audit · graphify · hyperframes · rea · claude-pxl을 쓸 때는 먼저 `docs/external-tools-guide.md`를 읽고 그 문서의 사용법·순서·주의를 따른다. 위 작업 순서(1~7)와 부딪히면 이 파일의 순서가 우선이다.
 
 이식 중 규칙:
 - 이식이 끝난 부분은 TS에만 고친다. 아직 이식 안 된 부분을 바꿔야 하면 먼저 그 부분을 이식한다 (이식 순서: `docs/WEB_PORT.md`).

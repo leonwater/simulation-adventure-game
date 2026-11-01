@@ -106,6 +106,7 @@ Actions 탭 → **Android APK 빌드** → **Run workflow**로 직접 실행할 
 - 알림 점: 남은 능력치 포인트, 새 스킬, 완료 퀘스트, 상점 갱신.
 - 앱 아이콘·타이틀 배경 (v3.0): 던전 입구 앞의 모험가 그림(`public/illustrations/title_bg.webp`, 안드로이드 아이콘은 `web/android/app/src/main/res/mipmap-*`, 배경색 #0B182A). 글꼴은 게임에 쓰는 글자 + 완성형 한글 2,350자만 남긴 Pretendard 부분 글꼴 (1.5MB → 0.35MB).
 - 화면 스타일 (v3.2 리스타일): 컨셉 '횃불이 비추는 석실' — 바탕은 푸른 기가 살짝 도는 검정(#11161E), 글자는 양피지색(#F1E8D6), 주요 버튼·선택만 횃불 호박색(#F0A23B) 빛. 화면 제목은 고운바탕 Bold(167KB), 버튼은 누르면 살짝 작아지고 비활성은 색·글자·커서로 구분, 하단 메뉴 선택 칸 위 막대, 팝업·알림 등장 모션, 포커스 링, 기기 '움직임 줄이기' 지원. 색은 모두 `web/src/ui/app.css`의 `:root` 변수. 진단·비교 자료는 `docs/restyle/`.
+- 전투 픽셀 그림 (v3.3): 직업 4종·몬스터 24종을 픽셀 그림으로 (claude-pxl, 원본 `web/art/units.px.js`, `bash web/scripts/sprites.sh`로 다시 그림 → `web/src/assets/sprites/`, 전부 합쳐 7KB). 테두리 없이 무대에 3배(혼자 나온 보스는 4배)로 서고, 발밑 타원은 보스·정예 색·일반은 그림자, 선택한 적은 발밑이 금색으로 깜빡인다. 그림이 없는 종류는 예전처럼 도형.
 - 몬스터 (v3.0): 능력치는 자리가 아니라 종류의 특색(`monsters.json` `Trait`, 방패형 HP↑ 공격↓ · 후방 딜러 HP↓ 공격↑, 보스·튜토리얼 제외). 기본 공격은 명중 +12% 보정으로 적정 스펙에서 보스 외 몬스터에게 90~92% (`BasicAttackBonus`).
 - 일러스트: 마을(`town.webp`)·길드(`guild_receptionist.webp`)·대장간(`blacksmith.webp`)·수련장(`training.webp`)·상점(`shop.webp`) 적용. 나머지는 점선 상자로 표시됩니다.
   그림은 원본 비율을 유지한 채 잘라 채웁니다 (`Assets/Scripts/Editor/AssetImportRules.cs`가 2의 거듭제곱 늘림을 끄고 압축).

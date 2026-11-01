@@ -22,7 +22,7 @@
   /* 겹침·글꼴 */
   --font-body: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
   --font-display: 'Gowun Batang', var(--font-body);
-  --track: #28303F; --illust-bg: #161C26; --shade: rgba(8,10,16,0.92); --dialogue-bg: rgba(24,30,40,0.94); --dim: rgba(0,0,0,.6); --scrim: rgba(0,0,0,.72);
+  --track: #28303F; --illust-bg: #161C26; --shade: rgba(8,10,16,0.92); --dialogue-bg: rgba(24,30,40,0.94); --dim: rgba(0,0,0,.6); --foot-shadow: rgba(0,0,0,.35); --scrim: rgba(0,0,0,.72);
   --toast-bg: rgba(32,38,52,0.96); --ink-shadow: #000; --placeholder: #7D7666; --chip-bg: rgba(255,255,255,.12);
   /* R6 움직임 곡선 (emil-design-eng: UI 등장은 강한 ease-out, 화면 위 이동은 ease-in-out) */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1); --ease-move: cubic-bezier(0.77, 0, 0.175, 1);
@@ -141,6 +141,8 @@ input.text::placeholder { color: var(--placeholder); }
 .stagewrap .stage { position: absolute; left: 50%; margin-left: -195px; }
 .unit-shape { position: absolute; transform-origin: center; cursor: pointer; }
 .unit-shape > * { position: absolute; }
+.unit-sprite { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); image-rendering: pixelated; pointer-events: none; }
+.unit-foot { left: 2px; right: 2px; bottom: -5px; height: 10px; border-radius: 50%; }
 .unit-label { position: absolute; text-align: center; white-space: nowrap; pointer-events: none; }
 .hpbar { position: absolute; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; pointer-events: none; }
 .hpbar > i { display: block; width: 100%; height: 100%; transform-origin: left center; transition: transform .25s var(--ease-move); }

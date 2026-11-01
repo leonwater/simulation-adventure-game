@@ -2,7 +2,7 @@
 
 > 이 문서는 아래 도구를 쓸 때 **먼저 참고하는 기준 문서**입니다. (CLAUDE.md에서 이 파일을 가리킵니다.)
 
-- **대상 도구 13종**: frontend-design, ui-ux-pro-max, hallmark, emil-design-eng, web-design-guidelines, context7, code-review, superpowers, ponytail, security-audit, graphify, hyperframes, rea (+ 마켓플레이스 `claude-plugins-official`)
+- **대상 도구 14종**: frontend-design, ui-ux-pro-max, hallmark, emil-design-eng, web-design-guidelines, context7, code-review, superpowers, ponytail, security-audit, graphify, hyperframes, rea, claude-pxl (+ 마켓플레이스 `claude-plugins-official`)
 - **기준**: 각 저장소 README·문서에 적힌 내용 (2026-11 시점). **[제안]** 표시는 문서에 없는 작성자의 판단입니다.
 - **터미널**: PowerShell. 설치 후에는 Claude Code를 **새로 시작**해야 플러그인이 적용됩니다.
 - 이전 버전에 있던 opencode, ComfyUI, ruflo는 목록에서 뺐습니다 (git 기록에서 복원 가능).
@@ -67,6 +67,7 @@ powershell -ExecutionPolicy Bypass -File scripts\install_all.ps1
 | 스킬 | emil-design-eng | `npx -y skills add emilkowalski/skills -s emil-design-eng -g -a claude-code -y --copy` |
 | 스킬 | web-design-guidelines | `npx -y skills add vercel-labs/agent-skills -s web-design-guidelines -g -a claude-code -y --copy` |
 | CLI | graphify | `uv tool install graphifyy` → `graphify install` |
+| 스킬 | claude-pxl | `git clone https://github.com/crsolver/claude-pxl $HOME\.claude\skills\claude-pxl` (Node 22.18+, 설치할 패키지 없음) |
 
 - `claude plugin install`의 기본 범위는 **user(전체 프로젝트)** 입니다.
 - 스킬은 `-g`라서 `%USERPROFILE%\.claude\skills\`에 설치됩니다. `--copy`는 Windows 심볼릭 링크 권한 문제를 피하려고 넣었습니다.
@@ -189,6 +190,19 @@ powershell -ExecutionPolicy Bypass -File scripts\install_all.ps1
   - `/hyperframes:hyperframes` 후 `10초짜리 제품 소개 영상 만들어줘`
   - CLI: `npx hyperframes init my-video` → `preview` → `render`
 - **주의**: CLI는 Node.js 22+와 FFmpeg가 필요합니다. PowerShell에서는 JSON 옵션을 파일로 넘기세요. Windows는 Studio 앱(`Install-HyperFrames.exe`, hyperframes.dev/studio, 64비트 Intel/AMD)이 가장 쉽습니다.
+
+### 2-5. 그림 1종
+
+#### claude-pxl — 🟢 자동 (스킬 `pxl-pixel-art`)
+- **하는 일**: 픽셀 아트를 코드(`.px.js`)로 적으면 PNG·확대 미리보기·스프라이트 시트·GIF로 뽑습니다. 좌우 대칭(`mx`), 자동 외곽선(`outline`), 명암 단계(`ramps` + `shade`/`light`), 빛 번짐(`glow`), 색만 바꾼 변형(`base` + `swap`), 부품 재사용(`_이름` + `stamp`), 프레임 애니메이션(`anim`)을 지원합니다.
+- **사용법**
+  - 요청: `슬라임 픽셀 그림 그려줘` → 스킬이 켜져 `.px.js`를 쓰고 빌드합니다.
+  - 직접: `node <스킬 폴더>/bin/pxl.js build art.px.js` → `out/sprites/*.png`, `out/_preview/*.png`(확대·격자)
+  - 칸 단위 수정: `pxl ascii art.px.js <이름>` (좌표 눈금 붙은 글자 미리보기) · 실시간 보기: `pxl serve art.px.js`
+- **주의**
+  - 격자 줄은 **모두 같은 길이**로 씁니다. 짧은 줄은 오른쪽이 채워져 `mx` 대칭이 어긋납니다.
+  - 그림 안의 덧그림도 `mx`로 함께 뒤집힙니다. 검·방패처럼 **비대칭인 것**은 대칭 몸을 `_부품`으로 만들고, 완성 그림에서 `stamp` 후 덧그립니다.
+  - `light`/`shade`에 `density` 0.5를 주면 바둑판 무늬(디더)가 생깁니다. 작은 그림에서는 지저분해 보일 수 있습니다.
 
 ---
 
@@ -319,6 +333,7 @@ rea README의 예시 프롬프트가 "이해 → 근거 제시 → 내 프로젝
 | 코드베이스 파악 | graphify → security-audit / ponytail-audit |
 | 앱 역분석 후 구현 | rea → superpowers |
 | 영상 | hyperframes (+ ui-ux-pro-max로 브랜드 시스템) |
+| 게임 픽셀 그림 | claude-pxl → 게임 화면 스크린샷으로 확인 |
 
 ---
 
@@ -333,6 +348,7 @@ rea README의 예시 프롬프트가 "이해 → 근거 제시 → 내 프로젝
 - **큰 개편 뒤 코드 정리**: `ponytail-review`·`ponytail-audit`. 쓰지 않는 함수·CSS 점검(CLAUDE.md 4번)과 함께 봅니다.
 - **릴리스 전 보안 감사**는 `security-audit`. 이 프로젝트는 서명 키·비밀번호를 저장소에 넣지 않는 규칙이 있으니, 보고서에 키 관련 항목이 나오면 우선 확인합니다.
 - **코드 구조 질문**(예: 전투 계산이 어디서 시작하는지)에는 `graphify`를 쓸 수 있습니다. 결과 폴더 `graphify-out/`는 저장소에 넣지 않습니다.
+- **전투 유닛 픽셀 그림**은 `claude-pxl`. 원본은 `web/art/units.px.js`, 그리기는 `bash web/scripts/sprites.sh`(claude-pxl을 고정 커밋으로 `web/.pxl/`에 받아 빌드 → `web/public/sprites/`). 새 그림은 `web/src/screens/battle.ts`의 `SPRITES` 목록에 이름(직업은 영문 소문자, 몬스터는 `monsters.json` Id)을 추가해야 게임에 나옵니다. 그림 높이는 24칸 이하(게임에서 3배). 클라우드 세션에서 실행이 막히면 저장소 `.claude/settings.json`의 허용 규칙을 확인합니다.
 - 이 프로젝트에서 쓸 일이 거의 없는 도구: `hyperframes`(영상), `rea`(역분석), `context7`(필요할 때만 Vite·Capacitor·Playwright 등 라이브러리 문서 확인).
 
 ---
