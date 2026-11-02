@@ -28,3 +28,13 @@ for f in fs:
     pad16(Image.open(f).convert('RGBA')).resize((128, 128), Image.NEAREST).save('public/icons/' + os.path.basename(f), optimize=True)
 print(f'icons: {len(fs)}장')
 PY
+# 시설 일러스트: art/illust.px.js 의 128×64 장면(illust_*) → public/illustrations/*.webp (무손실, 게임에서 약 3배)
+rm -rf art/out/illust
+node .pxl/bin/pxl.js build art/illust.px.js --out art/out/illust --no-preview
+python3 - <<'PY'
+from PIL import Image; import glob, os
+fs = glob.glob('art/out/illust/scenes/illust_*.png')
+for f in fs:
+    Image.open(f).save('public/illustrations/' + os.path.basename(f)[len('illust_'):-4] + '.webp', lossless=True, method=6)
+print(f'illustrations: {len(fs)}장')
+PY
