@@ -12,6 +12,7 @@ Unity 프로젝트(`Assets/`)는 `unity-v2.4` 태그로 고정된 기준용이�
 5. README·`docs/DEV_PLAN.md`·UI 시안을 갱신한다.
 6. 정해지지 않은 것(사용자 결정이 필요한 질문)이 하나라도 남아 있으면 빌드를 보류한다 — main 대신 작업 브랜치에만 올리고, 모든 작업이 끝나면 그때 빌드한다.
 7. main에 푸시한다 → GitHub Actions "웹 앱 빌드"가 웹 zip(`web-latest`)과 APK(`android-latest`)를 Releases에 올린다. 끝나면 링크와 크기를 알린다.
+   - 저장소가 비공개라 Releases 링크는 다른 사람에게 열리지 않는다. 남에게 줄 웹 플레이 링크는 claude.ai 아티팩트 https://claude.ai/artifact/63TPyXbWy8hFLEyR9Yf7ro 이다: `npm run build` 뒤 `web/dist/index.html`의 `<head>` 안 title·icon·css·script 줄과 `<div id="app">`만 담은 `web/dist/play.html`을 만들어, 같은 주소로 dist 파일 전부(`files`, root `web/dist`)와 함께 다시 올린다.
 8. 빌드가 끝난 뒤에만 기획서에 **지난 빌드와 달라진 확정 내용**을 적는다 (빌드하지 않은 내용·계획·아이디어는 적지 않는다).
 
 외부 도구 규칙:
