@@ -126,7 +126,7 @@ export class CharacterScreen extends Screen {
       line(statIcon(atk), '공격력', h('span', null, String(attack(c)), colored(` (${Names.stat(atk)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)})`, 'var(--sub)'))),
       line('status_fortify', '방어력', String(defense(c))),
       line(statIcon('Agility'), '회피', percent(evasion(c))),
-      line(PERKS[c.Job].icon, `${PERKS[c.Job].name} (등급 전용)`, PERKS[c.Job].text(percent(jobPerk(c)))),
+      line(PERKS[c.Job].icon, `${PERKS[c.Job].name} (모험가 등급 전용)`, PERKS[c.Job].text(percent(jobPerk(c)))),
       line(statIcon('Spirit'), '상태 이상 저항', percent(resist(c))),
       ...(c.Job === 'Rogue' ? [line('perk_vital', '치명타', `도적 스킬 전용 · 치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`)] : []),
       line(statIcon('Luck'), '드롭률', `+${percent(dropBonus(c) - 1)}`),

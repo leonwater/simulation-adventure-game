@@ -135,6 +135,16 @@ export function refreshBoard(g: GuildState, c: Character, rng: Rng): void {
       g.Board.push(q);
     }
   }
+  // 여러 층을 한 번에 깨서 도전 층 근처 퀘스트가 모두 내 등급보다 높으면, 내 등급에 맞는 가장 깊은 층들에서 채운다
+  const fit: number[] = [];
+  for (let f = Math.max(1, maxChallengeFloor(c)); f >= 1 && fit.length < 5; f--) if (inRange(c.Rank, rankFor(f))) fit.push(f);
+  for (let tries = 0; fit.length > 0 && g.Board.length < B.QuestBoardSize && tries < 80; tries++) {
+    const q = createQuest(c, rng, rng.pick(fit), rng.pick(kinds));
+    if (inRange(c.Rank, q.Rank) && !used.has(questKey(q))) {
+      used.add(questKey(q));
+      g.Board.push(q);
+    }
+  }
   g.Board.sort((a, b) => (b.Rank !== a.Rank ? rk(b.Rank) - rk(a.Rank) : b.TargetFloor - a.TargetFloor));
 }
 

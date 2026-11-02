@@ -55,12 +55,22 @@ export function jobInfo(job: Job, rank?: Rank): HTMLElement {
       ...fact('주요 능력치', stat('Vitality'), ' · ', stat(j.attackStat)),
       ...fact('HP', `체력 1당 +${j.hpPerVitality}`),
       ...fact('기본 공격', ...phrases(BASIC[job])),
-      ...(job === 'Mage' ? fact('마력 폭주', ...phrases(['쓸 공격이 없을 때', `${B.OverloadTurns}턴 약화`])) : []),
+      ...(job === 'Mage' ? fact('주의', h('button', { class: 'chip-btn', on: { click: showOverload } }, icon('status_overload', 16), ' 마력 폭주 ›')) : []),
       ...fact('시작 스킬', skillDef(startingSkill(job))?.Name ?? '')),
     h('div', { class: 'job-perk' },
-      row(icon(perk.icon, 24), h('b', null, perk.name), h('span', { class: 'sub grow', style: { fontSize: '12px' } }, '등급으로만 오름')),
+      row(icon(perk.icon, 24), h('b', null, perk.name), h('span', { class: 'sub grow', style: { fontSize: '12px' } }, '모험가 등급으로만 오름')),
       h('b', { style: { fontSize: '13px' } }, PERK_SHORT[job], job === 'Rogue' ? h('span', { class: 'sub', style: { fontSize: '11px', fontWeight: '400' } }, ' (확률 · 피해)') : null),
       table));
+}
+
+/** 마력 폭주 설명 창 (직업 정보의 '마력 폭주'를 누르면). */
+function showOverload(): void {
+  const m = modal('마력 폭주');
+  m.body.append(row(icon('status_overload', 32), h('b', { class: 'grow' }, `${B.OverloadTurns}턴 동안 약해짐`)),
+    h('div', { class: 'job-facts' },
+      ...[['언제', '에너지 볼과 장착 스킬이 모두 재사용 대기일 때 공격'], ['주는 피해', `-${B.OverloadValue}%`], ['받는 피해', `+${B.OverloadValue}%`], ['지속', `${B.OverloadTurns}턴`]]
+        .flatMap(([k, v]) => [h('span', { class: 'jf-label' }, k), h('b', { class: 'jf-value' }, v)])),
+    button('닫기', m.close, 'ghost'));
 }
 
 /** 직업 정보 창 (캐릭터 화면 등급 카드). */

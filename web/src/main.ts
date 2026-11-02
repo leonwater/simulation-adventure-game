@@ -5,6 +5,7 @@ import { navigate } from './screens/nav';
 import { InventoryScreen } from './screens/inventory';
 import { RegistrationScreen } from './screens/register';
 import { S } from './ui/game';
+import { showPromotions } from './ui/promotion';
 import * as items from './core/items';
 import * as equipment from './core/equipment';
 
@@ -20,6 +21,7 @@ fitHeight();
 window.addEventListener('resize', fitHeight);
 
 router.mount(document.getElementById('app')!);
+router.onRender = showPromotions;
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') router.back();
 });

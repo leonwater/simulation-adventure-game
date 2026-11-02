@@ -107,6 +107,19 @@ describe('V16Tests (튜토리얼 귀환·퀘스트·초반 보정·방 알림)',
     }
   });
 
+  it('Quests_LowRankDeepFloorsStillHasAcceptable (v3.9)', () => {
+    // 등급을 올리지 않고 여러 층을 한 번에 깬 경우에도 수락할 수 있는 퀘스트가 게시판에 있다
+    const rng = new Rng(9);
+    for (const floors of [8, 12, 20, 28]) {
+      const c = createCharacter('a', 'Warrior');
+      c.Rank = 'F';
+      c.HighestFloorCleared = floors;
+      const g = newGuildState();
+      refreshBoard(g, c, rng);
+      expect(g.Board.filter((q) => inRange(c.Rank, q.Rank)).length, `${floors}층`).toBeGreaterThanOrEqual(3);
+    }
+  });
+
   it('Quests_BossClearPostsNextFloorQuests', () => {
     const s = session(8, 19);
     s.newGame('a', 'Warrior', 'Normal');

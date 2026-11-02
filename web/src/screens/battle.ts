@@ -309,9 +309,10 @@ export class BattleScreen extends Screen {
   private potionIcon(): HTMLElement {
     return potionButton((item) => {
       const ch = this.b!.getItemChoices().find((x) => x.itemUid === item.Uid);
-      if (ch && ch.enabled) this.pick(ch);
-      else toast('지금은 마실 수 없습니다');
-    }, 'battle-potion');
+      if (!ch || !ch.enabled) return void toast('지금은 마실 수 없습니다');
+      if (this.playing || this.finished || this.leaving) return;
+      this.execute(ch); // 물약을 이미 골랐으니 아이템 사용 창을 다시 띄우지 않는다
+    }, 'battle-potion', {}, () => this.b!.player.hp >= this.b!.player.maxHp);
   }
 
   private kindStyle(ch: BattleChoice): { tag: string; bar: string; fill: string; border: string } {

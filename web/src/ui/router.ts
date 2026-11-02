@@ -17,6 +17,8 @@ let current: Screen | null = null;
 const closers: (() => boolean)[] = [];
 
 export const router = {
+  /** 화면을 그릴 때마다 (승급 알림처럼 어느 화면에서든 띄울 팝업). main.ts가 정한다. */
+  onRender: null as (() => void) | null,
   mount(root: HTMLElement): void {
     view = document.createElement('div');
     view.className = 'page';
@@ -51,6 +53,7 @@ export const router = {
       if (scrolls[i]) e.scrollTop = scrolls[i];
     });
     current.afterShow();
+    router.onRender?.();
   },
   /** 뒤로 가기: 열린 팝업을 먼저 닫고, 없으면 화면에 맡긴다. */
   back(): boolean {
