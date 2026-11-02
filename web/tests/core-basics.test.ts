@@ -26,7 +26,7 @@ const give = (c: ReturnType<typeof createCharacter>, item: ReturnType<typeof cre
 describe('캐릭터 (CharacterTests)', () => {
   it('경험치 곡선', () => {
     expect(expToNext(1)).toBe(100);
-    expect(expToNext(4)).toBe(800);
+    expect(expToNext(4)).toBe(985); // 100 × 4^1.65 (v3.9: 1.5 → 1.65)
     expect(expToNext(B.MaxLevel)).toBe(0);
   });
 
@@ -53,7 +53,7 @@ describe('캐릭터 (CharacterTests)', () => {
 
   it('레벨업: 여러 번 오르고 포인트 3, 최대 레벨에서 멈춘다', () => {
     const c = createCharacter('a', 'Warrior');
-    expect(addExp(c, 100 + 283 + 10)).toBe(2);
+    expect(addExp(c, expToNext(1) + expToNext(2) + 10)).toBe(2);
     expect(c.Level).toBe(3);
     expect(c.UnspentPoints).toBe(6);
     expect(c.Exp).toBe(10);
@@ -256,7 +256,7 @@ describe('아이템 (ItemSkillTests)', () => {
     const w = createGear('Weapon', 'Common', 10, 'Warrior', 'Vitality');
     expect(w.BaseValue).toBe(26);
     expect(valueAt(w, 1)).toBe(27);
-    expect(valueAt(w, 15)).toBe(26 + 16); // 보너스 단계 30 × 2% × 26 = 15.6 → 16
+    expect(valueAt(w, 15)).toBe(26 + 39); // 보너스 단계 30 × 5% × 26 = 39 (v3.9: 2% → 5%)
     expect(goldCost(w)).toBe(60);
     w.Enhance = 2;
     expect(goldSpent(w)).toBe(30 * 1 * 2 + 30 * 2 * 2);

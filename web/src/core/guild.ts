@@ -1,4 +1,4 @@
-import { B, enemyExp, roundEven } from './balance';
+import { B, enemyExp, overLevelMult, roundEven } from './balance';
 import type { Character } from './character';
 import { addExp, maxChallengeFloor } from './character';
 import type { QuestKind, Rank } from './enums';
@@ -198,6 +198,12 @@ export function isQuestComplete(q: Quest, c: Character): boolean {
   return q.Progress >= q.Required;
 }
 
+/** 실제로 받을 보상: 내 레벨이 목표 층 적정 레벨보다 많이 높으면 줄어든다 (던전 보상과 같은 규칙). */
+export function questReward(q: Quest, c: Character): { gold: number; exp: number; reduced: boolean } {
+  const m = overLevelMult(c.Level, q.TargetFloor);
+  return { gold: roundEven(q.RewardGold * m), exp: roundEven(q.RewardExp * m), reduced: m < 1 };
+}
+
 /** 완료한 퀘스트를 보고하고 보상을 받는다. 오른 레벨 수를 levelsGained로 돌려준다. */
 export function turnInQuest(g: GuildState, c: Character, questId: string): { ok: boolean; levelsGained: number; error: string | null } {
   const q = g.Active.find((x) => x.Id === questId);
@@ -205,8 +211,9 @@ export function turnInQuest(g: GuildState, c: Character, questId: string): { ok:
   if (!isQuestComplete(q, c)) return { ok: false, levelsGained: 0, error: '아직 완료하지 않았습니다' };
   if (q.Kind === 'Collect') removeTemplate(c.Inventory, q.MaterialId, q.Required);
   g.Active.splice(g.Active.indexOf(q), 1);
-  c.Gold += q.RewardGold;
-  const levelsGained = addExp(c, q.RewardExp);
+  const r = questReward(q, c);
+  c.Gold += r.gold;
+  const levelsGained = addExp(c, r.exp);
   c.QuestsCompleted++;
   return { ok: true, levelsGained, error: null };
 }

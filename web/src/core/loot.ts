@@ -1,4 +1,4 @@
-import { B, enemyGold } from './balance';
+import { B, enemyGold, overLevelMult, rewardLevel, roundEven } from './balance';
 import type { Battle } from './battle';
 import type { Character } from './character';
 import { addExp, dropBonus } from './character';
@@ -89,8 +89,9 @@ export const randomEquipment = (floor: number, c: Character, rng: Rng, bossLevel
  * 스킬서 드롭: 지금 직업 70%·다른 직업 각 10%, 장착 레벨이 지금 레벨 + 5 이하인 것만,
  * 지금 레벨보다 높은 것은 절반 확률로 뺀다. 그중 가장 높은 단계를 우선하고(최상급은 25% 확률로만), 아직 배우지 않은 스킬을 먼저 고른다.
  */
-export function highSkillBook(c: Character, rng: Rng): ItemInstance {
-  const list = preferOwnLevel(obtainableSkills(c.Level, rollItemJob(c.Job, rng)), c.Level, rng);
+export function highSkillBook(c: Character, rng: Rng, floor: number): ItemInstance {
+  const lv = rewardLevel(c.Level, floor);
+  const list = preferOwnLevel(obtainableSkills(lv, rollItemJob(c.Job, rng)), lv, rng);
   let best = 0;
   for (const s of list) {
     const t = (TIERS as readonly SkillTier[]).indexOf(s.Tier);
@@ -109,7 +110,7 @@ export function treasure(floor: number, c: Character, rng: Rng): LootReport {
   if (rng.chance(0.6)) r.Items.push(randomEquipment(floor, c, rng, 1));
   if (rng.chance(0.35)) r.Items.push(createConsumable(rng.chance(0.7) ? 'potion' : 'potion_hi', rng.rangeInclusive(1, 2)));
   if (stonesDropOn(floor) && rng.chance(0.15)) r.Items.push(createEnhanceStone());
-  if (rng.chance(0.05)) r.Items.push(highSkillBook(c, rng));
+  if (rng.chance(0.05)) r.Items.push(highSkillBook(c, rng, floor));
   return r;
 }
 
@@ -118,7 +119,7 @@ export function createEventReward(reward: EventReward, floor: number, c: Charact
     case 'Potion': return createConsumable('potion');
     case 'HighPotion': return createConsumable('potion_hi');
     case 'Equipment': return randomEquipment(floor, c, rng, 1);
-    case 'HighSkillBook': return highSkillBook(c, rng);
+    case 'HighSkillBook': return highSkillBook(c, rng, floor);
     case 'EnhanceStone': return createEnhanceStone();
     default: return null;
   }
@@ -126,6 +127,12 @@ export function createEventReward(reward: EventReward, floor: number, c: Charact
 
 /** 보상을 캐릭터에 넣는다. 들어가지 않는 아이템은 Dropped로 옮긴다. */
 export function applyLoot(c: Character, run: DungeonRun | null, report: LootReport): void {
+  // 던전 보상은 내 레벨이 그 층 적정 레벨보다 많이 높으면 줄어든다 (쉬운 층 반복 방지)
+  if (run) {
+    const mult = overLevelMult(c.Level, run.Floor);
+    if (report.Gold > 0) report.Gold = roundEven(report.Gold * mult);
+    if (report.Exp > 0) report.Exp = roundEven(report.Exp * mult);
+  }
   if (report.Gold !== 0) {
     c.Gold = Math.max(0, c.Gold + report.Gold);
     if (run && report.Gold > 0) run.GoldEarned += report.Gold;
@@ -154,7 +161,7 @@ function rollDrops(b: Battle, e: Battle['defeated'][number], drop: number, repor
   const equip = e.guaranteedEquipment ? 1 : role === 2 ? B.EquipDropBoss : role === 1 ? B.EquipDropElite : B.EquipDropNormal;
   if (rng.chance(Math.min(1, equip * drop))) report.Items.push(randomEquipment(b.floor, b.character, rng, Math.max(role, e.guaranteedEquipment ? 1 : 0)));
   const book = role === 2 ? B.SkillBookDropBoss : role === 1 ? B.SkillBookDropElite : B.SkillBookDropNormal;
-  if (rng.chance(book * drop)) report.Items.push(highSkillBook(b.character, rng));
+  if (rng.chance(book * drop)) report.Items.push(highSkillBook(b.character, rng, b.floor));
   if (!stonesDropOn(b.floor)) return; // 강화석은 10층부터
   if (role === 2) report.Items.push(createEnhanceStone(B.StoneDropBoss));
   else if (rng.chance((role === 1 ? B.StoneDropElite : B.StoneDropNormal) * drop)) report.Items.push(createEnhanceStone());

@@ -89,7 +89,7 @@ describe('상점 (TownTests)', () => {
     for (let i = 0; i < 400; i++) {
       const c = createCharacter('a', JOBS[i % 4]);
       c.Level = 1 + (i % 60);
-      const book = highSkillBook(c, rng);
+      const book = highSkillBook(c, rng, 30);
       const def = obtainableSkills(c.Level, JOBS[(book.JobRestriction + 4) % 4]).find((s) => s.Id === book.SkillId);
       expect(def, book.SkillId).toBeDefined();
     }

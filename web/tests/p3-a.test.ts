@@ -76,21 +76,20 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     expect(b.cooldownState()[ENERGY_BALL]).toBeGreaterThan(0);
   });
 
-  it('마법사 (v3.8): 단일 하급 스킬(화염구·마력 화살)이 하나라도 있으면 번갈아 써서 마력 폭주를 끝까지 피할 수 있다', () => {
-    const mage = skillsForJob('Mage').map((s) => s.Id);
-    for (const low of ['m_fireball', 'm_bolt']) {
-      for (const other of [null, ...mage.filter((id) => id !== low)]) {
-        const { b, c } = setup12('Mage', low, 1);
-        c.Skills.Equipped = [low];
-        if (other) { learnSkill(c, other); equipSkill(c, other); }
-        for (let t = 0; t < 30; t++) {
-          const list = b.getChoices();
-          const pick = list.find((x) => x.kind === 'Attack' && x.label.startsWith('에너지 볼') && x.enabled)
-            ?? list.find((x) => x.kind === 'Skill' && x.enabled && (x.target === 0 || x.target < 0))!;
-          expect(pick, `${low}+${other} ${t}턴`).toBeTruthy();
-          b.execute(pick);
-          expect(b.player.statuses.has('Overload')).toBe(false);
-        }
+  it('마법사 (v3.9): 화염구·마력 화살(재사용 2턴)을 함께 끼면 에너지 볼과 번갈아 써서 마력 폭주를 끝까지 피할 수 있다', () => {
+    const mage = skillsForJob('Mage').map((s) => s.Id).filter((id) => id !== 'm_fireball' && id !== 'm_bolt');
+    for (const other of [null, ...mage]) {
+      const { b, c } = setup12('Mage', 'm_fireball', 1);
+      learnSkill(c, 'm_bolt');
+      c.Skills.Equipped = ['m_fireball', 'm_bolt'];
+      if (other) { learnSkill(c, other); equipSkill(c, other); }
+      for (let t = 0; t < 30; t++) {
+        const list = b.getChoices();
+        const pick = list.find((x) => x.kind === 'Attack' && x.label.startsWith('에너지 볼') && x.enabled)
+          ?? list.find((x) => x.kind === 'Skill' && x.enabled && (x.target === 0 || x.target < 0))!;
+        expect(pick, `${other} ${t}턴`).toBeTruthy();
+        b.execute(pick);
+        expect(b.player.statuses.has('Overload')).toBe(false);
       }
     }
   });
@@ -314,7 +313,7 @@ const TABLE: [string, SkillTier, number, number][] = [
   ['r_vital', 'Mid', 4, -0.08], ['r_shadow', 'Mid', 4, -0.08],
   ['r_storm', 'High', 5, -0.08], ['r_cruel', 'High', 6, 0],
   ['r_assassin', 'Top', 6, -0.12], ['r_dance', 'Top', 7, -0.12],
-  ['m_fireball', 'Low', 1, -0.04], ['m_bolt', 'Low', 1, -0.03], ['m_shard', 'Low', 3, -0.08],
+  ['m_fireball', 'Low', 2, -0.04], ['m_bolt', 'Low', 2, -0.03], ['m_shard', 'Low', 3, -0.08],
   ['m_ice', 'Mid', 4, -0.04], ['m_chain', 'Mid', 4, -0.04], ['m_silence', 'Mid', 5, -0.04],
   ['m_meteor', 'High', 6, -0.10], ['m_prison', 'High', 6, -0.06],
   ['m_overload', 'Top', 8, -0.12], ['m_apocalypse', 'Top', 10, -0.12],

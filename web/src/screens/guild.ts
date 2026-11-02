@@ -5,7 +5,7 @@ import type { Rank } from '../core/enums';
 import type { Quest } from '../core/guild';
 import {
   abandonQuest, acceptQuest, cannotAcceptReason, deposit, goalText, isQuestComplete, maxQuestRank, minQuestRank, progressText, storageFee,
-  turnInQuest, withdraw,
+  questReward, turnInQuest, withdraw,
 } from '../core/guild';
 import type { ItemContainer } from '../core/items';
 import { displayName, statLine } from '../core/items';
@@ -93,6 +93,7 @@ export class GuildScreen extends Screen {
       return b;
     };
     const right = done ? act('보고', () => this.turnIn(q), 'primary') : active ? act('포기', () => this.abandon(q), 'ghost') : act('수락', () => this.accept(q), 'outline', cannotAcceptReason(S.data!.Guild, c, q) === null);
+    const rw = questReward(q, c);
     const sprite = q.Kind === 'Collect' ? null : spriteUrl(q.SpeciesId);
     const pic = q.Kind === 'Collect' ? artImg(q.MaterialId) : sprite ? h('img', { class: 'qpic-unit', src: sprite, alt: '' })
       : h('span', { class: 'qboss' }, icon('room_boss', 40, 'var(--qboss)')); // 보스 의뢰: 붉은 기운 속 큰 해골
@@ -101,7 +102,7 @@ export class GuildScreen extends Screen {
       h('div', { class: 'qhead' }, icon(rankIcon(q.Rank), 22), h('b', { class: 'qtitle' }, q.Title)),
       h('div', { class: 'qpic' }, pic),
       h('div', { class: 'qline' }, h('span', { class: 'nw' }, `목표 ${q.TargetFloor}층`), ' · ', h('span', { class: 'nw' }, active ? progressText(q, c) : goalText(q))),
-      h('div', { class: 'qline' }, icon('gold', 14), h('b', { class: 'nw qgold' }, `${num(q.RewardGold)}G`), ' ', h('span', { class: 'nw' }, `경험치 ${num(q.RewardExp)}`)),
+      h('div', { class: 'qline' }, icon('gold', 14), h('b', { class: 'nw qgold' }, `${num(rw.gold)}G`), ' ', h('span', { class: 'nw' }, `경험치 ${num(rw.exp)}`)),
       right);
   }
 
@@ -111,7 +112,7 @@ export class GuildScreen extends Screen {
     const m = modal(q.Title);
     m.body.append(
       row(icon(rankIcon(q.Rank), 36), h('b', { class: 'grow' }, `${q.Rank} 등급 의뢰 · 목표 ${q.TargetFloor}층`)),
-      h('div', null, '보수 ', colored(`${num(q.RewardGold)}G`, 'var(--gold)'), ` · 경험치 ${num(q.RewardExp)}`),
+      h('div', null, '보수 ', colored(`${num(questReward(q, c).gold)}G`, 'var(--gold)'), ` · 경험치 ${num(questReward(q, c).exp)}`, questReward(q, c).reduced ? colored(' (적정 레벨보다 높아 줄어듦)', 'var(--sub)') : null),
       sub('등급은 목표 층과 토벌 난이도(보스 > 토벌 > 채집)로 정해지고, 보수는 그 등급 범위에서 정해집니다.'),
       h('div', { class: 'body' }, active ? progressText(q, c) : `목표 ${goalText(q)}`));
     if (active) {
@@ -155,9 +156,10 @@ export class GuildScreen extends Screen {
   private turnIn(q: Quest): void {
     const c = S.c;
     const before = c.Level;
+    const rw = questReward(q, c);
     const r = turnInQuest(S.data!.Guild, c, q.Id);
     if (!r.ok) return toast(r.error ?? '');
-    this.line = `수고하셨어요! 보수 ${num(q.RewardGold)}G와 경험치 ${num(q.RewardExp)}을 드릴게요.`;
+    this.line = `수고하셨어요! 보수 ${num(rw.gold)}G와 경험치 ${num(rw.exp)}을 드릴게요.`;
     if (r.levelsGained > 0) toast(`레벨 업! Lv.${before} → Lv.${c.Level}`);
     S.save();
     router.rebuild();

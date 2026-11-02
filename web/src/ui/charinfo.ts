@@ -5,7 +5,7 @@ import {
 import { describeActive, explainStatus } from '../core/statustext';
 import type { StatusType } from '../core/enums';
 import { effectDescribe, effectName, effectRemaining } from '../core/explore';
-import { isQuestComplete, progressText } from '../core/guild';
+import { isQuestComplete, progressText, questReward } from '../core/guild';
 import { jobData, PERKS } from '../core/jobs';
 import { gold, Names } from '../core/names';
 import type { StatusInstance } from '../core/status';
@@ -93,7 +93,7 @@ export function showQuests(): void {
     m.body.append(h('div', { class: 'card', style: { background: 'var(--blue-bg)', borderColor: done ? 'var(--accent)' : 'var(--blue-border)', gap: '2px', padding: '8px 12px' } },
       h('b', null, q.Title),
       h('div', { style: { fontSize: '13px', color: done ? 'var(--gold)' : 'var(--body)' } }, `목표 ${q.TargetFloor}층 · ${progressText(q, c)}`, done ? colored(' · 보고 가능', 'var(--gold)') : null),
-      h('div', { class: 'sub' }, '보상 ', colored(`${q.RewardGold.toLocaleString('en-US')}G`, 'var(--gold)'), ` · 경험치 ${q.RewardExp.toLocaleString('en-US')}`)));
+      h('div', { class: 'sub' }, '보상 ', colored(`${questReward(q, S.c).gold.toLocaleString('en-US')}G`, 'var(--gold)'), ` · 경험치 ${questReward(q, S.c).exp.toLocaleString('en-US')}`)));
   }
 }
 

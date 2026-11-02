@@ -13,6 +13,9 @@ import { skillDef } from '../core/skills';
 
 /** 자동 플레이 봇 (테스트와 밸런스 시뮬레이션이 같이 쓴다). C# BotPlayer와 같은 행동 규칙. */
 
+/** 밸런스 비교용: noEnhance = 대장간을 쓰지 않는 플레이어 (NOENH=1). */
+export const botOptions = { noEnhance: false };
+
 export function prepareInTown(s: GameSession): void {
   const c = s.c;
   const d = s.data!;
@@ -35,7 +38,7 @@ export function prepareInTown(s: GameSession): void {
   }
   // 강화와 수련
   const weapon = equipped(c, 'Weapon');
-  if (weapon && c.Gold > goldCost(weapon) * 3) enhance(c, weapon.Uid, s.rng);
+  if (weapon && !botOptions.noEnhance && c.Gold > goldCost(weapon) * 3) enhance(c, weapon.Uid, s.rng);
   for (const st of c.Skills.Learned) if (c.Gold > trainingCost(st) * 4 && trainingCost(st) > 0) trainSkill(c, st.SkillId);
   // 물약 구매
   const potion = d.Shop.Goods.find((g) => g.Item.TemplateId === 'potion');
@@ -208,7 +211,7 @@ export function prepareStrong(s: GameSession): void {
     enhance(c, uid, s.rng);
     return true;
   };
-  for (let i = 0; i < 400; i++) {
+  for (let i = 0; i < (botOptions.noEnhance ? 0 : 400); i++) {
     const w = equipped(c, 'Weapon');
     const targets = [];
     if (w && w.Enhance < 13) targets.push(w);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { B, enemyGold, roundEven } from '../src/core/balance';
+import { B, enemyExp, enemyGold, expToNext, roundEven } from '../src/core/balance';
 import { Battle } from '../src/core/battle';
 import { addExp, createCharacter, maxChallengeFloor, maxHp } from '../src/core/character';
 import {
@@ -204,7 +204,7 @@ describe('탐험 (DungeonTests)', () => {
     const report = die(c, run, 'Normal', '고블린 궁수');
     expect(report.GoldLost).toBe(372);
     expect(c.Gold).toBe(868);
-    expect(report.ExpLost).toBe(57);
+    expect(report.ExpLost).toBe(roundEven(expToNext(2) * B.DeathExpLoss));
     expect(c.Level).toBe(2);
     expect(report.ItemsLost.length).toBe(1);
     expect(c.Inventory.Items.length).toBe(0);
@@ -344,7 +344,7 @@ describe('이벤트 (DungeonTests·SpecialEventTests)', () => {
   it('피의 우물: 5번까지, 바칠수록 경험치가 커진다', () => {
     const rng = new Rng(12);
     const c = createCharacter('a', 'Warrior');
-    c.Level = 10;
+    c.Level = 4; // 1층 적정 레벨 + 여유 안 (v3.9 레벨 보정 없이)
     c.CurrentHp = 100000;
     const run = startRun(c, 1, rng);
     const room = find(run, 'Event');
@@ -358,7 +358,7 @@ describe('이벤트 (DungeonTests·SpecialEventTests)', () => {
       exps.push(r.Loot.Exp);
       expect(r.Continues).toBe(i < 4);
     }
-    expect(exps).toEqual([1, 1, 3, 3, 6].map((m) => roundEven(m * 30)));
+    expect(exps).toEqual([1, 1, 3, 3, 6].map((m) => roundEven(m * enemyExp(1))));
     expect(room.Cleared).toBe(true);
     expect(BLOOD_RISK.length).toBe(5);
   });

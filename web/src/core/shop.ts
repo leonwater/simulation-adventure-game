@@ -1,4 +1,4 @@
-import { B, roundEven } from './balance';
+import { B, rewardLevel, roundEven } from './balance';
 import type { Character } from './character';
 import { maxChallengeFloor, recalculateCapacities } from './character';
 import { createDrop, consumableAt, createConsumable, createEnhanceStone, createSkillBook, rollDropGrade, stonePrice, addItem, canAdd, cloneWithCount, findItem, overConsumableLimit, sellPrice, takeItem, goodMaxBuy, goodUnlimited, newUid } from './items';
@@ -95,8 +95,9 @@ export function restock(s: ShopState, c: Character, rng: Rng): void {
 export function merchantExtras(goods: ShopGood[], c: Character, floor: number, rng: Rng): void {
   if (rng.chance(B.MerchantEquipChance)) goods.push({ Item: createDrop(rng, rollDropGrade(rng, floor, 1), floor, c), Stock: 1 });
   if (rng.chance(B.MerchantBookChance)) {
-    let books = obtainableSkills(c.Level, rollItemJob(c.Job, rng), ['Low', 'Mid', 'High']).filter((b) => !knowsSkill(c, b.Id));
-    books = preferOwnLevel(books, c.Level, rng);
+    const lv = rewardLevel(c.Level, floor);
+    let books = obtainableSkills(lv, rollItemJob(c.Job, rng), ['Low', 'Mid', 'High']).filter((b) => !knowsSkill(c, b.Id));
+    books = preferOwnLevel(books, lv, rng);
     if (books.length > 0) goods.push({ Item: createSkillBook(rng.pick(books).Id), Stock: 1 });
   }
 }

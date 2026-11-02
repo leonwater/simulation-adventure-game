@@ -15,6 +15,7 @@ import { enhance, downgradeChance, equipSkill, learnSkill, powerMultiplier } fro
 import { JOBS, RANKS } from '../src/core/enums';
 import type { Job, RoomType } from '../src/core/enums';
 import { merchantGoods } from '../src/core/generator';
+import { floorLevel, overLevelMult, rewardLevel } from '../src/core/balance';
 import { acceptQuest, inRange, newGuildState, NEXT_FLOOR_QUESTS, questKey, refreshBoard } from '../src/core/guild';
 import {
   addItem, countOf, createConsumable, createEnhanceStone, createGear, createRandomGear, createSkillBook, ENHANCE_STONE_ID, goldCost, goldSpent,
@@ -105,6 +106,14 @@ describe('V16Tests (튜토리얼 귀환·퀘스트·초반 보정·방 알림)',
       refreshBoard(g, c, rng);
       expect(g.Board.some((q) => questKey(q) === questKey(active))).toBe(false);
     }
+  });
+
+  it('OverLevel (v3.9): 적정 레벨 + 3을 넘으면 1레벨마다 보상 -10%, 최저 20%', () => {
+    expect(floorLevel(3)).toBe(5); expect(floorLevel(10)).toBe(18); expect(floorLevel(20)).toBe(35);
+    expect(overLevelMult(21, 10)).toBe(1);
+    expect(overLevelMult(22, 10)).toBeCloseTo(0.9, 9);
+    expect(overLevelMult(60, 1)).toBe(0.2);
+    expect(rewardLevel(60, 10)).toBe(21);
   });
 
   it('Quests_LowRankDeepFloorsStillHasAcceptable (v3.9)', () => {
@@ -274,8 +283,8 @@ describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 �
     const legend = createGear('Weapon', 'Legendary', 20, 'Warrior', 'Luck');
     expect(Math.abs(legend.BaseValue - Math.round(common.BaseValue * 1.9))).toBeLessThanOrEqual(1); // 전설은 일반의 1.9배 (v2.9)
     common.Enhance = legend.Enhance = 10;
-    expect(Math.abs(itemValue(common) - Math.round(common.BaseValue * 1.3))).toBeLessThanOrEqual(1); // 일반 +10 = 보너스 단계 15 × 2% = +30%
-    expect(Math.abs(itemValue(legend) - Math.round(legend.BaseValue * 1.6))).toBeLessThanOrEqual(1); // 전설 +10 = 15 × 4% = +60%
+    expect(Math.abs(itemValue(common) - Math.round(common.BaseValue * 1.75))).toBeLessThanOrEqual(1); // 일반 +10 = 보너스 단계 15 × 5% = +75% (v3.9)
+    expect(Math.abs(itemValue(legend) - Math.round(legend.BaseValue * 2.35))).toBeLessThanOrEqual(1); // 전설 +10 = 15 × 9% = +135%
   });
 
   it('EnhancedGear_SellsForMore', () => {
