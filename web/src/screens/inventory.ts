@@ -48,7 +48,7 @@ export class InventoryScreen extends Screen {
         row(h('b', { class: 'grow' }, '가방 ', h('span', { class: 'sub', style: { fontSize: '14px' } }, `${c.Inventory.Items.length} / ${c.Inventory.Capacity}`)), this.fromDungeon ? null : expand),
         itemGrid(c.Inventory, c, (item) => this.showItem(item, null))),
       this.fromDungeon
-        ? h('div', { style: { padding: '8px 16px', background: 'var(--bar)', borderTop: '1px solid var(--line)', flexShrink: '0' } }, button('던전으로 돌아가기', () => this.back(), 'primary', 'lg'))
+        ? h('div', { style: { display: 'flex', justifyContent: 'center', padding: '8px 16px', background: 'var(--bar)', borderTop: '1px solid var(--line)', flexShrink: '0' } }, button('던전으로 돌아가기', () => this.back(), 'primary', 'lg'))
         : bottomNav(2, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
   }
 

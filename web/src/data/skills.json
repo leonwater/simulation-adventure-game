@@ -1014,8 +1014,8 @@
     "Target": "SingleEnemy",
     "TargetCount": 1,
     "ChainMults": [],
-    "Cooldown": 3,
-    "DamageMult": 1.8,
+    "Cooldown": 1,
+    "DamageMult": 1.3,
     "Hits": 1,
     "HealRatio": 0,
     "SuccessBonus": -0.04,
@@ -1033,14 +1033,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "단일 180% + 화상 2턴",
+    "Effect": "단일 130% + 화상 2턴",
     "Role": "단일",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -4%",
-    "Description": "단일 180% + 화상 2턴 · 재사용 3턴"
+    "Description": "단일 130% + 화상 2턴 · 재사용 1턴"
   },
   {
     "Id": "m_bolt",
@@ -1050,8 +1050,8 @@
     "Target": "SingleEnemy",
     "TargetCount": 1,
     "ChainMults": [],
-    "Cooldown": 2,
-    "DamageMult": 1.2,
+    "Cooldown": 1,
+    "DamageMult": 1.4,
     "Hits": 1,
     "HealRatio": 0,
     "SuccessBonus": -0.03,
@@ -1061,14 +1061,14 @@
     "ExecuteThreshold": 0,
     "ExecuteMult": 1,
     "Statuses": [],
-    "Effect": "단일 120%",
+    "Effect": "단일 140%",
     "Role": "단일",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -3%",
-    "Description": "단일 120% · 재사용 2턴"
+    "Description": "단일 140% · 재사용 1턴"
   },
   {
     "Id": "m_shard",
@@ -1078,7 +1078,7 @@
     "Target": "Column",
     "TargetCount": 1,
     "ChainMults": [],
-    "Cooldown": 4,
+    "Cooldown": 3,
     "DamageMult": 0.8,
     "Hits": 1,
     "HealRatio": 0,
@@ -1096,7 +1096,7 @@
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -8%",
-    "Description": "좌우 광역 80% · 재사용 4턴"
+    "Description": "좌우 광역 80% · 재사용 3턴"
   },
   {
     "Id": "m_ice",

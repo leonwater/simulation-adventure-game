@@ -28,7 +28,7 @@ export function statRow(draft: AllocationDraft, stat: Stat, line: boolean, onCha
   };
   return h('div', { class: 'row statrow', style: { height: '60px', borderBottom: line ? '1px solid var(--line-soft)' : '' } },
     icon(statIcon(stat), 24),
-    h('div', { class: 'col grow', style: { gap: '1px' } },
+    h('div', { class: 'col grow', style: { gap: '1px', minWidth: '0' } },
       h('b', null, Names.stat(stat), own >= B.StatCap ? colored(' 최대', 'var(--gold)') : null),
       h('div', { class: 'sub', style: { fontSize: '11px' } }, ...effectLabel(c, stat).split(' · ').flatMap((seg, i) => [i > 0 ? ' · ' : '', h('span', { style: { whiteSpace: 'nowrap' } }, seg)]))),
     step('-', pending > 0, () => draft.remove(stat)),

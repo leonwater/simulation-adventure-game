@@ -7,6 +7,7 @@ import {
   abandonQuest, acceptQuest, cannotAcceptReason, deposit, goalText, isQuestComplete, maxQuestRank, minQuestRank, progressText, storageFee,
   turnInQuest, withdraw,
 } from '../core/guild';
+import type { ItemContainer } from '../core/items';
 import { displayName, statLine } from '../core/items';
 import { npcIllustration, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
@@ -209,14 +210,21 @@ export class GuildScreen extends Screen {
     const verb = this.withdrawMode ? '찾기' : `맡기기 · ${fee}G`;
     return [
       seg,
-      h('b', null, `창고 ${c.Storage.Items.length} / ${c.Storage.Capacity} · 가방 ${c.Inventory.Items.length} / ${c.Inventory.Capacity}`),
+      // 쓸 수 있는 칸: 창고 · 가방 남은 칸 (출고 화면은 창고 빈칸도 그대로 보인다)
+      row(slotsLeft('창고', c.Storage), slotsLeft('가방', c.Inventory)),
       itemGrid(from, c, (item) => confirmBox(displayName(item), statLine(item), verb, () => {
         const r = this.withdrawMode ? withdraw(c, item.Uid) : deposit(c, item.Uid);
         if (!r.ok) return toast(r.error ?? '');
         S.save();
         toast(`${displayName(item)}${this.withdrawMode ? ' 찾음' : ` 맡김 · 수수료 ${fee}G`}`);
         router.rebuild();
-      }, '닫기'), { showEmpty: false }),
+      }, '닫기'), { showEmpty: this.withdrawMode }),
     ];
   }
+}
+
+/** 남은 칸 표시: '창고 남은 칸 12 / 30' (가득 차면 빨강). */
+function slotsLeft(name: string, box: ItemContainer): HTMLElement {
+  const left = Math.max(0, box.Capacity - box.Items.length);
+  return h('div', { class: 'grow slots-left' }, h('span', null, `${name} 남은 칸`), h('b', { style: { color: left === 0 ? 'var(--red-light)' : 'var(--gold)' } }, String(left)), h('span', { class: 'sub' }, ` / ${box.Capacity}`));
 }

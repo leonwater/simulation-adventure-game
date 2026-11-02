@@ -9,7 +9,7 @@ import { jobData, PERKS } from '../core/jobs';
 import { Names } from '../core/names';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { showJobInfo } from '../ui/jobinfo';
+import { perkValue, showJobInfo } from '../ui/jobinfo';
 import { button, divider, h, icon, progress, row, sub } from '../ui/kit';
 import { colored } from '../ui/items';
 import { modal, toast } from '../ui/overlay';
@@ -68,19 +68,22 @@ export class CharacterScreen extends Screen {
   private badgePanel(): HTMLElement {
     const c = S.c;
     const st = promotionStatus(c);
-    const cond = (label: string, cur: number, req: number): HTMLElement =>
-      h('div', { class: 'grow', style: { fontSize: '13px' } }, `${label} `, colored(`${Math.min(cur, req)}/${req}`, cur >= req ? 'var(--green)' : 'var(--text)'));
+    // 승급 조건: 이름은 작게, 값은 크게 · 채우면 초록
+    const cond = (label: string, cur: number, req: number): HTMLElement => h('div', { class: `promo-cond${cur >= req ? ' done' : ''}` },
+      h('span', null, label), h('b', null, `${Math.min(cur, req)}/${req}`));
+    const next = st.isMaxRank ? -1 : RANKS.indexOf(st.next);
     // 등급 카드를 누르면 직업 정보 (고유 능력치의 등급별 값)
-    return h('div', { class: 'card', role: 'button', style: { gap: '8px', padding: '12px 14px', cursor: 'pointer' }, on: { click: () => showJobInfo(c.Job, c.Rank) } },
+    return h('div', { class: 'card', role: 'button', style: { gap: '10px', padding: '12px 14px', cursor: 'pointer' }, on: { click: () => showJobInfo(c.Job, c.Rank) } },
       row(icon(rankIcon(c.Rank), 32), h('b', { class: 'grow', style: { fontSize: '15px' } }, `${c.Rank} 등급 모험가`), h('span', { class: 'gold', style: { fontSize: '13px' } }, `기본 능력치 +${Math.round(badgeBonus(c.Rank) * 100)}%`)),
-      // 직업 고유 능력치: 포인트로는 못 올리고 모험가 등급으로만 오른다
-      row(icon(PERKS[c.Job].icon, 28), h('div', { class: 'col grow', style: { gap: '1px' } },
-        h('b', null, `${PERKS[c.Job].name} ${percent(jobPerk(c))}`, st.isMaxRank ? null : colored(` → ${st.next} 등급 ${percent(B.JobPerk[c.Job][RANKS.indexOf(st.next)])}`, 'var(--sub)')),
-        h('div', { class: 'sub', style: { fontSize: '12px' } }, PERKS[c.Job].text(percent(jobPerk(c))), ' · ', h('span', { class: 'nw' }, '등급 전용')))),
+      // 직업 고유 능력치: 아이콘 · 지금 값 → 다음 등급 값 (설명은 누르면 나오는 직업 정보에)
+      row(icon(PERKS[c.Job].icon, 24), h('b', { class: 'gold', style: { fontSize: '15px' } }, perkValue(c.Job, RANKS.indexOf(c.Rank))),
+        next < 0 ? null : h('span', { class: 'sub', style: { fontSize: '13px' } }, '→ '), next < 0 ? null : icon(rankIcon(st.next), 18),
+        next < 0 ? null : h('span', { class: 'sub', style: { fontSize: '13px' } }, perkValue(c.Job, next))),
       st.isMaxRank
         ? sub('최고 등급입니다')
-        : h('div', { class: 'col', style: { gap: '8px' } }, sub(`${st.next} 등급 승급 조건 · 모두 채우면 자동 승급`),
-          row(cond('돌파 층', st.floorCurrent, st.floorRequired), cond('레벨', st.levelCurrent, st.levelRequired), cond('퀘스트', st.questsCurrent, st.questsRequired))));
+        : h('div', { class: 'col', style: { gap: '6px' } },
+          row(h('b', { style: { fontSize: '14px', color: 'var(--accent)' } }, `${st.next} 등급 승급 조건`), h('span', { class: 'sub grow', style: { fontSize: '11px', textAlign: 'right' } }, '모두 채우면 자동 승급')),
+          h('div', { class: 'promo-conds' }, cond('돌파 층', st.floorCurrent, st.floorRequired), cond('레벨', st.levelCurrent, st.levelRequired), cond('퀘스트', st.questsCurrent, st.questsRequired))));
   }
 
   private statsPanel(draft: AllocationDraft): HTMLElement {
@@ -115,17 +118,19 @@ export class CharacterScreen extends Screen {
     const c = S.c;
     const m = modal('상세 능력치');
     // 이름은 한 줄 그대로, 긴 값만 오른쪽에서 접힌다
-    const line = (k: string, v: string | HTMLElement): HTMLElement => row(h('div', { class: 'nw', style: { minHeight: '30px', lineHeight: '30px', flexShrink: '0' } }, k), h('div', { class: 'grow', style: { textAlign: 'right', minWidth: '0' } }, v));
+    const line = (ic: string, k: string, v: string | HTMLElement): HTMLElement => row(icon(ic, 18),
+      h('div', { class: 'nw', style: { minHeight: '30px', lineHeight: '30px', flexShrink: '0' } }, k), h('div', { class: 'grow', style: { textAlign: 'right', minWidth: '0' } }, v));
+    const atk = jobData(c.Job).attackStat;
     m.body.append(
-      line('최대 HP', String(maxHp(c))),
-      line('공격력', h('span', null, String(attack(c)), colored(` (${Names.stat(jobData(c.Job).attackStat)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)})`, 'var(--sub)'))),
-      line('방어력', String(defense(c))),
-      line('회피', percent(evasion(c))),
-      line(`${PERKS[c.Job].name} (등급 전용)`, PERKS[c.Job].text(percent(jobPerk(c)))),
-      line('상태 이상 저항', percent(resist(c))),
-      ...(c.Job === 'Rogue' ? [line('치명타', `도적 스킬 전용 · 치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`)] : []),
-      line('드롭률', `+${percent(dropBonus(c) - 1)}`),
-      line('이벤트 판정', `+${percent(eventLuckBonus(c))}`),
+      line(statIcon('Vitality'), '최대 HP', String(maxHp(c))),
+      line(statIcon(atk), '공격력', h('span', null, String(attack(c)), colored(` (${Names.stat(atk)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)})`, 'var(--sub)'))),
+      line('status_fortify', '방어력', String(defense(c))),
+      line(statIcon('Agility'), '회피', percent(evasion(c))),
+      line(PERKS[c.Job].icon, `${PERKS[c.Job].name} (등급 전용)`, PERKS[c.Job].text(percent(jobPerk(c)))),
+      line(statIcon('Spirit'), '상태 이상 저항', percent(resist(c))),
+      ...(c.Job === 'Rogue' ? [line('perk_vital', '치명타', `도적 스킬 전용 · 치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`)] : []),
+      line(statIcon('Luck'), '드롭률', `+${percent(dropBonus(c) - 1)}`),
+      line(statIcon('Luck'), '이벤트 판정', `+${percent(eventLuckBonus(c))}`),
       divider(),
       h('b', null, '능력치별 효과'),
       ...STATS.map((s) => {

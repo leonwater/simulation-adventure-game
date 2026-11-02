@@ -64,6 +64,9 @@ const STATES = [
   ['dungeon-info', enterDungeon, ['.bottombar button:has-text("정보")']],
   ['dungeon-quest', enterDungeon, ['.bottombar button:has-text("퀘스트")']],
   ['dungeon-bag', `${enterDungeon}; window.__bag()`],
+  // 레벨 업 배분 창: 퍼센트가 소수·두 자리가 되게 능력치를 올려 둔다 (저항·회피·드롭 글자 넘침 점검)
+  ['dungeon-levelup', `(() => { const S = window.__S; if (!S.inDungeon) S.enterDungeon(); S.run.FloorIntroPending = false; S.c.BaseStats.Values = S.c.BaseStats.Values.map((v, i) => v + 37 + i * 13); window.__screens.goDungeon(true); })()`],
+  ['character-detail-hi', `(() => { window.__S.c.BaseStats.Values = window.__S.c.BaseStats.Values.map((v, i) => v + 37 + i * 13); window.__nav('character'); })()`, ['button:has-text("상세 능력치")']],
   ['battle', forceRoom('Battle')],
   ['battle-items', forceRoom('Battle'), ['.bchoice:has-text("아이템 사용")']],
   ['battle-detail', forceRoom('Battle'), ['.bchoice >> nth=1']],

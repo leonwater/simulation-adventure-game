@@ -16,16 +16,18 @@ import { S } from './game';
 import { colored } from './items';
 import { divider, h, icon, progress, row, sub } from './kit';
 import { modal } from './overlay';
+import { statIcon } from './statrow';
 import { rankIcon } from './theme';
 
 const DEBUFFS: StatusType[] = ['Poison', 'Bleed', 'Burn', 'Weaken', 'Vulnerable', 'Stun', 'Silence', 'Blind', 'Fear'];
 const BUFFS: StatusType[] = ['Empower', 'Fortify', 'Regen', 'Focus', 'Swift', 'Keen', 'Cruel'];
 
 const section = (title: string): HTMLElement[] => [divider(), h('b', { class: 'gold', style: { fontSize: '14px' } }, title)];
-const pair = (a: string, av: string, b: string, bv: string): HTMLElement =>
-  row(
-    h('div', { class: 'row grow', style: { gap: '6px', height: '22px' } }, h('span', { class: 'sub grow', style: { fontSize: '13px' } }, a), h('b', { style: { fontSize: '13px' } }, av)),
-    h('div', { class: 'row grow', style: { gap: '6px', height: '22px' } }, h('span', { class: 'sub grow', style: { fontSize: '13px' } }, b), h('b', { style: { fontSize: '13px' } }, bv)));
+/** 능력치 두 개를 한 줄에: [아이콘, 이름, 값] × 2 */
+type Cell = [string, string, string];
+const pair = (...cells: [Cell, Cell]): HTMLElement =>
+  row(...cells.map(([ic, k, v]) => h('div', { class: 'row grow', style: { gap: '6px', height: '24px', minWidth: '0', flexBasis: '0' } },
+    icon(ic, 16), h('span', { class: 'sub grow nw', style: { fontSize: '13px' } }, k), h('b', { class: 'nw', style: { fontSize: '13px' } }, v))));
 
 export const statusIcon = (t: StatusType): string => `status_${t.toLowerCase()}`;
 
@@ -58,9 +60,9 @@ export function showCharacterInfo(battle: Battle | null = null): void {
     h('div', { class: 'row sub', style: { gap: '8px' } }, '경험치', h('div', { class: 'grow' }, progress(expProgress(c), 'var(--blue)'))),
     h('div', { class: 'sub' }, `골드 ${gold(c.Gold)}`, c.UnspentPoints > 0 ? colored(` · 포인트 ${c.UnspentPoints}`, 'var(--gold)') : null),
     ...section('전투 능력치'),
-    pair('공격력', String(me?.attack ?? attack(c)), '방어력', String(defense(c))),
-    pair('회피', percent(evasion(c)), PERKS[c.Job].name, percent(jobPerk(c))),
-    pair('상태 이상 저항', percent(resist(c)), '스킬 피해', `+${percent(skillDamageBonus(c))}`),
+    pair([statIcon(jobData(c.Job).attackStat), '공격력', String(me?.attack ?? attack(c))], ['status_fortify', '방어력', String(defense(c))]),
+    pair([statIcon('Agility'), '회피', percent(evasion(c))], [PERKS[c.Job].icon, PERKS[c.Job].name, percent(jobPerk(c))]),
+    pair([statIcon('Spirit'), '상태 이상 저항', percent(resist(c))], ['perk_amplify', '스킬 피해', `+${percent(skillDamageBonus(c))}`]),
     ...section('상태 이상'));
   const active = me?.statuses.visible() ?? [];
   if (active.length === 0) m.body.append(sub(battle ? '걸린 상태 이상이 없습니다.' : '전투 밖에서는 상태 이상이 남지 않습니다. 전투가 끝나면 모두 풀립니다.'));
@@ -104,7 +106,7 @@ export function showEnemyInfo(e: Combatant, isTarget: boolean, makeTarget: () =>
   m.body.append(h('b', { style: { fontSize: '13px', color: e.role === 2 ? 'var(--boss)' : e.role === 1 ? 'var(--gold)' : 'var(--sub)' } }, `${role} 몬스터`),
     h('div', null, hpText, k && k.shield > 0 ? colored(` · 보호막 ${k.shield}`, 'var(--info)') : null, k && k.barrier > 0 ? colored(` · 방어막 ${k.barrier}회`, 'var(--barrier)') : null),
     progress(e.hp / Math.max(1, e.maxHp), 'var(--red)'),
-    pair('공격력', String(e.attack), '방어력', String(e.defense)));
+    pair([statIcon('Strength'), '공격력', String(e.attack)], ['status_fortify', '방어력', String(e.defense)]));
   if (k && k.intent) m.body.append(h('b', { style: { fontSize: '13px' } }, '다음 턴 ', colored(k.intent, 'var(--warn)')));
   m.body.append(...section('상태 이상'));
   const list = e.statuses.visible();

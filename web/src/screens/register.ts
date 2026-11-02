@@ -6,7 +6,7 @@ import { jobLine, npcIllustration, topBar } from '../ui/chrome';
 import { S } from '../ui/game';
 import { button, h, phrases, row, sub } from '../ui/kit';
 import { modal, toast } from '../ui/overlay';
-import { JOB_DIFFICULTY, jobInfo } from '../ui/jobinfo';
+import { difficultyTag, jobInfo } from '../ui/jobinfo';
 import { Screen, router } from '../ui/router';
 import { DIFFICULTY_COLOR } from '../ui/theme';
 import { spriteUrl } from '../ui/sprites';
@@ -100,11 +100,12 @@ export class RegistrationScreen extends Screen {
               this.next();
             }, 'primary', 'grow')));
         } } },
+        difficultyTag(j),
         h('img', { class: 'job-sprite', src: spriteUrl(j.toLowerCase()) ?? '', alt: '' }),
         h('b', { style: { fontSize: '16px', color: on ? 'var(--gold)' : 'var(--text)' } }, jobData(j).name),
-        h('span', { class: 'job-diff', style: { color: JOB_DIFFICULTY[j][1] } }, `난이도 ${JOB_DIFFICULTY[j][0]}`),
-        h('span', { class: 'job-pro' }, '+ ', ...phrases(pro)),
-        h('span', { class: 'job-con' }, '− ', ...phrases(con)));
+        h('div', { class: 'job-pc' },
+          h('span', { class: 'job-pro' }, '+ ', ...phrases(pro)),
+          h('span', { class: 'job-con' }, '− ', ...phrases(con))));
       })));
   }
 

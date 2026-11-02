@@ -190,12 +190,30 @@ input.text::placeholder { color: var(--placeholder); }
 .icard-empty.mini { height: 72px; }
 .item-art { width: 32px; height: 32px; flex-shrink: 0; image-rendering: pixelated; }
 .nw { white-space: nowrap; }
-.job-diff { font-size: 11px; line-height: 1.2; }
+/* 난이도: 칸 오른쪽 위 꼬리표 (파란 칸) — 아래 장단점(초록·주황)과 위치·색을 나눈다 */
+.diff-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; line-height: 1; color: var(--blue-light); white-space: nowrap; }
+.job-card .diff-tag { position: absolute; top: 6px; right: 6px; }
+.diff-pips { display: inline-flex; gap: 2px; }
+.diff-pips i { width: 6px; height: 6px; border: 1px solid var(--blue); }
+.diff-pips i.on { background: var(--blue-light); border-color: var(--blue-light); }
+.job-facts { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; align-items: center; font-size: 13px; }
+.jf-label { color: var(--sub); font-size: 12px; white-space: nowrap; }
+.jf-value { color: var(--text); }
+.job-perk { display: flex; flex-direction: column; gap: 6px; padding: 8px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: var(--r-ctrl); }
+.promo-conds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.promo-cond { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: var(--r-ctrl); min-width: 0; }
+.promo-cond span { font-size: 12px; color: var(--sub); }
+.promo-cond b { font-size: 16px; color: var(--text); white-space: nowrap; }
+.promo-cond.done { border-color: var(--green); }
+.promo-cond.done b { color: var(--green); }
+.slots-left { display: flex; align-items: baseline; justify-content: center; gap: 4px; padding: 6px 8px; font-size: 13px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: var(--r-ctrl); white-space: nowrap; }
+.slots-left b { font-size: 16px; }
+.job-pc { display: flex; flex-direction: column; gap: 2px; width: 100%; margin-top: 2px; padding-top: 6px; border-top: 1px dashed var(--line); }
 .perk-table { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 .perk-cell { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px 2px; font-size: 11px; background: var(--bg); border: 1px solid var(--line-soft); border-radius: 3px; min-width: 0; }
 .perk-cell.on { border-color: var(--gold); color: var(--gold); }
 .job-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.job-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; min-height: 150px; text-align: center; }
+.job-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; min-height: 150px; text-align: center; }
 .job-sprite { width: 60px; height: auto; image-rendering: pixelated; }
 .job-pro { font-size: 12px; color: var(--green); line-height: 1.3; white-space: nowrap; }
 .job-con { font-size: 12px; color: var(--orange); line-height: 1.3; white-space: nowrap; }

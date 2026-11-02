@@ -1,3 +1,4 @@
+import { B } from '../core/balance';
 import type { TutorialStage } from '../core/save';
 import { josa } from '../core/names';
 import { coach } from './coach';
@@ -176,7 +177,7 @@ function jobTip(): string {
     case 'Warrior': return `전사는 맞을 때 ${H('반격')} 확률만큼 피해를 절반으로 막고 바로 되받아쳐요. ${cd}`;
     case 'Archer': return `궁수는 ${H('기본 공격')}이 주력이에요. ${H('관통')}으로 적 방어를 일부 무시하고, 스킬로 기본 공격을 강화하거나 여러 적을 쏴요. ${cd}`;
     case 'Rogue': return `도적은 ${H('스킬 치명타')}가 주력이에요. ${H('급소')}로 치명타 확률과 피해가 조금씩 올라요. ${cd}`;
-    default: return `마법사의 기본 공격 자리는 ${H('에너지 볼')}(재사용 2턴)이에요. 쓸 수 있는 공격이 하나도 없으면 ${bad('마력 폭주')}로 억지로 쏘고 잠시 약해져요. ${cd}`;
+    default: return `마법사의 기본 공격 자리는 ${H('에너지 볼')}(재사용 ${B.EnergyBallCooldown}턴)이에요. ${good('에너지 볼과 화염구를 번갈아 쓰면')} 끊기지 않아요. 쓸 공격이 하나도 없으면 ${bad('마력 폭주')}로 억지로 쏘고 잠시 약해져요. ${cd}`;
   }
 }
 

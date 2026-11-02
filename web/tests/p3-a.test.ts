@@ -56,21 +56,43 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     }
   });
 
-  it('마법사 (v3.7): 기본 공격 자리는 에너지 볼(재사용 2턴), 쓸 공격이 없으면 마력 폭주로 쏘고 약해진다', () => {
-    const { b } = setup12('Mage', 'm_fireball', 1);
+  it('마법사 (v3.8): 에너지 볼은 재사용 1턴, 쓸 공격이 없으면 마력 폭주로 쏘고 약해진다', () => {
+    const { b, c } = setup12('Mage', 'm_meteor', 1);
+    c.Skills.Equipped = ['m_meteor']; // 긴 스킬 하나만 → 폭주를 피할 수 없는 조합
     const attack = () => b.getChoices().find((x) => x.kind === 'Attack')!;
     expect(attack().label.startsWith('에너지 볼')).toBe(true);
     b.execute(attack());
     expect(b.cooldown(ENERGY_BALL)).toBe(B.EnergyBallCooldown);
-    expect(attack().enabled).toBe(false); // 화염구가 남아 있으면 에너지 볼은 기다린다
-    b.execute(choice12(b, 'm_fireball'));
-    // 에너지 볼·화염구 모두 재사용 대기 → 마력 폭주
+    expect(attack().enabled).toBe(false); // 운석이 남아 있으면 에너지 볼은 기다린다
+    b.execute(choice12(b, 'm_meteor'));
+    expect(attack().label.startsWith('에너지 볼')).toBe(true); // 한 턴 걸러 다시 쓸 수 있다
+    b.execute(attack());
+    // 에너지 볼·운석 모두 재사용 대기 → 마력 폭주
     expect(attack().enabled).toBe(true);
     expect(attack().label.startsWith('마력 폭주')).toBe(true);
     b.execute(attack());
     expect(b.player.statuses.has('Overload')).toBe(true);
     // 재사용 대기는 다음 전투로 넘길 수 있다
     expect(b.cooldownState()[ENERGY_BALL]).toBeGreaterThan(0);
+  });
+
+  it('마법사 (v3.8): 단일 하급 스킬(화염구·마력 화살)이 하나라도 있으면 번갈아 써서 마력 폭주를 끝까지 피할 수 있다', () => {
+    const mage = skillsForJob('Mage').map((s) => s.Id);
+    for (const low of ['m_fireball', 'm_bolt']) {
+      for (const other of [null, ...mage.filter((id) => id !== low)]) {
+        const { b, c } = setup12('Mage', low, 1);
+        c.Skills.Equipped = [low];
+        if (other) { learnSkill(c, other); equipSkill(c, other); }
+        for (let t = 0; t < 30; t++) {
+          const list = b.getChoices();
+          const pick = list.find((x) => x.kind === 'Attack' && x.label.startsWith('에너지 볼') && x.enabled)
+            ?? list.find((x) => x.kind === 'Skill' && x.enabled && (x.target === 0 || x.target < 0))!;
+          expect(pick, `${low}+${other} ${t}턴`).toBeTruthy();
+          b.execute(pick);
+          expect(b.player.statuses.has('Overload')).toBe(false);
+        }
+      }
+    }
   });
 
   it('여러 번 때리는 스킬은 타격마다 판정', () => {
@@ -292,7 +314,7 @@ const TABLE: [string, SkillTier, number, number][] = [
   ['r_vital', 'Mid', 4, -0.08], ['r_shadow', 'Mid', 4, -0.08],
   ['r_storm', 'High', 5, -0.08], ['r_cruel', 'High', 6, 0],
   ['r_assassin', 'Top', 6, -0.12], ['r_dance', 'Top', 7, -0.12],
-  ['m_fireball', 'Low', 3, -0.04], ['m_bolt', 'Low', 2, -0.03], ['m_shard', 'Low', 4, -0.08],
+  ['m_fireball', 'Low', 1, -0.04], ['m_bolt', 'Low', 1, -0.03], ['m_shard', 'Low', 3, -0.08],
   ['m_ice', 'Mid', 4, -0.04], ['m_chain', 'Mid', 4, -0.04], ['m_silence', 'Mid', 5, -0.04],
   ['m_meteor', 'High', 6, -0.10], ['m_prison', 'High', 6, -0.06],
   ['m_overload', 'Top', 8, -0.12], ['m_apocalypse', 'Top', 10, -0.12],

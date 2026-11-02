@@ -309,7 +309,7 @@
   },
   "RiposteDamage": 1.0,
   "RogueCritDamageRatio": 2.5,
-  "EnergyBallCooldown": 2,
+  "EnergyBallCooldown": 1,
   "EnergyBallPerGrade": 0.1,
   "OverloadValue": 25,
   "OverloadTurns": 2,

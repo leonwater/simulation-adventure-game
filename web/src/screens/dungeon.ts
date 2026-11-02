@@ -151,10 +151,13 @@ export class DungeonScreen extends Screen {
       router.rebuild();
     }, 'primary', 'grow');
     ok.disabled = !draft.hasChanges;
-    m.body.append(row(button('나중에', () => {
+    const later = button('나중에', () => {
       m.close();
       toast('포인트는 마을 캐릭터 화면에서도 배분할 수 있습니다');
-    }, 'ghost', 'grow'), auto, ok));
+    }, 'ghost', 'grow');
+    // 좁은 화면에서도 버튼 글자가 한 줄로 (360px에서 '자동 배분'이 접혔다)
+    for (const b of [later, auto, ok]) Object.assign(b.style, { whiteSpace: 'nowrap', paddingInline: '6px' });
+    m.body.append(row(later, auto, ok));
   }
 
   // ── 아래 고정 칸 ──

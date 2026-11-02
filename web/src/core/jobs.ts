@@ -41,7 +41,7 @@ export const PERKS: Record<Job, { name: string; icon: string; text: (v: string) 
   Warrior: { name: '반격', icon: 'perk_counter', text: (v) => `맞을 때 ${v} 확률로 피해 절반 + 즉시 반격`, about: '맞을 때 그 확률로 피해를 절반으로 막고 즉시 반격' },
   Archer: { name: '관통', icon: 'perk_pierce', text: (v) => `기본 공격이 적 방어력의 ${v}를 무시`, about: '기본 공격이 적 방어력을 그 비율만큼 무시' },
   Rogue: { name: '급소', icon: 'perk_vital', text: (v) => `스킬 치명타 확률 +${v} · 치명타 피해 +${rogueCritDamage(v)}`, about: '스킬 치명타 확률과 치명타 피해가 오른다' },
-  Mage: { name: '증폭', icon: 'perk_amplify', text: (v) => `스킬 피해 +${v} (대신 재사용 대기가 김)`, about: '스킬 피해가 그만큼 오른다 (대신 재사용 대기가 김)' },
+  Mage: { name: '증폭', icon: 'perk_amplify', text: (v) => `스킬 피해 +${v}`, about: '스킬 피해가 그만큼 오른다' },
 };
 
 /** 도적 급소의 치명타 피해 보너스 ('4%' → '10%'). */
