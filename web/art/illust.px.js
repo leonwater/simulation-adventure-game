@@ -1,211 +1,230 @@
-// 모험가 키우기 시설 일러스트 (초안, claude-pxl): 유닛·물품과 같은 색표 · 검은 테두리 · 납작한 2~3단 명암
-// 128×64 = 게임에서 약 3배 (전투 유닛과 같은 픽셀 크기). 물품은 items.px.js 그림을 그대로 올린다.
-// 빌드: node .pxl/bin/pxl.js build art/illust.px.js --out art/out/illust
-include("items.px.js")
+// 모험가 키우기 시설 일러스트 (v3.9 초안 2, claude-pxl)
+// 192×96 장면(게임에서 약 2배). 배경은 5~7단 색 단계·점무늬 그러데이션·빛 번짐으로 깊이를 주고,
+// 인물은 가슴 위 반신(높이 약 60칸)에 큰 눈·3~4단 명암·재질별 어두운 테두리.
+// 참고 그림의 '수준'만 따르고 모양·색·구성은 새로 만든다 (고블린 상인 · 펠트 모자 · 외알 안경).
+// 빌드: bash scripts/sprites.sh (→ public/illustrations/*.webp)
 pal({
-  k: "#1a1420",
-  s: "#f2c9a0", S: "#c98f6a", u: "#8e5a44",               // 피부
-  w: "#f4f6fb", m: "#d3d8e2", M: "#8f98ab", n: "#59627a", // 강철·흰색
-  r: "#e0565e", R: "#a83a48", Q: "#6e2236",               // 빨강
-  y: "#f6d070", Y: "#c8963a",                             // 금
-  d: "#a87650", D: "#6e4630", E: "#4a2e22",               // 가죽·나무
-  l: "#c8f08a", g: "#7ccf5a", G: "#3f8f3f", t: "#245a3a", // 슬라임
-  e: "#9bbf4a", f: "#5f8a2e",                             // 고블린 피부
-  b: "#f3ecd8", B: "#c9bc9c", c: "#8a7d62",               // 뼈
-  x: "#ff6a3c", z: "#ffe066",                             // 눈빛
-  p: "#b07ee0", P: "#7048a8", o: "#3e2860",               // 보라
-  a: "#8fd4ff", A: "#3f80c0", O: "#23446e",               // 파랑
-  i: "#b4b0a8", I: "#7a766f", j: "#46433f",               // 회색 (털·돌)
-  v: "#62a868", V: "#336e40",                             // 숲 초록
-  q: "#c08a5c", T: "#7e5434",                             // 갈색 털
-  N: "#433d5e", Z: "#28233c",                             // 검은 천
-  H: "#ffa040",                                           // 불꽃
-  W: "#ffffff", L: "#fff1b0",                             // 하이라이트
-  9: "#2e1d18", 8: "#3a261e",                             // 가게 안 어두운 벽 (일러스트 전용)
+  k: "#1a1420", K: "#2b1c22",                                         // 테두리
+  0: "#1e130e", 1: "#2c1c15", 2: "#3f281d", 3: "#573826", 4: "#744b31", 5: "#97653f", 6: "#bd8a57", 7: "#dcb07a", // 나무
+  G: "#243d22", f: "#3f6a2e", e: "#62933f", h: "#8dbb55", H: "#bfe07e", // 고블린 피부
+  r: "#b8704a",                                                       // 볼·귀 안쪽
+  w: "#f4f1e8", i: "#e0a53a", I: "#8a4f1c",                           // 눈
+  m: "#5a1a26", W: "#fff6dc",                                         // 입
+  n: "#141c2c", N: "#22324a", b: "#34506e", B: "#4f7396", c: "#7aa0bf", // 코트 (짙은 청색)
+  S: "#b9ab8c", s: "#ece2c8",                                         // 셔츠·종이
+  Q: "#5c1a2a", R: "#94303e", q: "#cf4b52", x: "#f28a7c",              // 빨강
+  Y: "#7a4a16", y: "#c08a30", z: "#f2c85a", Z: "#fff1b0",             // 금
+  P: "#3a1f3a", p: "#5c3358", o: "#86507c",                           // 모자 (자두색 펠트)
+  U: "#3d4c66", u: "#62779a", A: "#8fb6dc", a: "#bcd8ef", l: "#e9f3fb", // 창밖 하늘·지붕
+  J: "#4a5268", M: "#8a93a8", j: "#cfd5e0",                           // 강철
+  T: "#22573a", t: "#3f9a5a", g: "#8ee08a",                           // 초록 물약
+  O: "#203a7a", v: "#3b6fd0", V: "#9cc8ff",                           // 파란 물약
+  F: "#ff9a3c", L: "#ffe27a",                                         // 불꽃
 })
-ramps("k89EDdq", "kQRr", "kunSs", "knMmw", "kYy", "kfe", "kcBb", "koPp", "kOAa", "kjIi", "kVv", "kZN")
+ramps("k0123456", "kGfehH", "knNbBc", "kQRqx", "kYyzZ", "kPpo", "kUuAal", "kJMj", "kTtg", "kOvV", "kSs")
 
-// ── 부품 ──
-// 상인 고블린: 대머리 · 큰 귀 · 외알 안경 · 금니 · 갈색 조끼 + 흰 셔츠 · 붉은 넥타이 · 깍지 낀 손
-sprite("_merchant", { outline: "k" }, `
-  ..............ffffff..............
-  ............ffeeeeeeff............
-  ...........feeeeeeeeeef...........
-  ..........feeeeeeeeeeeef..........
-  ff........feeeeeeeeeeeef........ff
-  eef.......feeeeeeeeeeeef.......fee
-  .eeff....feeeeeeeeeeeeeef....ffee.
-  ..eeeff..feeyyyeeeeekkeef..ffeee..
-  ...eeeeffeeyakyeeeeewkeeeffeeee...
-  ....eeeefeeyyyeeeeeeeeeeefeeee....
-  .....ffeefeeeeeffeeeeeeeefeeff....
-  .......ffeeeeeeeffeeeeeeeeff......
-  .........feeeeeeffeeeeeef.........
-  .........fefkkkkkkkkkkfef.........
-  ..........feekbybbbbkeef..........
-  ...........ffeekkkkeeff...........
-  .............ffffffff.............
-  .........DDDDDbbbbbbDDDDD.........
-  ......DDDdddDDbbRRbbDDdddDDD......
-  .....DdddddddDDbRRbDDdddddddD.....
-  ....DddddddddDdBRRBdDddddddddD....
-  ....DdddddddDDdbRRbdDDdddddddD....
-  ....DdddddddDddbbbbddDdddddddD....
-  ....DddddddDDdddbbdddDDddddddD....
-  ....DddddddDddddyddddDDddddddD....
-  ....DdddddEDDDDdddddDDDDEddddD....
-  ....DddddEDDDDDDddDDDDDDEdddD.....
-  ....DddddEDDDDDDDDDDDDDDEdddD.....
-  ....DddddEEDDDDDDDDDDDDEEddddD....
-  ....DdddddEEEEEEEEEEEEEEdddddD....
-  ....DddddddddddddddddddddddD......
-  ....DddddddddddddddddddddddD......`)
+// 빛·그늘: 정한 색만 한 단계씩 (테두리 검정은 그대로)
+const LIT = { 0: "1", 1: "2", 2: "3", 3: "4", 4: "5", 5: "6", 6: "7", N: "b", b: "B", B: "c", f: "e", e: "h", p: "o", P: "p", y: "z", J: "M", M: "j" }
+const DIM = { 1: "0", 2: "1", 3: "2", 4: "3", 5: "4", 6: "5", 7: "6", b: "N", B: "b", c: "B", e: "f", h: "e", S: "B", s: "S", u: "U", A: "u", a: "A" }
 
-// 카운터에 올린 주먹 (흰 소매 끝)
-sprite("_fist", { outline: "k" }, `
-  bbbb.
-  .eee.
-  eeeee
-  efefe
-  .fff.`)
+// ── 상인 (가슴 위 반신, 72×64) ──
+sprite("_eye", {}, `
+  ..kkkkkk..
+  .kkkkkkkkk
+  kwwZiiIkkw
+  kwwiiIIkkw
+  .wwiiIIkw.
+  ..wwwwww..
+  ...ffff...`)
 
-// 책 한 권 (세로), 색만 바꿔 쓴다
+sprite("_merchant", { w: 95, h: 85, outline: "k" }, (c) => {
+  // 코트: 어깨 → 가슴, 왼쪽(그늘)은 어둡게
+  c.poly([2, 85, 10, 68, 25, 59, 70, 59, 85, 68, 92, 85], "b")
+  c.poly([2, 85, 10, 68, 25, 59, 35, 59, 29, 85], "N")
+  c.poly([70, 59, 85, 68, 92, 85, 78, 85, 75, 68], "B")
+  // 셔츠 V 깃 + 붉은 스카프
+  c.poly([35, 59, 60, 59, 48, 80], "s")
+  c.poly([35, 59, 40, 59, 48, 80], "S")
+  c.poly([42, 60, 52, 60, 50, 74, 45, 74], "q")
+  c.poly([42, 60, 46, 60, 46, 74, 45, 74], "R")
+  c.px(49, 62, "x")
+  // 라펠 (높은 깃)
+  c.poly([22, 55, 35, 59, 48, 80, 38, 85], "B")
+  c.poly([72, 55, 60, 59, 48, 80, 58, 85], "c")
+  c.line(35, 59, 48, 80, "n"); c.line(60, 59, 48, 80, "n")
+  c.px(39, 75, "z"); c.px(38, 81, "z")
+  // 목 (짧게, 턱 그림자)
+  c.rect(40, 51, 15, 9, "f"); c.hline(40, 51, 15, "G")
+  // 귀 (길고 위로 뾰족) — 위쪽 가장자리만 밝게
+  c.poly([28, 30, 1, 14, 5, 25, 28, 41], "f")
+  c.poly([68, 30, 94, 14, 90, 25, 68, 41], "e")
+  c.poly([25, 31, 9, 19, 10, 24, 25, 38], "r")
+  c.poly([70, 31, 86, 19, 85, 24, 70, 38], "r")
+  c.line(69, 30, 92, 14, "h")
+  // 머리 · 볼 · 뾰족한 턱
+  c.ellipse(48, 31, 21, 20, "e")
+  c.ellipse(48, 39, 20, 12, "e")
+  c.poly([40, 49, 55, 49, 50, 56, 45, 56], "e")
+  // 명암 (셀 음영): 왼쪽 그늘 · 모자 챙 그늘 · 턱 밑 · 오른쪽 이마 하이라이트
+  // 빛은 오른쪽 위: 머리를 오른쪽으로 민 타원 밖 = 왼쪽 초승달 그늘
+  c.recolor({ e: "f" }, (x, y) => ((x - 54) / 21) ** 2 + ((y - 33) / 22) ** 2 > 1, 1)
+  c.recolor({ e: "f" }, (x, y) => y < 21, 1)
+  c.recolor({ e: "f" }, (x, y) => y > 52, 1)
+  c.recolor({ e: "h" }, (x, y) => ((x - 60) / 9) ** 2 + ((y - 28) / 7) ** 2 < 1, 1)
+  c.px(65, 24, "H"); c.px(66, 25, "H"); c.px(66, 26, "H")
+  // 모자: 챙 → 몸통 → 띠 → 깃털
+  c.ellipse(48, 16, 32, 4, "P")
+  c.hline(16, 15, 64, "p")
+  c.poly([30, 16, 31, 2, 39, 0, 56, 0, 64, 2, 65, 16], "p")
+  c.poly([30, 16, 31, 2, 39, 0, 41, 0, 38, 16], "P")
+  c.recolor({ p: "o" }, [56, 2, 6, 11], 1)
+  c.rect(31, 10, 34, 4, "y"); c.hline(31, 10, 34, "z"); c.hline(31, 12, 34, "Y")
+  c.line(62, 9, 85, 0, "S", 2); c.line(64, 8, 84, 0, "s")
+  // 눈썹 (치켜올라간)
+  c.line(29, 21, 41, 25, "G"); c.line(29, 22, 41, 26, "G")
+  c.line(54, 25, 66, 21, "G"); c.line(54, 26, 66, 22, "G")
+  // 눈 + 외알 안경 (사슬은 코트로 늘어짐)
+  c.stamp("_eye", 31, 26); c.stamp("_eye", 54, 26)
+  c.ring(36, 30, 8, "y"); c.px(41, 24, "Z"); c.px(42, 25, "Z")
+  for (let k = 0; k < 11; k++) c.px(29 - Math.round(k * 0.6), 38 + k * 2, "z")
+  // 코: 매부리 + 둥근 코끝 (오른쪽 빛, 아래 그늘)
+  c.poly([46, 32, 49, 32, 53, 40, 49, 41], "e")
+  c.circ(51, 42, 3, "e")
+  c.line(46, 33, 48, 41, "f"); c.hline(48, 45, 6, "f")
+  c.px(47, 44, "G"); c.px(52, 45, "G")
+  c.line(50, 34, 52, 39, "h"); c.px(53, 41, "H"); c.px(52, 40, "h")
+  c.recolor({ e: "f" }, [45, 32, 48, 32, 49, 39, 48, 45, 45, 45])
+  c.recolor({ e: "h" }, [58, 37, 5, 2])
+  // 입: 한쪽만 올라간 웃음 (이빨 · 금니)
+  c.poly([39, 48, 55, 47, 58, 44, 54, 51, 42, 51], "m")
+  c.hline(41, 48, 13, "W"); c.px(55, 47, "W"); c.px(50, 48, "z"); c.px(51, 48, "z")
+  c.line(38, 48, 58, 44, "G")
+  c.hline(43, 52, 9, "f")
+  // 볼
+  c.recolor({ f: "r" }, [29, 42, 2], 0.5)
+  c.recolor({ e: "r", h: "r" }, [64, 41, 2], 0.5)
+})
+
+// ── 소품 ──
+sprite("_bottle", { outline: "k" }, `
+  ..444..
+  ..lal..
+  .qqqqq.
+  qZqqqqR
+  qxqqqqR
+  qqqqqRR
+  .qRRRR.`)
+sprite("_jar", { outline: "k" }, `
+  .5555.
+  SSSSSS
+  sSSSSB
+  sSSSSB
+  SSSSBB
+  .BBBB.`)
 sprite("_book", { outline: "k" }, `
-  RR
-  Ry
-  RR
-  RR
-  Ry
-  RR`)
-// 촛불
-sprite("_candle", {}, `
-  .z.
-  .H.
-  .b.
-  bbB
-  bbB
-  YYY`)
-// 매달린 등불
+  RRR
+  RzR
+  RRR
+  RRR
+  RzR
+  RRR
+  RRR`)
 sprite("_lantern", { outline: "k" }, `
-  .YY.
-  YYYY
-  YzzY
-  YzHY
-  YzzY
-  YYYY`)
-// 가격표
-sprite("_tag", {}, `
-  bbbb
-  bkkb
-  bbbb`)
-// 금화 더미
-sprite("_coins", { outline: "k" }, `
   ..yy..
-  .yyYy.
-  yyYyyY
-  yYyyYy`)
+  .yzzy.
+  yyyyyy
+  yLLLLy
+  yLFFLy
+  yLFFLy
+  yLLLLy
+  yyyyyy
+  .YYYY.`)
+sprite("_helmet", { outline: "k" }, `
+  ...jjjj...
+  .jjjMMMMM.
+  jjjMMMMMMJ
+  jMMMMMMMMJ
+  jMkkkkkkMJ
+  jMkMMMMkMJ
+  MMMJJJJMMJ
+  .JJJ..JJJ.`)
+// 동전 더미
+sprite("_coins", { outline: "k" }, `
+  ...zzz....
+  ..zZzzy...
+  .zzyyyyz..
+  zzZzzzyyy.
+  yyyyyyyyyY
+  YyyyyyyyYY`)
 
-// 세워 둔 큰 검
-sprite("_bigsword", { outline: "k" }, `
-  ..w..
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  .wmM.
-  YyyyY
-  ..E..
-  ..D..
-  ..E..
-  ..y..`)
-// 세워 둔 활 (왼쪽으로 휜 몸 + 곧은 시위)
-sprite("_bigbow", { outline: "k" }, `
-  ....dD
-  ...dDB
-  ...dDB
-  ..dD.B
-  ..dD.B
-  ..dD.B
-  .dD..B
-  .dD..B
-  .dD..B
-  dD...B
-  dD...B
-  EE...B
-  EE...B
-  EE...B
-  EE...B
-  EE...B
-  EE...B
-  EE...B
-  EE...B
-  dD...B
-  dD...B
-  .dD..B
-  .dD..B
-  .dD..B
-  ..dD.B
-  ..dD.B
-  ..dD.B
-  ...dDB
-  ...dDB
-  ....dD`)
+// ── 장면 ──
+scene("illust_shop", { w: 192, h: 96, bg: "#1a1420" },
+  // 뒷벽: 세로 판자 (판자마다 밝기 조금씩)
+  rect(0, 0, 192, 74, "3"),
+  (c) => {
+    for (let x = 0, n = 0; x < 192; x += 11, n++) {
+      if (n % 3 === 1) c.rect(x + 1, 0, 10, 74, "2")
+      c.vline(x, 0, 74, "1")
+    }
+  },
+  noise(0, 6, 192, 66, "2", 0.05, 7, "3"),
+  noise(0, 6, 192, 66, "4", 0.03, 9, "3"),
+  // 천장 들보
+  rect(0, 0, 192, 5, "2"), hline(0, 5, 192, "1"), hline(0, 6, 192, "0"),
+  (c) => { for (let x = 20; x < 192; x += 56) { c.rect(x, 0, 6, 7, "4"); c.vline(x + 5, 0, 7, "2") } },
 
-// 불빛이 닿으면 벽·나무만 한 단계 밝게 (테두리 검정은 그대로)
-const LIT = { 9: "8", 8: "E", E: "D", D: "d", d: "q" }
+  // 창문 (상인 뒤): 하늘 그러데이션 + 구름 + 먼 지붕
+  rect(62, 10, 68, 40, "0"),
+  grad(64, 12, 64, 36, "AAaal", "v", 0.7),
+  ellipse(80, 20, 9, 3, "l"), ellipse(88, 19, 6, 3, "l"), ellipse(118, 26, 8, 2, "l"), ellipse(112, 25, 5, 2, "l"),
+  dither(64, 22, 64, 4, ".", "l", 0.12),
+  poly([64, 48, 64, 38, 70, 38, 70, 34, 76, 30, 82, 34, 82, 40, 92, 40, 92, 36, 98, 36, 98, 40, 108, 38, 108, 32, 112, 26, 116, 32, 116, 40, 128, 38, 128, 48], "u"),
+  poly([64, 48, 64, 42, 74, 42, 78, 40, 88, 44, 100, 42, 112, 44, 128, 42, 128, 48], "U"),
+  // 창틀 · 십자 창살
+  box(62, 10, 68, 40, "1"), box(63, 11, 66, 38, "5"), rect(95, 12, 2, 36, "5"), rect(64, 29, 64, 2, "5"),
+  hline(62, 50, 68, "6"), hline(62, 51, 68, "2"),
+  // 창에서 들어오는 빛
+  layer("winlight", { light: LIT, density: 0.25 }, poly([62, 50, 130, 50, 150, 74, 42, 74], "k")),
 
-// 선반 한 칸 (나무 판 + 그림자)
-const shelf = (x, y, w) => [rect(x, y, w, 2, "d"), hline(x, y + 2, w, "E"), hline(x, y + 3, w, "k")]
+  // 왼쪽 선반: 투구 · 물약 · 단지 · 책
+  rect(3, 9, 52, 62, "1"), box(3, 9, 52, 62, "0"),
+  (c) => { for (const y of [27, 46, 64]) { c.rect(4, y, 50, 2, "5"); c.hline(4, y, 50, "6"); c.hline(4, y + 2, 50, "0") } },
+  stamp("_helmet", 7, 17), stamp("_jar", 22, 20), stamp("_bottle", 33, 18), stamp("_bottle", 43, 18, { swap: { q: "v", R: "O", x: "V" } }),
+  stamp("_book", 6, 37), stamp("_book", 10, 37, { swap: { R: "O", z: "V" } }), stamp("_book", 14, 38, { swap: { R: "T", z: "g" } }),
+  stamp("_book", 18, 37, { swap: { R: "p" } }),
+  stamp("_bottle", 26, 37, { swap: { q: "t", R: "T", x: "g" } }), stamp("_jar", 37, 39, { swap: { S: "6", s: "7", B: "5" } }),
+  stamp("_coins", 40, 57), stamp("_jar", 8, 56), stamp("_bottle", 22, 55),
 
-scene("illust_shop", { w: 128, h: 64, bg: "#1a1420" },
-  // 뒷벽: 어두운 세로 판자 + 들보
-  rect(0, 0, 128, 50, "8"),
-  (c) => { for (let x = 3; x < 128; x += 9) c.vline(x, 0, 50, "9") },
-  noise(0, 4, 128, 44, "9", 0.06, 3, "8"),
-  rect(0, 0, 128, 3, "D"), hline(0, 3, 128, "k"),
-  // 왼쪽 선반: 위 갑옷·투구, 아래 책·스킬서
-  rect(1, 6, 36, 40, "9"), box(1, 6, 36, 40, "k"),
-  ...shelf(2, 23, 34), ...shelf(2, 40, 34),
-  stamp("armor", 3, 7), stamp("helmet", 18, 7),
-  stamp("_candle", 32, 17),
-  stamp("_book", 4, 31), stamp("_book", 8, 31, { swap: { R: "A", y: "a" } }), stamp("_book", 12, 31, { swap: { R: "V", y: "v" } }),
-  stamp("skillbook", 17, 24), stamp("necklace", 26, 24),
-  // 오른쪽 선반: 책 줄 + 반지, 아래 신발·바지
-  rect(92, 6, 35, 40, "9"), box(92, 6, 35, 40, "k"),
-  ...shelf(93, 23, 33), ...shelf(93, 40, 33),
-  stamp("_book", 95, 14), stamp("_book", 99, 14, { swap: { R: "P", y: "p" } }), stamp("_book", 103, 14, { swap: { R: "A", y: "a" } }),
-  stamp("_book", 107, 14, { swap: { R: "V", y: "v" } }), stamp("_book", 111, 14),
-  stamp("ring", 116, 7), stamp("weapon_rogue", 96, 24), stamp("weapon_mage", 110, 24),
-  // 매달린 등불
-  vline(85, 4, 4, "k"), stamp("_lantern", 83, 8),
+  // 오른쪽 벽: 방패 · 칼 · 활 · 등불
+  rect(140, 9, 50, 62, "2"), box(140, 9, 50, 62, "1"),
+  circ(158, 32, 11, "R"), circ(158, 32, 9, "q"), ring(158, 32, 11, "4"), ring(158, 32, 10, "5"),
+  recolor({ q: "R" }, [147, 21, 11, 22]),
+  rect(157, 23, 2, 18, "z"), rect(150, 31, 16, 2, "z"), circ(158, 32, 2, "j"),
+  // 칼 (세로로 걸어 둠)
+  rect(178, 14, 3, 32, "j"), vline(180, 14, 32, "M"), px(179, 13, "j"),
+  rect(175, 46, 9, 2, "y"), hline(175, 46, 9, "z"), rect(178, 48, 3, 6, "2"), px(179, 54, "z"),
+  // 작은 선반: 물약 둘 · 약초 단지
+  rect(144, 56, 42, 2, "5"), hline(144, 56, 42, "6"), hline(144, 58, 42, "0"),
+  stamp("_bottle", 146, 47, { swap: { q: "v", R: "O", x: "V" } }), stamp("_jar", 158, 49, { swap: { S: "t", s: "g", B: "T" } }), stamp("_bottle", 168, 47, { swap: { q: "o", R: "p", x: "Z" } }),
+  // 걸어 둔 등불
+  vline(150, 0, 6, "0"), stamp("_lantern", 146, 6),
+  layer("lamp1", { light: LIT, density: 0.3 }, circ(149, 12, 26, "k")),
+  layer("lamp2", { light: LIT }, circ(149, 12, 12, "k")),
+
   // 상인 (카운터 뒤)
-  stamp("_merchant", 46, 14), stamp("_fist", 53, 43), stamp("_fist", 68, 43, { flip: "x" }),
-  // 카운터 옆에 세워 둔 검·활
-  stamp("_bigsword", 78, 22), stamp("_bigbow", 84, 17),
+  stamp("_merchant", 48, 1),
+
   // 카운터
-  rect(0, 48, 128, 3, "d"), hline(0, 48, 128, "q"), hline(0, 51, 128, "k"),
-  rect(0, 52, 128, 12, "D"),
-  (c) => { for (let x = 15; x < 128; x += 24) c.vline(x, 53, 11, "E") },
-  hline(0, 52, 128, "E"),
-  // 카운터 위 물건
-  stamp("potion", 4, 33), stamp("potion_hi", 16, 33), stamp("antidote", 28, 33),
-  stamp("_tag", 8, 49), stamp("_tag", 20, 49),
-  stamp("_coins", 47, 43), stamp("salve", 100, 33), stamp("enhance_stone", 112, 33),
-  stamp("_tag", 104, 49),
-  // 불빛
-  // 등불·촛불 빛: 둘레를 한 단계 밝게 (바깥은 점무늬로 흐리게)
-  layer("light", { light: LIT, density: 0.5 }, circ(85, 13, 16, "k"), circ(33, 18, 6, "k")),
-  layer("light2", { light: LIT }, circ(85, 13, 8, "k"), circ(33, 18, 3, "k")),
+  rect(0, 70, 192, 4, "5"), hline(0, 70, 192, "7"), hline(0, 71, 192, "6"), hline(0, 74, 192, "1"),
+  rect(0, 75, 192, 21, "3"),
+  (c) => { for (let x = 4; x < 192; x += 32) { c.box(x, 78, 26, 15, "2"); c.hline(x + 1, 79, 24, "4") } },
+  hline(0, 75, 192, "2"),
+  // 카운터 위: 물약 셋 · 동전 · 장부
+  stamp("_bottle", 14, 60), stamp("_bottle", 24, 60, { swap: { q: "v", R: "O", x: "V" } }), stamp("_bottle", 34, 60, { swap: { q: "t", R: "T", x: "g" } }),
+  stamp("_coins", 140, 64), stamp("_coins", 150, 65),
+  poly([158, 70, 164, 63, 186, 63, 190, 70], "s"), line(174, 63, 174, 70, "S"), hline(166, 65, 6, "S"), hline(166, 67, 5, "S"), hline(177, 65, 7, "S"),
+  line(184, 58, 179, 66, "w"),
+
+  // 가장자리 어둡게 (점무늬)
+  layer("vig", { shade: DIM, density: 0.5 }, rect(0, 0, 192, 3, "k"), rect(0, 0, 3, 96, "k"), rect(189, 0, 3, 96, "k")),
 )
