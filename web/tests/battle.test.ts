@@ -130,7 +130,7 @@ describe('전투 진행', () => {
     expect(b.cooldown('w_bash')).toBe(4);
     const again = b.getChoices().find((x) => x.skillId === 'w_bash')!;
     expect(again.enabled).toBe(false);
-    expect(again.note).toBe('4턴 후 사용 가능');
+    expect(again.note).toBe('4턴');
     for (let i = 3; i >= 0; i--) {
       b.execute(b.getChoices()[0]);
       expect(b.cooldown('w_bash')).toBe(i);

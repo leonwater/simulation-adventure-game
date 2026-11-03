@@ -34,6 +34,12 @@ const PERK_SHORT: Record<Job, string> = {
   Warrior: '맞을 때 피해 절반 + 반격', Archer: '기본 공격 방어 무시', Rogue: '스킬 치명타 확률·피해 ↑', Mage: '스킬 피해 ↑',
 };
 
+/** 고유 능력치를 정확한 이름과 값으로 [[이름, 값], …] (캐릭터 등급 카드). r = 등급 순번 */
+export function perkStats(job: Job, r: number): [string, string][] {
+  if (job === 'Rogue') return [['치명타 확률', percent(B.JobPerk.Rogue[r])], ['치명타 피해', percent(B.JobPerk.Rogue[r] * B.RogueCritDamageRatio)]];
+  return [[{ Warrior: '반격 확률', Archer: '기본 공격 관통', Mage: '스킬 피해' }[job as 'Warrior'], perkValue(job, r)]];
+}
+
 /** 고유 능력치 값 (도적은 '확률 · 피해'). r = 등급 순번 */
 export const perkValue = (job: Job, r: number): string => (job === 'Rogue'
   ? `${percent(B.JobPerk.Rogue[r])} · ${percent(B.JobPerk.Rogue[r] * B.RogueCritDamageRatio)}`

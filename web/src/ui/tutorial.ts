@@ -1,6 +1,8 @@
 import { B } from '../core/balance';
 import type { TutorialStage } from '../core/save';
+import { jobData, PERKS } from '../core/jobs';
 import { josa } from '../core/names';
+import { skillDef, startingSkill } from '../core/skills';
 import { coach } from './coach';
 import { S } from './game';
 import { button, h, row } from './kit';
@@ -158,9 +160,9 @@ function onDungeon(): void {
   if (run0 && run0.BossDefeated && document.querySelector('[data-anchor="dungeon.home"]')) {
     return doIt('dungeon.home', `보스를 쓰러뜨렸어요! 첫 모험은 여기까지예요. ${H("'마을로 귀환한다'")}를 눌러 돌아가세요.`);
   }
-  run([info('dun.map', 'dungeon.map', '미니맵', `${H('금색')}이 지금 위치예요. 미니맵을 누르면 전체 지도가 열리고, 탐험을 마친 방으로 ${H('순간이동')}할 수 있어요.`)], () => {
+  run([info('tut.job', null, `${jobData(S.c.Job).name} 안내`, jobGuide()), info('dun.map', 'dungeon.map', '미니맵', `${H('금색')}이 지금 위치예요. 미니맵을 누르면 전체 지도가 열리고, 탐험을 마친 방으로 ${H('순간이동')}할 수 있어요.`)], () => {
     if (run0 && run0.Map.Rooms.some((r) => r.Type === 'Return' && r.Visited)) {
-      run([info('dun.return', 'dungeon.return', '귀환', `${H('귀환 마법진')}을 찾았어요! 이제 ${good("'귀환'")} 버튼으로 언제든 마을로 돌아갈 수 있어요.`)], null);
+      run([info('dun.return', 'dungeon.return', '귀환', `${H('귀환 마법진')}을 찾았어요! 다음 모험부터는 여기서 ${good("'귀환'")} 버튼으로 언제든 돌아갈 수 있어요. 첫 모험은 ${H('보스를 쓰러뜨려야')} 끝나요.`)], null);
       return;
     }
     if (!S.tipShown('dun.go') && document.querySelector('[data-anchor="dungeon.choice0"]')) {
@@ -168,6 +170,15 @@ function onDungeon(): void {
       doIt('dungeon.choice0', `아래 ${H('방향키')}로 갈 길을 골라 보세요. ${H('금색')}이 새 방이에요.`);
     }
   });
+}
+
+/** 첫 던전에 들어가면: 고른 직업 소개 (기본 공격 · 고유 능력치 · 시작 스킬). */
+function jobGuide(): string {
+  const c = S.c;
+  const perk = PERKS[c.Job];
+  const start = skillDef(startingSkill(c.Job));
+  const basic = c.Job === 'Mage' ? `기본 공격 자리는 ${H('에너지 볼')}(재사용 ${B.EnergyBallCooldown}턴)` : c.Job === 'Archer' ? `${H('기본 공격')}이 주력` : `${H('기본 공격')}은 재사용 없이 매 턴`;
+  return `${H(jobData(c.Job).name)}: ${basic}이에요. 고유 능력치 ${H(perk.name)}(${perk.about})는 ${H('모험가 등급')}이 오를수록 커져요. 시작 스킬 ${H(start?.Name ?? '')}: ${start?.Effect ?? ''}.`;
 }
 
 /** 직업별 전투 안내 (v3.7 규칙). */

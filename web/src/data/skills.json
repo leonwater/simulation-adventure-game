@@ -90,14 +90,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "2턴 동안 반격 확률 +40%",
+    "Effect": "다음 공격 한 번 반격",
     "Role": "보조",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": false,
     "NeedsTarget": false,
     "SuccessText": "성공률 100%",
-    "Description": "2턴 동안 반격 확률 +40% · 재사용 5턴"
+    "Description": "2턴 동안 다음 공격 한 번을 반드시 막고 반격 · 재사용 5턴"
   },
   {
     "Id": "w_shield",

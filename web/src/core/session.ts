@@ -474,7 +474,8 @@ export class GameSession {
 
   /** 귀환 방(발견한 경우)·이벤트·보스 처치 후 마을로 돌아간다. */
   get canReturn(): boolean {
-    return this.inDungeon && !this.battle && (dungeon.returnRoomFound(this.run!) || this.run!.BossDefeated);
+    // 튜토리얼 던전은 보스를 잡아야만 돌아간다 (귀환 마법진은 안내만)
+    return this.inDungeon && !this.battle && (this.run!.BossDefeated || (!this.inTutorialRun && dungeon.returnRoomFound(this.run!)));
   }
 
   returnToTown(): void {

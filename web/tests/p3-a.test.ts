@@ -94,6 +94,20 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     }
   });
 
+  it('반격 태세 (v3.10): 다음 직접 공격 한 번을 반드시 막고 반격, 그 뒤로는 사라진다', () => {
+    const { b } = setup12('Warrior', null, 1);
+    b.enemies[0].attack = 50;
+    b.player.counter = 0; // 고유 반격 확률은 빼고 반격 태세만
+    b.player.statuses.apply('Riposte', 40, 2);
+    const attack = () => b.getChoices().find((x) => x.kind === 'Attack')!;
+    b.execute(attack());
+    expect(b.lastEvents.some((e) => e.kind === 'Damage' && e.target === -1 && e.damage === 'Blocked')).toBe(true);
+    expect(b.lastEvents.some((e) => e.kind === 'Damage' && e.actor === -1 && e.damage === 'Counter')).toBe(true);
+    expect(b.player.statuses.has('Riposte')).toBe(false);
+    b.execute(attack());
+    expect(b.lastEvents.some((e) => e.damage === 'Blocked' || e.damage === 'Counter')).toBe(false);
+  });
+
   it('여러 번 때리는 스킬은 타격마다 판정', () => {
     const { b } = setup12('Archer', 'a_flash', 1);
     b.execute(choice12(b, 'a_flash'));

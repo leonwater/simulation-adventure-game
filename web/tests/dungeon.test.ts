@@ -18,8 +18,8 @@ import {
 import { addEffect, afterBattleEffects, applyEffectsToBattle, hasEffect, onRestEffects } from '../src/core/explore';
 import { generateFloor, rollRoomTypes, violations } from '../src/core/generator';
 import { newGuildState, onBossKilled } from '../src/core/guild';
-import { addItem, countOf, createConsumable } from '../src/core/items';
-import { collectRewards } from '../src/core/loot';
+import { addItem, countOf, createConsumable, createGear } from '../src/core/items';
+import { applyLoot, collectRewards, newLootReport } from '../src/core/loot';
 import { branchesOnBossPath, deadEnds, distances, getRoom, countOfType, isConnected } from '../src/core/map';
 import type { FloorMap, Room } from '../src/core/map';
 import { becomeMerchant, chainEvent, findReturn, linkBoss, revealRooms, spawnTreasure } from '../src/core/mapevents';
@@ -339,6 +339,17 @@ describe('이벤트 (DungeonTests·SpecialEventTests)', () => {
       expect(room.Cleared).toBe(true);
     }
     throw new Error('성공한 적이 없다');
+  });
+
+  it('가방이 가득 차 못 가진 물품은 PendingDrops로 남는다 (v3.10, 99개 제한은 제외)', () => {
+    const c = createCharacter('a', 'Warrior');
+    c.Inventory.Capacity = c.Inventory.Items.length;
+    const run = startRun(c, 1, new Rng(1));
+    const r = newLootReport();
+    r.Items.push(createGear('Weapon', 'Common', 1, 'Warrior', 'Strength'));
+    applyLoot(c, run, r);
+    expect(r.Dropped.length).toBe(1);
+    expect(run.PendingDrops?.length).toBe(1);
   });
 
   it('피의 우물: 5번까지, 바칠수록 경험치가 커진다', () => {

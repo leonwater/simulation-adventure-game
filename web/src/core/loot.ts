@@ -6,7 +6,7 @@ import type { EventReward } from './events';
 import type { GuildState } from './guild';
 import { onEnemyKilled } from './guild';
 import type { ItemInstance } from './items';
-import { addItem, createConsumable, createDrop, createEnhanceStone, createMaterial, createSkillBook, displayName, rollDropGrade } from './items';
+import { addItem, createConsumable, createDrop, createEnhanceStone, createMaterial, createSkillBook, displayName, overConsumableLimit, rollDropGrade } from './items';
 import { rollItemJob } from './jobs';
 import { josa } from './names';
 import type { Rng } from './rng';
@@ -147,7 +147,11 @@ export function applyLoot(c: Character, run: DungeonRun | null, report: LootRepo
     if (addItem(c.Inventory, item)) {
       kept.push(item);
       run?.Loot.push(label);
-    } else report.Dropped.push(item);
+    } else {
+      report.Dropped.push(item);
+      // 가방이 가득 차서 못 가진 것은 나중에 가방 물품과 바꿀 수 있게 남긴다 (99개 제한은 바꿔도 소용없으니 제외)
+      if (run && !overConsumableLimit(c.Inventory, item)) (run.PendingDrops ??= []).push(item);
+    }
   }
   report.Items = kept;
 }

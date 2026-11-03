@@ -18,7 +18,8 @@ import { describeStatus } from './statustext';
 export type BattleOutcome = 'Ongoing' | 'Victory' | 'Defeat' | 'Fled';
 export type ActionKind = 'Wait' | 'Attack' | 'Skill' | 'Item' | 'Flee';
 export type LogTone = 'Normal' | 'Good' | 'Bad' | 'System';
-export type DamageKind = 'Normal' | 'Crit' | 'Poison' | 'Bleed' | 'Burn' | 'Heal';
+/** Counter = 전사 반격, Blocked = 막아서 절반만 받은 피격, Pierce = 궁수 관통 기본 공격 (화면에서 따로 보여 준다). */
+export type DamageKind = 'Normal' | 'Crit' | 'Poison' | 'Bleed' | 'Burn' | 'Heal' | 'Counter' | 'Blocked' | 'Pierce';
 export type BattleEventKind = 'Act' | 'Damage' | 'Miss' | 'Heal' | 'Status' | 'Defeat' | 'Text' | 'Spawn';
 
 export interface LogLine {
@@ -257,7 +258,7 @@ export class Battle {
       const def = skillDef(id);
       if (!def) continue;
       const cd = this.cooldown(id);
-      const note = silenced ? '침묵 상태' : cd > 0 ? `${cd}턴 후 사용 가능` : '';
+      const note = silenced ? '침묵 상태' : cd > 0 ? `${cd}턴` : '';
       const enabled = note.length === 0;
       if (def.NeedsTarget && enabled) {
         for (const e of alive) {
@@ -520,7 +521,7 @@ export class Battle {
         : `에너지 볼 — 무기 공격력·등급에 비례하는 단일 공격, 재사용 ${B.EnergyBallCooldown}턴`;
     return alive.map((e) => choice({
       kind: 'Attack', label: `${name} · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus),
-      enabled: !mage || stuck || cd <= 0, note: mage && !stuck && cd > 0 ? `${cd}턴 후 사용 가능` : '',
+      enabled: !mage || stuck || cd <= 0, note: mage && !stuck && cd > 0 ? `${cd}턴` : '',
       damageNote: `피해 약 ${damage(this.player, e, mult, false, true)}${hits > 1 ? ` × ${hits}회` : ''}${guardNote(e)}`,
       detail: `${what}\n\n${this.damageFormula(mult, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, B.BasicAttackBonus, true)}`,
     }));
@@ -651,7 +652,7 @@ export class Battle {
       total += dmg;
       landed++;
       anyCrit = anyCrit || crit;
-      this.event('Damage', -1, ti, { amount: dmg, damage: crit ? 'Crit' : 'Normal', hpAfter: target.hp });
+      this.event('Damage', -1, ti, { amount: dmg, damage: crit ? 'Crit' : basic && this.player.basicPierce + this.player.statuses.value('Piercing') > 0 ? 'Pierce' : 'Normal', hpAfter: target.hp });
       this.afterEnemyHit(target, dmg, true);
     }
     const what = skill ? skill.Name : this.character.Job === 'Mage' ? '에너지 볼' : '공격';
@@ -917,14 +918,16 @@ export class Battle {
   private hitPlayer(e: Combatant, mult: number, what: string): number {
     const ei = this.indexOf(e);
     let dmg = damage(e, this.player, mult, false);
-    const counter = this.player.counter > 0 ? this.player.counter + this.player.statuses.value('Riposte') / 100 : 0;
-    if (counter > 0 && this.player.alive && this.rng.chance(counter)) {
+    // 반격 태세: 다음 직접 공격 한 번은 반드시 막는다 (여러 번 때리면 첫 타만, 지속 피해는 이 길로 오지 않음)
+    let blocked = this.player.alive && this.player.statuses.remove('Riposte');
+    if (!blocked && this.player.counter > 0 && this.player.alive && this.rng.chance(this.player.counter)) blocked = true;
+    if (blocked) {
       dmg = Math.max(1, roundEven(dmg / 2));
       this.pendingRiposte = true;
     }
     this.player.hp = Math.max(0, this.player.hp - dmg);
-    if (what) this.add(`${e.name}의 ${what}. ${dmg} 피해${this.pendingRiposte ? ' (막아냄)' : ''}`, 'Bad');
-    this.event('Damage', ei, -1, { amount: dmg, hpAfter: this.player.hp });
+    if (what) this.add(`${e.name}의 ${what}. ${dmg} 피해${blocked ? ' (막아냄)' : ''}`, 'Bad');
+    this.event('Damage', ei, -1, { amount: dmg, damage: blocked ? 'Blocked' : 'Normal', hpAfter: this.player.hp });
     return dmg;
   }
 
@@ -934,12 +937,11 @@ export class Battle {
     this.pendingRiposte = false;
     if (!this.player.alive || !e.alive) return;
     const ei = this.indexOf(e);
-    this.event('Text', -1, ei, { text: '반격!' });
     if (this.blockedByBarrier(e)) return;
     const dmg = damage(this.player, e, B.RiposteDamage * jobData(this.character.Job).basicAttackMultiplier, false);
     e.hp = Math.max(0, e.hp - absorbShield(e, dmg));
     this.add(`반격! ${e.name}에게 ${dmg} 피해`, 'Good');
-    this.event('Damage', -1, ei, { amount: dmg, damage: 'Normal', hpAfter: e.hp });
+    this.event('Damage', -1, ei, { amount: dmg, damage: 'Counter', hpAfter: e.hp });
     if (!e.alive) this.onEnemyDown(e);
   }
 

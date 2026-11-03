@@ -3,7 +3,7 @@ import { attack, maxChallengeFloor, skillDamageBonus, totalStat } from '../core/
 import { cannotEquipSkillReason, getSkillState, isSkillEquipped, maxSkillLevel, powerMultiplier, trainingEffect } from '../core/equipment';
 import { jobData } from '../core/jobs';
 import { Names } from '../core/names';
-import { isUtility, skillCooldown, skillDef, skillTurns } from '../core/skills';
+import { skillCooldown, skillDef, skillTurns } from '../core/skills';
 import { isDebuff } from '../core/status';
 import { describeStatus, explainStatus } from '../core/statustext';
 import { S } from './game';
@@ -47,7 +47,8 @@ export function showSkillDetail(id: string, actions: { equip: (id: string) => vo
       m.body.append(line('피해 계산', `공격력 ${atk} × 배율 ${mults.map((x) => Math.round(x * power * 100)).join(' → ')}% × 방어 보정 ${guard.toFixed(2)}\n= 약 ${dmg.join(' → ')}${def.Hits > 1 ? ` × ${def.Hits}회` : ''}${def.CritChance > 0 || def.GuaranteedCrit ? ` · ${def.GuaranteedCrit ? '치명타 확정' : `치명타 확률 ${Math.round(def.CritChance * 100)}%`}` : ''}`));
     }
     m.body.append(
-      line('수련', isUtility(def) ? `1단계 지속 +1턴 · 2단계 재사용 -1턴 (지금 ${trainingEffect(def, st.Level)})` : `+${st.Level} / ${maxSkillLevel(def)}단계`),
+      // 공격·비전투 스킬 같은 모양: +지금 / 최대 단계 · 지금 효과 (비전투는 1단계 지속 +1턴 · 2단계 재사용 -1턴이 끝)
+      line('수련', `+${st.Level} / ${maxSkillLevel(def)}단계 · ${trainingEffect(def, st.Level)}`),
       line('장착 조건', `Lv.${def.ReqLevel} · ${def.ReqRank} 등급`));
     for (const s of def.Statuses) {
       const who = s.OnSelf || def.Target === 'Self' ? '자신' : '적';

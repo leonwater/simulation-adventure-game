@@ -275,6 +275,10 @@ export class AllocationDraft {
   get hasChanges(): boolean {
     return this.pending.some((p) => p > 0);
   }
+  /** 배분을 확정했을 때의 캐릭터 (HP·공격력 같은 효과를 미리 보여 줄 때만 쓴다, 원본은 그대로). */
+  preview(): Character {
+    return { ...this.c, BaseStats: { Values: this.c.BaseStats.Values.map((v, i) => v + this.pending[i]) } };
+  }
   canAdd(stat: Stat): boolean {
     return this.remaining > 0 && canAllocate(jobData(this.c.Job), stat) && getStat(this.c.BaseStats, stat) + this.pendingOf(stat) < B.StatCap;
   }

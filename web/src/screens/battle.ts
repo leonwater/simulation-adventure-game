@@ -46,7 +46,9 @@ interface UnitView {
 
 /** 상태 이름(사건 문구) → 상태 종류. */
 const STATUS_BY_NAME = new Map<string, StatusType>(STATUSES.map((t) => [Names.status(t), t]));
-const DAMAGE_COLOR: Record<DamageKind, string> = { Normal: '#fff', Crit: 'var(--gold)', Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Heal: '#A8E6A0' };
+const DAMAGE_COLOR: Record<DamageKind, string> = { Normal: '#fff', Crit: 'var(--gold)', Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Heal: '#A8E6A0', Counter: '#FF9A4A', Blocked: '#8FC7FF', Pierce: '#9EE6E0' };
+/** 피해 숫자 앞 이름표 · 글씨 크기 (치명타·반격처럼 특별한 타격은 크게). */
+const DAMAGE_TAG: Partial<Record<DamageKind, [string, number]>> = { Crit: ['치명타! ', 26], Counter: ['반격! ', 25], Blocked: ['막음 ', 20], Pierce: ['관통 ', 21] };
 const TONE_COLOR: Record<LogTone, string> = { Normal: 'var(--log-ink)', Good: 'var(--gold)', Bad: 'var(--red-light)', System: 'var(--text)' };
 
 /** 적 자리 = 배열 순서: 왼쪽 열이 전방(0·2), 오른쪽 열이 후방(1·3). */
@@ -107,7 +109,7 @@ export class BattleScreen extends Screen {
     this.fixTarget();
     this.units.clear();
     const th = dungeonTheme(themeIndex(b.floor));
-    const stageWrap = h('div', { class: 'stagewrap', style: { background: th.stage } });
+    const stageWrap = h('div', { class: `stagewrap${b.isBoss ? ' boss' : ''}`, style: { background: th.stage } }); // 보스전: 붉은 기운이 은은하게 맥동
     this.stage = h('div', { class: 'stage' });
     stageWrap.append(h('div', { style: { position: 'absolute', left: '0', right: '0', bottom: '0', height: '70px', background: `linear-gradient(to top, ${th.line}59, transparent)` } }), this.stage);
     this.buildStage();
@@ -155,7 +157,8 @@ export class BattleScreen extends Screen {
       speed.textContent = `${settings.battleSpeed}×`;
     });
     return h('div', { class: 'header', style: { height: '60px', padding: '6px 12px 6px 16px', gap: '6px' } },
-      h('b', { class: 'grow', style: { fontSize: '15px' } }, `${b.floor}층 · ${b.isBoss ? '보스전' : '전투'} `, colored(`${b.turn}턴째`, 'var(--sub)')),
+      b.isBoss ? h('span', { class: 'boss-badge', 'aria-hidden': 'true' }, icon('room_boss', 20, '#ffd2c8')) : null,
+      h('b', { class: 'grow', style: { fontSize: '15px' } }, `${b.floor}층 · `, b.isBoss ? colored('보스전 ', 'var(--boss)') : '전투 ', colored(`${b.turn}턴째`, 'var(--sub)')),
       speed,
       sq([icon('character', 22)], () => {
         if (!this.playing && !this.leaving) showCharacterInfo(b);
@@ -350,7 +353,7 @@ export class BattleScreen extends Screen {
       h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name', style: skillColor ? { color: skillColor } : {} }, label), subText ? h('span', { class: 'dmg' }, subText) : null),
       right ? h('div', { class: 'col', style: { alignItems: 'flex-end', gap: '0' } },
         perHit ? h('span', { style: { fontSize: '11px', color: 'var(--sub)' } }, '타격당') : null,
-        h('span', { style: { fontSize: pct ? '15px' : '12px', fontWeight: pct ? '700' : '400', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right' } }, right)) : null);
+        h('span', { style: { fontSize: pct ? '15px' : '14px', fontWeight: '700', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right', whiteSpace: 'nowrap' } }, right)) : null); // 재사용 대기 'N턴'은 한 줄로 크게
     longPress(el, () => {
       if (!tutorial.running) this.showDetail(ch); // 튜토리얼 중에는 안내한 행동만
     }, () => this.pick(ch));
@@ -450,17 +453,20 @@ export class BattleScreen extends Screen {
       case 'Damage':
         this.shown(e.target, e.hpAfter);
         if (unit) {
-          this.shake(unit.shape, e.damage === 'Crit' ? 10 : 6);
+          this.shake(unit.shape, e.damage === 'Crit' || e.damage === 'Counter' ? 10 : e.damage === 'Blocked' ? 3 : 6);
           this.flashUnit(unit.shape, e.target < 0 ? 'red' : 'white');
           this.setBar(unit, e.hpAfter, e.shield, e.barrier);
           const at = this.spot(e.target)!;
           if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') fxTick(this.stage, at, e.damage);
-          else fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit');
+          else fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit' || e.damage === 'Counter');
         }
         // 독·출혈·화상처럼 턴마다 들어가는 피해는 이름을 붙여 공격 피해와 헷갈리지 않게 한다
         if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') this.float(e.target, `${Names.status(e.damage)} ${e.amount}`, DAMAGE_COLOR[e.damage], 15, true);
-        else this.float(e.target, `${e.damage === 'Crit' ? '치명타! ' : ''}${e.amount}`, DAMAGE_COLOR[e.damage], e.damage === 'Crit' ? 26 : 19, true);
-        if (e.damage === 'Crit' && e.actor === -1) vibrate();
+        else {
+          const [tag, size] = DAMAGE_TAG[e.damage] ?? ['', 19];
+          this.float(e.target, `${tag}${e.amount}`, DAMAGE_COLOR[e.damage], size, true);
+        }
+        if ((e.damage === 'Crit' || e.damage === 'Counter') && e.actor === -1) vibrate();
         if (e.target < 0 && e.actor >= 0) vibrate();
         break;
       case 'Miss':
@@ -582,7 +588,7 @@ export class BattleScreen extends Screen {
       if (loot.Gold !== 0) card.append(h('div', null, `· 골드 +${loot.Gold.toLocaleString('en-US')}`));
       if (loot.Exp !== 0) card.append(h('div', null, `· 경험치 +${loot.Exp.toLocaleString('en-US')}`));
       for (const i of mergeStacks(loot.Items)) card.append(h('div', null, `· ${i.Count > 1 ? `${i.Name}${i.Enhance > 0 ? ` +${i.Enhance}` : ''} ×${i.Count}` : i.Enhance > 0 ? `${i.Name} +${i.Enhance}` : i.Name}`));
-      if (loot.Dropped.length > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `· 가방이 가득 차거나 99개라 두고 옴: ${itemNames(loot.Dropped)}`));
+      if (loot.Dropped.length > 0) card.append(h('div', { style: { color: 'var(--red-light)', fontSize: '13px' } }, `· 가방이 가득 참: ${itemNames(loot.Dropped)} (던전에서 가방 물품과 바꿀 수 있어요)`));
       if (loot.LevelsGained > 0) card.append(h('b', { class: 'gold' }, `레벨 업! Lv.${b.character.Level} · 능력치 포인트 +${loot.LevelsGained * B.PointsPerLevel}`));
     }
     parent.append(h('div', { style: { overflowY: 'auto', flex: '1' } }, card));

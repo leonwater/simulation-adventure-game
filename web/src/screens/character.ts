@@ -3,13 +3,13 @@ import {
   AllocationDraft, attack, badgeBonus, dropBonus, jobPerk, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
   percent, promotionStatus, resist, totalStat, weaponAttack, defense,
 } from '../core/character';
-import type { Stat } from '../core/enums';
+import type { Job, Stat } from '../core/enums';
 import { RANKS, STATS } from '../core/enums';
 import { jobData, PERKS } from '../core/jobs';
 import { Names } from '../core/names';
 import { bottomNav, jobLine, townBar } from '../ui/chrome';
 import { S } from '../ui/game';
-import { perkValue, showJobInfo } from '../ui/jobinfo';
+import { perkStats, showJobInfo } from '../ui/jobinfo';
 import { button, divider, h, icon, progress, row, sub } from '../ui/kit';
 import { colored } from '../ui/items';
 import { modal, toast } from '../ui/overlay';
@@ -20,9 +20,9 @@ import { navigate } from './nav';
 
 
 /** 능력치가 주는 효과 (상세 능력치 창의 한 줄 설명). */
-function statEffect(s: Stat): string {
+function statEffect(s: Stat, job: Job): string {
   switch (s) {
-    case 'Vitality': return '최대 HP 증가 (직업마다 1당 HP가 다름)';
+    case 'Vitality': return `최대 HP 증가 (${jobData(job).name} 체력 1당 HP +${jobData(job).hpPerVitality})`;
     case 'Spirit': return '독·기절 같은 디버프에 걸리지 않을 확률';
     case 'Luck': return '아이템 드롭률과 이벤트 판정 성공률';
     case 'Strength': return `전사의 공격력 (1당 +${B.AttackPerMainStat})`;
@@ -71,14 +71,11 @@ export class CharacterScreen extends Screen {
     // 승급 조건: 이름은 작게, 값은 크게 · 채우면 초록
     const cond = (label: string, cur: number, req: number): HTMLElement => h('div', { class: `promo-cond${cur >= req ? ' done' : ''}` },
       h('span', null, label), h('b', null, `${Math.min(cur, req)}/${req}`));
-    const next = st.isMaxRank ? -1 : RANKS.indexOf(st.next);
     // 등급 카드를 누르면 직업 정보 (고유 능력치의 등급별 값)
     return h('div', { class: 'card', role: 'button', style: { gap: '10px', padding: '12px 14px', cursor: 'pointer' }, on: { click: () => showJobInfo(c.Job, c.Rank) } },
       row(icon(rankIcon(c.Rank), 32), h('b', { class: 'grow', style: { fontSize: '15px' } }, `${c.Rank} 등급 모험가`), h('span', { class: 'gold', style: { fontSize: '13px' } }, `기본 능력치 +${Math.round(badgeBonus(c.Rank) * 100)}%`)),
-      // 직업 고유 능력치: 아이콘 · 지금 값 → 다음 등급 값 (설명은 누르면 나오는 직업 정보에)
-      row(icon(PERKS[c.Job].icon, 24), h('b', { class: 'gold', style: { fontSize: '15px' } }, perkValue(c.Job, RANKS.indexOf(c.Rank))),
-        next < 0 ? null : h('span', { class: 'sub', style: { fontSize: '13px' } }, '→ '), next < 0 ? null : icon(rankIcon(st.next), 18),
-        next < 0 ? null : h('span', { class: 'sub', style: { fontSize: '13px' } }, perkValue(c.Job, next))),
+      // 직업 고유 능력치: 지금 등급 값만, 정확한 이름으로 (등급별 값은 누르면 나오는 직업 정보에)
+      row(icon(PERKS[c.Job].icon, 24), h('div', { class: 'perk-now' }, ...perkStats(c.Job, RANKS.indexOf(c.Rank)).map(([k, v]) => h('span', { class: 'nw' }, k, ' ', h('b', null, v))))),
       st.isMaxRank
         ? sub('최고 등급입니다')
         : h('div', { class: 'col', style: { gap: '6px' } },
@@ -117,18 +114,19 @@ export class CharacterScreen extends Screen {
   private details(): void {
     const c = S.c;
     const m = modal('상세 능력치');
-    // 이름은 한 줄 그대로, 긴 값만 오른쪽에서 접힌다
-    const line = (ic: string, k: string, v: string | HTMLElement): HTMLElement => row(icon(ic, 18),
-      h('div', { class: 'nw', style: { minHeight: '30px', lineHeight: '30px', flexShrink: '0' } }, k), h('div', { class: 'grow', style: { textAlign: 'right', minWidth: '0' } }, v));
+    // 이름은 한 줄 그대로(조건은 이름 아래 작은 글씨), 값은 오른쪽 — 오른쪽이 넓어 줄바꿈이 적다
+    const line = (ic: string, k: string, v: string | HTMLElement, note = ''): HTMLElement => row(icon(ic, 18),
+      h('div', { class: 'col', style: { minHeight: '30px', justifyContent: 'center', flexShrink: '0', gap: '0' } }, h('span', { class: 'nw' }, k), note ? h('span', { class: 'sub nw', style: { fontSize: '11px' } }, note) : null),
+      h('div', { class: 'grow', style: { textAlign: 'right', minWidth: '0', fontSize: '13px' } }, v));
     const atk = jobData(c.Job).attackStat;
     m.body.append(
       line(statIcon('Vitality'), '최대 HP', String(maxHp(c))),
-      line(statIcon(atk), '공격력', h('span', null, String(attack(c)), colored(` (${Names.stat(atk)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)})`, 'var(--sub)'))),
+      line(statIcon(atk), '공격력', h('span', null, colored(`(${Names.stat(atk)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)}) `, 'var(--sub)'), h('b', null, String(attack(c))))),
       line('status_fortify', '방어력', String(defense(c))),
       line(statIcon('Agility'), '회피', percent(evasion(c))),
-      line(PERKS[c.Job].icon, `${PERKS[c.Job].name} (모험가 등급 전용)`, PERKS[c.Job].text(percent(jobPerk(c)))),
+      line(PERKS[c.Job].icon, PERKS[c.Job].name, PERKS[c.Job].text(percent(jobPerk(c))), '모험가 등급 전용'),
       line(statIcon('Spirit'), '상태 이상 저항', percent(resist(c))),
-      ...(c.Job === 'Rogue' ? [line('perk_vital', '치명타', `도적 스킬 전용 · 치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`)] : []),
+      ...(c.Job === 'Rogue' ? [line('perk_vital', '치명타', `치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`, '도적 스킬 전용')] : []),
       line(statIcon('Luck'), '드롭률', `+${percent(dropBonus(c) - 1)}`),
       line(statIcon('Luck'), '이벤트 판정', `+${percent(eventLuckBonus(c))}`),
       divider(),
@@ -140,7 +138,7 @@ export class CharacterScreen extends Screen {
           icon(statIcon(s), 28),
           h('div', { class: 'col grow', style: { gap: '2px' } },
             h('b', null, `${Names.stat(s)} `, colored(`${ownStat(c, s)}${eq > 0 ? `(+${eq})` : ''}`, 'var(--gold)'), eq > 0 ? colored(` · 합계 ${totalStat(c, s)}`, 'var(--sub)') : null, colored(` · 최대 ${B.StatCap}`, 'var(--sub)')),
-            h('div', { class: 'sub' }, statEffect(s), ...(mine ? [] : [' · ', h('span', { class: 'nw' }, '이 직업은 배분 불가')]))));
+            h('div', { class: 'sub' }, statEffect(s, c.Job), ...(mine ? [] : [' · ', h('span', { class: 'nw' }, '이 직업은 배분 불가')]))));
       }),
       sub(`등급 효과(+${Math.round(badgeBonus(c.Rank) * 100)}%)는 장비·버프를 제외한 캐릭터 자체 능력치에만 곱합니다.`));
   }

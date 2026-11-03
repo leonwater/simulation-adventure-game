@@ -47,6 +47,8 @@ const showSituation = (run: DungeonRun): boolean => {
 const exploringAfterBoss = new WeakSet<DungeonRun>();
 
 export class DungeonScreen extends Screen {
+  /** 가방이 가득 차 못 가진 물품을 바꿀지 묻는 창은 이 화면에서만 (ui/bagfull.ts). */
+  readonly dropsHere = true;
   constructor(private levelUp = false) {
     super();
   }
@@ -88,7 +90,7 @@ export class DungeonScreen extends Screen {
         ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
         ibtn('character', '정보', () => showCharacterInfo()),
         ibtn('quest', '퀘스트', () => showQuests()),
-        ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast('아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
+        ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast(S.inTutorialRun ? '첫 모험은 보스를 쓰러뜨려야 돌아갈 수 있어요.' : '아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
       run.FloorIntroPending ? this.floorIntro(run) : null,
       dungeon.currentRoom(run).Type === 'Boss' && run.BossDefeated && !exploringAfterBoss.has(run) ? this.bossChoice(run) : null);
     if (!run.FloorIntroPending) queueMicrotask(() => this.afterIntro());

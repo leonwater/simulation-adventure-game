@@ -288,6 +288,8 @@ describe('저장·진행 (SessionTests)', () => {
     expect(s.c.Level).toBeGreaterThanOrEqual(2);
     s.closeBattle();
     expect(s.move(2)).toBe('Return');
+    expect(s.canReturn, '튜토리얼은 보스를 잡아야 귀환 (v3.10)').toBe(false);
+    s.run!.BossDefeated = true;
     expect(s.canReturn).toBe(true);
     s.returnToTown();
     expect(s.data!.Tutorial).toBe('AfterReturn');
