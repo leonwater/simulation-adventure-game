@@ -15,6 +15,15 @@ const icon = (t: StatusType): string => ICONS[`status_${t.toLowerCase()}`] ?? ''
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const stage = $('stage'), now = $('now');
+// 이 페이지는 이펙트를 보여 주는 곳이라 기기의 '동작 줄이기' 설정과 상관없이 모두 재생한다 (게임은 그 설정을 따른다)
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const mm = window.matchMedia.bind(window);
+window.matchMedia = (q: string): MediaQueryList => (q.includes('prefers-reduced-motion') ? ({ ...mm(q), matches: false } as MediaQueryList) : mm(q));
+if (reduced) {
+  const warn = Object.assign(document.createElement('p'), { textContent: "이 기기는 '동작 줄이기(애니메이션 제거)'가 켜져 있습니다. 이 페이지에서는 이펙트를 모두 보여 주지만, 게임에서는 이펙트가 생략됩니다." });
+  warn.style.cssText = 'margin:0;color:var(--gold);font-size:13px';
+  now.after(warn);
+}
 let speed = 1;
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms / speed));
 
