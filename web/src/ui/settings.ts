@@ -1,5 +1,5 @@
 /** 기기별 설정 (localStorage). 저장 파일과 별개라 새 게임을 해도 유지된다. */
-const KEYS = { speed: 'battle_speed', typewriter: 'typewriter', vibration: 'vibration', textSize: 'text_size', tutorial: 'tutorial_completed' } as const;
+const KEYS = { speed: 'battle_speed', typewriter: 'typewriter', vibration: 'vibration', textSize: 'text_size', tutorial: 'tutorial_completed', fxAlways: 'fx_always' } as const;
 
 function get(key: string, fallback: number): number {
   try {
@@ -26,6 +26,9 @@ export const settings = {
   /** 전투 연출 속도 1 또는 2. */
   get battleSpeed(): number { return get(KEYS.speed, 1) >= 2 ? 2 : 1; },
   set battleSpeed(v: number) { set(KEYS.speed, v >= 2 ? 2 : 1); },
+  /** 이펙트 항상 보기 (기본 켜기). 끄면 기기의 '동작 줄이기' 설정을 따른다. */
+  get fxAlways(): boolean { return get(KEYS.fxAlways, 1) === 1; },
+  set fxAlways(v: boolean) { set(KEYS.fxAlways, v ? 1 : 0); },
   /** 대사 한 글자씩 출력. */
   get typewriter(): boolean { return get(KEYS.typewriter, 1) === 1; },
   set typewriter(v: boolean) { set(KEYS.typewriter, v ? 1 : 0); },

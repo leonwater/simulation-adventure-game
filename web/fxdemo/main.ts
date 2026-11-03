@@ -5,7 +5,7 @@ import type { Job, SkillTarget, StatusType } from '../src/core/enums';
 import { Names } from '../src/core/names';
 import { ALL_SKILLS } from '../src/core/skills';
 import type { SkillDef } from '../src/core/skills';
-import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxTick, isDebuff, setFxSpeed } from '../src/ui/fx';
+import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, isDebuff, setFxSpeed, swingsSword } from '../src/ui/fx';
 import type { FxStyle, Spot, TickKind } from '../src/ui/fx';
 import { spriteUrl } from '../src/ui/sprites';
 
@@ -15,15 +15,6 @@ const icon = (t: StatusType): string => ICONS[`status_${t.toLowerCase()}`] ?? ''
 
 const $ = (id: string): HTMLElement => document.getElementById(id)!;
 const stage = $('stage'), now = $('now');
-// 이 페이지는 이펙트를 보여 주는 곳이라 기기의 '동작 줄이기' 설정과 상관없이 모두 재생한다 (게임은 그 설정을 따른다)
-const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const mm = window.matchMedia.bind(window);
-window.matchMedia = (q: string): MediaQueryList => (q.includes('prefers-reduced-motion') ? ({ ...mm(q), matches: false } as MediaQueryList) : mm(q));
-if (reduced) {
-  const warn = Object.assign(document.createElement('p'), { textContent: "이 기기는 '동작 줄이기(애니메이션 제거)'가 켜져 있습니다. 이 페이지에서는 이펙트를 모두 보여 주지만, 게임에서는 이펙트가 생략됩니다." });
-  warn.style.cssText = 'margin:0;color:var(--gold);font-size:13px';
-  now.after(warn);
-}
 let speed = 1;
 const wait = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms / speed));
 
@@ -91,10 +82,12 @@ const DMG = (crit: boolean): string => (crit ? '#F6C063' : '#fff');
 // ── 사건 단위 재생 (게임의 Act → Damage/Miss/Status 순서와 같다) ──
 interface Attack { from: number; to: number[]; style: FxStyle; skillId?: string; skill?: string; hits?: number; crit?: boolean; statuses?: StatusType[]; selfStatuses?: StatusType[]; noDamage?: boolean }
 async function attack(a: Attack): Promise<void> {
-  dash(a.from);
   if (a.skill) float(a.from, a.skill, '#F6C063', 13);
   let travel = 0;
-  if (a.from < 0) travel = fxSkill(stage, sp(-1), a.to.map(sp), job, a.skillId ?? null);
+  // 게임과 같이: 전사 근접 공격은 그 자리에서 칼을 휘두르고, 나머지는 앞으로 돌진
+  if (a.from < 0 && a.to.length && swingsSword(job, a.skillId ?? null)) travel = fxSwing(stage, units.get(-1)!.el, sp(-1), !!a.skillId);
+  else dash(a.from);
+  if (a.from < 0) travel = Math.max(travel, fxSkill(stage, sp(-1), a.to.map(sp), job, a.skillId ?? null));
   else if (a.skill) fxEnemyCast(stage, sp(a.from));
   await wait(Math.max(192, travel + 40));
   // 게임과 같이: 한 번에 맞는 적들은 거의 동시에, 다음 타격은 한 박자 뒤
@@ -137,16 +130,16 @@ const skill = (d: SkillDef): Demo => {
   };
 };
 const JOB_LEAD: Record<Job, string> = {
-  Warrior: '마법진 없이 몸으로: 내려찍기는 흰 충격, 회오리는 둥근 칼바람, 대지 가르기는 땅이 갈라지고 화면이 흔들립니다.',
+  Warrior: '그 자리에서 칼을 휘둘러 금빛 궤적을 남기고 큰 충격이 터집니다. 회전 베기는 둥근 칼바람, 대지 가르기는 땅이 갈라지며 돌이 튀고 화면이 흔들립니다.',
   Archer: '화살은 빛 꼬리를 끌고, 화살비는 하늘에서 쏟아지며, 관통 사격은 한 줄을 꿰뚫는 빛줄기입니다.',
-  Rogue: '그림자 잔상이 적에게 스치고, 암살은 화면이 어두워진 뒤 X자로 베어 냅니다.',
+  Rogue: '도적의 보라 그림자 분신이 연기 속에서 나와 잔상을 남기며 적 뒤로 달려가 벱니다. 암살은 화면이 어두워진 뒤 적 뒤에 나타나 핏빛 X자로 베어 냅니다.',
   Mage: '시전자 앞에 마법진이 서고 빛나는 투사체가 날아갑니다. 운석은 하늘에서 큰 운석이 떨어져 모든 적을 동시에 때립니다.',
 };
 
 const GROUPS: Group[] = [
   {
     title: '기본 공격',
-    lead: '직업마다 모양이 다릅니다. 마법사는 마법진을 세우고 빛나는 마력 창을 쏩니다.',
+    lead: '전사는 그 자리에서 칼을 휘둘러 반달 궤적을 남기고, 마법사는 마법진을 세우고 빛나는 마력 창을 쏩니다.',
     items: [
       basic('Warrior', '전사 · 베기', '전사 기본 공격 · 반격'),
       basic('Archer', '궁수 · 화살', '궁수 기본 공격 (날아가는 화살)'),
@@ -193,7 +186,7 @@ const GROUPS: Group[] = [
       { label: '출혈 (턴 피해)', when: '떨어지는 핏방울', run: () => tick(1, 'Bleed') },
       { label: '화상 (턴 피해)', when: '올라가는 불꽃', run: () => tick(2, 'Burn') },
       { label: '회복', when: '물약·불굴·재생 (초록 십자)', run: () => { fxHeal(stage, sp(-1)); float(-1, '+30', '#A8E6A0'); } },
-      { label: '쓰러짐', when: '가라앉으며 흐려짐 (2초 뒤 되살림)', run: async () => { fxDefeat(units.get(2)!.el); await wait(2000); reset(); } },
+      { label: '쓰러짐', when: '가라앉으며 흐려짐 (2초 뒤 되살림)', run: async () => { fxDefeat(units.get(2)!.el, stage, sp(2)); await wait(2000); reset(); } },
     ],
   },
 ];

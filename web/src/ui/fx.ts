@@ -1,27 +1,21 @@
 /**
- * 전투 이펙트. 무대(stage) 위에 잠깐 떴다 사라지는 요소를 붙인다 (transform·opacity만 움직임).
+ * 전투 이펙트 (v3.11): 모든 모양은 claude-pxl로 그린 픽셀 그림(art/fx.px.js → assets/fx/atlas.png)이다.
+ * 코드는 프레임을 단계 재생하고 위치·회전·투명도만 움직인다 (transform·opacity·background-position).
  * 전투 화면과 확인 페이지(`npm run fx` → docs/fx-demo.html)가 같은 코드를 쓴다.
+ * 기기의 '동작 줄이기'는 설정 '이펙트 항상 보기'를 끈 경우에만 따른다.
  */
 import './fx.css';
 import { STATUSES } from '../core/enums';
 import type { Job, StatusType } from '../core/enums';
+import atlasUrl from '../assets/fx/atlas.png';
+import ATLAS from '../assets/fx/atlas.json';
+import { spriteUrl } from './sprites';
 
 /** 타격 계열: 기본 공격은 직업별, 스킬은 스킬별(SKILL_STYLE), 몬스터는 할퀴기. */
 export type FxStyle = 'slash' | 'arrow' | 'stab' | 'arcane' | 'fire' | 'ice' | 'bolt' | 'quake' | 'shout' | 'claw' | 'smash' | 'shadow' | 'poison';
-/** 유닛 중심 좌표와 크기 (무대 px). */
+/** 유닛 중심 좌표와 크기 (무대 px). y는 보이는 몸통 가운데. */
 export interface Spot { x: number; y: number; size: number }
 export type TickKind = 'Poison' | 'Bleed' | 'Burn';
-
-export const FX_COLOR: Record<FxStyle, string> = {
-  slash: '#F1E8D6', arrow: '#E8D4A0', stab: '#C9D3E0', arcane: '#8FD3FF', fire: '#F0913A',
-  ice: '#8FD3F4', bolt: '#FFE066', quake: '#C8A06A', shout: '#F6C063', claw: '#E0524A',
-  smash: '#FFE7B0', shadow: '#A47CFF', poison: '#7BC86F',
-};
-export const STATUS_COLOR: Record<StatusType, string> = {
-  Empower: '#F6C063', Fortify: '#8FB3D9', Regen: '#7BC86F', Focus: '#8FD3F4', Swift: '#A8E6A0', Keen: '#F6C063', Cruel: '#E0524A', Riposte: '#F6C063', Hawk: '#E8D4A0', Rapid: '#A8E6A0', Piercing: '#C9D3E0',
-  Poison: '#7BC86F', Bleed: '#E0524A', Burn: '#F0913A', Weaken: '#B48CFF', Vulnerable: '#E06B4E', Stun: '#FFE066', Silence: '#9AA7B8', Blind: '#7A8494', Fear: '#B48CFF', Overload: '#B48CFF',
-};
-const HEAL = '#A8E6A0';
 
 const BASIC: Record<Job, FxStyle> = { Warrior: 'slash', Archer: 'arrow', Rogue: 'stab', Mage: 'arcane' };
 const SKILL_STYLE: Record<string, FxStyle> = {
@@ -29,297 +23,389 @@ const SKILL_STYLE: Record<string, FxStyle> = {
   a_flash: 'bolt', r_venom: 'poison', r_shadow: 'shadow', r_assassin: 'shadow', r_dance: 'shadow', r_storm: 'slash',
   m_fireball: 'fire', m_shard: 'fire', m_meteor: 'fire', m_apocalypse: 'fire', m_ice: 'ice', m_prison: 'ice', m_chain: 'bolt',
 };
-
-/** 기본 공격(skillId 없음)은 직업 계열, 스킬은 속성 계열 (따로 없으면 직업 계열). */
 export const fxStyleFor = (job: Job, skillId: string | null): FxStyle => (skillId && SKILL_STYLE[skillId]) || BASIC[job];
 export const isDebuff = (t: StatusType): boolean => STATUSES.indexOf(t) >= STATUSES.indexOf('Poison');
+
+// 상태 이상 → 그림 색 묶음 (art/fx.px.js 의 PAL 이름)
+const STATUS_PAL: Record<StatusType, string> = {
+  Empower: 'gold', Fortify: 'ice', Regen: 'green', Focus: 'ice', Swift: 'green', Keen: 'gold', Cruel: 'red', Riposte: 'gold', Hawk: 'gold', Rapid: 'green', Piercing: 'white',
+  Poison: 'poison', Bleed: 'blood', Burn: 'fire', Weaken: 'shadow', Vulnerable: 'red', Stun: 'bolt', Silence: 'seal', Blind: 'seal', Fear: 'shadow', Overload: 'arc',
+};
 
 let speed = 1;
 /** 전투 속도 (2배속이면 이펙트도 2배 빠르게). */
 export const setFxSpeed = (s: number): void => { speed = s; };
-const calm = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+let always = true;
+/** 설정 '이펙트 항상 보기' (기본 켜기). 끄면 기기의 '동작 줄이기'를 따른다. */
+export const setFxAlways = (v: boolean): void => { always = v; };
+const calm = (): boolean => !always && typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 const rand = (a: number, b: number): number => a + Math.random() * (b - a);
 const EASE = 'cubic-bezier(0.23, 1, 0.32, 1)';
+const later = (ms: number, fn: () => void): void => { window.setTimeout(fn, ms / speed); };
+/** 발끝 높이 (Spot.y는 몸통 가운데). */
+const feet = (s: Spot): number => s.y + s.size * 0.62;
 
-/** (x, y)가 중심이 되게 붙인다 → transform은 중심 기준. */
-function put(stage: HTMLElement, cls: string, x: number, y: number, w: number, hgt: number, color: string): HTMLElement {
+// ── 그림 한 장 재생 ──
+type Frame = [number, number, number, number, number, number];
+const A = ATLAS as unknown as Record<string, Frame>;
+const [AW, AH] = A._size;
+/** 그림 1픽셀 = 화면 3px (전투 유닛과 같은 배율). */
+const PX = 3;
+
+interface SpOpt {
+  /** 배율 (기본 3). */ scale?: number;
+  /** 시작까지 기다림 ms. */ delay?: number;
+  /** 화면에 남는 시간 ms (기본: 프레임을 한 번 다 도는 시간). */ life?: number;
+  /** 프레임을 계속 돈다 (투사체·빛줄기). */ loop?: boolean;
+  /** 돌림(도) · 좌우 뒤집기 · 위아래로 납작하게(바닥 고리). */ rot?: number; flip?: boolean; squash?: number;
+  /** 기준점: 가운데(c) 또는 아래 가운데(b, 땅에서 솟는 것). */ anchor?: 'c' | 'b';
+}
+/**
+ * 그림을 (x, y)에 놓고 프레임을 재생한다. 남는 시간이 지나면 지운다.
+ * 바깥 틀(돌려주는 것)은 자리·움직임, 안쪽은 그림·돌림·뒤집기·배율을 맡는다.
+ * 그림 묶음은 늘 3배로만 깔고 더 크게는 transform으로 키운다 (휴대폰 GPU의 4096px 한도를 넘지 않게).
+ */
+function sp(stage: HTMLElement, name: string, x: number, y: number, o: SpOpt = {}): HTMLElement {
+  const [ax, ay, w, h, n, fms] = A[name];
+  const s = o.scale ?? PX, delay = o.delay ?? 0, W = w * s, H = h * s, w3 = w * PX, h3 = h * PX;
+  const box = document.createElement('div');
+  box.className = 'fx';
+  box.style.cssText = `left:${x - W / 2}px;top:${o.anchor === 'b' ? y - H : y - H / 2}px;width:${W}px;height:${H}px`;
   const el = document.createElement('div');
-  el.className = `fx ${cls}`;
-  el.style.cssText = `left:${x - w / 2}px;top:${y - hgt / 2}px;width:${w}px;height:${hgt}px;color:${color}`;
-  stage.append(el);
-  return el;
-}
-function play(el: HTMLElement, frames: Keyframe[], ms: number, delay = 0, easing = EASE): void {
-  // 늦게 시작하는 조각은 시작 전까지 숨긴다 (첫 장면이 미리 보이지 않게)
+  el.className = 'fx-sp';
+  el.style.cssText = `left:${(W - w3) / 2}px;top:${o.anchor === 'b' ? H - h3 : (H - h3) / 2}px;width:${w3}px;height:${h3}px;background-image:url(${atlasUrl});background-size:${AW * PX}px ${AH * PX}px;background-position:${-ax * PX}px ${-ay * PX}px`;
+  el.style.transformOrigin = o.anchor === 'b' ? '50% 100%' : '50% 50%';
+  el.style.transform = [o.rot ? `rotate(${o.rot}deg)` : '', o.flip ? 'scaleX(-1)' : '', o.squash ? `scaleY(${o.squash})` : '', s !== PX ? `scale(${s / PX})` : ''].join(' ').trim() || 'none';
+  box.append(el);
+  stage.append(box);
   if (delay > 0) {
-    el.style.visibility = 'hidden';
-    window.setTimeout(() => { el.style.visibility = ''; }, delay / speed);
+    box.style.visibility = 'hidden';
+    later(delay, () => { box.style.visibility = ''; });
   }
-  el.animate(frames, { duration: ms / speed, delay: delay / speed, easing, fill: 'forwards' }).onfinish = () => el.remove();
+  if (n > 1) {
+    const from = `${-ax * PX}px ${-ay * PX}px`;
+    if (o.loop) el.animate([{ backgroundPosition: from }, { backgroundPosition: `${-(ax + n * w) * PX}px ${-ay * PX}px` }], { duration: (n * fms) / speed, delay: delay / speed, iterations: Infinity, easing: `steps(${n})` });
+    // 마지막 프레임에서 멈춰 남는 시간(life)까지 보인다
+    else el.animate([{ backgroundPosition: from }, { backgroundPosition: `${-(ax + (n - 1) * w) * PX}px ${-ay * PX}px` }], { duration: ((n - 1) * fms) / speed, delay: delay / speed, easing: `steps(${n - 1})`, fill: 'forwards' });
+  }
+  later(delay + (o.life ?? n * fms), () => box.remove());
+  return box;
+}
+/** 놓인 그림을 움직인다 (지우기는 sp가 맡는다). 처음 transform을 덮으니 돌림 등은 프레임에 함께 적는다. */
+function move(el: HTMLElement, frames: Keyframe[], ms: number, delay = 0, easing = 'linear'): void {
+  el.animate(frames, { duration: ms / speed, delay: delay / speed, easing, fill: 'both' });
+}
+function fadeOut(el: HTMLElement, ms: number, delay: number): void {
+  el.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms / speed, delay: delay / speed, fill: 'forwards', composite: 'replace' });
 }
 
-// ── 조각 ──
+// ── 입자: 작은 픽셀 그림들이 흩어지거나 떠오른다 ──
+/** 사방(up이면 위쪽 반)으로 튀는 입자. gravity > 0이면 끝에 떨어진다. */
+function scatter(stage: HTMLElement, name: string, x: number, y: number, n: number, dist: number, o: { delay?: number; gravity?: number; scale?: number; up?: boolean } = {}): void {
+  for (let i = 0; i < n; i++) {
+    const a = o.up ? rand(-Math.PI * 0.9, -Math.PI * 0.1) : (i / n) * Math.PI * 2 + rand(-0.3, 0.3);
+    const d = dist * rand(0.55, 1), dx = Math.cos(a) * d, dy = Math.sin(a) * d, g = o.gravity ?? 0, ms = rand(420, 620), at = (o.delay ?? 0) + i * 12;
+    const el = sp(stage, name, x, y, { delay: at, life: ms, scale: o.scale });
+    move(el, [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${dx * 0.7}px,${dy * 0.7}px)`, opacity: 1, offset: 0.5 }, { transform: `translate(${dx}px,${dy + g}px)`, opacity: 0 }], ms, at, 'ease-out');
+  }
+}
+/** 몸에서 위(dy<0)나 아래(dy>0)로 흐르는 입자. */
+function drift(stage: HTMLElement, s: Spot, name: string, n: number, dy: number, delay = 0): void {
+  for (let i = 0; i < n; i++) {
+    const x = s.x + rand(-0.36, 0.36) * s.size, y = s.y + rand(-0.2, 0.3) * s.size, sx = rand(-8, 8), ms = rand(560, 760), d = delay + i * 50;
+    const el = sp(stage, name, x, y, { delay: d, life: ms });
+    move(el, [{ transform: 'translate(0,0)', opacity: 0 }, { transform: `translate(${sx / 2}px,${dy * 0.3}px)`, opacity: 1, offset: 0.25 }, { transform: `translate(${sx}px,${dy}px)`, opacity: 0 }], ms, d, 'ease-out');
+  }
+}
+type Pt = { x: number; y: number };
+/** 투사체: 그림이 a → b로 날아가며(방향에 맞춰 돌림) 꼬리 입자를 남긴다. 도착 시각(ms)을 돌려준다. */
+function shoot(stage: HTMLElement, name: string, a: Pt, b: Pt, ms: number, delay = 0, o: { trail?: string; scale?: number; spin?: boolean } = {}): number {
+  const dx = b.x - a.x, dy = b.y - a.y;
+  const el = sp(stage, name, a.x, a.y, { delay, life: ms, loop: true, scale: o.scale, rot: o.spin ? 0 : (Math.atan2(dy, dx) * 180) / Math.PI });
+  move(el, [{ transform: 'translate(0,0)' }, { transform: `translate(${dx}px,${dy}px)` }], ms, delay, 'cubic-bezier(.45,0,.9,.6)');
+  if (o.trail) for (let i = 1; i < 7; i++) {
+    const t = i / 7, p = sp(stage, o.trail, a.x + dx * t + rand(-4, 4), a.y + dy * t + rand(-5, 5), { delay: delay + ms * t, life: 360 });
+    move(p, [{ transform: 'translate(0,0)', opacity: 1 }, { transform: `translate(${rand(-10, 2)}px,${rand(-8, 8)}px)`, opacity: 0 }], 360, delay + ms * t, 'ease-out');
+  }
+  return delay + ms;
+}
+/** 하늘에서 떨어지는 것 (운석·화살비). rotate면 떨어지는 방향으로 돌린다. */
+function fall(stage: HTMLElement, name: string, to: Pt, ms: number, delay: number, from: { dx: number; dy: number }, scale?: number, rotate = true): void {
+  const el = sp(stage, name, to.x + from.dx, to.y + from.dy, { delay, life: ms, loop: true, scale, rot: rotate ? (Math.atan2(-from.dy, -from.dx) * 180) / Math.PI : 0 });
+  move(el, [{ transform: 'translate(0,0)' }, { transform: `translate(${-from.dx}px,${-from.dy}px)` }], ms, delay, 'cubic-bezier(.4,0,.9,.6)');
+}
+const middle = (to: Spot[]): Spot => ({ x: to.reduce((a, t) => a + t.x, 0) / to.length, y: to.reduce((a, t) => a + t.y, 0) / to.length, size: to[0].size });
 
-/** 사방으로 튀는 픽셀 입자. */
-function burst(stage: HTMLElement, x: number, y: number, color: string, n: number, dist: number, px = 5): void {
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + rand(-0.3, 0.3), d = dist * rand(0.5, 1);
-    play(put(stage, 'fx-px', x, y, px, px, color), [
-      { transform: 'translate(0,0)', opacity: 1 },
-      { transform: `translate(${Math.cos(a) * d}px,${Math.sin(a) * d}px) scale(.4)`, opacity: 0 },
-    ], rand(380, 540));
-  }
-}
-/** 몸 폭 안에서 위(dy<0)나 아래(dy>0)로 흘러가는 입자 (거품·불꽃·핏방울·반짝임). */
-function drift(stage: HTMLElement, s: Spot, color: string, n: number, dy: number, cls = 'fx-px', px = 4): void {
-  for (let i = 0; i < n; i++) {
-    const x = s.x + rand(-0.32, 0.32) * s.size, y = s.y + rand(-0.15, 0.25) * s.size, sway = rand(-8, 8);
-    play(put(stage, cls, x, y, px, px, color), [
-      { transform: 'translate(0,0) scale(.6)', opacity: 0 },
-      { transform: `translate(${sway / 2}px,${dy * 0.3}px) scale(1)`, opacity: 1, offset: 0.25 },
-      { transform: `translate(${sway}px,${dy}px) scale(.5)`, opacity: 0 },
-    ], rand(520, 720), i * 45, 'ease-out');
-  }
-}
-function ring(stage: HTMLElement, x: number, y: number, d: number, color: string, ms = 440, from = 0.3, to = 1.2, delay = 0, flat = 1): void {
-  play(put(stage, 'fx-ring', x, y, d, d * flat, color), [
-    { transform: `scale(${from})`, opacity: 1 },
-    { transform: `scale(${to})`, opacity: 0 },
-  ], ms, delay);
-}
-/** 번쩍이는 칼날 선. */
-function line(stage: HTMLElement, x: number, y: number, len: number, deg: number, color: string, ms = 300, delay = 0, thick = 6): void {
-  play(put(stage, 'fx-line', x, y, len, thick, color), [
-    { transform: `rotate(${deg}deg) scaleX(.1)`, opacity: 1 },
-    { transform: `rotate(${deg}deg) scaleX(1)`, opacity: 1, offset: 0.35 },
-    { transform: `rotate(${deg}deg) scaleX(1.05) scaleY(.4)`, opacity: 0 },
-  ], ms, delay);
-}
-/** 위에서 내리꽂는 번개 (꺾인 선 3개). */
-function lightning(stage: HTMLElement, s: Spot, color: string): void {
-  const top = s.y - s.size * 0.9, seg = (s.y - top) / 3;
-  [[-8, 20], [8, -24], [-6, 16]].forEach(([dx, deg], i) => line(stage, s.x + dx, top + seg * (i + 0.5), seg * 1.15, 90 + deg, color, 220, i * 25, 3));
-}
-/** 화면 흔들림 (무대의 scale을 건드리지 않게 translate 속성만 움직인다). */
 export function fxShake(stage: HTMLElement, amp = 5): void {
   if (calm()) return;
   stage.animate([{ translate: '0 0' }, { translate: `${-amp}px ${amp / 2}px` }, { translate: `${amp}px ${-amp / 2}px` }, { translate: `${-amp / 2}px 0` }, { translate: '0 0' }], { duration: 260 / speed });
 }
-
-// ── 전투 사건별 이펙트 ──
-
-// ── 스킬 연출 조각 (참고: 시전 마법진 → 빛나는 투사체·입자 꼬리 → 맞는 순간 번쩍임) ──
-
-/** 무대 전체를 잠깐 물들이는 번쩍임. */
-function flash(stage: HTMLElement, color: string, ms = 220, alpha = 0.45): void {
-  const el = put(stage, 'fx-flash', 0, 0, 0, 0, color);
-  el.style.inset = '0';
-  el.style.width = el.style.height = '';
-  play(el, [{ opacity: alpha }, { opacity: 0 }], ms, 0, 'ease-out');
-}
-/** 시전 마법진: 시전자 앞에 세로로 선 점선 고리 + 발밑 고리. big이면 더 크고 오래. */
-function circle(stage: HTMLElement, s: Spot, color: string, big = false): void {
-  const k = big ? 1.35 : 1, x = s.x + s.size * 0.55;
-  play(put(stage, 'fx-circle', x, s.y, s.size * 0.38 * k, s.size * 1.05 * k, color), [
-    { transform: 'scaleY(.1)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1, offset: 0.3 }, { transform: 'scaleY(1)', opacity: 1, offset: 0.7 }, { transform: 'scaleY(1.1) scaleX(.6)', opacity: 0 },
-  ], big ? 620 : 460);
-  play(put(stage, 'fx-circle', s.x, s.y + s.size * 0.5, s.size * 1.4 * k, s.size * 0.32 * k, color), [
-    { transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1)', opacity: 0.9, offset: 0.35 }, { transform: 'scale(1.15)', opacity: 0 },
-  ], big ? 620 : 460);
-  for (let i = 0; i < (big ? 8 : 5); i++) {
-    const y = s.y + rand(-0.4, 0.4) * s.size * k;
-    play(put(stage, 'fx-px', x + rand(-4, 4), y, 3, 3, '#FFFFFF'), [{ transform: 'translateX(0)', opacity: 1 }, { transform: `translateX(${rand(10, 24)}px)`, opacity: 0 }], 360, i * 40);
-  }
-}
-/** 투사체 꼬리: 지나간 자리에 남는 반짝이 입자. */
-function trail(stage: HTMLElement, x0: number, y0: number, dx: number, dy: number, ms: number, color: string, n: number, px = 4): void {
-  for (let i = 0; i < n; i++) {
-    const t = i / n;
-    play(put(stage, 'fx-px', x0 + dx * t + rand(-3, 3), y0 + dy * t + rand(-4, 4), px, px, i % 3 === 0 ? '#FFFFFF' : color), [
-      { opacity: 0, transform: 'scale(1)' }, { opacity: 1, transform: 'scale(1)', offset: 0.1 }, { opacity: 0, transform: `translate(${rand(-8, 4)}px,${rand(-6, 6)}px) scale(.3)` },
-    ], 380, ms * t);
-  }
-}
-/** 빛나는 창 모양 투사체 (가운데 흰 심 + 색 빛 + 꼬리 입자 + 속도선). 비행 시간을 돌려준다. */
-function shard(stage: HTMLElement, from: Spot, to: Spot, color: string, len = 34, thick = 9, ms = 200): number {
-  const x0 = from.x + from.size * 0.5, y0 = from.y, dx = to.x - x0, dy = to.y - y0, deg = (Math.atan2(dy, dx) * 180) / Math.PI;
-  play(put(stage, 'fx-shard', x0, y0, len, thick, color), [
-    { transform: `translate(0,0) rotate(${deg}deg) scaleX(.4)`, opacity: 0.6 },
-    { transform: `translate(${dx * 0.15}px,${dy * 0.15}px) rotate(${deg}deg) scaleX(1)`, opacity: 1, offset: 0.15 },
-    { transform: `translate(${dx}px,${dy}px) rotate(${deg}deg) scaleX(1.2)`, opacity: 1 },
-  ], ms, 0, 'cubic-bezier(.5,0,.9,.5)');
-  trail(stage, x0, y0, dx, dy, ms, color, 10);
-  for (let i = 0; i < 2; i++) line(stage, x0 + dx * 0.4, y0 + dy * 0.4 + (i ? 7 : -7), len * 1.4, deg, color, ms, ms * 0.3, 2);
-  return ms;
-}
-/** 불덩이: 큰 빛 구슬 + 불꽃 꼬리. */
-function orb(stage: HTMLElement, from: Spot, to: Spot, color: string, d = 16, ms = 230): number {
-  const x0 = from.x + from.size * 0.5, y0 = from.y, dx = to.x - x0, dy = to.y - y0;
-  play(put(stage, 'fx-orb', x0, y0, d, d, color), [{ transform: 'translate(0,0) scale(.5)' }, { transform: `translate(${dx}px,${dy}px) scale(1.2)` }], ms, 0, 'cubic-bezier(.4,0,.9,.6)');
-  for (let i = 0; i < 10; i++) {
-    const t = i / 10;
-    play(put(stage, 'fx-px fx-flame', x0 + dx * t, y0 + dy * t, 6, 6, i % 2 ? '#FFE066' : color), [
-      { opacity: 0, transform: 'translateY(0) scale(1)' }, { opacity: 1, offset: 0.1 }, { opacity: 0, transform: `translateY(${rand(-14, -4)}px) scale(.4)` },
-    ], 360, ms * t);
-  }
-  return ms;
-}
-/** 화살 (반짝이는 꼬리). */
-function arrow(stage: HTMLElement, from: Spot, to: Spot, color: string, delay = 0, ms = 170): void {
-  const x0 = from.x + from.size * 0.45, y0 = from.y, dx = to.x - x0 + rand(-6, 6), dy = to.y - y0 + rand(-6, 6), deg = (Math.atan2(dy, dx) * 180) / Math.PI;
-  play(put(stage, 'fx-arrow', x0, y0, 28, 3, color), [{ transform: `translate(0,0) rotate(${deg}deg)` }, { transform: `translate(${dx}px,${dy}px) rotate(${deg}deg)` }], ms, delay, 'cubic-bezier(.4,0,.9,.6)');
-  line(stage, x0 + dx * 0.5, y0 + dy * 0.5, Math.hypot(dx, dy) * 0.6, deg, '#FFFFFF', ms, delay, 1);
-}
-/** 하늘에서 떨어지는 것 (운석·화살비): 위쪽 바깥에서 대상 쪽으로. */
-function fall(stage: HTMLElement, cls: string, to: { x: number; y: number }, w: number, hgt: number, color: string, ms: number, delay = 0, from = { dx: -120, dy: -220 }): void {
-  const deg = (Math.atan2(-from.dy, -from.dx) * 180) / Math.PI;
-  play(put(stage, cls, to.x + from.dx, to.y + from.dy, w, hgt, color), [
-    { transform: `translate(0,0) rotate(${deg}deg)`, opacity: 0.2 }, { transform: `translate(${-from.dx * 0.2}px,${-from.dy * 0.2}px) rotate(${deg}deg)`, opacity: 1, offset: 0.2 },
-    { transform: `translate(${-from.dx}px,${-from.dy}px) rotate(${deg}deg)`, opacity: 1 },
-  ], ms, delay, 'cubic-bezier(.4,0,.9,.6)');
-}
-const middle = (to: Spot[]): Spot => ({ x: to.reduce((a, t) => a + t.x, 0) / to.length, y: to.reduce((a, t) => a + t.y, 0) / to.length, size: to[0].size });
-/** 버프: 몸에서 솟는 빛기둥 + 발밑 고리 + 올라가는 입자. */
-function aura(stage: HTMLElement, s: Spot, color: string): void {
-  play(put(stage, 'fx-pillar', s.x, s.y - s.size * 0.1, s.size * 0.9, s.size * 1.7, color), [
-    { transform: 'scaleY(.2)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 0.85, offset: 0.35 }, { transform: 'scaleY(1.1) scaleX(.5)', opacity: 0 },
-  ], 560);
-  ring(stage, s.x, s.y + s.size * 0.5, s.size * 1.5, color, 520, 0.3, 1.1, 0, 0.3);
-  drift(stage, s, color, 10, -s.size * 0.8, 'fx-px', 4);
-}
-/** 대상 둘레에 솟는 얼음 가시. */
-function spikes(stage: HTMLElement, s: Spot, color: string): void {
-  for (let i = 0; i < 6; i++) {
-    const x = s.x + (i - 2.5) * s.size * 0.2, h2 = s.size * rand(0.5, 0.9);
-    play(put(stage, 'fx-spike', x, s.y + s.size * 0.45 - h2 / 2, s.size * 0.18, h2, color), [
-      { transform: 'scaleY(0)', opacity: 1, transformOrigin: 'bottom' }, { transform: 'scaleY(1)', opacity: 1, offset: 0.4, transformOrigin: 'bottom' }, { transform: 'scaleY(1)', opacity: 0, transformOrigin: 'bottom' },
-    ], 640, i * 30);
-  }
-}
-/** 그림자 잔상: 시전자에서 대상까지 어두운 몸 셋이 스치고 지나간다. */
-function afterimage(stage: HTMLElement, from: Spot, to: Spot): number {
-  for (let i = 0; i < 3; i++) {
-    play(put(stage, 'fx-shadow', from.x, from.y, from.size * 0.5, from.size * 0.9, FX_COLOR.shadow), [
-      { transform: 'translateX(0)', opacity: 0.7 }, { transform: `translate(${to.x - from.x - 20}px,${to.y - from.y}px)`, opacity: 0 },
-    ], 220, i * 50);
-  }
-  return 200;
-}
-/** 지그재그 번개 한 줄기 (a → b). */
-function zap(stage: HTMLElement, a: { x: number; y: number }, b: { x: number; y: number }, color: string, delay: number): void {
-  const n = 4;
-  let px = a.x, py = a.y;
-  for (let i = 1; i <= n; i++) {
-    const t = i / n, nx = a.x + (b.x - a.x) * t + (i < n ? rand(-12, 12) : 0), ny = a.y + (b.y - a.y) * t + (i < n ? rand(-12, 12) : 0);
-    const len = Math.hypot(nx - px, ny - py), deg = (Math.atan2(ny - py, nx - px) * 180) / Math.PI;
-    line(stage, (px + nx) / 2, (py + ny) / 2, len * 1.1, deg, color, 260, delay, 3);
-    px = nx; py = ny;
-  }
+/** 무대 전체를 잠깐 물들이는 번쩍임 (모양이 아니라 색 덮개). */
+function flash(stage: HTMLElement, color: string, ms = 220, alpha = 0.45, delay = 0): void {
+  const el = document.createElement('div');
+  el.className = 'fx fx-flash';
+  el.style.color = color;
+  stage.append(el);
+  el.animate([{ opacity: alpha }, { opacity: 0 }], { duration: ms / speed, delay: delay / speed, fill: 'both', easing: 'ease-out' }).onfinish = () => el.remove();
 }
 
-type SkillFx = (stage: HTMLElement, me: Spot, to: Spot[]) => number;
-const ALL_DIR = { dx: 0, dy: -260 };
+// ── 공통 연출 ──
+/** 시전 마법진: 시전자 앞에 서는 세로 점선 타원 + 발밑 마법진 + 모여드는 반짝이. */
+function cast(stage: HTMLElement, s: Spot, pal: string, big = false): void {
+  const k = big ? 4 : 3, life = big ? 640 : 520;
+  sp(stage, `circlev_${pal}`, s.x + s.size * 0.6, s.y, { scale: k, life });
+  sp(stage, `circleg_${pal}`, s.x, feet(s), { scale: k, life });
+  const star = A[`star_${pal}`] ? `star_${pal}` : 'star_white';
+  for (let i = 0; i < (big ? 6 : 4); i++) {
+    const a = rand(0, Math.PI * 2), d = s.size * 0.8, el = sp(stage, star, s.x + s.size * 0.6 + Math.cos(a) * d, s.y + Math.sin(a) * d, { life: 320, delay: i * 40 });
+    move(el, [{ transform: 'translate(0,0)', opacity: 0 }, { transform: `translate(${-Math.cos(a) * d}px,${-Math.sin(a) * d}px)`, opacity: 1 }], 320, i * 40, 'ease-in');
+  }
+}
+/** 자기 강화: 빛기둥 + 발밑 고리 + 떠오르는 반짝이. */
+function aura(stage: HTMLElement, s: Spot, pal: 'gold' | 'ice' | 'green' | 'red' | 'white', delay = 0): void {
+  sp(stage, `aura_${pal}`, s.x, feet(s) + 4, { anchor: 'b', delay, life: 600 });
+  sp(stage, `ring_${pal}`, s.x, feet(s), { squash: 0.35, scale: 4, delay });
+  drift(stage, s, `star_${pal}`, 5, -s.size * 0.8, delay + 80);
+}
+/** 대상 아래 바닥에서 얼음 가시가 솟았다가 깨진다 (참고 그림). */
+function iceSpikes(stage: HTMLElement, t: Spot, big: boolean, delay: number): void {
+  const g = feet(t) + 6;
+  sp(stage, 'circleg_ice', t.x, feet(t), { delay: Math.max(0, delay - 80), life: 760 });
+  const back: [number, string][] = big ? [[-0.15, 'spike_l'], [0.3, 'spike_l'], [-0.45, 'spike_s'], [0.6, 'spike_s']] : [[0, 'spike_s']];
+  const front: [number, string][] = big ? [[-0.6, 'spike_s'], [0.05, 'spike_l'], [0.45, 'spike_s'], [-0.3, 'spike_s']] : [[-0.4, 'spike_s'], [0.35, 'spike_s']];
+  [...back, ...front].forEach(([dx, name], i) => sp(stage, name, t.x + dx * t.size * 1.2, g + (i >= back.length ? 4 : -2), { anchor: 'b', delay: delay + i * 35, life: 720 }));
+  scatter(stage, 'snow', t.x, t.y, 6, t.size * 0.8, { delay: delay + 120 });
+  scatter(stage, 'shard_ice', t.x, feet(t) - t.size * 0.3, 8, t.size, { delay: delay + 640, gravity: 30 });
+}
+
+/**
+ * 도적 그림자 분신: 실제 도적 그림(19×18)을 픽셀 그대로 한 색 실루엣 + 밝은 테두리로 칠한 그림.
+ * 처음 쓸 때 캔버스로 한 번 만들어 색마다 저장해 둔다.
+ */
+const ROGUE = 'rogue';
+const tintCache = new Map<string, string>();
+let rogueImg: HTMLImageElement | null = null;
+// 첫 분신이 칠해진 그림으로 나오게 미리 불러 둔다
+if (typeof Image !== 'undefined') { rogueImg = new Image(); rogueImg.src = spriteUrl(ROGUE) ?? ''; }
+function tinted(body: string, rim: string): string {
+  const key = body + rim, hit = tintCache.get(key);
+  if (hit) return hit;
+  if (!rogueImg) { rogueImg = new Image(); rogueImg.src = spriteUrl(ROGUE) ?? ''; }
+  if (!rogueImg.complete || !rogueImg.naturalWidth) return spriteUrl(ROGUE) ?? '';
+  const w = rogueImg.naturalWidth, h = rogueImg.naturalHeight, cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  const g = cv.getContext('2d')!;
+  g.drawImage(rogueImg, 0, 0);
+  const src = g.getImageData(0, 0, w, h), out = g.createImageData(w, h);
+  const solid = (x: number, y: number): boolean => x >= 0 && y >= 0 && x < w && y < h && src.data[(y * w + x) * 4 + 3] > 0;
+  const hex = (c: string): number[] => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+  const [B, Rm] = [hex(body), hex(rim)];
+  // 안쪽은 원래 그림의 밝기에 따라 3단(어두움·몸색·밝음)으로 칠해 얼굴·옷 모양이 보이게 한다
+  const mix = (a: number[], b: number[], t: number): number[] => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  const tones = [mix(B, [0, 0, 0], 0.45), B, mix(B, Rm, 0.45)];
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (!solid(x, y)) continue;
+    const i = (y * w + x) * 4, lum = (src.data[i] * 0.3 + src.data[i + 1] * 0.59 + src.data[i + 2] * 0.11) / 255;
+    const edge = !solid(x - 1, y) || !solid(x + 1, y) || !solid(x, y - 1) || !solid(x, y + 1);
+    out.data.set([...(edge ? Rm : tones[lum < 0.25 ? 0 : lum < 0.55 ? 1 : 2]), 255], i);
+  }
+  g.putImageData(out, 0, 0);
+  const url = cv.toDataURL();
+  tintCache.set(key, url);
+  return url;
+}
+/** 분신 한 장을 발끝(at)에 세운다. */
+function clone(stage: HTMLElement, at: Pt, o: { delay: number; life: number; flip?: boolean; alpha?: number; body?: string; rim?: string }): HTMLElement {
+  const w = 19 * PX, h = 18 * PX;
+  const el = document.createElement('img');
+  el.className = 'fx fx-clone';
+  el.alt = '';
+  el.src = tinted(o.body ?? '#2a1450', o.rim ?? '#c77dff');
+  el.style.cssText = `left:${at.x - w / 2}px;top:${at.y - h}px;width:${w}px;height:${h}px`;
+  if (o.flip) el.style.transform = 'scaleX(-1)';
+  if (o.alpha !== undefined) el.style.opacity = String(o.alpha);
+  stage.append(el);
+  if (o.delay > 0) {
+    el.style.visibility = 'hidden';
+    later(o.delay, () => { el.style.visibility = ''; });
+  }
+  later(o.delay + o.life, () => el.remove());
+  return el;
+}
+/** 분신이 연기 속에서 나와 잔상을 남기며 대상 뒤로 달려가 벤다. 벤 시각(ms)을 돌려준다. */
+function shadowStrike(stage: HTMLElement, me: Spot, t: Spot, delay: number, hit: 'slash' | 'x'): number {
+  const from = { x: me.x, y: feet(me) }, to = { x: t.x + t.size * 0.55, y: feet(t) }, run = 150;
+  sp(stage, 'smoke', from.x, me.y, { delay, scale: 3 });
+  for (let i = 1; i <= 4; i++) {
+    const f = i / 5, c = clone(stage, { x: from.x + (to.x - from.x) * f, y: from.y + (to.y - from.y) * f }, { delay: delay + run * f, life: 260, alpha: 0.75 - i * 0.12, body: i % 2 ? '#56289a' : '#7a3fc8', rim: '#d08cff' });
+    fadeOut(c, 260, delay + run * f);
+  }
+  const body = clone(stage, to, { delay: delay + run, life: 440, flip: true });
+  fadeOut(body, 160, delay + run + 280);
+  if (hit === 'x') sp(stage, 'xslash_shadow', t.x, t.y, { delay: delay + run + 40, scale: 4 });
+  else sp(stage, 'slash_shadow', t.x, t.y, { delay: delay + run + 20, scale: 4, flip: true });
+  scatter(stage, 'star_shadow', t.x, t.y, 5, t.size * 0.7, { delay: delay + run + 60 });
+  sp(stage, 'smoke', to.x, t.y, { delay: delay + run + 300, scale: 3 });
+  return delay + run + 60;
+}
+/** 줄줄이 이어 붙이는 그림 (번개 마디·빛줄기·땅 갈라짐): a → b 방향으로 seg 간격. */
+function chain(stage: HTMLElement, name: string, a: Pt, b: Pt, o: { delay: number; life: number; step?: number; loop?: boolean }): HTMLElement[] {
+  const dx = b.x - a.x, dy = b.y - a.y, seg = A[name][2] * PX - 3, n = Math.max(1, Math.round(Math.hypot(dx, dy) / seg)), deg = (Math.atan2(dy, dx) * 180) / Math.PI;
+  return Array.from({ length: n }, (_, k) => sp(stage, name, a.x + (dx * (k + 0.5)) / n, a.y + (dy * (k + 0.5)) / n, { rot: deg, delay: o.delay + k * (o.step ?? 0), life: o.life, loop: o.loop }));
+}
+
+type SkillFx = (st: HTMLElement, me: Spot, to: Spot[]) => number;
 /**
  * 스킬마다 다른 연출. 돌려주는 값 = 맞는 순간까지의 시간(ms, 전투 속도 반영 전).
- * to = 실제로 맞는 적들 (자기 강화는 빈 배열).
+ * to = 실제로 맞는 적들 (자기 강화는 빈 배열). 전사 근접 스킬의 휘두르기는 fxSwing이 맡는다.
  */
 const SKILL_FX: Record<string, SkillFx> = {
-  // 전사
-  w_bash: (st, me) => { ring(st, me.x, me.y, me.size * 1.1, FX_COLOR.smash, 260, 1.2, 0.5); return 120; },
-  w_shield: (st, me) => { ring(st, me.x, me.y, me.size * 1.1, FX_COLOR.smash, 260, 1.2, 0.5); return 120; },
-  w_warcry: (st, me) => { aura(st, me, STATUS_COLOR.Empower); for (let i = 0; i < 3; i++) ring(st, me.x, me.y, me.size * 2.2, FX_COLOR.shout, 520, 0.3, 1.3, i * 110); return 0; },
-  w_riposte: (st, me) => { aura(st, me, STATUS_COLOR.Riposte); line(st, me.x + me.size * 0.3, me.y, me.size, -50, '#FFFFFF', 260, 200); return 0; },
-  w_guard: (st, me) => { aura(st, me, STATUS_COLOR.Fortify); ring(st, me.x, me.y, me.size * 1.5, STATUS_COLOR.Fortify, 600, 0.9, 1.05); return 0; },
-  w_will: (st, me) => { aura(st, me, STATUS_COLOR.Regen); drift(st, me, HEAL, 8, -me.size * 0.7, 'fx-px fx-plus', 10); return 0; },
-  w_whirl: (st, me) => {
-    for (let i = 0; i < 4; i++) line(st, me.x, me.y, me.size * 1.6, i * 45, FX_COLOR.slash, 320, i * 40, 4);
-    ring(st, me.x, me.y, me.size * 1.9, FX_COLOR.slash, 360, 0.4, 1.2);
+  // ── 전사 ──
+  w_bash: () => 0,
+  w_shield: () => 0,
+  w_warcry: (st, me) => { aura(st, me, 'gold'); for (let i = 0; i < 3; i++) sp(st, 'ring_gold', me.x, me.y, { scale: 5 + i, delay: i * 110 }); fxShake(st, 3); return 0; },
+  w_riposte: (st, me) => { aura(st, me, 'gold'); sp(st, 'shield', me.x + me.size * 0.45, me.y, { delay: 160, life: 520 }); return 0; },
+  w_guard: (st, me) => { aura(st, me, 'ice'); sp(st, 'ring_ice', me.x, me.y, { scale: 5, delay: 120 }); sp(st, 'shield', me.x + me.size * 0.45, me.y, { delay: 160, life: 520 }); return 0; },
+  w_will: (st, me) => { aura(st, me, 'green'); drift(st, me, 'plus', 6, -me.size * 0.8, 100); return 0; },
+  w_whirl: (st, me, to) => {
+    sp(st, 'whirl', me.x, me.y, { scale: 4, life: 420 });
+    to.forEach((t, i) => sp(st, 'slash_white', t.x, t.y, { delay: 160 + i * 30, rot: rand(-30, 30) }));
     return 200;
   },
-  w_roar: (st, me) => { flash(st, '#E0524A', 260, 0.18); for (let i = 0; i < 4; i++) ring(st, me.x, me.y, me.size * 3, FX_COLOR.shout, 600, 0.2, 1.4, i * 100); fxShake(st, 4); return 260; },
+  w_roar: (st, me) => { flash(st, '#E0524A', 260, 0.18); for (let i = 0; i < 4; i++) sp(st, 'ring_gold', me.x, me.y, { scale: 5 + i * 2, delay: i * 90 }); fxShake(st, 4); return 260; },
   w_earth: (st, me, to) => {
-    const g = me.y + me.size * 0.45, end = Math.max(...to.map((t) => t.x)) + 30;
-    play(put(st, 'fx-crack', (me.x + end) / 2, g, end - me.x, 5, FX_COLOR.quake), [{ transform: 'scaleX(0)', opacity: 1, transformOrigin: 'left' }, { transform: 'scaleX(1)', opacity: 1, offset: 0.5, transformOrigin: 'left' }, { transform: 'scaleX(1)', opacity: 0, transformOrigin: 'left' }], 520);
-    for (const t of to) drift(st, { x: t.x, y: t.y + t.size * 0.4, size: t.size }, FX_COLOR.quake, 8, -t.size * 0.7, 'fx-px', 6);
-    fxShake(st, 8);
-    return 260;
+    const g = feet(me) - 4, end = Math.max(...to.map((t) => t.x)) + 30;
+    chain(st, 'crack', { x: me.x + 10, y: g }, { x: end, y: g }, { delay: 0, life: 620, step: 45 });
+    for (const t of to) { sp(st, 'burst_earth', t.x, feet(t) - 10, { delay: 180, scale: 4 }); scatter(st, 'rock', t.x, feet(t) - 10, 7, t.size * 0.8, { delay: 180, up: true, gravity: 40 }); }
+    later(180, () => fxShake(st, 8));
+    return 220;
   },
-  w_strike: (st, me, to) => { circle(st, me, FX_COLOR.smash, true); if (to[0]) { flash(st, '#FFFFFF', 200, 0.4); line(st, to[0].x, to[0].y, to[0].size * 1.8, -40, '#FFFFFF', 320, 160, 8); line(st, to[0].x, to[0].y, to[0].size * 1.8, 40, '#FFFFFF', 320, 220, 8); } fxShake(st, 9); return 260; },
-  // 궁수
-  a_aim: (st, me) => { aura(st, me, STATUS_COLOR.Hawk); ring(st, me.x + me.size * 0.6, me.y - me.size * 0.2, me.size * 0.6, STATUS_COLOR.Hawk, 500, 1.4, 0.8); return 0; },
-  a_double: (st, me) => { aura(st, me, STATUS_COLOR.Rapid); for (let i = 0; i < 3; i++) line(st, me.x, me.y + (i - 1) * 12, me.size * 1.4, 0, STATUS_COLOR.Rapid, 300, i * 60, 2); return 0; },
-  a_wind: (st, me) => { aura(st, me, STATUS_COLOR.Piercing); line(st, me.x + me.size, me.y, me.size * 1.8, 0, '#FFFFFF', 340, 120, 3); return 0; },
-  a_storm: (st, me) => { aura(st, me, STATUS_COLOR.Hawk); aura(st, me, STATUS_COLOR.Rapid); for (let i = 0; i < 3; i++) ring(st, me.x, me.y, me.size * 2, STATUS_COLOR.Rapid, 520, 0.3, 1.2, i * 120, 0.5); return 0; },
-  a_scatter: (st, me, to) => { to.forEach((t, i) => { arrow(st, me, t, FX_COLOR.arrow, i * 30); arrow(st, me, t, FX_COLOR.arrow, i * 30 + 20); }); return 200; },
-  a_flash: (st, me, to) => { if (!to[0]) return 0; const ms = shard(st, me, to[0], '#FFF3B0', 30, 6, 160); flash(st, '#FFFFFF', 200, 0.35); return ms; },
-  a_weak: (st, me, to) => { if (!to[0]) return 0; play(put(st, 'fx-circle', to[0].x, to[0].y, to[0].size * 0.9, to[0].size * 0.9, '#E0524A'), [{ transform: 'scale(1.6) rotate(0)', opacity: 0 }, { transform: 'scale(1) rotate(90deg)', opacity: 1, offset: 0.6 }, { transform: 'scale(.9) rotate(120deg)', opacity: 0 }], 420); arrow(st, me, to[0], FX_COLOR.arrow, 180); return 330; },
-  a_rain: (st, _me, to) => { for (const t of to) for (let i = 0; i < 7; i++) fall(st, 'fx-arrow', { x: t.x + rand(-t.size * 0.4, t.size * 0.4), y: t.y + rand(-10, 20) }, 22, 3, FX_COLOR.arrow, 220, i * 35, { dx: -40, dy: -200 }); return 260; },
-  a_pierce: (st, me, to) => { const end = Math.max(...to.map((t) => t.x)) + 60; play(put(st, 'fx-beam', (me.x + end) / 2, me.y, end - me.x, 6, '#FFFFFF'), [{ transform: 'scaleX(0)', opacity: 1, transformOrigin: 'left' }, { transform: 'scaleX(1)', opacity: 1, offset: 0.4, transformOrigin: 'left' }, { transform: 'scaleX(1) scaleY(.2)', opacity: 0, transformOrigin: 'left' }], 380); return 150; },
-  a_volley: (st, me, to) => { for (let w = 0; w < 3; w++) to.forEach((t, i) => arrow(st, me, t, FX_COLOR.arrow, w * 70 + i * 15)); return 240; },
-  // 도적
-  r_ambush: (st, me, to) => (to[0] ? afterimage(st, me, to[0]) : 0),
-  r_shadow: (st, me, to) => (to[0] ? afterimage(st, me, to[0]) : 0),
-  r_venom: (st, me) => { drift(st, me, FX_COLOR.poison, 5, -me.size * 0.4, 'fx-px fx-bubble', 6); return 120; },
-  r_keen: (st, me) => { aura(st, me, STATUS_COLOR.Keen); return 0; },
-  r_cruel: (st, me) => { aura(st, me, STATUS_COLOR.Cruel); flash(st, '#E0524A', 220, 0.15); return 0; },
-  r_shuriken: (st, me, to) => { to.forEach((t, i) => { const x0 = me.x + me.size * 0.4; play(put(st, 'fx-star', x0, me.y, 12, 12, '#DCE3EE'), [{ transform: 'translate(0,0) rotate(0)' }, { transform: `translate(${t.x - x0}px,${t.y - me.y}px) rotate(900deg)` }], 220, i * 40, 'linear'); }); return 220; },
-  r_vital: (st, me, to) => { if (to[0]) line(st, (me.x + to[0].x) / 2, me.y, to[0].x - me.x, 0, '#FFFFFF', 160, 0, 2); return 120; },
-  r_storm: (st, _me, to) => { for (const t of to) for (let i = 0; i < 4; i++) line(st, t.x + rand(-8, 8), t.y + rand(-8, 8), t.size * 1.1, rand(-70, 70), FX_COLOR.slash, 220, i * 60, 3); return 160; },
-  r_assassin: (st, me, to) => { flash(st, '#140A24', 360, 0.55); const ms = to[0] ? afterimage(st, me, to[0]) : 0; if (to[0]) { line(st, to[0].x, to[0].y, to[0].size * 1.9, -45, '#E0C8FF', 300, ms, 6); line(st, to[0].x, to[0].y, to[0].size * 1.9, 45, '#E0C8FF', 300, ms + 60, 6); } fxShake(st, 8); return ms + 80; },
-  r_dance: (st, me, to) => { flash(st, '#140A24', 300, 0.4); to.forEach((t, i) => afterimage(st, i === 0 ? me : to[i - 1], t)); return 220; },
-  // 마법사
-  m_fireball: (st, me, to) => { circle(st, me, FX_COLOR.fire); return to[0] ? 80 + orb(st, me, to[0], FX_COLOR.fire, 18) : 0; },
-  m_bolt: (st, me, to) => { circle(st, me, FX_COLOR.arcane); return to[0] ? shard(st, me, to[0], FX_COLOR.arcane) : 0; },
-  m_shard: (st, me, to) => { circle(st, me, FX_COLOR.fire); to.forEach((t) => shard(st, me, t, FX_COLOR.fire, 22, 6, 200)); return 200; },
-  m_ice: (st, me, to) => { circle(st, me, FX_COLOR.ice, true); const far = to.reduce((a, t) => (t.x > a.x ? t : a), to[0] ?? me); return to.length ? shard(st, me, far, FX_COLOR.ice, 56, 14, 260) : 0; },
-  m_chain: (st, me, to) => { circle(st, me, FX_COLOR.bolt); let prev = { x: me.x + me.size * 0.5, y: me.y }; to.forEach((t, i) => { zap(st, prev, t, FX_COLOR.bolt, i * 90); prev = t; }); flash(st, '#FFF6B0', 160, 0.25); return 140; },
-  m_silence: (st, me, to) => { circle(st, me, '#9AA7B8'); if (to[0]) play(put(st, 'fx-circle', to[0].x, to[0].y, to[0].size * 1.1, to[0].size * 1.1, '#C9B8FF'), [{ transform: 'scale(.3) rotate(0)', opacity: 0 }, { transform: 'scale(1) rotate(180deg)', opacity: 1, offset: 0.5 }, { transform: 'scale(1.1) rotate(270deg)', opacity: 0 }], 520, 150); return 260; },
-  m_prison: (st, me, to) => { circle(st, me, FX_COLOR.ice, true); if (to[0]) spikes(st, to[0], FX_COLOR.ice); return 240; },
+  w_strike: (st, me, to) => {
+    cast(st, me, 'gold', true);
+    if (to[0]) { sp(st, 'xslash_white', to[0].x, to[0].y, { scale: 5, delay: 200 }); flash(st, '#FFFFFF', 200, 0.4, 200); }
+    later(200, () => fxShake(st, 9));
+    return 240;
+  },
+  // ── 궁수 ──
+  a_aim: (st, me) => { aura(st, me, 'gold'); sp(st, 'ring_gold', me.x + me.size * 0.6, me.y - me.size * 0.2, { scale: 2, delay: 200 }); return 0; },
+  a_double: (st, me) => { aura(st, me, 'green'); for (let i = 0; i < 3; i++) sp(st, 'pierce_white', me.x + me.size * 0.9, me.y + (i - 1) * 12, { delay: i * 70 }); return 0; },
+  a_wind: (st, me) => { aura(st, me, 'white'); sp(st, 'pierce_white', me.x + me.size, me.y, { scale: 4, delay: 120 }); return 0; },
+  a_storm: (st, me) => { aura(st, me, 'gold'); aura(st, me, 'green', 120); for (let i = 0; i < 3; i++) sp(st, 'ring_green', me.x, me.y, { scale: 4 + i, delay: i * 120 }); return 0; },
+  a_scatter: (st, me, to) => {
+    let t0 = 0;
+    to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, t, 170, i * 30)); shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y - 6 }, { x: t.x, y: t.y - 8 }, 170, i * 30 + 25); });
+    return t0;
+  },
+  a_flash: (st, me, to) => { if (!to[0]) return 0; flash(st, '#FFFFFF', 200, 0.3, 140); return shoot(st, 'proj_light', { x: me.x + me.size * 0.4, y: me.y }, to[0], 150, 0, { trail: 'star_bolt' }); },
+  a_weak: (st, me, to) => { if (!to[0]) return 0; sp(st, 'seal', to[0].x, to[0].y, { life: 420 }); return shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, to[0], 170, 160, { trail: 'star_red' }); },
+  a_rain: (st, _me, to) => { for (const t of to) for (let i = 0; i < 7; i++) fall(st, 'proj_arrow', { x: t.x + rand(-t.size * 0.4, t.size * 0.4), y: t.y + rand(-10, 20) }, 220, i * 35, { dx: -40, dy: -200 }); return 260; },
+  a_pierce: (st, me, to) => {
+    const x0 = me.x + me.size * 0.5, end = Math.max(...to.map((t) => t.x)) + 60;
+    chain(st, 'beam_light', { x: x0, y: me.y }, { x: end, y: me.y }, { delay: 60, life: 300, step: 20, loop: true });
+    return shoot(st, 'proj_arrow', { x: x0, y: me.y }, { x: end, y: me.y }, 160, 0, { scale: 4 }) - 40;
+  },
+  a_volley: (st, me, to) => { for (let w = 0; w < 3; w++) to.forEach((t, i) => shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y + rand(-8, 8) }, { x: t.x + rand(-6, 6), y: t.y + rand(-6, 6) }, 170, w * 70 + i * 15)); return 240; },
+  // ── 도적 ──
+  r_ambush: (st, me, to) => {
+    const t = to[0];
+    if (!t) return 0;
+    sp(st, 'smoke', me.x, me.y);
+    const c = clone(st, { x: t.x + t.size * 0.55, y: feet(t) }, { delay: 120, life: 440, flip: true });
+    move(c, [{ transform: 'scaleX(-1) translateY(-90px)', opacity: 0 }, { transform: 'scaleX(-1) translateY(0)', opacity: 1 }], 140, 120, 'ease-in');
+    fadeOut(c, 160, 400);
+    sp(st, 'slash_gold', t.x, t.y, { scale: 4, delay: 250, flip: true, rot: 20 });
+    scatter(st, 'star_gold', t.x, t.y, 6, t.size * 0.7, { delay: 270 });
+    return 270;
+  },
+  r_shadow: (st, me, to) => (to[0] ? shadowStrike(st, me, to[0], 0, 'x') : 0),
+  r_venom: (st, me, to) => { drift(st, me, 'bubble', 6, -me.size * 0.5); if (to[0]) sp(st, 'pierce_white', to[0].x - to[0].size * 0.3, to[0].y, { delay: 100 }); return 120; },
+  r_keen: (st, me) => { aura(st, me, 'gold'); scatter(st, 'star_gold', me.x + me.size * 0.4, me.y, 5, me.size * 0.5, { delay: 200 }); return 0; },
+  r_cruel: (st, me) => { aura(st, me, 'red'); flash(st, '#E0524A', 220, 0.15); drift(st, me, 'drop', 5, -me.size * 0.5, 100); return 0; },
+  r_shuriken: (st, me, to) => { let t0 = 0; to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_star', { x: me.x + me.size * 0.4, y: me.y }, t, 220, i * 40, { spin: true })); }); return t0; },
+  r_vital: (st, _me, to) => { if (to[0]) sp(st, 'pierce_blood', to[0].x - to[0].size * 0.2, to[0].y, { scale: 4 }); return 110; },
+  r_storm: (st, _me, to) => { for (const t of to) for (let i = 0; i < 3; i++) sp(st, 'slash_white', t.x + rand(-8, 8), t.y + rand(-8, 8), { delay: i * 70, rot: rand(0, 360) }); return 160; },
+  r_assassin: (st, me, to) => {
+    const t = to[0];
+    if (!t) return 0;
+    flash(st, '#140A24', 700, 0.6);
+    sp(st, 'smoke', me.x, me.y, { scale: 4 });
+    const at = { x: t.x + t.size * 0.55, y: feet(t) };
+    sp(st, 'smoke', at.x, t.y, { scale: 4, delay: 180 });
+    const c = clone(st, at, { delay: 220, life: 520, flip: true });
+    fadeOut(c, 160, 600);
+    sp(st, 'xslash_blood', t.x, t.y, { scale: 5, delay: 380 });
+    sp(st, 'slash_shadow', t.x, t.y, { scale: 5, delay: 420, flip: true });
+    scatter(st, 'drop', t.x, t.y, 8, t.size * 0.8, { delay: 400, gravity: 30 });
+    later(380, () => fxShake(st, 8));
+    return 400;
+  },
+  r_dance: (st, me, to) => { flash(st, '#140A24', 400, 0.45); let t0 = 0; to.forEach((t, i) => { t0 = Math.max(t0, shadowStrike(st, me, t, i * 70, 'slash')); }); return t0; },
+  // ── 마법사 ──
+  m_fireball: (st, me, to) => { cast(st, me, 'fire'); return to[0] ? shoot(st, 'proj_fire', { x: me.x + me.size * 0.6, y: me.y }, to[0], 230, 160, { trail: 'ember', scale: 4 }) : 0; },
+  m_bolt: (st, me, to) => { cast(st, me, 'arc'); return to[0] ? shoot(st, 'proj_arc', { x: me.x + me.size * 0.6, y: me.y }, to[0], 200, 160, { trail: 'star_arc', scale: 4 }) : 0; },
+  m_shard: (st, me, to) => { cast(st, me, 'fire'); let t0 = 0; to.forEach((t) => { t0 = Math.max(t0, shoot(st, 'proj_fire', { x: me.x + me.size * 0.6, y: me.y }, t, 210, 160, { trail: 'ember' })); }); return t0; },
+  m_ice: (st, me, to) => {
+    cast(st, me, 'ice', true);
+    if (!to.length) return 0;
+    const far = to.reduce((a, t) => (t.x > a.x ? t : a), to[0]);
+    const t0 = shoot(st, 'proj_ice', { x: me.x + me.size * 0.6, y: me.y }, far, 260, 200, { trail: 'snow', scale: 4 });
+    for (const t of to) iceSpikes(st, t, false, t0 - 60);
+    return t0;
+  },
+  m_chain: (st, me, to) => {
+    cast(st, me, 'bolt');
+    let prev: Pt = { x: me.x + me.size * 0.6, y: me.y };
+    to.forEach((t, i) => { chain(st, 'zap_h', prev, t, { delay: 160 + i * 100, life: 260, loop: true }); prev = t; });
+    flash(st, '#FFF6B0', 160, 0.25, 160);
+    return 200;
+  },
+  m_silence: (st, me, to) => { cast(st, me, 'seal'); if (to[0]) sp(st, 'seal', to[0].x, to[0].y, { scale: 4, delay: 200 }); return 280; },
+  m_prison: (st, me, to) => { cast(st, me, 'ice', true); if (to[0]) iceSpikes(st, to[0], true, 220); return 300; },
   m_overload: (st, me, to) => {
-    circle(st, me, '#C9B8FF', true);
+    cast(st, me, 'seal', true);
     if (!to[0]) return 0;
-    const x0 = me.x + me.size * 0.5, len = to[0].x - x0 + 30;
-    play(put(st, 'fx-beam', x0 + len / 2, me.y, len, 18, '#C9B8FF'), [{ transform: 'scaleX(0)', opacity: 1, transformOrigin: 'left' }, { transform: 'scaleX(1)', opacity: 1, offset: 0.3, transformOrigin: 'left' }, { transform: 'scaleX(1) scaleY(1.3)', opacity: 1, offset: 0.6, transformOrigin: 'left' }, { transform: 'scaleX(1) scaleY(.1)', opacity: 0, transformOrigin: 'left' }], 520, 200);
-    flash(st, '#FFFFFF', 240, 0.35);
-    fxShake(st, 7);
+    const x0 = me.x + me.size * 0.6;
+    chain(st, 'beam_arc', { x: x0, y: me.y }, { x: to[0].x + 30, y: me.y }, { delay: 220, life: 520, step: 15, loop: true }).forEach((el, i) =>
+      move(el, [{ transform: 'scaleY(.2)' }, { transform: 'scaleY(1.4)', offset: 0.3 }, { transform: 'scaleY(1)', offset: 0.7 }, { transform: 'scaleY(0)' }], 520, 220 + i * 15));
+    sp(st, 'burst_arc', to[0].x, to[0].y, { scale: 5, delay: 300 });
+    flash(st, '#FFFFFF', 240, 0.35, 280);
+    later(300, () => fxShake(st, 7));
     return 320;
   },
   m_meteor: (st, me, to) => {
-    circle(st, me, FX_COLOR.fire, true);
+    cast(st, me, 'fire', true);
     if (!to.length) return 0;
-    const c = middle(to), fallMs = 460, d = 60, dx = -140, dy = -200;
-    fall(st, 'fx-meteor', c, d, d, FX_COLOR.fire, fallMs, 160, { dx, dy });
-    for (let i = 0; i < 16; i++) {
-      const t = i / 16;
-      play(put(st, 'fx-px fx-flame', c.x + dx * (1 - t) + rand(-8, 8), c.y + dy * (1 - t) + rand(-8, 8), 10, 10, i % 2 ? '#FFE066' : FX_COLOR.fire), [{ opacity: 1 }, { opacity: 0, transform: `translate(${rand(-10, 10)}px,${rand(-16, -4)}px) scale(.3)` }], 420, 160 + fallMs * t);
-    }
-    // 떨어진 순간: 번쩍 + 큰 충격파 + 흔들림
-    window.setTimeout(() => { flash(st, '#FFB060', 300, 0.55); fxShake(st, 10); }, (160 + fallMs) / speed);
-    ring(st, c.x, c.y + 20, 220, FX_COLOR.fire, 520, 0.2, 1.3, 160 + fallMs, 0.45);
-    ring(st, c.x, c.y + 20, 160, '#FFE066', 420, 0.2, 1.2, 200 + fallMs, 0.45);
-    return 160 + fallMs;
+    const c = middle(to), fallMs = 460, hit = 160 + fallMs;
+    fall(st, 'meteor', c, fallMs, 160, { dx: -150, dy: -210 }, 5, false);
+    // 떨어진 순간: 모든 적이 동시에 터진다 + 번쩍 + 흔들림
+    for (const t of to) { sp(st, 'explode', t.x, t.y, { delay: hit }); scatter(st, 'ember', t.x, t.y, 6, t.size * 0.9, { delay: hit, up: true }); }
+    sp(st, 'explode', c.x, c.y, { scale: 4, delay: hit - 20 });
+    sp(st, 'ring_fire', c.x, c.y + 20, { scale: 8, squash: 0.45, delay: hit });
+    flash(st, '#FFB060', 300, 0.5, hit);
+    later(hit, () => fxShake(st, 10));
+    return hit;
   },
   m_apocalypse: (st, me, to) => {
-    circle(st, me, '#E0524A', true);
-    flash(st, '#7A1410', 420, 0.35);
-    to.forEach((t, i) => play(put(st, 'fx-pillar', t.x, t.y - t.size * 0.3, t.size * 0.6, t.size * 2.2, FX_COLOR.fire), [{ transform: 'scaleY(0)', opacity: 1, transformOrigin: 'bottom' }, { transform: 'scaleY(1)', opacity: 1, offset: 0.35, transformOrigin: 'bottom' }, { transform: 'scaleY(1) scaleX(.4)', opacity: 0, transformOrigin: 'bottom' }], 620, 200 + i * 60));
-    for (const t of to) for (let i = 0; i < 3; i++) fall(st, 'fx-meteor', { x: t.x + rand(-14, 14), y: t.y }, 20, 20, FX_COLOR.fire, 300, 120 + i * 90, ALL_DIR);
-    window.setTimeout(() => fxShake(st, 10), 340 / speed);
+    cast(st, me, 'red', true);
+    flash(st, '#7A1410', 520, 0.35);
+    to.forEach((t, i) => {
+      sp(st, 'pillar_fire', t.x, feet(t) + 6, { anchor: 'b', delay: 220 + i * 60, life: 560 });
+      for (let k = 0; k < 2; k++) fall(st, 'meteor', { x: t.x + rand(-14, 14), y: t.y }, 260, 120 + k * 110, { dx: -40, dy: -200 }, 2, false);
+      scatter(st, 'ember', t.x, feet(t), 6, t.size, { delay: 260 + i * 60, up: true });
+    });
+    later(340, () => fxShake(st, 10));
     return 340;
   },
 };
+/** 전사가 그 자리에서 칼을 휘두르는 스킬 (fxSwing). */
+const SWING = new Set(['w_bash', 'w_shield', 'w_strike']);
+export const swingsSword = (job: Job, skillId: string | null): boolean => job === 'Warrior' && (!skillId || SWING.has(skillId));
 
-/** 기본 공격 연출 (직업별). 마법사 에너지 볼은 참고 그림처럼 마법진 + 빛나는 창. */
+/** 기본 공격 연출 (직업별). 맞는 순간까지의 시간을 돌려준다. 전사는 fxSwing이 맡는다. */
 function basicFx(stage: HTMLElement, job: Job, me: Spot, to: Spot[]): number {
   if (!to[0]) return 0;
-  if (job === 'Mage') {
-    circle(stage, me, FX_COLOR.arcane);
-    return 60 + shard(stage, me, to[0], FX_COLOR.arcane, 30, 8, 180);
-  }
-  if (job === 'Archer') {
-    arrow(stage, me, to[0], FX_COLOR.arrow);
-    return 170;
-  }
+  if (job === 'Mage') { cast(stage, me, 'arc'); return shoot(stage, 'proj_arc', { x: me.x + me.size * 0.6, y: me.y }, to[0], 190, 150, { trail: 'star_arc' }); }
+  if (job === 'Archer') return shoot(stage, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, to[0], 170);
   return 0;
 }
 
@@ -332,77 +418,51 @@ export function fxSkill(stage: HTMLElement, me: Spot, to: Spot[], job: Job, skil
   if (!skillId) return basicFx(stage, job, me, to);
   const fx = SKILL_FX[skillId];
   if (fx) return fx(stage, me, to);
-  circle(stage, me, FX_COLOR[fxStyleFor(job, skillId)]);
+  cast(stage, me, 'arc');
   return 120;
 }
-/** 몬스터 스킬: 붉은 마법진만. */
+/**
+ * 전사 휘두르기: 돌진하지 않고 그 자리에서 칼을 들었다 내려치며(그림을 발끝 기준으로 기울임),
+ * 칼 쪽에 반달 베기 궤적이 나타난다. 맞는 순간까지의 시간을 돌려준다.
+ */
+export function fxSwing(stage: HTMLElement, unit: HTMLElement, me: Spot, big = false): number {
+  const img = unit.querySelector<HTMLElement>('img') ?? unit;
+  img.style.transformOrigin = '50% 100%';
+  img.animate([{ rotate: '0deg' }, { rotate: '-14deg', offset: 0.35 }, { rotate: '18deg', offset: 0.6 }, { rotate: '0deg' }], { duration: 340 / speed, easing: 'ease-out' });
+  if (calm()) return 120;
+  sp(stage, big ? 'slash_gold' : 'slash_white', me.x + me.size * 0.6, me.y - me.size * 0.15, { scale: big ? 4 : 3, delay: 100 });
+  return 150;
+}
+/** 몬스터 스킬: 붉은 마법진 (몬스터는 왼쪽을 본다). */
 export function fxEnemyCast(stage: HTMLElement, s: Spot): void {
   if (calm()) return;
-  play(put(stage, 'fx-circle', s.x - s.size * 0.55, s.y, s.size * 0.38, s.size * 1.05, '#E0524A'), [
-    { transform: 'scaleY(.1)', opacity: 0 }, { transform: 'scaleY(1)', opacity: 1, offset: 0.35 }, { transform: 'scaleY(1)', opacity: 0 },
-  ], 420);
+  sp(stage, 'circlev_red', s.x - s.size * 0.6, s.y, { flip: true });
+  sp(stage, 'circleg_red', s.x, feet(s));
 }
 
-/** 타격: 계열별 모양 + 입자. 치명타는 더 크게 + 흰 고리 + 화면 흔들림. */
+/** 타격: 계열별 픽셀 그림 + 입자. 치명타는 더 크게 + 흰 폭발 + 금빛 별 + 화면 흔들림. */
 export function fxHit(stage: HTMLElement, s: Spot, style: FxStyle, crit: boolean): void {
   if (calm()) return;
-  const c = FX_COLOR[style], k = crit ? 1.5 : 1, { x, y, size } = s;
+  const k = crit ? 4 : 3, { x, y, size } = s;
   switch (style) {
-    case 'slash':
-      line(stage, x, y, size * 1.1 * k, -35, c);
-      if (crit) line(stage, x, y, size * 1.1 * k, 35, c, 260, 60);
-      break;
-    case 'claw':
-      for (let i = -1; i <= 1; i++) line(stage, x + i * 9, y, size * 0.7 * k, 62, c, 240, (i + 1) * 30, 3);
-      break;
-    case 'stab':
-      for (let i = 0; i < (crit ? 3 : 1); i++) line(stage, x + rand(-6, 6), y + (i - 1) * 8 * (crit ? 1 : 0), size * 0.8, rand(-8, 8), c, 200, i * 50, 3);
-      break;
-    case 'bolt':
-      lightning(stage, s, c);
-      ring(stage, x, y, size * 0.9 * k, c);
-      break;
-    case 'quake':
-      line(stage, x, y + size * 0.45, size * 1.4 * k, 0, c, 420, 0, 3);
-      ring(stage, x, y + size * 0.45, size * 1.6 * k, c, 420, 0.3, 1.2, 0, 0.3);
-      drift(stage, { x, y: y + size * 0.4, size }, c, 8, -size * 0.5);
-      break;
-    case 'fire':
-      ring(stage, x, y, size * 1.0 * k, c);
-      drift(stage, s, c, 6, -size * 0.6, 'fx-px fx-flame', 5);
-      break;
-    case 'ice':
-      ring(stage, x, y, size * 0.9 * k, c);
-      burst(stage, x, y, '#E8F7FF', 8, size * 0.55, 6);
-      break;
-    case 'arcane':
-      // 참고 그림: 맞은 자리에서 분홍 불티가 튄다
-      ring(stage, x, y, size * 0.9 * k, c);
-      burst(stage, x, y, '#FF8FC8', 8, size * 0.6, 4);
-      break;
-    case 'smash':
-      ring(stage, x, y, size * 1.3 * k, c, 320, 0.2, 1.2);
-      line(stage, x, y, size * 0.9 * k, 0, '#FFFFFF', 200, 0, 5);
-      line(stage, x, y, size * 0.9 * k, 90, '#FFFFFF', 200, 0, 5);
-      fxShake(stage, crit ? 8 : 4);
-      break;
-    case 'shadow':
-      line(stage, x, y, size * 1.2 * k, -45, c, 260, 0, 5);
-      line(stage, x, y, size * 1.2 * k, 45, c, 260, 70, 5);
-      break;
-    case 'poison':
-      ring(stage, x, y, size * 0.8 * k, c);
-      drift(stage, s, c, 6, -size * 0.5, 'fx-px fx-bubble', 7);
-      break;
-    default:
-      ring(stage, x, y, size * 0.8 * k, c);
+    case 'slash': sp(stage, 'slash_white', x, y, { scale: k, rot: rand(-20, 20) }); scatter(stage, 'star_white', x, y, 4, size * 0.6); break;
+    case 'claw': sp(stage, 'claw', x, y, { scale: k }); scatter(stage, 'star_red', x, y, 3, size * 0.5); break;
+    case 'stab': sp(stage, 'pierce_white', x - size * 0.25, y, { scale: k }); sp(stage, 'burst_white', x, y, { scale: 2, delay: 60 }); break;
+    case 'arrow': sp(stage, 'burst_gold', x, y, { scale: k - 1 }); scatter(stage, 'feather', x, y, 3, size * 0.5, { gravity: 20 }); break;
+    case 'arcane': sp(stage, 'burst_arc', x, y, { scale: k }); scatter(stage, 'star_arc', x, y, 5, size * 0.7); break;
+    case 'fire': sp(stage, 'burst_fire', x, y, { scale: k }); scatter(stage, 'ember', x, y, 6, size * 0.7, { up: true }); break;
+    case 'ice': sp(stage, 'burst_ice', x, y, { scale: k }); scatter(stage, 'shard_ice', x, y, 5, size * 0.7, { gravity: 24 }); scatter(stage, 'snow', x, y, 3, size * 0.5); break;
+    case 'bolt': sp(stage, 'bolt_v', x, feet(s) + 4, { anchor: 'b' }); sp(stage, 'burst_bolt', x, y, { scale: k, delay: 40 }); break;
+    case 'quake': sp(stage, 'burst_earth', x, feet(s) - 10, { scale: k }); scatter(stage, 'rock', x, feet(s) - 10, 6, size * 0.7, { up: true, gravity: 40 }); break;
+    case 'shout': sp(stage, 'ring_gold', x, y, { scale: k + 1 }); break;
+    case 'smash': sp(stage, 'burst_gold', x, y, { scale: k + 1 }); sp(stage, 'ring_white', x, y, { scale: k, delay: 40 }); fxShake(stage, crit ? 8 : 4); break;
+    case 'shadow': sp(stage, 'xslash_shadow', x, y, { scale: k }); scatter(stage, 'star_shadow', x, y, 4, size * 0.6); break;
+    case 'poison': sp(stage, 'burst_poison', x, y, { scale: k }); scatter(stage, 'bubble', x, y, 5, size * 0.6, { up: true }); break;
   }
-  // 맞는 순간 흰 빛이 터진다 (모든 타격 공통)
-  play(put(stage, 'fx-orb', x, y, size * 0.5 * k, size * 0.5 * k, c), [{ transform: 'scale(.5)', opacity: 1 }, { transform: 'scale(1.4)', opacity: 0 }], 200, 0, 'ease-out');
-  burst(stage, x, y, c, crit ? 16 : 10, size * 0.75 * k, crit ? 6 : 5);
   if (crit) {
-    ring(stage, x, y, size * 1.6, '#FFFFFF', 380, 0.4, 1.1, 40);
-    fxShake(stage);
+    sp(stage, 'burst_white', x, y, { scale: 5, delay: 40 });
+    scatter(stage, 'star_gold', x, y, 8, size * 0.9, { delay: 40 });
+    fxShake(stage, 6);
   }
 }
 
@@ -413,69 +473,68 @@ export function fxDodge(el: HTMLElement, enemy: boolean): void {
   el.animate([{ translate: '0 0', opacity: 1 }, { translate: `${dx}px 0`, opacity: 0.45, offset: 0.35 }, { translate: '0 0', opacity: 1 }], { duration: 320 / speed, easing: EASE });
 }
 
-/** 반격 태세 발동: 금빛 막 + 칼날 번쩍임. */
+/** 반격 태세 발동: 금빛 방패가 번쩍이고 칼로 되받아친다. */
 export function fxCounter(stage: HTMLElement, s: Spot): void {
   if (calm()) return;
-  const c = STATUS_COLOR.Riposte;
-  ring(stage, s.x, s.y, s.size * 1.3, c, 300, 0.7, 1.15);
-  line(stage, s.x + s.size * 0.3, s.y, s.size * 0.9, -50, '#FFFFFF', 220, 80);
-  burst(stage, s.x + s.size * 0.3, s.y, c, 6, s.size * 0.35);
+  sp(stage, 'shield', s.x + s.size * 0.45, s.y, { life: 360 });
+  sp(stage, 'slash_gold', s.x + s.size * 0.6, s.y - s.size * 0.1, { delay: 90 });
+  scatter(stage, 'star_gold', s.x + s.size * 0.4, s.y, 5, s.size * 0.5, { delay: 60 });
 }
 
-/** 상태 이상이 걸림: 상태 아이콘이 튀어 오르고 상태 색 고리 + 상태별 입자. */
+/** 상태 이상이 걸림: 상태 아이콘이 튀어 오르고 발밑에 상태 색 고리 + 상태별 입자. */
 export function fxStatus(stage: HTMLElement, s: Spot, type: StatusType, iconSrc: string): void {
-  const c = STATUS_COLOR[type];
   const img = document.createElement('img');
   img.className = 'fx fx-icon';
   img.src = iconSrc;
   img.alt = '';
   img.style.cssText = `left:${s.x - 12}px;top:${s.y - s.size * 0.55 - 12}px`;
   stage.append(img);
-  play(img, calm()
+  img.animate(calm()
     ? [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.75 }, { opacity: 0 }]
-    : [{ transform: 'translateY(8px) scale(.6)', opacity: 0 }, { transform: 'translateY(-6px) scale(1.15)', opacity: 1, offset: 0.25 }, { transform: 'translateY(-10px) scale(1)', opacity: 1, offset: 0.75 }, { transform: 'translateY(-16px) scale(1)', opacity: 0 }], 820);
+    : [{ transform: 'translateY(8px) scale(.6)', opacity: 0 }, { transform: 'translateY(-6px) scale(1.15)', opacity: 1, offset: 0.25 }, { transform: 'translateY(-10px) scale(1)', opacity: 1, offset: 0.75 }, { transform: 'translateY(-16px) scale(1)', opacity: 0 }],
+  { duration: 820 / speed, easing: EASE, fill: 'forwards' }).onfinish = () => img.remove();
   if (calm()) return;
-  ring(stage, s.x, s.y, s.size * 1.1, c, 420, 0.5, 1.15);
-  statusParticles(stage, s, type);
+  const pal = STATUS_PAL[type];
+  sp(stage, `ring_${pal}`, s.x, feet(s), { scale: 4, squash: 0.35 });
+  switch (type) {
+    case 'Poison': return drift(stage, s, 'bubble', 7, -s.size * 0.55);
+    case 'Burn': return drift(stage, s, 'ember', 8, -s.size * 0.65);
+    case 'Bleed': return drift(stage, { ...s, y: s.y - s.size * 0.2 }, 'drop', 6, s.size * 0.5);
+    case 'Stun': return stunStars(stage, s);
+    default: return drift(stage, s, `star_${pal}`, 7, isDebuff(type) ? s.size * 0.45 : -s.size * 0.6);
+  }
+}
+/** 기절: 머리 위를 도는 별 3개. */
+function stunStars(stage: HTMLElement, s: Spot): void {
+  const cy = s.y - s.size * 0.5, r = s.size * 0.32;
+  for (let i = 0; i < 3; i++) {
+    const a0 = (i / 3) * Math.PI * 2;
+    const at = (t: number): string => `translate(${Math.cos(a0 + t) * r}px,${Math.sin(a0 + t) * r * 0.35}px)`;
+    const el = sp(stage, 'star_gold', s.x, cy, { life: 900, loop: true });
+    move(el, [{ transform: at(0), opacity: 0 }, { transform: at(1.6), opacity: 1, offset: 0.2 }, { transform: at(4.8), opacity: 1, offset: 0.8 }, { transform: at(6.4), opacity: 0 }], 900);
+  }
 }
 
 /** 턴마다 들어가는 독·출혈·화상 피해. */
 export function fxTick(stage: HTMLElement, s: Spot, kind: TickKind): void {
-  if (!calm()) statusParticles(stage, s, kind);
+  if (calm()) return;
+  if (kind === 'Poison') { sp(stage, 'burst_poison', s.x, s.y, { scale: 2 }); drift(stage, s, 'bubble', 6, -s.size * 0.55); }
+  else if (kind === 'Bleed') { sp(stage, 'burst_blood', s.x, s.y, { scale: 2 }); drift(stage, { ...s, y: s.y - s.size * 0.2 }, 'drop', 5, s.size * 0.5); }
+  else { sp(stage, 'burst_fire', s.x, s.y, { scale: 2 }); drift(stage, s, 'ember', 7, -s.size * 0.65); }
 }
 
-function statusParticles(stage: HTMLElement, s: Spot, type: StatusType): void {
-  const c = STATUS_COLOR[type];
-  switch (type) {
-    case 'Poison': return drift(stage, s, c, 7, -s.size * 0.55, 'fx-px fx-bubble', 6);
-    case 'Burn': return drift(stage, s, c, 8, -s.size * 0.65, 'fx-px fx-flame', 5);
-    case 'Bleed': return drift(stage, { ...s, y: s.y - s.size * 0.2 }, c, 6, s.size * 0.5, 'fx-px fx-drop', 6);
-    case 'Stun': return stars(stage, s, c);
-    default: return drift(stage, s, c, 8, isDebuff(type) ? s.size * 0.45 : -s.size * 0.6, 'fx-px', 5);
-  }
-}
-/** 기절: 머리 위를 도는 별 3개. */
-function stars(stage: HTMLElement, s: Spot, color: string): void {
-  const cy = s.y - s.size * 0.5, r = s.size * 0.32;
-  for (let i = 0; i < 3; i++) {
-    const a0 = (i / 3) * Math.PI * 2;
-    const at = (t: number): string => `translate(${Math.cos(a0 + t) * r}px,${Math.sin(a0 + t) * r * 0.35}px) rotate(45deg)`;
-    play(put(stage, 'fx-px', s.x, cy, 6, 6, color), [
-      { transform: at(0), opacity: 0 }, { transform: at(1.6), opacity: 1, offset: 0.2 }, { transform: at(4.8), opacity: 1, offset: 0.8 }, { transform: at(6.4), opacity: 0 },
-    ], 900, 0, 'linear');
-  }
-}
-
-/** 회복: 초록 고리 + 올라가는 십자 입자. */
+/** 회복: 발밑 초록 고리 + 올라가는 십자 + 반짝이. */
 export function fxHeal(stage: HTMLElement, s: Spot): void {
   if (calm()) return;
-  ring(stage, s.x, s.y + s.size * 0.35, s.size * 1.3, HEAL, 480, 0.4, 1.1, 0, 0.35);
-  drift(stage, s, HEAL, 7, -s.size * 0.7, 'fx-px fx-plus', 10);
+  sp(stage, 'ring_green', s.x, feet(s), { scale: 4, squash: 0.35 });
+  drift(stage, s, 'plus', 6, -s.size * 0.7);
+  drift(stage, s, 'star_green', 4, -s.size * 0.8, 120);
 }
 
-/** 쓰러짐: 살짝 가라앉으며 흐려진다 (끝 상태 유지). */
-export function fxDefeat(el: HTMLElement): void {
+/** 쓰러짐: 연기가 피어오르며 살짝 가라앉고 흐려진다 (끝 상태 유지). */
+export function fxDefeat(el: HTMLElement, stage?: HTMLElement, s?: Spot): void {
   el.style.opacity = '.3';
   if (calm()) return;
+  if (stage && s) sp(stage, 'smoke', s.x, s.y, { scale: 4 });
   el.animate([{ translate: '0 0', opacity: 1 }, { translate: '0 6px', opacity: 0.3 }], { duration: 420 / speed, easing: EASE });
 }

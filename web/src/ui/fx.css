@@ -1,24 +1,6 @@
-/* 전투 이펙트 (src/ui/fx.ts). 색은 color(currentColor)로 받는다. */
+/* 전투 이펙트 (src/ui/fx.ts). 모양은 모두 픽셀 그림(assets/fx/atlas.png)이고, 여기는 놓는 틀만 둔다. */
 .fx { position: absolute; pointer-events: none; z-index: 4; }
-.fx-px { background: currentColor; }
-.fx-bubble { border-radius: 50%; background: transparent; border: 1.5px solid currentColor; }
-.fx-flame { border-radius: 50% 50% 20% 20%; box-shadow: 0 0 4px currentColor; }
-.fx-drop { border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%; }
-.fx-plus { background: linear-gradient(currentColor, currentColor) center / 100% 30% no-repeat, linear-gradient(currentColor, currentColor) center / 30% 100% no-repeat; }
-.fx-ring { border: 3px solid currentColor; border-radius: 50%; box-shadow: 0 0 8px currentColor; }
-.fx-glow { box-shadow: 0 0 10px currentColor, inset 0 0 10px currentColor; }
-.fx-line { background: linear-gradient(90deg, transparent, currentColor 25%, #fff 50%, currentColor 75%, transparent); border-radius: 2px; box-shadow: 0 0 8px currentColor; }
-.fx-arrow { background: linear-gradient(90deg, transparent, currentColor 45%, #fff); border-radius: 2px; }
-.fx-orb { border-radius: 50%; background: radial-gradient(circle, #fff 0 25%, currentColor 60%); box-shadow: 0 0 8px 2px currentColor; }
+.fx-sp { position: absolute; background-repeat: no-repeat; image-rendering: pixelated; }
+.fx-clone { image-rendering: pixelated; }
+.fx-flash { inset: 0; background: currentColor; z-index: 3; }
 .fx-icon { width: 24px; height: 24px; image-rendering: pixelated; z-index: 6; }
-/* v3.11 스킬 연출 */
-.fx-flash { background: currentColor; z-index: 3; }
-.fx-circle { border: 3px dotted currentColor; border-radius: 50%; box-shadow: 0 0 10px currentColor, inset 0 0 8px currentColor; }
-.fx-shard { border-radius: 50% 0 0 50% / 50%; background: linear-gradient(90deg, transparent, currentColor 40%, #fff 80%, #fff); box-shadow: 0 0 10px 2px currentColor; clip-path: polygon(0 35%, 75% 0, 100% 50%, 75% 100%, 0 65%); filter: drop-shadow(0 0 4px currentColor); }
-.fx-meteor { border-radius: 50%; background: radial-gradient(circle at 60% 60%, #fff 0 18%, #FFE066 30%, currentColor 60%, #7A1410 100%); box-shadow: 0 0 18px 6px currentColor; }
-.fx-pillar { border-radius: 50% 50% 20% 20% / 30% 30% 10% 10%; background: linear-gradient(0deg, currentColor, #FFE066 45%, transparent); filter: blur(2px); mix-blend-mode: screen; }
-.fx-beam { border-radius: 8px; background: linear-gradient(0deg, currentColor, #fff 40%, #fff 60%, currentColor); box-shadow: 0 0 14px 4px currentColor; }
-.fx-crack { background: repeating-linear-gradient(90deg, currentColor 0 10px, #fff 10px 13px, transparent 13px 16px); box-shadow: 0 0 8px currentColor; }
-.fx-star { background: currentColor; clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); filter: drop-shadow(0 0 3px #fff); }
-.fx-shadow { border-radius: 45% 45% 20% 20%; background: currentColor; filter: blur(2px); }
-.fx-spike { background: linear-gradient(0deg, currentColor, #fff); clip-path: polygon(50% 0, 100% 100%, 0 100%); filter: drop-shadow(0 0 4px currentColor); }

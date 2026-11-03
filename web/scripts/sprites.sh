@@ -28,6 +28,10 @@ for f in fs:
     pad16(Image.open(f).convert('RGBA')).resize((128, 128), Image.NEAREST).save('public/icons/' + os.path.basename(f), optimize=True)
 print(f'icons: {len(fs)}장')
 PY
+# 전투 이펙트: art/fx.px.js 의 애니 → src/assets/fx/atlas.png + atlas.json (한 장으로 묶음)
+rm -rf art/out/fx
+node .pxl/bin/pxl.js build art/fx.px.js --out art/out/fx --no-preview
+python3 scripts/fxatlas.py art/out/fx/anims src/assets/fx
 # 일러스트 픽셀 장면: art/illust*.px.js 의 장면(illust_<이름>) → public/illustrations/<이름>.webp (무손실)
 rm -rf art/out/illust
 for f in art/illust*.px.js; do node .pxl/bin/pxl.js build "$f" --out "art/out/illust/$(basename "$f" .px.js)" --no-preview; done

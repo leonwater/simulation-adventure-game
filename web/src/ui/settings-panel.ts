@@ -27,6 +27,7 @@ export function openSettings(fromTitle = false): void {
   const fill = (): void => {
     card.replaceChildren(
       choice('전투 속도', ['1×', '2×'], settings.battleSpeed - 1, (i) => (settings.battleSpeed = i + 1), true, true),
+      choice('이펙트 항상 보기', ['끄기', '켜기'], settings.fxAlways ? 1 : 0, (i) => (settings.fxAlways = i === 1)),
       choice('대사 한 글자씩', ['끄기', '켜기'], settings.typewriter ? 1 : 0, (i) => (settings.typewriter = i === 1)),
       choice('진동', ['끄기', '켜기'], settings.vibration ? 1 : 0, (i) => (settings.vibration = i === 1)),
       choice('글자 크기', TEXT_SIZE_NAMES, settings.textSize, (i) => (settings.textSize = i), false, true));

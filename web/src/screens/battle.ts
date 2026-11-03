@@ -11,7 +11,7 @@ import { itemNames, mergeStacks } from '../core/loot';
 import { ALL_SKILLS, skillDef } from '../core/skills';
 import { STATUSES } from '../core/enums';
 import type { StatusType } from '../core/enums';
-import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxTick, setFxSpeed } from '../ui/fx';
+import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, setFxAlways, setFxSpeed, swingsSword } from '../ui/fx';
 import type { FxStyle, Spot } from '../ui/fx';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
@@ -429,6 +429,7 @@ export class BattleScreen extends Screen {
   private startPlayback(events: BattleEvent[]): void {
     this.playing = true;
     setFxSpeed(settings.battleSpeed);
+    setFxAlways(settings.fxAlways);
     if (this.lower) this.lower.style.pointerEvents = 'none';
     this.later(50, () => this.playNext(events, 0));
   }
@@ -442,20 +443,25 @@ export class BattleScreen extends Screen {
     switch (e.kind) {
       case 'Act': {
         const actor = this.units.get(e.actor);
-        if (actor) this.dash(actor.shape, e.actor < 0 ? 34 : -28);
         if (e.text) this.float(e.actor, e.text, 'var(--gold)', 13, false);
         const from = this.spot(e.actor);
         this.wave.clear();
         wait = STEP * 0.6;
         if (e.actor >= 0) {
+          if (actor) this.dash(actor.shape, -28);
           this.fxStyle = 'claw';
           if (from && e.text) fxEnemyCast(this.stage, from);
           break;
         }
         const job = this.b!.character.Job, id = ALL_SKILLS.find((s) => s.Name === e.text)?.Id ?? null;
+        const targets = this.playerTargets(events, i);
         this.fxStyle = fxStyleFor(job, id);
+        // 전사 근접 공격은 돌진하지 않고 그 자리에서 칼을 휘두른다
+        let hitAt = 0;
+        if (actor && from && targets.length && swingsSword(job, id)) hitAt = fxSwing(this.stage, actor.shape, from, !!id);
+        else if (actor) this.dash(actor.shape, 34);
         // 스킬마다 다른 연출: 맞을 적들을 미리 모아 넘기고, 맞는 순간까지 기다린다
-        if (from) wait = Math.max(wait, fxSkill(this.stage, from, this.playerTargets(events, i), job, id) + 40);
+        if (from) wait = Math.max(wait, Math.max(hitAt, fxSkill(this.stage, from, targets, job, id)) + 40);
         break;
       }
       case 'Damage':
@@ -508,7 +514,7 @@ export class BattleScreen extends Screen {
       }
       case 'Defeat':
         this.shown(e.target, 0);
-        if (unit) fxDefeat(unit.shape);
+        if (unit) fxDefeat(unit.shape, this.stage, this.spot(e.target) ?? undefined);
         break;
       case 'Spawn':
         // 분열·소환: 그 자리에 새 적을 그린다 (다른 적은 지금 보이는 HP 그대로)
