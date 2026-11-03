@@ -1,6 +1,6 @@
 import { B } from '../core/balance';
 import {
-  AllocationDraft, attack, badgeBonus, dropBonus, jobPerk, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
+  AllocationDraft, attack, badgeBonus, dropBonus, equipmentBonus, evasion, eventLuckBonus, expProgress, maxHp, ownStat,
   percent, promotionStatus, resist, totalStat, weaponAttack, defense,
 } from '../core/character';
 import type { Job, Stat } from '../core/enums';
@@ -124,7 +124,7 @@ export class CharacterScreen extends Screen {
       line(statIcon(atk), '공격력', h('span', null, colored(`(${Names.stat(atk)} × ${B.AttackPerMainStat} + 무기 ${weaponAttack(c)}) `, 'var(--sub)'), h('b', null, String(attack(c))))),
       line('status_fortify', '방어력', String(defense(c))),
       line(statIcon('Agility'), '회피', percent(evasion(c))),
-      line(PERKS[c.Job].icon, PERKS[c.Job].name, PERKS[c.Job].text(percent(jobPerk(c))), '모험가 등급 전용'),
+      line(PERKS[c.Job].icon, PERKS[c.Job].name, h('span', null, ...perkStats(c.Job, RANKS.indexOf(c.Rank)).flatMap(([k, v], i) => [i > 0 ? ' · ' : '', h('span', { class: 'nw' }, `${k} ${v}`)])), '모험가 등급 전용'),
       line(statIcon('Spirit'), '상태 이상 저항', percent(resist(c))),
       ...(c.Job === 'Rogue' ? [line('perk_vital', '치명타', `치명타 피해량 ${Math.round(B.CritMultiplier * 100)}%`, '도적 스킬 전용')] : []),
       line(statIcon('Luck'), '드롭률', `+${percent(dropBonus(c) - 1)}`),

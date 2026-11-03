@@ -290,7 +290,7 @@ export class BattleScreen extends Screen {
     const targetName = this.target >= 0 ? b.enemies[this.target].name : '';
     parent.append(h('div', { class: 'row' },
       this.target >= 0
-        ? h('div', { class: 'sub grow' }, '대상 ', colored(targetName, 'var(--gold)'), ' · 적을 눌러 바꾸기')
+        ? h('div', { class: 'sub grow' }, h('span', { class: 'nw' }, '대상 ', colored(targetName, 'var(--gold)')), ' · ', h('span', { class: 'nw' }, '적을 눌러 바꾸기'))
         : h('div', { class: 'sub grow' }, '모든 선택은 1턴을 사용합니다'),
       sub('길게 누르면 상세')));
     const list = h('div', { class: 'col', 'data-anchor': 'battle.choices', style: { gap: '6px', overflowY: 'auto', flex: '1', minHeight: '0', paddingTop: '2px' } });

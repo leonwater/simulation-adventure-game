@@ -1,5 +1,6 @@
 import { addItem, displayName, takeItem } from '../core/items';
 import type { ItemInstance } from '../core/items';
+import { josa } from '../core/names';
 import { S } from './game';
 import { cardGrid, itemCard, itemGrid } from './items';
 import { button, h, row, sub } from './kit';
@@ -39,7 +40,7 @@ export function showPendingDrops(): void {
       itemGrid(S.c.Inventory, S.c, confirm, { showEmpty: false }), button('뒤로', ask, 'ghost'));
   };
   const confirm = (old: ItemInstance): void => {
-    m.body.replaceChildren(head, h('div', { class: 'body', style: { lineHeight: '1.5' } }, `${name(old)}을(를) 버리고 ${name(item)}을(를) 가져갑니다.`),
+    m.body.replaceChildren(head, h('div', { class: 'body', style: { lineHeight: '1.5' } }, `${josa(name(old), '을/를')} 버리고 ${josa(name(item), '을/를')} 가져갑니다.`),
       row(button('다시 고르기', pick, 'ghost', 'grow'), button('버리기', () => {
         const removed = takeItem(S.c.Inventory, old.Uid);
         if (!addItem(S.c.Inventory, item)) {
