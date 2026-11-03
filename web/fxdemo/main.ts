@@ -1,9 +1,11 @@
 /** 전투 이펙트 확인 페이지 (npm run fx → docs/fx-demo.html). 게임과 같은 src/ui/fx.ts를 쓴다. */
 import { STATUSES } from '../src/core/enums';
-import type { Job, StatusType } from '../src/core/enums';
+import { JOBS } from '../src/core/enums';
+import type { Job, SkillTarget, StatusType } from '../src/core/enums';
 import { Names } from '../src/core/names';
-import { skillDef } from '../src/core/skills';
-import { fxCast, fxCounter, fxDefeat, fxDodge, fxHeal, fxHit, fxShot, fxStatus, fxStyleFor, fxTick, isDebuff, setFxSpeed } from '../src/ui/fx';
+import { ALL_SKILLS } from '../src/core/skills';
+import type { SkillDef } from '../src/core/skills';
+import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxTick, isDebuff, setFxSpeed } from '../src/ui/fx';
 import type { FxStyle, Spot, TickKind } from '../src/ui/fx';
 import { spriteUrl } from '../src/ui/sprites';
 
@@ -78,39 +80,29 @@ function float(i: number, text: string, color: string, size = 19): void {
 const DMG = (crit: boolean): string => (crit ? '#F6C063' : '#fff');
 
 // ── 사건 단위 재생 (게임의 Act → Damage/Miss/Status 순서와 같다) ──
-interface Attack { from: number; to: number[]; style: FxStyle; skill?: string; hits?: number; crit?: boolean; statuses?: StatusType[]; noDamage?: boolean }
+interface Attack { from: number; to: number[]; style: FxStyle; skillId?: string; skill?: string; hits?: number; crit?: boolean; statuses?: StatusType[]; selfStatuses?: StatusType[]; noDamage?: boolean }
 async function attack(a: Attack): Promise<void> {
   dash(a.from);
-  if (a.skill) {
-    float(a.from, a.skill, '#F6C063', 13);
-    fxCast(stage, sp(a.from), a.style);
-  }
-  if (a.from < 0) fxShot(stage, sp(a.from), sp(a.to[0]), a.style);
-  await wait(192);
-  for (const t of a.to) {
-    for (let k = 0; k < (a.hits ?? 1); k++) {
-      if (!a.noDamage) {
-        react(t, !!a.crit);
-        fxHit(stage, sp(t), a.style, !!a.crit);
-        const n = Math.round((a.crit ? 38 : 22) + Math.random() * 6);
-        float(t, `${a.crit ? '치명타! ' : ''}${n}`, DMG(!!a.crit), a.crit ? 26 : 19);
-        await wait(320);
-      }
-    }
-    for (const s of a.statuses ?? []) {
-      status(t, s);
-      await wait(192);
+  if (a.skill) float(a.from, a.skill, '#F6C063', 13);
+  let travel = 0;
+  if (a.from < 0) travel = fxSkill(stage, sp(-1), a.to.map(sp), job, a.skillId ?? null);
+  else if (a.skill) fxEnemyCast(stage, sp(a.from));
+  await wait(Math.max(192, travel + 40));
+  // 게임과 같이: 한 번에 맞는 적들은 거의 동시에, 다음 타격은 한 박자 뒤
+  for (let k = 0; k < (a.hits ?? 1) && !a.noDamage; k++) {
+    for (const [n, t] of a.to.entries()) {
+      react(t, !!a.crit);
+      fxHit(stage, sp(t), a.style, !!a.crit);
+      float(t, `${a.crit ? '치명타! ' : ''}${Math.round((a.crit ? 38 : 22) + Math.random() * 6)}`, DMG(!!a.crit), a.crit ? 26 : 19);
+      await wait(n < a.to.length - 1 ? 50 : 320);
     }
   }
+  for (const s of a.selfStatuses ?? []) { status(-1, s); await wait(192); }
+  for (const t of a.to) for (const s of a.statuses ?? []) { status(t, s); await wait(120); }
 }
 function status(t: number, s: StatusType): void {
   fxStatus(stage, sp(t), s, icon(s));
   float(t, Names.status(s), '#8FB3D9', 13);
-}
-async function selfBuff(name: string, s: StatusType): Promise<void> {
-  float(-1, name, '#F6C063', 13);
-  await wait(192);
-  status(-1, s);
 }
 async function tick(t: number, k: TickKind): Promise<void> {
   react(t, false);
@@ -119,17 +111,33 @@ async function tick(t: number, k: TickKind): Promise<void> {
 }
 
 const ALL = [0, 1, 2];
-const name = (id: string): string => skillDef(id)?.Name ?? id;
 interface Demo { label: string; when: string; job?: Job; img?: string; run: () => Promise<void> | void }
 interface Group { title: string; lead: string; items: Demo[] }
 
 const basic = (j: Job, label: string, when: string): Demo => ({ label, when, job: j, run: () => attack({ from: -1, to: [0], style: fxStyleFor(j, null) }) });
-const skill = (j: Job, id: string, when: string, a: Omit<Attack, 'from' | 'style' | 'skill'>): Demo => ({ label: name(id), when, job: j, run: () => attack({ from: -1, style: fxStyleFor(j, id), skill: name(id), ...a }) });
+// 스킬 40종: 표(skills.json)의 대상·타수·상태 이상 그대로 (무대의 적 0=앞 왼쪽, 1=뒤, 2=앞 아래)
+const TARGET_OF: Record<SkillTarget, number[]> = { SingleEnemy: [0], AllEnemies: ALL, Self: [], Column: [0, 2], Row: [0, 1], RandomEnemies: ALL, ChainEnemies: ALL };
+const skill = (d: SkillDef): Demo => {
+  const j = JOBS[d.JobRestriction];
+  return {
+    label: d.Name, when: d.Effect, job: j,
+    run: () => attack({
+      from: -1, to: TARGET_OF[d.Target], style: fxStyleFor(j, d.Id), skillId: d.Id, skill: d.Name, hits: d.Hits, noDamage: !d.IsAttack,
+      statuses: d.Statuses.filter((x) => !x.OnSelf).map((x) => x.Type), selfStatuses: d.Statuses.filter((x) => x.OnSelf).map((x) => x.Type),
+    }),
+  };
+};
+const JOB_LEAD: Record<Job, string> = {
+  Warrior: '마법진 없이 몸으로: 내려찍기는 흰 충격, 회오리는 둥근 칼바람, 대지 가르기는 땅이 갈라지고 화면이 흔들립니다.',
+  Archer: '화살은 빛 꼬리를 끌고, 화살비는 하늘에서 쏟아지며, 관통 사격은 한 줄을 꿰뚫는 빛줄기입니다.',
+  Rogue: '그림자 잔상이 적에게 스치고, 암살은 화면이 어두워진 뒤 X자로 베어 냅니다.',
+  Mage: '시전자 앞에 마법진이 서고 빛나는 투사체가 날아갑니다. 운석은 하늘에서 큰 운석이 떨어져 모든 적을 동시에 때립니다.',
+};
 
 const GROUPS: Group[] = [
   {
     title: '기본 공격',
-    lead: '직업마다 모양이 다릅니다. 궁수·마법사는 화살·마력탄이 날아가 꽂힙니다.',
+    lead: '직업마다 모양이 다릅니다. 마법사는 마법진을 세우고 빛나는 마력 창을 쏩니다.',
     items: [
       basic('Warrior', '전사 · 베기', '전사 기본 공격 · 반격'),
       basic('Archer', '궁수 · 화살', '궁수 기본 공격 (날아가는 화살)'),
@@ -138,27 +146,7 @@ const GROUPS: Group[] = [
       { label: '몬스터 · 할퀴기', when: '모든 몬스터의 공격 (나를 때림)', run: () => attack({ from: 0, to: [-1], style: 'claw' }) },
     ],
   },
-  {
-    title: '스킬',
-    lead: '스킬을 쓰면 시전자에게 빛이 모이고, 속성(불·얼음·번개·대지·함성)이 있는 스킬은 그 모양으로 터집니다. 광역은 맞는 적마다 터집니다.',
-    items: [
-      skill('Warrior', 'w_bash', '전사 단일 스킬 (베기 계열)', { to: [0] }),
-      skill('Warrior', 'w_whirl', '전사 광역 (적마다 베기)', { to: ALL }),
-      skill('Warrior', 'w_earth', '대지 계열: 땅 갈라짐 + 파편 → 취약', { to: ALL, statuses: ['Vulnerable'] }),
-      skill('Warrior', 'w_roar', '함성 계열: 퍼지는 고리 → 약화', { to: ALL, statuses: ['Weaken'], noDamage: true }),
-      skill('Archer', 'a_double', '연속 타격 (화살 3발)', { to: [0], hits: 3 }),
-      skill('Archer', 'a_rain', '광역 2회 (적마다 화살)', { to: ALL, hits: 2 }),
-      skill('Rogue', 'r_venom', '찌르기 → 독', { to: [0], statuses: ['Poison'], noDamage: true }),
-      skill('Rogue', 'r_shadow', '도적 단일 (치명타면 3연 찌르기)', { to: [0], crit: true }),
-      skill('Rogue', 'r_storm', '광역 찌르기 → 출혈', { to: ALL, statuses: ['Bleed'] }),
-      skill('Mage', 'm_bolt', '마력 계열 (보라 마력탄)', { to: [0] }),
-      skill('Mage', 'm_fireball', '불 계열: 불꽃 폭발 → 화상', { to: [0], statuses: ['Burn'] }),
-      skill('Mage', 'm_ice', '얼음 계열: 얼음 파편 → 약화', { to: [0, 1], statuses: ['Weaken'] }),
-      skill('Mage', 'm_chain', '번개 계열: 내리꽂는 번개 (연쇄)', { to: ALL }),
-      skill('Mage', 'm_meteor', '불 계열 광역 → 화상', { to: ALL, statuses: ['Burn'] }),
-      skill('Mage', 'm_prison', '얼음 계열 → 기절', { to: [0], statuses: ['Stun'] }),
-    ],
-  },
+  ...JOBS.map((j): Group => ({ title: `${Names.job(j)} 스킬`, lead: JOB_LEAD[j], items: ALL_SKILLS.filter((d) => JOBS[d.JobRestriction] === j).map(skill) })),
   {
     title: '피격 · 회피 · 반격',
     lead: '맞으면 흔들림·번쩍임 위에 타격 이펙트가 겹칩니다. 치명타는 더 크게 터지고 화면이 흔들립니다.',
@@ -196,7 +184,6 @@ const GROUPS: Group[] = [
       { label: '출혈 (턴 피해)', when: '떨어지는 핏방울', run: () => tick(1, 'Bleed') },
       { label: '화상 (턴 피해)', when: '올라가는 불꽃', run: () => tick(2, 'Burn') },
       { label: '회복', when: '물약·불굴·재생 (초록 십자)', run: () => { fxHeal(stage, sp(-1)); float(-1, '+30', '#A8E6A0'); } },
-      { label: '반격 태세 (버프)', when: '전사 스킬: 자기 강화', job: 'Warrior', run: () => selfBuff(name('w_riposte'), 'Riposte') },
       { label: '쓰러짐', when: '가라앉으며 흐려짐 (2초 뒤 되살림)', run: async () => { fxDefeat(units.get(2)!.el); await wait(2000); reset(); } },
     ],
   },

@@ -11,7 +11,7 @@ import { itemNames, mergeStacks } from '../core/loot';
 import { ALL_SKILLS, skillDef } from '../core/skills';
 import { STATUSES } from '../core/enums';
 import type { StatusType } from '../core/enums';
-import { fxCast, fxCounter, fxDefeat, fxDodge, fxHeal, fxHit, fxShot, fxStatus, fxStyleFor, fxTick, setFxSpeed } from '../ui/fx';
+import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxTick, setFxSpeed } from '../ui/fx';
 import type { FxStyle, Spot } from '../ui/fx';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
@@ -80,6 +80,7 @@ export class BattleScreen extends Screen {
   private units = new Map<number, UnitView>();
   /** 지금 재생 중인 행동의 이펙트 계열 (행동 사건에서 정하고 이어지는 피해 사건이 쓴다). */
   private fxStyle: FxStyle = 'slash';
+  private readonly wave = new Set<number>();
   private timers: number[] = [];
 
   onBack(): boolean {
@@ -443,11 +444,18 @@ export class BattleScreen extends Screen {
         const actor = this.units.get(e.actor);
         if (actor) this.dash(actor.shape, e.actor < 0 ? 34 : -28);
         if (e.text) this.float(e.actor, e.text, 'var(--gold)', 13, false);
-        this.fxStyle = e.actor < 0 ? fxStyleFor(this.b!.character.Job, ALL_SKILLS.find((s) => s.Name === e.text)?.Id ?? null) : 'claw';
-        const from = this.spot(e.actor), to = this.spot(e.target);
-        if (from && e.text) fxCast(this.stage, from, this.fxStyle);
-        if (from && to && e.actor < 0) fxShot(this.stage, from, to, this.fxStyle);
+        const from = this.spot(e.actor);
+        this.wave.clear();
         wait = STEP * 0.6;
+        if (e.actor >= 0) {
+          this.fxStyle = 'claw';
+          if (from && e.text) fxEnemyCast(this.stage, from);
+          break;
+        }
+        const job = this.b!.character.Job, id = ALL_SKILLS.find((s) => s.Name === e.text)?.Id ?? null;
+        this.fxStyle = fxStyleFor(job, id);
+        // 스킬마다 다른 연출: 맞을 적들을 미리 모아 넘기고, 맞는 순간까지 기다린다
+        if (from) wait = Math.max(wait, fxSkill(this.stage, from, this.playerTargets(events, i), job, id) + 40);
         break;
       }
       case 'Damage':
@@ -458,7 +466,15 @@ export class BattleScreen extends Screen {
           this.setBar(unit, e.hpAfter, e.shield, e.barrier);
           const at = this.spot(e.target)!;
           if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') fxTick(this.stage, at, e.damage);
-          else fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit' || e.damage === 'Counter');
+          else {
+            if (e.damage === 'Counter') {
+              // 반격 태세 발동: 받아친 피해는 기본 공격 계열로 보여 준다
+              const me = this.spot(-1);
+              if (me) fxCounter(this.stage, me);
+              this.fxStyle = fxStyleFor(this.b!.character.Job, null);
+            }
+            fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit' || e.damage === 'Counter');
+          }
         }
         // 독·출혈·화상처럼 턴마다 들어가는 피해는 이름을 붙여 공격 피해와 헷갈리지 않게 한다
         if (e.damage === 'Poison' || e.damage === 'Bleed' || e.damage === 'Burn') this.float(e.target, `${Names.status(e.damage)} ${e.amount}`, DAMAGE_COLOR[e.damage], 15, true);
@@ -468,10 +484,12 @@ export class BattleScreen extends Screen {
         }
         if ((e.damage === 'Crit' || e.damage === 'Counter') && e.actor === -1) vibrate();
         if (e.target < 0 && e.actor >= 0) vibrate();
+        wait = this.waveWait(events, i);
         break;
       case 'Miss':
         if (unit) fxDodge(unit.shape, e.target >= 0);
         this.float(e.target, '빗나감', 'var(--sub)', 15, false);
+        wait = this.waveWait(events, i);
         break;
       case 'Heal':
         this.shown(e.target, e.hpAfter);
@@ -503,16 +521,35 @@ export class BattleScreen extends Screen {
         // 방어막에 막힘: 남은 횟수를 바로 줄여 보여 준다
         const guarded = this.units.get(e.target);
         if (e.barrier >= 0 && guarded) this.setBar(guarded, guarded.hp, e.shield, e.barrier);
-        // 반격 태세 발동: 이어지는 피해는 플레이어의 기본 공격 계열로 보여 준다
-        if (e.text === '반격!') {
-          const me = this.spot(-1);
-          if (me) fxCounter(this.stage, me);
-          this.fxStyle = fxStyleFor(this.b!.character.Job, null);
-        }
         this.float(e.actor, e.text ?? '', 'var(--gold)', 16, true);
       }
     }
     this.later(wait, () => this.playNext(events, i + 1));
+  }
+
+  /** 이번 플레이어 행동(다음 'Act' 전까지)에 맞는 적들의 자리. 턴마다 드는 피해는 뺀다. */
+  private playerTargets(events: BattleEvent[], i: number): Spot[] {
+    const seen = new Set<number>(), out: Spot[] = [];
+    for (let j = i + 1; j < events.length && events[j].kind !== 'Act'; j++) {
+      const e = events[j];
+      if (e.actor !== -1 || e.target < 0 || seen.has(e.target) || !this.isPlayerHit(e)) continue;
+      seen.add(e.target);
+      const s = this.spot(e.target);
+      if (s) out.push(s);
+    }
+    return out;
+  }
+  private isPlayerHit(e: BattleEvent): boolean {
+    return e.actor === -1 && e.target >= 0 && (e.kind === 'Miss' || (e.kind === 'Damage' && e.damage !== 'Poison' && e.damage !== 'Bleed' && e.damage !== 'Burn'));
+  }
+  /** 광역기: 같은 공격에서 아직 안 맞은 다른 적이 이어지면 거의 동시에 맞힌다 (다음 묶음은 한 박자 쉰다). */
+  private waveWait(events: BattleEvent[], i: number): number {
+    const e = events[i], next = events[i + 1];
+    if (!this.isPlayerHit(e)) return STEP;
+    this.wave.add(e.target);
+    if (next && this.isPlayerHit(next) && !this.wave.has(next.target)) return 50;
+    this.wave.clear();
+    return STEP;
   }
 
   private spot(index: number): Spot | null {
