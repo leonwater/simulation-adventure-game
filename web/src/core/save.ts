@@ -45,7 +45,7 @@ export interface SaveData {
   SeenSkills: string[] | null;
 }
 
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 export function newSaveData(difficulty: Difficulty, character: Character, tutorial: TutorialStage): SaveData {
   return {
@@ -215,6 +215,8 @@ export function repair(d: SaveData): void {
     i.BaseValue = baseValue(i.Gear, i.LevelReq, i.Grade);
     i.Name = RENAMED_GEAR[i.Name] ?? i.Name;
   }
+  // v3.11: 가방 15칸 + 5칸씩 → 8칸 + 4칸씩. 예전 저장은 칸이 줄지 않게 산 가방 수를 늘려 준다
+  if (d.Version < 7) c.BagsBought = Math.max(0, Math.ceil((Math.min(60, 15 + 5 * (c.BagsBought ?? 0)) - B.InventoryStart) / B.InventoryPerBag));
   recalculateCapacities(c);
   c.CurrentHp = clamp(c.CurrentHp, 0, maxHp(c));
   if (!d.TipsShown) d.TipsShown = [];

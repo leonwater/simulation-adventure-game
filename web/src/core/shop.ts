@@ -115,7 +115,8 @@ export function refreshPrices(s: ShopState, c: Character): void {
   if (floor >= B.StoneFirstFloor && !s.Goods.some((g) => g.Item.Kind === 'EnhanceStone')) s.Goods.push({ Item: { ...createEnhanceStone(), Price: stonePrice(floor) }, Stock: -1 });
 }
 
-export const bagPrice = (c: Character): number => B.BagBasePrice * Math.pow(2, Math.min(20, c.BagsBought));
+/** 가방 확장 값: 200G에서 시작해 늘릴 때마다 1.6배 (12→16칸보다 16→20칸이 비싸다). */
+export const bagPrice = (c: Character): number => roundEven(B.BagBasePrice * Math.pow(B.BagPriceGrowth, Math.min(30, c.BagsBought)));
 export const canBuyBag = (c: Character): boolean => c.Inventory.Capacity < B.InventoryMax;
 
 export function buyBag(c: Character): { ok: boolean; error: string | null } {

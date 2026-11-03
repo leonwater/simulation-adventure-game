@@ -47,7 +47,7 @@ describe('캐릭터 (CharacterTests)', () => {
     expect(equipped(c, 'Weapon')!.Name).toBe('견습 지팡이');
     expect(countOf(c.Inventory, 'potion')).toBe(3);
     expect(c.Skills.Equipped).toEqual(['m_fireball']);
-    expect(c.Inventory.Capacity).toBe(15);
+    expect(c.Inventory.Capacity).toBe(8); // v3.11: 8칸 + 4칸씩
     expect(c.Storage.Capacity).toBe(4);
   });
 
@@ -161,7 +161,7 @@ describe('캐릭터 (CharacterTests)', () => {
     c.Rank = 'C';
     c.BagsBought = 3;
     recalculateCapacities(c);
-    expect([c.Inventory.Capacity, c.Storage.Capacity]).toEqual([30, 10]);
+    expect([c.Inventory.Capacity, c.Storage.Capacity]).toEqual([20, 10]);
   });
 });
 

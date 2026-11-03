@@ -7,6 +7,18 @@ import { addItem, createMaterial } from '../src/core/items';
 import { ALL_SPECIES, monster, themeFor } from '../src/core/monsters';
 import { newSaveData, repair } from '../src/core/save';
 
+describe('v3.11 가방', () => {
+  it('예전 저장(15칸 + 5칸씩)은 칸이 줄지 않게 산 가방 수를 늘려 준다', () => {
+    for (const bags of [0, 1, 3, 9]) {
+      const d = newSaveData('Normal', createCharacter('테스트', 'Warrior'), 'Done');
+      d.Version = 6;
+      d.Character.BagsBought = bags;
+      repair(d);
+      expect(d.Character.Inventory.Capacity, `가방 ${bags}개`).toBeGreaterThanOrEqual(Math.min(60, 15 + 5 * bags));
+    }
+  });
+});
+
 describe('v3.4 몬스터 교체', () => {
   it('예전 저장의 의뢰 종류 Id·제목과 재료 이름을 새 몬스터로 바꾼다', () => {
     const d = newSaveData('Normal', createCharacter('테스트', 'Warrior'), 'Done');

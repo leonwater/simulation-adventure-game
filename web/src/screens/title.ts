@@ -18,10 +18,10 @@ export class TitleScreen extends Screen {
     cont.disabled = !hasSave;
     return h('div', { class: 'page', style: { padding: '32px 24px', justifyContent: 'center', gap: '12px', position: 'relative' } },
       h('div', { class: 'title-bg', style: { backgroundImage: `url(${assetUrl('illustrations/title_bg.webp')})` } }),
-      h('div', { class: 'spacer', style: { flex: '1.2' } }),
+      h('div', { class: 'spacer', style: { flex: '.25' } }), // 제목은 하늘 쪽 위에
       col(
-        h('div', { style: { color: 'var(--accent)', fontSize: '14px', textAlign: 'center' } }, '─  ◆  ─'),
-        h('div', { class: 'display', style: { color: 'var(--gold)', fontSize: '40px', textAlign: 'center', fontWeight: '700' } }, '모험가 키우기'),
+        h('div', { class: 'title-logo', style: { color: 'var(--accent)', fontSize: '14px', textAlign: 'center' } }, '─  ◆  ─'),
+        h('div', { class: 'display title-logo', style: { color: 'var(--gold)', fontSize: '40px', textAlign: 'center', fontWeight: '700' } }, '모험가 키우기'),
       ),
       h('div', { class: 'spacer' }),
       col(

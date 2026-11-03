@@ -273,8 +273,10 @@ input.text::placeholder { color: var(--placeholder); }
 .battle-potion.off { opacity: .45; }
 
 /* 타이틀 화면 배경: 가운데에 정사각형 그림을 흐리게 깔고 가장자리는 부드럽게 지운다 */
-.title-bg { position: absolute; left: 50%; top: 50%; width: min(100%, 600px); aspect-ratio: 1; transform: translate(-50%, -50%); background-repeat: no-repeat; background-position: center; background-size: cover; opacity: .55; pointer-events: none;
-  -webkit-mask-image: radial-gradient(closest-side, var(--ink-shadow) 50%, transparent 100%); mask-image: radial-gradient(closest-side, var(--ink-shadow) 50%, transparent 100%); }
+/* 타이틀 화면 배경 (v3.11): 픽셀 거리 그림을 화면 가득, 아래쪽 버튼 자리는 어둡게 깔아 글자가 읽히게 */
+.title-bg { position: absolute; inset: 0; background-color: #7fa9cf; background-repeat: no-repeat; background-position: center bottom; background-size: max(100%, 56.25vh) auto; image-rendering: pixelated; pointer-events: none; } /* 폭에 맞추고 위는 하늘색 (건물이 잘리지 않게) */
+.title-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom, transparent 0%, transparent 62%, rgba(12, 16, 22, .7) 80%, rgba(12, 16, 22, .9) 100%); }
+.title-logo { text-shadow: 0 2px 0 #2a1c18, 2px 0 0 #2a1c18, -2px 0 0 #2a1c18, 0 -2px 0 #2a1c18; }
 .title-bg ~ * { position: relative; }
 
 /* 제목: 같은 픽셀 글꼴 굵게 */

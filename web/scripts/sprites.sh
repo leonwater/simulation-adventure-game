@@ -28,3 +28,13 @@ for f in fs:
     pad16(Image.open(f).convert('RGBA')).resize((128, 128), Image.NEAREST).save('public/icons/' + os.path.basename(f), optimize=True)
 print(f'icons: {len(fs)}장')
 PY
+# 일러스트 픽셀 장면: art/illust*.px.js 의 장면(illust_<이름>) → public/illustrations/<이름>.webp (무손실)
+rm -rf art/out/illust
+for f in art/illust*.px.js; do node .pxl/bin/pxl.js build "$f" --out "art/out/illust/$(basename "$f" .px.js)" --no-preview; done
+python3 - <<'PY'
+from PIL import Image; import glob, os
+fs = glob.glob('art/out/illust/*/scenes/illust_*.png')
+for f in fs:
+    Image.open(f).save('public/illustrations/' + os.path.basename(f)[len('illust_'):-4] + '.webp', lossless=True, method=6)
+print(f'illustrations: {len(fs)}장')
+PY

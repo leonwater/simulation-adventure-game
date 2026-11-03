@@ -9,10 +9,10 @@ import { restock } from '../src/core/shop';
 import type { ShopGood } from '../src/core/items';
 
 describe('v2.8', () => {
-  it('시작 골드 200 · 가방 15칸', () => {
+  it('시작 골드 200 · 가방 8칸 (v3.11)', () => {
     const c = createCharacter('a', 'Warrior');
     expect(c.Gold).toBe(200);
-    expect(c.Inventory.Capacity).toBe(15);
+    expect(c.Inventory.Capacity).toBe(8);
   });
 
   it('고급 회복 물약은 정해진 층부터 상점·상인에 나온다', () => {

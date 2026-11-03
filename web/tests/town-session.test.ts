@@ -113,10 +113,10 @@ describe('상점 (TownTests)', () => {
     const before = c.Gold;
     expect(sell(c, c.Inventory.Items.find((i) => i.Name === eq.Name && i.Kind === 'Equipment')!.Uid, 1).ok).toBe(true);
     expect(c.Gold).toBe(before + sellPrice(eq));
-    expect(bagPrice(c)).toBe(500);
+    expect(bagPrice(c)).toBe(200);
     expect(buyBag(c).ok).toBe(true);
-    expect(c.Inventory.Capacity).toBe(20);
-    expect(bagPrice(c)).toBe(1000);
+    expect(c.Inventory.Capacity).toBe(12);
+    expect(bagPrice(c)).toBe(320); // 늘릴수록 1.6배씩 비싸진다 (v3.11)
     const rest = c.Inventory.Items.map((i) => i.Uid);
     expect(sellMany(c, rest)).toBeGreaterThan(0);
     expect(c.Inventory.Items.length).toBe(0);
