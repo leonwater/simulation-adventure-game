@@ -317,7 +317,7 @@ anim("zap_h", { w: 24, h: 11, frames: 3, fps: 16 }, (c) => {
   }
 })
 // 빛줄기 마디 (마력 해방·관통 사격) 16×14, 3프레임 — 가로로 이어 붙인다
-for (const [n, p] of [["beam_arc", PAL.seal], ["beam_light", PAL.gold]]) {
+for (const [n, p] of [["beam_arc", PAL.seal]]) {
   anim(n, { w: 16, h: 14, frames: 3, fps: 16 }, (c) => {
     for (let x = 0; x < 16; x++) {
       const wob = R(Math.sin((x / 16) * TAU + c.frame * 2.1))

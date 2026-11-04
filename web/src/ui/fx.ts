@@ -368,13 +368,43 @@ const SKILL_FX: Record<string, SkillFx> = {
     return 400;
   },
   a_pierce: (st, me, to) => {
-    cast(st, me, 'gold');
-    const from = { x: me.x + me.size * 0.5, y: me.y };
-    beams(st, 'beam_light', from, to, { delay: 200, life: 320 });
-    let t0 = 0;
-    to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_arrow', from, t, 160, 160 + i * 50, { scale: 4, trail: 'star_gold' })); sp(st, 'burst_gold', t.x, t.y, { scale: 4, delay: 320 + i * 50 }); });
-    later(t0, () => fxShake(st, 5));
-    return t0;
+    // 궁수: 활 앞에 바람을 모았다가 큰 화살 한 발을 쏜다. 첫 적에 꽂힌 뒤 그 줄을 따라 뒤의 적까지 꿰뚫고 나간다 (마법진·빛줄기 없음)
+    if (!to.length) return 0;
+    const from = { x: me.x + me.size * 0.45, y: me.y }, d = (a: Pt, b: Pt): number => Math.hypot(b.x - a.x, b.y - a.y);
+    const hits = [...to].sort((a, b) => d(from, a) - d(from, b));
+    const last = hits[hits.length - 1], prev = hits.length > 1 ? hits[hits.length - 2] : from;
+    const ex = (last.x - prev.x) / d(prev, last), ey = (last.y - prev.y) / d(prev, last);
+    const path: Pt[] = [from, ...hits, { x: last.x + ex * 90, y: last.y + ey * 90 }];
+    const lens = path.slice(1).map((p, i) => d(path[i], p)), total = lens.reduce((a, b) => a + b, 0), fly = 200, flyMs = 300;
+    for (let i = 0; i < 6; i++) {
+      const a = rand(0, Math.PI * 2), r = me.size * 0.7, el = sp(st, 'star_white', from.x + Math.cos(a) * r, from.y + Math.sin(a) * r, { life: 260, delay: i * 25 });
+      move(el, [{ transform: 'translate(0,0)', opacity: 0 }, { transform: `translate(${-Math.cos(a) * r}px,${-Math.sin(a) * r}px)`, opacity: 1 }], 260, i * 25, 'ease-in');
+    }
+    sp(st, 'ring_white', from.x + 8, from.y, { scale: 3, squash: 0.5, delay: fly - 20 });
+    // 화살 한 발: 마디마다 같은 빠르기로, 꺾이는 곳(첫 적 몸 안)에서 방향을 바꾼다
+    const deg = (i: number): number => (Math.atan2(path[i + 1].y - path[i].y, path[i + 1].x - path[i].x) * 180) / Math.PI;
+    const arrow = sp(st, 'proj_arrow', from.x, from.y, { delay: fly, life: flyMs, loop: true, scale: 5, rot: deg(0) });
+    const pos: Keyframe[] = [], rot: Keyframe[] = [];
+    let acc = 0;
+    path.forEach((p, i) => {
+      const off = acc / total;
+      pos.push({ transform: `translate(${p.x - from.x}px,${p.y - from.y}px)`, offset: off });
+      if (i < lens.length) { rot.push({ transform: `rotate(${deg(i)}deg) scale(${5 / PX})`, offset: off }); acc += lens[i]; rot.push({ transform: `rotate(${deg(i)}deg) scale(${5 / PX})`, offset: acc / total }); }
+      // 지나간 자리에 남는 바람 자국
+      if (i < lens.length) chain(st, 'pierce_white', p, path[i + 1], { delay: fly + flyMs * off, life: 300, step: (flyMs * (28 * PX)) / total });
+    });
+    move(arrow, pos, flyMs, fly);
+    (arrow.firstElementChild as HTMLElement).animate(rot, { duration: flyMs / speed, delay: fly / speed, fill: 'both' });
+    let at = fly, first = 0;
+    hits.forEach((t, i) => {
+      at += (flyMs * lens[i]) / total;
+      if (!i) first = at;
+      sp(st, 'pierce_gold', t.x, t.y, { scale: 4, rot: deg(i + 1), delay: at });
+      sp(st, 'burst_gold', t.x, t.y, { scale: 4, delay: at + 20 });
+      scatter(st, 'feather', t.x, t.y, 4, t.size * 0.6, { delay: at, gravity: 20 });
+    });
+    later(first, () => fxShake(st, 5));
+    return first;
   },
   // 최상급
   a_storm: (st, me) => {
