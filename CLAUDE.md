@@ -8,10 +8,10 @@ Unity 프로젝트(`Assets/`)는 `unity-v2.4` 태그로 고정된 기준용이�
 1. 수정 사항을 모두 읽고, 기존 기획과 겹치거나 충돌하는 부분이 있으면 먼저 알린다. 사용자의 방향에 무조건 동의하지 말고, 더 나은 방법이나 고칠 점을 판단해 알린다.
 2. 코드 전에 이번 버전 계획을 `docs/DEV_PLAN.md`에 적고(아이디어·후보는 대화로), 코드 작업 계획을 짠다. 기획서(Claude Docs "모험가 키우기 기획서")에는 계획·시험·후보를 적지 않는다.
 3. 코딩(`web/`) → `cd web && npm run check` (타입·테스트·빌드). 화면을 바꿨으면 `npm run build`, `npm run preview &`, `npm run shot`으로 스크린샷을 찍어 직접 눈으로 확인한다.
-4. 작업이 끝나면 쓸모없어진 코드를 삭제·정리하고, 앱 최적화(번들·이미지·글꼴 크기, 안 쓰는 CSS·함수)를 점검한다.
+4. 작업이 끝나면 쓸모없어진 코드를 삭제·정리하고, 앱 최적화(번들·이미지·글꼴 크기, 안 쓰는 CSS·함수)를 점검한다. **빌드할 때마다 빌드 전에 코드 정리를 반드시 한다**: 아무 데도 안 쓰는 함수·내보내기·CSS 클래스·그림(이펙트 그림 묶음 포함)·파일·스크립트·패키지를 찾아 지운다. 정리를 빠뜨리고 빌드했으면 정리한 뒤 다시 빌드한다.
 5. README·`docs/DEV_PLAN.md`·UI 시안을 갱신한다.
 6. 정해지지 않은 것(사용자 결정이 필요한 질문)이 하나라도 남아 있으면 빌드를 보류한다 — main 대신 작업 브랜치에만 올리고, 모든 작업이 끝나면 그때 빌드한다.
-7. main에 푸시한다 → GitHub Actions "웹 앱 빌드"가 웹 zip(`web-latest`)과 APK(`android-latest`)를 Releases에 올린다. 끝나면 링크와 크기를 알린다.
+7. main에 푸시한다 → GitHub Actions "웹 앱 빌드"가 웹 zip(`web-latest`)과 APK(`android-latest`)를 Releases에 올린다. 끝나면 링크와 크기를 알린다. **빌드할 때마다 깃허브도 정리한다**: main에 다 합친 작업 브랜치 삭제, 안 합친 브랜치는 `archive/<이름>` 태그로 보관한 뒤 삭제(지우기 전에 알림), 빌드가 더는 만들지 않는 예전 릴리스·태그 삭제, `unity-v2.4` 태그는 남긴다.
    - 저장소가 비공개라 Releases 링크는 다른 사람에게 열리지 않는다. 남에게 줄 웹 플레이 링크는 claude.ai 아티팩트 https://claude.ai/artifact/63TPyXbWy8hFLEyR9Yf7ro 이다: `npm run build` 뒤 `web/dist/index.html`의 `<head>` 안 title·icon·css·script 줄과 `<div id="app">`만 담은 `web/dist/play.html`을 만들어, 같은 주소로 dist 파일 전부(`files`, root `web/dist`)와 함께 다시 올린다.
 8. 빌드가 끝난 뒤에만 기획서에 **지난 빌드와 달라진 확정 내용**을 적는다 (빌드하지 않은 내용·계획·아이디어는 적지 않는다).
 
