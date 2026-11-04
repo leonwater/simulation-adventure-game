@@ -177,22 +177,20 @@ function star(c, p, k) {
   else { c.px(3, 3, p[1]); for (const [x, y] of [[2, 2], [4, 2], [2, 4], [4, 4]]) c.px(x, y, p[2]) }
 }
 
-for (const n of ["white", "arc", "fire", "ice", "bolt", "shadow", "poison", "gold", "green", "earth", "red", "blood"]) {
+for (const n of ["white", "arc", "fire", "ice", "bolt", "poison", "gold", "earth", "blood"]) {
   anim(`burst_${n}`, { w: 24, h: 24, frames: 6, fps: 16 }, (c) => burst(c, PAL[n], c.frame))
 }
-for (const n of ["white", "arc", "fire", "ice", "bolt", "shadow", "poison", "gold", "green", "earth", "red", "seal", "blood"]) {
-  anim(`ring_${n}`, { w: 32, h: 32, frames: 5, fps: 14 }, (c) => ring(c, PAL[n], c.frame))
-  anim(`star_${n}`, { w: 7, h: 7, frames: 2, fps: 6 }, (c) => star(c, PAL[n], c.frame))
-}
-for (const n of ["white", "shadow", "gold", "blood", "ice"]) anim(`slash_${n}`, { w: 32, h: 32, frames: 5, fps: 18 }, (c) => slash(c, PAL[n], c.frame))
+for (const n of ["white", "arc", "fire", "ice", "bolt", "shadow", "poison", "gold", "green", "earth", "red", "seal", "blood"]) anim(`ring_${n}`, { w: 32, h: 32, frames: 5, fps: 14 }, (c) => ring(c, PAL[n], c.frame))
+for (const n of ["white", "arc", "fire", "ice", "bolt", "shadow", "gold", "green", "red", "seal"]) anim(`star_${n}`, { w: 7, h: 7, frames: 2, fps: 6 }, (c) => star(c, PAL[n], c.frame))
+for (const n of ["white", "shadow", "gold"]) anim(`slash_${n}`, { w: 32, h: 32, frames: 5, fps: 18 }, (c) => slash(c, PAL[n], c.frame))
 for (const n of ["shadow", "blood", "white"]) anim(`xslash_${n}`, { w: 32, h: 32, frames: 5, fps: 16 }, (c) => xslash(c, PAL[n], c.frame))
 anim("claw", { w: 24, h: 24, frames: 4, fps: 16 }, (c) => claw(c, PAL.red, c.frame))
 for (const n of ["white", "gold", "blood"]) anim(`pierce_${n}`, { w: 28, h: 9, frames: 4, fps: 18 }, (c) => pierce(c, PAL[n], c.frame))
-for (const n of ["arc", "fire", "ice", "bolt", "red", "gold", "seal", "shadow"]) {
+for (const n of ["arc", "fire", "ice", "bolt", "red", "gold", "seal"]) {
   anim(`circlev_${n}`, { w: 14, h: 38, frames: 6, fps: 12 }, (c) => circlev(c, PAL[n], c.frame))
   anim(`circleg_${n}`, { w: 44, h: 14, frames: 6, fps: 12 }, (c) => circleg(c, PAL[n], c.frame))
 }
-for (const n of ["gold", "ice", "green", "red", "white", "shadow"]) anim(`aura_${n}`, { w: 22, h: 46, frames: 6, fps: 12 }, (c) => aura(c, PAL[n], c.frame))
+for (const n of ["gold", "ice", "green", "red", "white"]) anim(`aura_${n}`, { w: 22, h: 46, frames: 6, fps: 12 }, (c) => aura(c, PAL[n], c.frame))
 
 // ── 투사체 (오른쪽을 향함, 돌려서 쓴다) ──
 // 마력 창 (참고 그림: 흰 심 + 하늘색 + 분홍 꼬리)
