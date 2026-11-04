@@ -50,13 +50,26 @@ button.primary{background:var(--torch);color:var(--on-torch);border-color:var(--
 .fxbtn.on{border-color:var(--torch);background:#2A2112}
 .note{display:grid;gap:4px;padding:12px 14px;border-left:3px solid var(--torch);background:var(--bg);border-radius:0 10px 10px 0;font-size:14px;max-width:70ch}
 .note b{color:var(--text)}
+.grade{overflow-x:auto}.grade table{border-collapse:collapse;font-size:13px;min-width:520px}.grade th,.grade td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}.grade th{color:var(--text);background:var(--card)}.grade td:first-child{color:var(--gold);white-space:nowrap;font-weight:700}
 </style>
 </head>
 <body>
 <main>
   <header class="top">
     <h1>전투 이펙트 모음 <small style="font-size:.55em;color:var(--gold)">v3.11 · 스킬 40종</small></h1>
-    <p>게임 전투 화면과 똑같은 이펙트 코드(<code>src/ui/fx.ts</code>)로 돌아갑니다. 버튼을 누르면 무대에서 바로 재생되고, 버튼 아래에 게임에서 언제 나오는지 적었습니다. <b style="color:var(--gold)">v3.11: 모든 이펙트를 픽셀 그림으로 새로 그렸습니다 (스킬 40종마다 다른 연출).</b></p>
+    <p>게임 전투 화면과 똑같은 이펙트 코드(<code>src/ui/fx.ts</code>)로 돌아갑니다. 버튼을 누르면 무대에서 바로 재생되고, 버튼 아래에 게임에서 언제 나오는지 적었습니다. <b style="color:var(--gold)">v3.11: 모든 이펙트를 픽셀 그림으로 새로 그렸고, 기본 공격 &lt; 하급 &lt; 중급 &lt; 상급 &lt; 최상급 순으로 화려함과 개수가 늘어납니다 (아래 기준표).</b></p>
+    <div class="grade">
+      <table>
+        <thead><tr><th>등급</th><th>시전</th><th>맞을 때 (적마다)</th><th>입자</th><th>화면</th></tr></thead>
+        <tbody>
+          <tr><td>기본 공격</td><td>없음 (마법사만 작은 세로 마법진)</td><td>타격 1겹 · 3배</td><td>×0.5</td><td>없음</td></tr>
+          <tr><td>하급</td><td>세로 마법진 3배 · 빛기둥만</td><td>타격 + 작은 흰 번쩍</td><td>×0.8</td><td>없음</td></tr>
+          <tr><td>중급</td><td>세로 + 바닥 마법진 3배 · 모이는 반짝 4</td><td>타격 + 고리 3배</td><td>×1.2</td><td>흔들림 약</td></tr>
+          <tr><td>상급</td><td>마법진 4배 · 반짝 6</td><td>타격 4배 + 고리 4배 + 흰 번쩍</td><td>×1.8</td><td>흔들림 중 · 약한 색 번쩍</td></tr>
+          <tr><td>최상급</td><td>마법진 4배 + 바깥 고리 5배 · 반짝 8 · 무대 어둡게</td><td>타격 4배 + 고리 5배 + 흰 폭발 + 금빛 별</td><td>×2.4</td><td>흔들림 강 · 강한 번쩍</td></tr>
+        </tbody>
+      </table>
+    </div>
   </header>
   <div class="layout">
     <section class="stagebox" aria-label="무대">

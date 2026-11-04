@@ -9,6 +9,7 @@ import { STATUSES } from '../core/enums';
 import type { Job, StatusType } from '../core/enums';
 import atlasUrl from '../assets/fx/atlas.png';
 import ATLAS from '../assets/fx/atlas.json';
+import { skillDef } from '../core/skills';
 import { spriteUrl } from './sprites';
 
 /** 타격 계열: 기본 공격은 직업별, 스킬은 스킬별(SKILL_STYLE), 몬스터는 할퀴기. */
@@ -149,23 +150,47 @@ function flash(stage: HTMLElement, color: string, ms = 220, alpha = 0.45, delay 
   el.animate([{ opacity: alpha }, { opacity: 0 }], { duration: ms / speed, delay: delay / speed, fill: 'both', easing: 'ease-out' }).onfinish = () => el.remove();
 }
 
+// ── 등급 기준 (기본 공격 0 < 하급 1 < 중급 2 < 상급 3 < 최상급 4) ──
+// 등급이 오를수록 겹(그림 수)·크기·입자·화면 연출이 늘어난다. 그림 질은 같고 양과 크기만 다르다.
+//  기본  : 시전 없음(마법사만 작은 세로 마법진) · 타격 1겹 3배 · 입자 ×0.5 · 화면 없음
+//  하급  : 세로 마법진 3배 / 빛기둥만 · 타격 + 작은 흰 번쩍(2배) · 입자 ×0.8 · 화면 없음
+//  중급  : 세로+바닥 마법진 3배 + 모이는 반짝 4 · 타격 + 고리(3배) · 입자 ×1.2 · 흔들림 3
+//  상급  : 마법진 4배 + 반짝 6 · 타격 4배 + 고리(4배) + 흰 번쩍(3배) · 입자 ×1.8 · 흔들림 6 · 약한 색 번쩍
+//  최상급: 마법진 4배 + 바깥 바닥 고리(5배) + 반짝 8 + 무대 어둡게 · 타격 4배 + 고리(5배) + 흰 폭발(4배) + 금빛 별 · 입자 ×2.4 · 흔들림 9 · 강한 번쩍
+const GRADE = [
+  { castK: 3, ground: false, gather: 0, hitK: 3, ring: 0, flare: 0, parts: 0.5, shake: 0 },
+  { castK: 3, ground: false, gather: 2, hitK: 3, ring: 0, flare: 2, parts: 0.8, shake: 0 },
+  { castK: 3, ground: true, gather: 4, hitK: 3, ring: 3, flare: 0, parts: 1.2, shake: 3 },
+  { castK: 4, ground: true, gather: 6, hitK: 4, ring: 4, flare: 3, parts: 1.8, shake: 6 },
+  { castK: 4, ground: true, gather: 8, hitK: 4, ring: 5, flare: 4, parts: 2.4, shake: 9 },
+];
+const TIER_OF: Record<string, number> = { Low: 1, Mid: 2, High: 3, Top: 4 };
+/** 스킬 등급 → 이펙트 등급 (기본 공격·없는 스킬은 0). */
+export const fxTierOf = (skillId: string | null): number => TIER_OF[skillDef(skillId)?.Tier ?? ''] ?? 0;
+/** 지금 연출 중인 행동의 등급 (fxSkill이 정한다). */
+let cur = 0;
+
 // ── 공통 연출 ──
-/** 시전 마법진: 시전자 앞에 서는 세로 점선 타원 + 발밑 마법진 + 모여드는 반짝이. */
-function cast(stage: HTMLElement, s: Spot, pal: string, big = false): void {
-  const k = big ? 4 : 3, life = big ? 640 : 520;
+/** 시전 마법진: 시전자 앞에 서는 세로 점선 타원 (+ 중급부터 발밑 마법진·모여드는 반짝이, 최상급은 바깥 고리·무대 어둡게). */
+function cast(stage: HTMLElement, s: Spot, pal: string, tier = cur): void {
+  const G = GRADE[tier], k = tier === 0 ? 2 : G.castK, life = 500 + tier * 40;
   sp(stage, `circlev_${pal}`, s.x + s.size * 0.6, s.y, { scale: k, life });
-  sp(stage, `circleg_${pal}`, s.x, feet(s), { scale: k, life });
+  if (G.ground) sp(stage, `circleg_${pal}`, s.x, feet(s), { scale: k, life });
+  if (tier === 4) { sp(stage, `circleg_${pal}`, s.x, feet(s), { scale: 5, delay: 80, life }); flash(stage, '#0A0612', 600, 0.35); }
   const star = A[`star_${pal}`] ? `star_${pal}` : 'star_white';
-  for (let i = 0; i < (big ? 6 : 4); i++) {
+  for (let i = 0; i < G.gather; i++) {
     const a = rand(0, Math.PI * 2), d = s.size * 0.8, el = sp(stage, star, s.x + s.size * 0.6 + Math.cos(a) * d, s.y + Math.sin(a) * d, { life: 320, delay: i * 40 });
     move(el, [{ transform: 'translate(0,0)', opacity: 0 }, { transform: `translate(${-Math.cos(a) * d}px,${-Math.sin(a) * d}px)`, opacity: 1 }], 320, i * 40, 'ease-in');
   }
 }
-/** 자기 강화: 빛기둥 + 발밑 고리 + 떠오르는 반짝이. */
-function aura(stage: HTMLElement, s: Spot, pal: 'gold' | 'ice' | 'green' | 'red' | 'white', delay = 0): void {
-  sp(stage, `aura_${pal}`, s.x, feet(s) + 4, { anchor: 'b', delay, life: 600 });
-  sp(stage, `ring_${pal}`, s.x, feet(s), { squash: 0.35, scale: 4, delay });
-  drift(stage, s, `star_${pal}`, 5, -s.size * 0.8, delay + 80);
+/** 자기 강화: 빛기둥 (+ 중급부터 발밑 고리, 상급부터 두 겹 고리, 최상급은 색 번쩍·흔들림) + 떠오르는 반짝이. */
+function aura(stage: HTMLElement, s: Spot, pal: 'gold' | 'ice' | 'green' | 'red' | 'white', delay = 0, tier = cur): void {
+  const G = GRADE[tier];
+  sp(stage, `aura_${pal}`, s.x, feet(s) + 4, { anchor: 'b', delay, life: 600, scale: tier >= 3 ? 4 : 3 });
+  if (tier >= 2) sp(stage, `ring_${pal}`, s.x, feet(s), { squash: 0.35, scale: G.ring + 1, delay });
+  if (tier >= 3) sp(stage, `ring_${pal}`, s.x, feet(s), { squash: 0.35, scale: G.ring + 3, delay: delay + 140 });
+  if (tier === 4) { flash(stage, { gold: '#F6C063', ice: '#8FD3F4', green: '#8EE87A', red: '#E0524A', white: '#FFFFFF' }[pal], 300, 0.3, delay + 100); later(delay + 100, () => fxShake(stage, 4)); }
+  drift(stage, s, `star_${pal}`, Math.round(3 + G.parts * 2), -s.size * 0.8, delay + 80);
 }
 /** 대상 아래 바닥에서 얼음 가시가 솟았다가 깨진다 (참고 그림). */
 function iceSpikes(stage: HTMLElement, t: Spot, big: boolean, delay: number): void {
@@ -260,74 +285,128 @@ type SkillFx = (st: HTMLElement, me: Spot, to: Spot[]) => number;
  * to = 실제로 맞는 적들 (자기 강화는 빈 배열). 전사 근접 스킬의 휘두르기는 fxSwing이 맡는다.
  */
 const SKILL_FX: Record<string, SkillFx> = {
-  // ── 전사 ──
+  // ── 전사 ── (강타·자루 찍기·전쟁의 일격의 휘두르기는 fxSwing이 등급에 맞춰 그린다)
+  // 하급
   w_bash: () => 0,
-  w_shield: () => 0,
-  w_warcry: (st, me) => { aura(st, me, 'gold'); for (let i = 0; i < 3; i++) sp(st, 'ring_gold', me.x, me.y, { scale: 5 + i, delay: i * 110 }); fxShake(st, 3); return 0; },
+  w_warcry: (st, me) => { aura(st, me, 'gold'); sp(st, 'ring_gold', me.x, me.y, { scale: 4, delay: 120 }); return 0; },
   w_riposte: (st, me) => { aura(st, me, 'gold'); sp(st, 'shield', me.x + me.size * 0.45, me.y, { delay: 160, life: 520 }); return 0; },
-  w_guard: (st, me) => { aura(st, me, 'ice'); sp(st, 'ring_ice', me.x, me.y, { scale: 5, delay: 120 }); sp(st, 'shield', me.x + me.size * 0.45, me.y, { delay: 160, life: 520 }); return 0; },
+  // 중급
+  w_shield: (st, _me, to) => { if (to[0]) sp(st, 'burst_white', to[0].x, to[0].y, { scale: 3, delay: 140 }); return 0; },
+  w_guard: (st, me) => { aura(st, me, 'ice'); sp(st, 'shield', me.x + me.size * 0.45, me.y, { delay: 160, life: 520 }); sp(st, 'ring_ice', me.x, me.y, { scale: 4, delay: 200 }); return 0; },
   w_will: (st, me) => { aura(st, me, 'green'); drift(st, me, 'plus', 6, -me.size * 0.8, 100); return 0; },
+  // 상급
   w_whirl: (st, me, to) => {
     sp(st, 'whirl', me.x, me.y, { scale: 4, life: 420 });
-    to.forEach((t, i) => sp(st, 'slash_white', t.x, t.y, { delay: 160 + i * 30, rot: rand(-30, 30) }));
+    sp(st, 'whirl', me.x, me.y, { scale: 5, delay: 100, life: 380 });
+    sp(st, 'ring_white', me.x, me.y, { scale: 5, delay: 60 });
+    to.forEach((t, i) => { sp(st, 'slash_white', t.x, t.y, { scale: 4, delay: 160 + i * 30, rot: rand(-30, 30) }); sp(st, 'slash_white', t.x, t.y, { delay: 230 + i * 30, rot: rand(150, 210) }); });
+    later(180, () => fxShake(st, 5));
     return 200;
   },
-  w_roar: (st, me) => { flash(st, '#E0524A', 260, 0.18); for (let i = 0; i < 4; i++) sp(st, 'ring_gold', me.x, me.y, { scale: 5 + i * 2, delay: i * 90 }); fxShake(st, 4); return 260; },
+  w_roar: (st, me) => { cast(st, me, 'red'); flash(st, '#E0524A', 260, 0.22); for (let i = 0; i < 4; i++) sp(st, 'ring_gold', me.x, me.y, { scale: 5 + i * 2, delay: i * 90 }); fxShake(st, 6); return 260; },
+  // 최상급
   w_earth: (st, me, to) => {
+    aura(st, me, 'gold');
     const g = feet(me) - 4, end = Math.max(...to.map((t) => t.x)) + 30;
-    chain(st, 'crack', { x: me.x + 10, y: g }, { x: end, y: g }, { delay: 0, life: 620, step: 45 });
-    for (const t of to) { sp(st, 'burst_earth', t.x, feet(t) - 10, { delay: 180, scale: 4 }); scatter(st, 'rock', t.x, feet(t) - 10, 7, t.size * 0.8, { delay: 180, up: true, gravity: 40 }); }
-    later(180, () => fxShake(st, 8));
-    return 220;
+    chain(st, 'crack', { x: me.x + 10, y: g }, { x: end, y: g }, { delay: 120, life: 700, step: 40 });
+    for (const t of to) {
+      sp(st, 'burst_earth', t.x, feet(t) - 10, { delay: 300, scale: 5 });
+      sp(st, 'ring_earth', t.x, feet(t), { delay: 300, scale: 6, squash: 0.4 });
+      scatter(st, 'rock', t.x, feet(t) - 10, 12, t.size, { delay: 300, up: true, gravity: 40 });
+    }
+    flash(st, '#C8A06A', 300, 0.4, 300);
+    later(300, () => fxShake(st, 10));
+    return 340;
   },
   w_strike: (st, me, to) => {
-    cast(st, me, 'gold', true);
-    if (to[0]) { sp(st, 'xslash_white', to[0].x, to[0].y, { scale: 5, delay: 200 }); flash(st, '#FFFFFF', 200, 0.4, 200); }
+    cast(st, me, 'gold');
+    if (to[0]) {
+      const t = to[0];
+      sp(st, 'xslash_white', t.x, t.y, { scale: 5, delay: 200 });
+      sp(st, 'burst_gold', t.x, t.y, { scale: 5, delay: 230 });
+      sp(st, 'ring_white', t.x, t.y, { scale: 6, delay: 240 });
+      scatter(st, 'star_gold', t.x, t.y, 10, t.size * 1.1, { delay: 240 });
+      flash(st, '#FFFFFF', 220, 0.5, 200);
+    }
     later(200, () => fxShake(st, 9));
     return 240;
   },
   // ── 궁수 ──
+  // 하급
   a_aim: (st, me) => { aura(st, me, 'gold'); sp(st, 'ring_gold', me.x + me.size * 0.6, me.y - me.size * 0.2, { scale: 2, delay: 200 }); return 0; },
-  a_double: (st, me) => { aura(st, me, 'green'); for (let i = 0; i < 3; i++) sp(st, 'pierce_white', me.x + me.size * 0.9, me.y + (i - 1) * 12, { delay: i * 70 }); return 0; },
-  a_wind: (st, me) => { aura(st, me, 'white'); sp(st, 'pierce_white', me.x + me.size, me.y, { scale: 4, delay: 120 }); return 0; },
-  a_storm: (st, me) => { aura(st, me, 'gold'); aura(st, me, 'green', 120); for (let i = 0; i < 3; i++) sp(st, 'ring_green', me.x, me.y, { scale: 4 + i, delay: i * 120 }); return 0; },
-  a_scatter: (st, me, to) => {
-    let t0 = 0;
-    to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, t, 170, i * 30)); shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y - 6 }, { x: t.x, y: t.y - 8 }, 170, i * 30 + 25); });
+  a_double: (st, me) => { aura(st, me, 'green'); for (let i = 0; i < 2; i++) sp(st, 'pierce_white', me.x + me.size * 0.9, me.y + (i - 0.5) * 12, { delay: i * 70 }); return 0; },
+  a_scatter: (st, me, to) => { let t0 = 0; to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, t, 170, i * 30)); }); return t0; },
+  // 중급
+  a_wind: (st, me) => { aura(st, me, 'white'); sp(st, 'pierce_white', me.x + me.size, me.y, { scale: 4, delay: 120 }); scatter(st, 'star_white', me.x + me.size, me.y, 4, me.size * 0.4, { delay: 160 }); return 0; },
+  a_flash: (st, me, to) => { if (!to[0]) return 0; cast(st, me, 'bolt'); flash(st, '#FFFFFF', 160, 0.15, 140); return shoot(st, 'proj_light', { x: me.x + me.size * 0.4, y: me.y }, to[0], 150, 60, { trail: 'star_bolt' }); },
+  a_weak: (st, me, to) => { if (!to[0]) return 0; sp(st, 'seal', to[0].x, to[0].y, { life: 420 }); return shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, to[0], 170, 160, { trail: 'star_red' }); },
+  // 상급
+  a_rain: (st, me, to) => {
+    cast(st, me, 'gold');
+    for (let i = 0; i < 4; i++) shoot(st, 'proj_arrow', { x: me.x + me.size * 0.3, y: me.y }, { x: me.x + 20 + i * 8, y: me.y - 160 }, 160, i * 30);
+    for (const t of to) {
+      sp(st, 'circleg_gold', t.x, feet(t), { delay: 120, life: 520 });
+      for (let i = 0; i < 9; i++) fall(st, 'proj_arrow', { x: t.x + rand(-t.size * 0.45, t.size * 0.45), y: t.y + rand(-10, 22) }, 200, 200 + i * 30, { dx: -40, dy: -200 });
+    }
+    later(400, () => fxShake(st, 5));
+    return 400;
+  },
+  a_pierce: (st, me, to) => {
+    cast(st, me, 'gold');
+    const x0 = me.x + me.size * 0.5, end = Math.max(...to.map((t) => t.x)) + 60;
+    chain(st, 'beam_light', { x: x0, y: me.y }, { x: end, y: me.y }, { delay: 200, life: 320, step: 20, loop: true });
+    const t0 = shoot(st, 'proj_arrow', { x: x0, y: me.y }, { x: end, y: me.y }, 160, 160, { scale: 4, trail: 'star_gold' }) - 40;
+    for (const t of to) sp(st, 'burst_gold', t.x, t.y, { scale: 4, delay: t0 });
+    later(t0, () => fxShake(st, 5));
     return t0;
   },
-  a_flash: (st, me, to) => { if (!to[0]) return 0; flash(st, '#FFFFFF', 200, 0.3, 140); return shoot(st, 'proj_light', { x: me.x + me.size * 0.4, y: me.y }, to[0], 150, 0, { trail: 'star_bolt' }); },
-  a_weak: (st, me, to) => { if (!to[0]) return 0; sp(st, 'seal', to[0].x, to[0].y, { life: 420 }); return shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, to[0], 170, 160, { trail: 'star_red' }); },
-  a_rain: (st, _me, to) => { for (const t of to) for (let i = 0; i < 7; i++) fall(st, 'proj_arrow', { x: t.x + rand(-t.size * 0.4, t.size * 0.4), y: t.y + rand(-10, 20) }, 220, i * 35, { dx: -40, dy: -200 }); return 260; },
-  a_pierce: (st, me, to) => {
-    const x0 = me.x + me.size * 0.5, end = Math.max(...to.map((t) => t.x)) + 60;
-    chain(st, 'beam_light', { x: x0, y: me.y }, { x: end, y: me.y }, { delay: 60, life: 300, step: 20, loop: true });
-    return shoot(st, 'proj_arrow', { x: x0, y: me.y }, { x: end, y: me.y }, 160, 0, { scale: 4 }) - 40;
+  // 최상급
+  a_storm: (st, me) => {
+    aura(st, me, 'gold'); aura(st, me, 'green', 140);
+    sp(st, 'whirl', me.x, me.y, { scale: 4, delay: 100, life: 420 });
+    for (let i = 0; i < 3; i++) sp(st, 'ring_green', me.x, me.y, { scale: 4 + i * 2, delay: i * 120 });
+    return 0;
   },
-  a_volley: (st, me, to) => { for (let w = 0; w < 3; w++) to.forEach((t, i) => shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y + rand(-8, 8) }, { x: t.x + rand(-6, 6), y: t.y + rand(-6, 6) }, 170, w * 70 + i * 15)); return 240; },
+  a_volley: (st, me, to) => {
+    cast(st, me, 'gold');
+    for (let w = 0; w < 4; w++) to.forEach((t, i) => shoot(st, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y + rand(-10, 10) }, { x: t.x + rand(-6, 6), y: t.y + rand(-6, 6) }, 170, 160 + w * 70 + i * 15, { trail: w % 2 ? undefined : 'star_gold' }));
+    for (const t of to) { sp(st, 'burst_gold', t.x, t.y, { scale: 4, delay: 560 }); sp(st, 'ring_gold', t.x, t.y, { scale: 5, delay: 580 }); }
+    flash(st, '#F6C063', 260, 0.4, 560);
+    later(560, () => fxShake(st, 9));
+    return 330;
+  },
   // ── 도적 ──
+  // 하급
   r_ambush: (st, me, to) => {
     const t = to[0];
     if (!t) return 0;
     sp(st, 'smoke', me.x, me.y);
-    const c = clone(st, { x: t.x + t.size * 0.55, y: feet(t) }, { delay: 120, life: 440, flip: true });
+    const c = clone(st, { x: t.x + t.size * 0.55, y: feet(t) }, { delay: 120, life: 400, flip: true });
     move(c, [{ transform: 'scaleX(-1) translateY(-90px)', opacity: 0 }, { transform: 'scaleX(-1) translateY(0)', opacity: 1 }], 140, 120, 'ease-in');
-    fadeOut(c, 160, 400);
-    sp(st, 'slash_gold', t.x, t.y, { scale: 4, delay: 250, flip: true, rot: 20 });
-    scatter(st, 'star_gold', t.x, t.y, 6, t.size * 0.7, { delay: 270 });
+    fadeOut(c, 160, 360);
+    sp(st, 'slash_gold', t.x, t.y, { delay: 250, flip: true, rot: 20 });
     return 270;
   },
-  r_shadow: (st, me, to) => (to[0] ? shadowStrike(st, me, to[0], 0, 'x') : 0),
-  r_venom: (st, me, to) => { drift(st, me, 'bubble', 6, -me.size * 0.5); if (to[0]) sp(st, 'pierce_white', to[0].x - to[0].size * 0.3, to[0].y, { delay: 100 }); return 120; },
-  r_keen: (st, me) => { aura(st, me, 'gold'); scatter(st, 'star_gold', me.x + me.size * 0.4, me.y, 5, me.size * 0.5, { delay: 200 }); return 0; },
-  r_cruel: (st, me) => { aura(st, me, 'red'); flash(st, '#E0524A', 220, 0.15); drift(st, me, 'drop', 5, -me.size * 0.5, 100); return 0; },
+  r_venom: (st, me, to) => { drift(st, me, 'bubble', 4, -me.size * 0.5); if (to[0]) sp(st, 'pierce_white', to[0].x - to[0].size * 0.3, to[0].y, { delay: 100 }); return 120; },
+  r_keen: (st, me) => { aura(st, me, 'gold'); scatter(st, 'star_gold', me.x + me.size * 0.4, me.y, 3, me.size * 0.5, { delay: 200 }); return 0; },
   r_shuriken: (st, me, to) => { let t0 = 0; to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_star', { x: me.x + me.size * 0.4, y: me.y }, t, 220, i * 40, { spin: true })); }); return t0; },
-  r_vital: (st, _me, to) => { if (to[0]) sp(st, 'pierce_blood', to[0].x - to[0].size * 0.2, to[0].y, { scale: 4 }); return 110; },
-  r_storm: (st, _me, to) => { for (const t of to) for (let i = 0; i < 3; i++) sp(st, 'slash_white', t.x + rand(-8, 8), t.y + rand(-8, 8), { delay: i * 70, rot: rand(0, 360) }); return 160; },
+  // 중급
+  r_vital: (st, me, to) => { if (!to[0]) return 0; sp(st, 'smoke', me.x, me.y); sp(st, 'pierce_blood', to[0].x - to[0].size * 0.2, to[0].y, { scale: 4, delay: 60 }); scatter(st, 'drop', to[0].x, to[0].y, 4, to[0].size * 0.6, { delay: 120, gravity: 24 }); return 140; },
+  r_shadow: (st, me, to) => (to[0] ? shadowStrike(st, me, to[0], 0, 'x') : 0),
+  // 상급
+  r_storm: (st, me, to) => {
+    sp(st, 'smoke', me.x, me.y, { scale: 4 });
+    sp(st, 'whirl', me.x, me.y, { scale: 4, life: 380 });
+    for (const t of to) { sp(st, 'ring_white', t.x, t.y, { scale: 4, delay: 120 }); for (let i = 0; i < 4; i++) sp(st, 'slash_white', t.x + rand(-8, 8), t.y + rand(-8, 8), { delay: 120 + i * 60, rot: rand(0, 360), scale: i % 2 ? 3 : 4 }); }
+    later(160, () => fxShake(st, 5));
+    return 160;
+  },
+  r_cruel: (st, me) => { aura(st, me, 'red'); flash(st, '#E0524A', 240, 0.22); drift(st, me, 'drop', 6, -me.size * 0.5, 100); return 0; },
+  // 최상급
   r_assassin: (st, me, to) => {
     const t = to[0];
     if (!t) return 0;
-    flash(st, '#140A24', 700, 0.6);
+    flash(st, '#140A24', 800, 0.65);
     sp(st, 'smoke', me.x, me.y, { scale: 4 });
     const at = { x: t.x + t.size * 0.55, y: feet(t) };
     sp(st, 'smoke', at.x, t.y, { scale: 4, delay: 180 });
@@ -335,17 +414,29 @@ const SKILL_FX: Record<string, SkillFx> = {
     fadeOut(c, 160, 600);
     sp(st, 'xslash_blood', t.x, t.y, { scale: 5, delay: 380 });
     sp(st, 'slash_shadow', t.x, t.y, { scale: 5, delay: 420, flip: true });
-    scatter(st, 'drop', t.x, t.y, 8, t.size * 0.8, { delay: 400, gravity: 30 });
-    later(380, () => fxShake(st, 8));
+    sp(st, 'ring_blood', t.x, t.y, { scale: 6, delay: 400 });
+    scatter(st, 'drop', t.x, t.y, 12, t.size, { delay: 400, gravity: 30 });
+    later(380, () => fxShake(st, 10));
     return 400;
   },
-  r_dance: (st, me, to) => { flash(st, '#140A24', 400, 0.45); let t0 = 0; to.forEach((t, i) => { t0 = Math.max(t0, shadowStrike(st, me, t, i * 70, 'slash')); }); return t0; },
+  r_dance: (st, me, to) => {
+    flash(st, '#140A24', 700, 0.5);
+    let t0 = 0;
+    to.forEach((t, i) => { t0 = Math.max(t0, shadowStrike(st, me, t, i * 70, 'slash')); });
+    const c = middle(to);
+    sp(st, 'xslash_shadow', c.x, c.y, { scale: 5, delay: t0 + 80 });
+    sp(st, 'ring_shadow', c.x, c.y, { scale: 6, delay: t0 + 100 });
+    later(t0 + 80, () => fxShake(st, 9));
+    return t0;
+  },
   // ── 마법사 ──
-  m_fireball: (st, me, to) => { cast(st, me, 'fire'); return to[0] ? shoot(st, 'proj_fire', { x: me.x + me.size * 0.6, y: me.y }, to[0], 230, 160, { trail: 'ember', scale: 4 }) : 0; },
-  m_bolt: (st, me, to) => { cast(st, me, 'arc'); return to[0] ? shoot(st, 'proj_arc', { x: me.x + me.size * 0.6, y: me.y }, to[0], 200, 160, { trail: 'star_arc', scale: 4 }) : 0; },
-  m_shard: (st, me, to) => { cast(st, me, 'fire'); let t0 = 0; to.forEach((t) => { t0 = Math.max(t0, shoot(st, 'proj_fire', { x: me.x + me.size * 0.6, y: me.y }, t, 210, 160, { trail: 'ember' })); }); return t0; },
+  // 하급
+  m_fireball: (st, me, to) => { cast(st, me, 'fire'); return to[0] ? shoot(st, 'proj_fire', { x: me.x + me.size * 0.6, y: me.y }, to[0], 230, 160, { trail: 'ember' }) : 0; },
+  m_bolt: (st, me, to) => { cast(st, me, 'arc'); return to[0] ? shoot(st, 'proj_arc', { x: me.x + me.size * 0.6, y: me.y }, to[0], 200, 160, { trail: 'star_arc' }) : 0; },
+  m_shard: (st, me, to) => { cast(st, me, 'fire'); let t0 = 0; to.forEach((t) => { t0 = Math.max(t0, shoot(st, 'proj_fire', { x: me.x + me.size * 0.6, y: me.y }, t, 210, 160)); }); return t0; },
+  // 중급
   m_ice: (st, me, to) => {
-    cast(st, me, 'ice', true);
+    cast(st, me, 'ice');
     if (!to.length) return 0;
     const far = to.reduce((a, t) => (t.x > a.x ? t : a), to[0]);
     const t0 = shoot(st, 'proj_ice', { x: me.x + me.size * 0.6, y: me.y }, far, 260, 200, { trail: 'snow', scale: 4 });
@@ -356,43 +447,48 @@ const SKILL_FX: Record<string, SkillFx> = {
     cast(st, me, 'bolt');
     let prev: Pt = { x: me.x + me.size * 0.6, y: me.y };
     to.forEach((t, i) => { chain(st, 'zap_h', prev, t, { delay: 160 + i * 100, life: 260, loop: true }); prev = t; });
-    flash(st, '#FFF6B0', 160, 0.25, 160);
+    flash(st, '#FFF6B0', 160, 0.15, 160);
     return 200;
   },
   m_silence: (st, me, to) => { cast(st, me, 'seal'); if (to[0]) sp(st, 'seal', to[0].x, to[0].y, { scale: 4, delay: 200 }); return 280; },
-  m_prison: (st, me, to) => { cast(st, me, 'ice', true); if (to[0]) iceSpikes(st, to[0], true, 220); return 300; },
+  // 상급
+  m_meteor: (st, me, to) => {
+    cast(st, me, 'fire');
+    if (!to.length) return 0;
+    const c = middle(to), fallMs = 460, hit = 160 + fallMs;
+    fall(st, 'meteor', c, fallMs, 160, { dx: -150, dy: -210 }, 4, false);
+    // 떨어진 순간: 모든 적이 동시에 터진다 + 번쩍 + 흔들림
+    for (const t of to) { sp(st, 'explode', t.x, t.y, { delay: hit }); scatter(st, 'ember', t.x, t.y, 6, t.size * 0.9, { delay: hit, up: true }); }
+    sp(st, 'ring_fire', c.x, c.y + 20, { scale: 7, squash: 0.45, delay: hit });
+    flash(st, '#FFB060', 260, 0.3, hit);
+    later(hit, () => fxShake(st, 7));
+    return hit;
+  },
+  m_prison: (st, me, to) => { cast(st, me, 'ice'); if (to[0]) iceSpikes(st, to[0], true, 220); later(260, () => fxShake(st, 5)); return 300; },
+  // 최상급
   m_overload: (st, me, to) => {
-    cast(st, me, 'seal', true);
+    cast(st, me, 'seal');
     if (!to[0]) return 0;
     const x0 = me.x + me.size * 0.6;
     chain(st, 'beam_arc', { x: x0, y: me.y }, { x: to[0].x + 30, y: me.y }, { delay: 220, life: 520, step: 15, loop: true }).forEach((el, i) =>
-      move(el, [{ transform: 'scaleY(.2)' }, { transform: 'scaleY(1.4)', offset: 0.3 }, { transform: 'scaleY(1)', offset: 0.7 }, { transform: 'scaleY(0)' }], 520, 220 + i * 15));
+      move(el, [{ transform: 'scaleY(.2)' }, { transform: 'scaleY(1.5)', offset: 0.3 }, { transform: 'scaleY(1.1)', offset: 0.7 }, { transform: 'scaleY(0)' }], 520, 220 + i * 15));
     sp(st, 'burst_arc', to[0].x, to[0].y, { scale: 5, delay: 300 });
-    flash(st, '#FFFFFF', 240, 0.35, 280);
-    later(300, () => fxShake(st, 7));
+    sp(st, 'ring_seal', to[0].x, to[0].y, { scale: 6, delay: 320 });
+    scatter(st, 'star_arc', to[0].x, to[0].y, 12, to[0].size * 1.1, { delay: 320 });
+    flash(st, '#FFFFFF', 260, 0.5, 280);
+    later(300, () => fxShake(st, 9));
     return 320;
   },
-  m_meteor: (st, me, to) => {
-    cast(st, me, 'fire', true);
-    if (!to.length) return 0;
-    const c = middle(to), fallMs = 460, hit = 160 + fallMs;
-    fall(st, 'meteor', c, fallMs, 160, { dx: -150, dy: -210 }, 5, false);
-    // 떨어진 순간: 모든 적이 동시에 터진다 + 번쩍 + 흔들림
-    for (const t of to) { sp(st, 'explode', t.x, t.y, { delay: hit }); scatter(st, 'ember', t.x, t.y, 6, t.size * 0.9, { delay: hit, up: true }); }
-    sp(st, 'explode', c.x, c.y, { scale: 4, delay: hit - 20 });
-    sp(st, 'ring_fire', c.x, c.y + 20, { scale: 8, squash: 0.45, delay: hit });
-    flash(st, '#FFB060', 300, 0.5, hit);
-    later(hit, () => fxShake(st, 10));
-    return hit;
-  },
   m_apocalypse: (st, me, to) => {
-    cast(st, me, 'red', true);
-    flash(st, '#7A1410', 520, 0.35);
+    cast(st, me, 'red');
+    flash(st, '#7A1410', 620, 0.4);
     to.forEach((t, i) => {
-      sp(st, 'pillar_fire', t.x, feet(t) + 6, { anchor: 'b', delay: 220 + i * 60, life: 560 });
-      for (let k = 0; k < 2; k++) fall(st, 'meteor', { x: t.x + rand(-14, 14), y: t.y }, 260, 120 + k * 110, { dx: -40, dy: -200 }, 2, false);
-      scatter(st, 'ember', t.x, feet(t), 6, t.size, { delay: 260 + i * 60, up: true });
+      sp(st, 'pillar_fire', t.x, feet(t) + 6, { anchor: 'b', delay: 220 + i * 60, life: 560, scale: 4 });
+      for (let k = 0; k < 3; k++) fall(st, 'meteor', { x: t.x + rand(-14, 14), y: t.y }, 260, 120 + k * 100, { dx: -40, dy: -200 }, 2, false);
+      sp(st, 'explode', t.x, t.y, { delay: 380 + i * 40 });
+      scatter(st, 'ember', t.x, feet(t), 10, t.size, { delay: 260 + i * 60, up: true });
     });
+    flash(st, '#FFB060', 280, 0.45, 380);
     later(340, () => fxShake(st, 10));
     return 340;
   },
@@ -404,7 +500,7 @@ export const swingsSword = (job: Job, skillId: string | null): boolean => job ==
 /** 기본 공격 연출 (직업별). 맞는 순간까지의 시간을 돌려준다. 전사는 fxSwing이 맡는다. */
 function basicFx(stage: HTMLElement, job: Job, me: Spot, to: Spot[]): number {
   if (!to[0]) return 0;
-  if (job === 'Mage') { cast(stage, me, 'arc'); return shoot(stage, 'proj_arc', { x: me.x + me.size * 0.6, y: me.y }, to[0], 190, 150, { trail: 'star_arc' }); }
+  if (job === 'Mage') { cast(stage, me, 'arc', 0); return shoot(stage, 'proj_arc', { x: me.x + me.size * 0.6, y: me.y }, to[0], 190, 150, { trail: 'star_arc' }); }
   if (job === 'Archer') return shoot(stage, 'proj_arrow', { x: me.x + me.size * 0.4, y: me.y }, to[0], 170);
   return 0;
 }
@@ -415,6 +511,7 @@ function basicFx(stage: HTMLElement, job: Job, me: Spot, to: Spot[]): number {
  */
 export function fxSkill(stage: HTMLElement, me: Spot, to: Spot[], job: Job, skillId: string | null): number {
   if (calm()) return 0;
+  cur = fxTierOf(skillId);
   if (!skillId) return basicFx(stage, job, me, to);
   const fx = SKILL_FX[skillId];
   if (fx) return fx(stage, me, to);
@@ -425,12 +522,16 @@ export function fxSkill(stage: HTMLElement, me: Spot, to: Spot[], job: Job, skil
  * 전사 휘두르기: 돌진하지 않고 그 자리에서 칼을 들었다 내려치며(그림을 발끝 기준으로 기울임),
  * 칼 쪽에 반달 베기 궤적이 나타난다. 맞는 순간까지의 시간을 돌려준다.
  */
-export function fxSwing(stage: HTMLElement, unit: HTMLElement, me: Spot, big = false): number {
+export function fxSwing(stage: HTMLElement, unit: HTMLElement, me: Spot, tier = 0): number {
   const img = unit.querySelector<HTMLElement>('img') ?? unit;
   img.style.transformOrigin = '50% 100%';
-  img.animate([{ rotate: '0deg' }, { rotate: '-14deg', offset: 0.35 }, { rotate: '18deg', offset: 0.6 }, { rotate: '0deg' }], { duration: 340 / speed, easing: 'ease-out' });
+  img.animate([{ rotate: '0deg' }, { rotate: `${-14 - tier * 2}deg`, offset: 0.35 }, { rotate: `${18 + tier * 2}deg`, offset: 0.6 }, { rotate: '0deg' }], { duration: 340 / speed, easing: 'ease-out' });
   if (calm()) return 120;
-  sp(stage, big ? 'slash_gold' : 'slash_white', me.x + me.size * 0.6, me.y - me.size * 0.15, { scale: big ? 4 : 3, delay: 100 });
+  // 기본: 흰 궤적 1 · 하급/중급: 금빛 궤적 · 상급 이상: 금빛 큰 궤적 + 흰 궤적 한 번 더
+  const x = me.x + me.size * 0.6, y = me.y - me.size * 0.15;
+  sp(stage, tier ? 'slash_gold' : 'slash_white', x, y, { scale: tier >= 3 ? 4 : 3, delay: 100 });
+  if (tier >= 3) sp(stage, 'slash_white', x + 6, y + 4, { delay: 150 });
+  if (tier >= 2) scatter(stage, 'star_gold', x + 10, y, Math.round(2 + tier * 1.5), me.size * 0.4, { delay: 140 });
   return 150;
 }
 /** 몬스터 스킬: 붉은 마법진 (몬스터는 왼쪽을 본다). */
@@ -440,29 +541,40 @@ export function fxEnemyCast(stage: HTMLElement, s: Spot): void {
   sp(stage, 'circleg_red', s.x, feet(s));
 }
 
-/** 타격: 계열별 픽셀 그림 + 입자. 치명타는 더 크게 + 흰 폭발 + 금빛 별 + 화면 흔들림. */
-export function fxHit(stage: HTMLElement, s: Spot, style: FxStyle, crit: boolean): void {
+// 타격 계열 → 고리·별 색
+const HIT_PAL: Record<FxStyle, string> = { slash: 'white', claw: 'red', stab: 'white', arrow: 'gold', arcane: 'arc', fire: 'fire', ice: 'ice', bolt: 'bolt', quake: 'earth', shout: 'gold', smash: 'gold', shadow: 'shadow', poison: 'poison' };
+/**
+ * 타격: 계열별 픽셀 그림 + 입자. tier(등급 기준 GRADE)가 높을수록 크기·겹·입자가 늘어난다.
+ * 치명타는 그 위에 흰 폭발 + 금빛 별 + 흔들림.
+ */
+export function fxHit(stage: HTMLElement, s: Spot, style: FxStyle, crit: boolean, tier = 0): void {
   if (calm()) return;
-  const k = crit ? 4 : 3, { x, y, size } = s;
+  const G = GRADE[tier], k = crit ? Math.max(4, G.hitK) : G.hitK, { x, y, size } = s;
+  const n = (base: number): number => Math.max(1, Math.round(base * G.parts));
   switch (style) {
-    case 'slash': sp(stage, 'slash_white', x, y, { scale: k, rot: rand(-20, 20) }); scatter(stage, 'star_white', x, y, 4, size * 0.6); break;
-    case 'claw': sp(stage, 'claw', x, y, { scale: k }); scatter(stage, 'star_red', x, y, 3, size * 0.5); break;
+    case 'slash': sp(stage, 'slash_white', x, y, { scale: k, rot: rand(-20, 20) }); scatter(stage, 'star_white', x, y, n(4), size * 0.6); break;
+    case 'claw': sp(stage, 'claw', x, y, { scale: k }); scatter(stage, 'star_red', x, y, n(3), size * 0.5); break;
     case 'stab': sp(stage, 'pierce_white', x - size * 0.25, y, { scale: k }); sp(stage, 'burst_white', x, y, { scale: 2, delay: 60 }); break;
-    case 'arrow': sp(stage, 'burst_gold', x, y, { scale: k - 1 }); scatter(stage, 'feather', x, y, 3, size * 0.5, { gravity: 20 }); break;
-    case 'arcane': sp(stage, 'burst_arc', x, y, { scale: k }); scatter(stage, 'star_arc', x, y, 5, size * 0.7); break;
-    case 'fire': sp(stage, 'burst_fire', x, y, { scale: k }); scatter(stage, 'ember', x, y, 6, size * 0.7, { up: true }); break;
-    case 'ice': sp(stage, 'burst_ice', x, y, { scale: k }); scatter(stage, 'shard_ice', x, y, 5, size * 0.7, { gravity: 24 }); scatter(stage, 'snow', x, y, 3, size * 0.5); break;
-    case 'bolt': sp(stage, 'bolt_v', x, feet(s) + 4, { anchor: 'b' }); sp(stage, 'burst_bolt', x, y, { scale: k, delay: 40 }); break;
-    case 'quake': sp(stage, 'burst_earth', x, feet(s) - 10, { scale: k }); scatter(stage, 'rock', x, feet(s) - 10, 6, size * 0.7, { up: true, gravity: 40 }); break;
+    case 'arrow': sp(stage, 'burst_gold', x, y, { scale: k - 1 }); scatter(stage, 'feather', x, y, n(3), size * 0.5, { gravity: 20 }); break;
+    case 'arcane': sp(stage, 'burst_arc', x, y, { scale: k }); scatter(stage, 'star_arc', x, y, n(5), size * 0.7); break;
+    case 'fire': sp(stage, 'burst_fire', x, y, { scale: k }); scatter(stage, 'ember', x, y, n(6), size * 0.7, { up: true }); break;
+    case 'ice': sp(stage, 'burst_ice', x, y, { scale: k }); scatter(stage, 'shard_ice', x, y, n(5), size * 0.7, { gravity: 24 }); scatter(stage, 'snow', x, y, n(3), size * 0.5); break;
+    case 'bolt': sp(stage, 'bolt_v', x, feet(s) + 4, { anchor: 'b', scale: tier >= 3 ? 4 : 3 }); sp(stage, 'burst_bolt', x, y, { scale: k, delay: 40 }); break;
+    case 'quake': sp(stage, 'burst_earth', x, feet(s) - 10, { scale: k }); scatter(stage, 'rock', x, feet(s) - 10, n(6), size * 0.7, { up: true, gravity: 40 }); break;
     case 'shout': sp(stage, 'ring_gold', x, y, { scale: k + 1 }); break;
-    case 'smash': sp(stage, 'burst_gold', x, y, { scale: k + 1 }); sp(stage, 'ring_white', x, y, { scale: k, delay: 40 }); fxShake(stage, crit ? 8 : 4); break;
-    case 'shadow': sp(stage, 'xslash_shadow', x, y, { scale: k }); scatter(stage, 'star_shadow', x, y, 4, size * 0.6); break;
-    case 'poison': sp(stage, 'burst_poison', x, y, { scale: k }); scatter(stage, 'bubble', x, y, 5, size * 0.6, { up: true }); break;
+    case 'smash': sp(stage, 'burst_gold', x, y, { scale: k + 1 }); sp(stage, 'ring_white', x, y, { scale: k, delay: 40 }); break;
+    case 'shadow': sp(stage, 'xslash_shadow', x, y, { scale: k }); scatter(stage, 'star_shadow', x, y, n(4), size * 0.6); break;
+    case 'poison': sp(stage, 'burst_poison', x, y, { scale: k }); scatter(stage, 'bubble', x, y, n(5), size * 0.6, { up: true }); break;
   }
+  // 등급 겹: 고리(중급~) · 흰 번쩍(하급 작게, 상급~) · 금빛 별(최상급) · 흔들림(중급~)
+  if (G.ring) sp(stage, `ring_${HIT_PAL[style]}`, x, y, { scale: G.ring, delay: 30 });
+  if (G.flare) sp(stage, 'burst_white', x, y, { scale: G.flare, delay: 40 });
+  if (tier === 4) scatter(stage, 'star_gold', x, y, 6, size, { delay: 60 });
+  if (G.shake) fxShake(stage, G.shake);
   if (crit) {
     sp(stage, 'burst_white', x, y, { scale: 5, delay: 40 });
     scatter(stage, 'star_gold', x, y, 8, size * 0.9, { delay: 40 });
-    fxShake(stage, 6);
+    fxShake(stage, Math.max(6, G.shake));
   }
 }
 

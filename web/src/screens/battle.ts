@@ -11,7 +11,7 @@ import { itemNames, mergeStacks } from '../core/loot';
 import { ALL_SKILLS, skillDef } from '../core/skills';
 import { STATUSES } from '../core/enums';
 import type { StatusType } from '../core/enums';
-import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, setFxAlways, setFxSpeed, swingsSword } from '../ui/fx';
+import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, fxTierOf, setFxAlways, setFxSpeed, swingsSword } from '../ui/fx';
 import type { FxStyle, Spot } from '../ui/fx';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
@@ -80,6 +80,8 @@ export class BattleScreen extends Screen {
   private units = new Map<number, UnitView>();
   /** 지금 재생 중인 행동의 이펙트 계열 (행동 사건에서 정하고 이어지는 피해 사건이 쓴다). */
   private fxStyle: FxStyle = 'slash';
+  /** 이번 행동의 이펙트 등급 (기본 0 · 하급 1 … 최상급 4). */
+  private fxTier = 0;
   private readonly wave = new Set<number>();
   private timers: number[] = [];
 
@@ -450,15 +452,17 @@ export class BattleScreen extends Screen {
         if (e.actor >= 0) {
           if (actor) this.dash(actor.shape, -28);
           this.fxStyle = 'claw';
+          this.fxTier = 0;
           if (from && e.text) fxEnemyCast(this.stage, from);
           break;
         }
         const job = this.b!.character.Job, id = ALL_SKILLS.find((s) => s.Name === e.text)?.Id ?? null;
         const targets = this.playerTargets(events, i);
         this.fxStyle = fxStyleFor(job, id);
+        this.fxTier = fxTierOf(id);
         // 전사 근접 공격은 돌진하지 않고 그 자리에서 칼을 휘두른다
         let hitAt = 0;
-        if (actor && from && targets.length && swingsSword(job, id)) hitAt = fxSwing(this.stage, actor.shape, from, !!id);
+        if (actor && from && targets.length && swingsSword(job, id)) hitAt = fxSwing(this.stage, actor.shape, from, this.fxTier);
         else if (actor) this.dash(actor.shape, 34);
         // 스킬마다 다른 연출: 맞을 적들을 미리 모아 넘기고, 맞는 순간까지 기다린다
         if (from) wait = Math.max(wait, Math.max(hitAt, fxSkill(this.stage, from, targets, job, id)) + 40);
@@ -478,8 +482,9 @@ export class BattleScreen extends Screen {
               const me = this.spot(-1);
               if (me) fxCounter(this.stage, me);
               this.fxStyle = fxStyleFor(this.b!.character.Job, null);
+              this.fxTier = 0;
             }
-            fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit' || e.damage === 'Counter');
+            fxHit(this.stage, at, this.fxStyle, e.damage === 'Crit' || e.damage === 'Counter', this.fxTier);
           }
         }
         // 독·출혈·화상처럼 턴마다 들어가는 피해는 이름을 붙여 공격 피해와 헷갈리지 않게 한다

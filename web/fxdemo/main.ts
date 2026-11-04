@@ -5,7 +5,7 @@ import type { Job, SkillTarget, StatusType } from '../src/core/enums';
 import { Names } from '../src/core/names';
 import { ALL_SKILLS } from '../src/core/skills';
 import type { SkillDef } from '../src/core/skills';
-import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, isDebuff, setFxSpeed, swingsSword } from '../src/ui/fx';
+import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, fxTierOf, isDebuff, setFxSpeed, swingsSword } from '../src/ui/fx';
 import type { FxStyle, Spot, TickKind } from '../src/ui/fx';
 import { spriteUrl } from '../src/ui/sprites';
 
@@ -85,7 +85,7 @@ async function attack(a: Attack): Promise<void> {
   if (a.skill) float(a.from, a.skill, '#F6C063', 13);
   let travel = 0;
   // 게임과 같이: 전사 근접 공격은 그 자리에서 칼을 휘두르고, 나머지는 앞으로 돌진
-  if (a.from < 0 && a.to.length && swingsSword(job, a.skillId ?? null)) travel = fxSwing(stage, units.get(-1)!.el, sp(-1), !!a.skillId);
+  if (a.from < 0 && a.to.length && swingsSword(job, a.skillId ?? null)) travel = fxSwing(stage, units.get(-1)!.el, sp(-1), fxTierOf(a.skillId ?? null));
   else dash(a.from);
   if (a.from < 0) travel = Math.max(travel, fxSkill(stage, sp(-1), a.to.map(sp), job, a.skillId ?? null));
   else if (a.skill) fxEnemyCast(stage, sp(a.from));
@@ -94,7 +94,7 @@ async function attack(a: Attack): Promise<void> {
   for (let k = 0; k < (a.hits ?? 1) && !a.noDamage; k++) {
     for (const [n, t] of a.to.entries()) {
       react(t, !!a.crit);
-      fxHit(stage, sp(t), a.style, !!a.crit);
+      fxHit(stage, sp(t), a.style, !!a.crit, a.from < 0 ? fxTierOf(a.skillId ?? null) : 0);
       float(t, `${a.crit ? '치명타! ' : ''}${Math.round((a.crit ? 38 : 22) + Math.random() * 6)}`, DMG(!!a.crit), a.crit ? 26 : 19);
       await wait(n < a.to.length - 1 ? 50 : 320);
     }
@@ -122,7 +122,7 @@ const TARGET_OF: Record<SkillTarget, number[]> = { SingleEnemy: [0], AllEnemies:
 const skill = (d: SkillDef): Demo => {
   const j = JOBS[d.JobRestriction];
   return {
-    label: d.Name, when: d.Effect, job: j,
+    label: `${d.Name} · ${Names.tier(d.Tier)}`, when: d.Effect, job: j,
     run: () => attack({
       from: -1, to: TARGET_OF[d.Target], style: fxStyleFor(j, d.Id), skillId: d.Id, skill: d.Name, hits: d.Hits, noDamage: !d.IsAttack,
       statuses: d.Statuses.filter((x) => !x.OnSelf).map((x) => x.Type), selfStatuses: d.Statuses.filter((x) => x.OnSelf).map((x) => x.Type),
@@ -148,7 +148,7 @@ const GROUPS: Group[] = [
       { label: '몬스터 · 할퀴기', when: '모든 몬스터의 공격 (나를 때림)', run: () => attack({ from: 0, to: [-1], style: 'claw' }) },
     ],
   },
-  ...JOBS.map((j): Group => ({ title: `${Names.job(j)} 스킬`, lead: JOB_LEAD[j], items: ALL_SKILLS.filter((d) => JOBS[d.JobRestriction] === j).map(skill) })),
+  ...JOBS.map((j): Group => ({ title: `${Names.job(j)} 스킬`, lead: JOB_LEAD[j], items: ALL_SKILLS.filter((d) => JOBS[d.JobRestriction] === j).sort((a, b) => fxTierOf(a.Id) - fxTierOf(b.Id)).map(skill) })),
   {
     title: '피격 · 회피 · 반격',
     lead: '맞으면 흔들림·번쩍임 위에 타격 이펙트가 겹칩니다. 치명타는 더 크게 터지고 화면이 흔들립니다.',
