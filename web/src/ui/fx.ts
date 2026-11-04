@@ -279,6 +279,22 @@ function chain(stage: HTMLElement, name: string, a: Pt, b: Pt, o: { delay: numbe
   return Array.from({ length: n }, (_, k) => sp(stage, name, a.x + (dx * (k + 0.5)) / n, a.y + (dy * (k + 0.5)) / n, { rot: deg, delay: o.delay + k * (o.step ?? 0), life: o.life, loop: o.loop }));
 }
 
+/**
+ * 빛줄기: 시전자 손(from)에서 대상(to) 쪽으로 기울여 뻗는다. 여러 대상이면 대상마다 한 줄씩 부채꼴로
+ * (서로 꿰뚫지 않고 각자 대상 앞에서 멈춘다). pulse면 굵어졌다 가늘어지며 사라진다 (돌린 방향 그대로).
+ */
+function beams(stage: HTMLElement, name: string, from: Pt, to: Spot[], o: { delay: number; life: number; pulse?: boolean }): void {
+  to.forEach((t, k) => {
+    const dx = t.x - from.x, dy = t.y - from.y, len = Math.hypot(dx, dy), stop = Math.max(0, len - t.size * 0.35);
+    const end = { x: from.x + (dx * stop) / len, y: from.y + (dy * stop) / len }, deg = (Math.atan2(dy, dx) * 180) / Math.PI, d = o.delay + k * 50;
+    chain(stage, name, from, end, { delay: d, life: o.life, step: 15, loop: true }).forEach((el, i) => {
+      if (!o.pulse) return;
+      const r = `rotate(${deg}deg)`;
+      el.firstElementChild!.animate([{ transform: `${r} scaleY(.2)` }, { transform: `${r} scaleY(1.5)`, offset: 0.3 }, { transform: `${r} scaleY(1.1)`, offset: 0.7 }, { transform: `${r} scaleY(0)` }], { duration: o.life / speed, delay: (d + i * 15) / speed, fill: 'both' });
+    });
+  });
+}
+
 type SkillFx = (st: HTMLElement, me: Spot, to: Spot[]) => number;
 /**
  * 스킬마다 다른 연출. 돌려주는 값 = 맞는 순간까지의 시간(ms, 전투 속도 반영 전).
@@ -353,10 +369,10 @@ const SKILL_FX: Record<string, SkillFx> = {
   },
   a_pierce: (st, me, to) => {
     cast(st, me, 'gold');
-    const x0 = me.x + me.size * 0.5, end = Math.max(...to.map((t) => t.x)) + 60;
-    chain(st, 'beam_light', { x: x0, y: me.y }, { x: end, y: me.y }, { delay: 200, life: 320, step: 20, loop: true });
-    const t0 = shoot(st, 'proj_arrow', { x: x0, y: me.y }, { x: end, y: me.y }, 160, 160, { scale: 4, trail: 'star_gold' }) - 40;
-    for (const t of to) sp(st, 'burst_gold', t.x, t.y, { scale: 4, delay: t0 });
+    const from = { x: me.x + me.size * 0.5, y: me.y };
+    beams(st, 'beam_light', from, to, { delay: 200, life: 320 });
+    let t0 = 0;
+    to.forEach((t, i) => { t0 = Math.max(t0, shoot(st, 'proj_arrow', from, t, 160, 160 + i * 50, { scale: 4, trail: 'star_gold' })); sp(st, 'burst_gold', t.x, t.y, { scale: 4, delay: 320 + i * 50 }); });
     later(t0, () => fxShake(st, 5));
     return t0;
   },
@@ -469,9 +485,7 @@ const SKILL_FX: Record<string, SkillFx> = {
   m_overload: (st, me, to) => {
     cast(st, me, 'seal');
     if (!to[0]) return 0;
-    const x0 = me.x + me.size * 0.6;
-    chain(st, 'beam_arc', { x: x0, y: me.y }, { x: to[0].x + 30, y: me.y }, { delay: 220, life: 520, step: 15, loop: true }).forEach((el, i) =>
-      move(el, [{ transform: 'scaleY(.2)' }, { transform: 'scaleY(1.5)', offset: 0.3 }, { transform: 'scaleY(1.1)', offset: 0.7 }, { transform: 'scaleY(0)' }], 520, 220 + i * 15));
+    beams(st, 'beam_arc', { x: me.x + me.size * 0.6, y: me.y }, [to[0]], { delay: 220, life: 520, pulse: true });
     sp(st, 'burst_arc', to[0].x, to[0].y, { scale: 5, delay: 300 });
     sp(st, 'ring_seal', to[0].x, to[0].y, { scale: 6, delay: 320 });
     scatter(st, 'star_arc', to[0].x, to[0].y, 12, to[0].size * 1.1, { delay: 320 });
