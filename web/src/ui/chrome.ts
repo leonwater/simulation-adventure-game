@@ -53,19 +53,16 @@ export function bottomNav(active: number, go: (index: number) => void): HTMLElem
 }
 
 /** 일러스트 + 아래쪽 대사 상자. */
-// 가로로 아주 긴(2:1) 그림은 좌우가 잘리지 않게 위쪽에 통째로 놓고, 남는 아래쪽은 같은 그림을 흐리게 깐다
-const WIDE = new Set(['training', 'shop']);
+// 인물이 대사 상자(아래쪽 절반)에 가리지 않게 그림마다 보이는 위치·크기를 맞춘다 (y가 클수록 인물이 위로 올라간다)
+const FRAME: Record<string, { pos: string; size?: string }> = {
+  guild_receptionist: { pos: 'center 88%' },
+  training: { pos: 'center 70%' },
+  shop: { pos: 'center 78%', size: 'auto 150%' },
+};
 
 export function npcIllustration(name: string, npcName: string, line: string, height = 290): HTMLElement {
-  const url = `url(${assetUrl(`illustrations/${name}.webp`)})`;
-  if (WIDE.has(name)) {
-    return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: url } },
-      h('div', { class: 'blurfill', style: { backgroundImage: url } }),
-      h('div', { class: 'wide', style: { backgroundImage: url } }),
-      h('div', { class: 'shade' }),
-      line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
-  }
-  return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: url } },
+  const f = FRAME[name];
+  return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: `url(${assetUrl(`illustrations/${name}.webp`)})`, backgroundPosition: f?.pos ?? '', backgroundSize: f?.size ?? '' } },
     h('div', { class: 'shade' }),
     line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
 }

@@ -264,8 +264,6 @@ input.text::placeholder { color: var(--placeholder); }
 .pad .potion .s { font-size: 14px; font-weight: 700; color: var(--return-text); }
 .pad .potion.off { opacity: .45; }
 /* 가로로 긴 NPC 그림: 위쪽에 전체를 보이고 아래는 흐린 같은 그림으로 채운다 */
-.illust .blurfill { position: absolute; inset: -12px; background: center / cover no-repeat; filter: blur(14px) brightness(.7); }
-.illust .wide { position: absolute; left: 0; right: 0; top: 0; aspect-ratio: 2 / 1; background: top center / 100% 100% no-repeat; }
 
 .battlelog > .grow { align-self: stretch; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; overflow: hidden; }
 .battle-potion { flex-shrink: 0; width: 58px; height: 58px; padding: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; background: var(--return-bg); border: 2px solid var(--return-border); border-radius: 12px; align-self: center; }
