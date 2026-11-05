@@ -237,6 +237,8 @@ export function repair(d: SaveData): void {
   if (d.Run && (!d.Run.Map || d.Run.Map.Rooms.length === 0 || !d.Run.Map.Rooms[d.Run.CurrentRoomId])) d.Run = null;
   if (d.Run === undefined) d.Run = null;
   if (d.Run && !d.Run.Cooldowns) d.Run.Cooldowns = {}; // v3.7: 재사용 대기가 던전 안에서 이어짐
+  // v3.16: 층별 클리어 횟수 — 예전 저장은 돌파한 층을 한 번씩 클리어한 것으로 친다
+  if (!c.FloorClears) c.FloorClears = Object.fromEntries(Array.from({ length: c.HighestFloorCleared }, (_, i) => [i + 1, 1]));
   // v3.15: 튜토리얼 보상 — 예전 저장은 튜토리얼 중인 모험가만 아직 받을 수 있다
   if (d.TutorialReward === undefined) d.TutorialReward = d.Tutorial !== 'TownGuide' && d.Tutorial !== 'FirstDungeon';
   d.SelectedFloor = clamp(d.SelectedFloor ?? 1, 1, maxChallengeFloor(c));

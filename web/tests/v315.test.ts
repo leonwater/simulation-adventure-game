@@ -100,3 +100,36 @@ describe('v3.15 마법사 에너지 볼', () => {
     expect(b2.cooldown(ENERGY_BALL)).toBe(0);
   });
 });
+
+describe('v3.16 층 보상 배율 · 궁수', () => {
+  it('처음 클리어 전 ×1.5, 클리어할수록 ×0.8씩 줄고 최저 ×0.5', async () => {
+    const { floorClearMult } = await import('../src/core/balance');
+    expect([0, 1, 2, 3, 4, 5, 9].map(floorClearMult)).toEqual([1.5, 1, 0.8, expect.closeTo(0.64), expect.closeTo(0.512), 0.5, 0.5]);
+  });
+
+  it('보스를 잡으면 그 층 클리어 횟수가 오르고, 예전 저장은 돌파한 층을 한 번씩 클리어한 것으로 친다', () => {
+    const d = newSaveData('Normal', createCharacter('a', 'Archer'), 'Done') as any;
+    expect(d.Character.Skills.Equipped).toEqual(['a_scatter']); // 궁수 시작 스킬
+    d.Character.HighestFloorCleared = 3;
+    delete d.Character.FloorClears;
+    repair(d);
+    expect(d.Character.FloorClears).toEqual({ 1: 1, 2: 1, 3: 1 });
+  });
+});
+
+describe('v3.16 창고 나눠 맡기기', () => {
+  it('여러 개짜리 물품을 고른 개수만큼만 맡기고 찾는다', async () => {
+    const { deposit, withdraw } = await import('../src/core/guild');
+    const c = createCharacter('a', 'Warrior');
+    c.Gold = 1000;
+    const potion = c.Inventory.Items.find((i) => i.TemplateId === 'potion')!;
+    expect(potion.Count).toBe(3);
+    expect(deposit(c, potion.Uid, 2).ok).toBe(true);
+    expect(c.Inventory.Items.find((i) => i.TemplateId === 'potion')!.Count).toBe(1);
+    const stored = c.Storage.Items.find((i) => i.TemplateId === 'potion')!;
+    expect(stored.Count).toBe(2);
+    expect(withdraw(c, stored.Uid, 1).ok).toBe(true);
+    expect(c.Inventory.Items.find((i) => i.TemplateId === 'potion')!.Count).toBe(2);
+    expect(c.Storage.Items.find((i) => i.TemplateId === 'potion')!.Count).toBe(1);
+  });
+});

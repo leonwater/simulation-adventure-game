@@ -9,7 +9,7 @@ import { modal, toast } from '../ui/overlay';
 import { difficultyTag, jobInfo } from '../ui/jobinfo';
 import { Screen, router } from '../ui/router';
 import { DIFFICULTY_COLOR } from '../ui/theme';
-import { spriteUrl } from '../ui/sprites';
+import { jobSprite } from '../ui/sprites';
 import { goTown } from './index';
 import { TitleScreen } from './title';
 
@@ -101,7 +101,7 @@ export class RegistrationScreen extends Screen {
             }, 'primary', 'grow')));
         } } },
         difficultyTag(j),
-        h('img', { class: 'job-sprite', src: spriteUrl(j.toLowerCase()) ?? '', alt: '' }),
+        jobSprite(j),
         h('b', { style: { fontSize: '16px', color: on ? 'var(--gold)' : 'var(--text)' } }, jobData(j).name),
         h('div', { class: 'job-pc' },
           h('span', { class: 'job-pro' }, '+ ', ...phrases(pro)),

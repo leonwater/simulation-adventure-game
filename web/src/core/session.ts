@@ -1,4 +1,4 @@
-import { B, clamp, roundEven } from './balance';
+import { B, clamp, floorClearMult, roundEven } from './balance';
 import type { BattleChoice } from './battle';
 import { Battle } from './battle';
 import type { Character } from './character';
@@ -304,6 +304,7 @@ export class GameSession {
       setup: (b) => {
         b.fleeAllowed = fleeAllowed;
         b.sureHit = run.IsTutorial;
+        if (!run.IsTutorial) b.dropMultiplier *= floorClearMult(this.c.FloorClears[run.Floor] ?? 0); // 층 보상 배율은 드롭 확률에도
         b.difficulty = this.difficulty;
         applyEffectsToBattle(run.Effects, b);
       },
@@ -342,6 +343,7 @@ export class GameSession {
         if (run.TrialFloor > 0) {
           // 시련의 문: 고른 층의 보스를 잡은 것으로 친다 (결과를 닫으면 바로 귀환)
           d.Character.HighestFloorCleared = Math.max(d.Character.HighestFloorCleared, run.TrialFloor);
+          d.Character.FloorClears[run.TrialFloor] = (d.Character.FloorClears[run.TrialFloor] ?? 0) + 1;
           onBossKilled(d.Guild, run.TrialFloor);
           if (run.TrialFloor === run.Floor) run.BossDefeated = true;
           if (run.TrialFloor >= B.MaxFloor && !d.GameCleared) {

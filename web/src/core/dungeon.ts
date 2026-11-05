@@ -278,5 +278,6 @@ export function onBossDefeated(run: DungeonRun, c: Character, guild: GuildState)
   run.BossDefeated = true;
   currentRoom(run).Cleared = true;
   c.HighestFloorCleared = Math.max(c.HighestFloorCleared, run.Floor);
+  c.FloorClears[run.Floor] = (c.FloorClears[run.Floor] ?? 0) + 1;
   onBossKilled(guild, run.Floor);
 }

@@ -176,14 +176,18 @@ export class BattleScreen extends Screen {
   private buildStage(): void {
     const b = this.b!;
     const p = b.player;
-    this.unit(-1, p, [84, 158], 76, '', 130, `HP ${p.hp}/${p.maxHp}`, false);
+    const PLAYER: [number, number] = [84, 158], PLAYER_SIZE = 76;
+    this.unit(-1, p, PLAYER, PLAYER_SIZE, '', 130, `HP ${p.hp}/${p.maxHp}`, false);
     const centers = enemyCenters(b.enemies.length);
     b.enemies.forEach((e, i) => {
       const many = b.enemies.length > 1;
       const size = e.role === 2 ? (many ? 72 : 96) : e.role === 1 ? 62 : 56;
+      const at = centers[Math.min(i, centers.length - 1)];
+      // 적이 한 줄(1~2마리)이면 발끝을 내 캐릭터와 같은 높이에
+      const center: [number, number] = b.enemies.length <= 2 ? [at[0], PLAYER[1] + PLAYER_SIZE / 2 - size / 2] : at;
       // 발밑 타원 색: 보스 = 보스 색, 정예 = 금색, 일반 = 그림자
       const foot = e.role === 2 ? 'var(--boss)' : e.role === 1 ? 'var(--gold)' : '';
-      this.unit(i, e, centers[Math.min(i, centers.length - 1)], size, foot, many ? 94 : 130, e.role === 1 ? `★${e.name}` : e.name, true);
+      this.unit(i, e, center, size, foot, many ? 94 : 130, e.role === 1 ? `★${e.name}` : e.name, true);
     });
   }
 

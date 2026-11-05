@@ -38,6 +38,8 @@ export interface Character {
   Storage: ItemContainer;
   Skills: SkillSet;
   BagsBought: number;
+  /** 층별 보스 클리어 횟수 (층 보상 배율 floorClearMult, v3.16). */
+  FloorClears: Record<number, number>;
 }
 
 // ── 등급 ─────────────────────────────────────────────────
@@ -179,7 +181,7 @@ export function createCharacter(name: string, job: Job): Character {
     BaseStats: startingStats(job), Gold: B.StartGold, Rank: 'F', HighestFloorCleared: 0, QuestsCompleted: 0, CurrentHp: 0,
     Equipment: { Slots: SLOTS.map(() => null) },
     Inventory: newContainer(B.InventoryStart), Storage: newContainer(B.StorageBase),
-    Skills: { Learned: [{ SkillId: first, Level: 0 }], Equipped: [first] }, BagsBought: 0,
+    Skills: { Learned: [{ SkillId: first, Level: 0 }], Equipped: [first] }, BagsBought: 0, FloorClears: {},
   };
   addItem(c.Inventory, createConsumable('potion', 3));
   setEquipped(c, 'Weapon', createGear('Weapon', 'Common', 1, job, 'Vitality'));

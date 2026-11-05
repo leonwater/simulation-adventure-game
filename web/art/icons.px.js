@@ -886,6 +886,7 @@ sprite("shop", { outline: "k" }, `
   ..DddddddddD..
   ...DDDDDDDD...`)
 sprite("training", { outline: "k" }, `
+  m............m
   mm..........mm
   Mmm........mmM
   .Mmm......mmM.
@@ -895,7 +896,8 @@ sprite("training", { outline: "k" }, `
   .....MmmM.....
   ....DMmmMD....
   ...DDD..DDD...
-  .yDD......DDy.
+  ..DD......DD..
+  .yD........Dy.
   yy..........yy`)
 sprite("stat_vitality", { outline: "k" }, `
   ..RRR...RRR...

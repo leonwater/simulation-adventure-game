@@ -364,20 +364,20 @@
     "Statuses": [
       {
         "Type": "Hawk",
-        "Value": 50,
+        "Value": 40,
         "Turns": 2,
         "OnSelf": true,
         "Chance": 1
       }
     ],
-    "Effect": "2턴 동안 기본 공격 피해 +50%",
+    "Effect": "2턴 동안 기본 공격 피해 +40%",
     "Role": "보조",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": false,
     "NeedsTarget": false,
     "SuccessText": "성공률 100%",
-    "Description": "2턴 동안 기본 공격 피해 +50% · 재사용 4턴"
+    "Description": "2턴 동안 기본 공격 피해 +40% · 재사용 4턴"
   },
   {
     "Id": "a_double",
@@ -406,14 +406,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "2턴 동안 기본 공격 2회 타격",
+    "Effect": "2턴 동안 기본 공격 2회 타격 (한 발당 90%)",
     "Role": "보조",
     "ReqLevel": 1,
     "ReqRank": "F",
     "IsAttack": false,
     "NeedsTarget": false,
     "SuccessText": "성공률 100%",
-    "Description": "2턴 동안 기본 공격 2회 타격 · 재사용 5턴"
+    "Description": "2턴 동안 기본 공격 2회 타격 (한 발당 90%) · 재사용 5턴"
   },
   {
     "Id": "a_scatter",
@@ -423,7 +423,7 @@
     "Target": "RandomEnemies",
     "TargetCount": 3,
     "ChainMults": [],
-    "Cooldown": 3,
+    "Cooldown": 2,
     "DamageMult": 0.7,
     "Hits": 1,
     "HealRatio": 0,
@@ -441,7 +441,7 @@
     "IsAttack": true,
     "NeedsTarget": true,
     "SuccessText": "성공률 -8%",
-    "Description": "대상 + 무작위 2명 70% · 재사용 3턴"
+    "Description": "대상 + 무작위 2명 70% · 재사용 2턴"
   },
   {
     "Id": "a_wind",
@@ -628,7 +628,7 @@
     "Statuses": [
       {
         "Type": "Hawk",
-        "Value": 60,
+        "Value": 78,
         "Turns": 2,
         "OnSelf": true,
         "Chance": 1
@@ -641,14 +641,14 @@
         "Chance": 1
       }
     ],
-    "Effect": "2턴 동안 기본 공격 피해 +60%, 2회 타격",
+    "Effect": "2턴 동안 기본 공격 피해 +78%, 2회 타격 (한 발당 90%)",
     "Role": "보조",
     "ReqLevel": 30,
     "ReqRank": "C",
     "IsAttack": false,
     "NeedsTarget": false,
     "SuccessText": "성공률 100%",
-    "Description": "2턴 동안 기본 공격 피해 +60%, 2회 타격 · 재사용 7턴"
+    "Description": "2턴 동안 기본 공격 피해 +78%, 2회 타격 (한 발당 90%) · 재사용 7턴"
   },
   {
     "Id": "a_volley",

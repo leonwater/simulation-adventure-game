@@ -1,6 +1,6 @@
 import { anchored } from '../ui/coach';
 import { tutorial } from '../ui/tutorial';
-import { B } from '../core/balance';
+import { B, floorClearMult } from '../core/balance';
 import { AllocationDraft, maxHp } from '../core/character';
 import * as dungeon from '../core/dungeon';
 import type { DungeonRun, MovePad, PadSlot } from '../core/dungeon';
@@ -104,13 +104,14 @@ export class DungeonScreen extends Screen {
     if (run && !run.FloorIntroPending && !this.levelUp) tutorial.onDungeon();
   }
 
-  /** 층에 들어오면 1초 정도 큰 제목을 보여 준다. */
+  /** 층에 들어오면 1초 정도 큰 제목을 보여 준다 (층 보상 배율도 함께). */
   private floorIntro(run: DungeonRun): HTMLElement {
     run.FloorIntroPending = false;
     S.save();
     const el = h('div', { class: 'intro' },
       h('div', { class: 'display', style: { fontSize: '44px', color: 'var(--gold)' } }, `${run.Floor}층`),
-      h('div', { style: { fontSize: '16px', color: dungeonTheme(themeIndex(run.Floor)).accent } }, run.IsTutorial ? '튜토리얼' : themeFor(run.Floor).Name));
+      h('div', { style: { fontSize: '16px', color: dungeonTheme(themeIndex(run.Floor)).accent } }, run.IsTutorial ? '튜토리얼' : themeFor(run.Floor).Name),
+      run.IsTutorial ? null : h('div', { style: { fontSize: '13px', color: 'var(--sub)' } }, clearRewardText(S.c.FloorClears[run.Floor] ?? 0)));
     window.setTimeout(() => {
       el.remove();
       this.afterIntro();
@@ -202,14 +203,14 @@ export class DungeonScreen extends Screen {
     return h('div', { class: 'pad' }, ...pad.Slots.map((slot) => this.padCell(slot, open, place[slot.Dir])), this.potionButton());
   }
 
-  /** 방향키 오른쪽 위 빈칸: 물약 버튼 (종류가 여러 개면 고르는 팝업). */
+  /** 방향키 왼쪽 위 빈칸(위 방향키 왼쪽): 물약 버튼 (종류가 여러 개면 고르는 팝업). */
   private potionButton(): HTMLElement {
     return potionButton((item) => {
       const r = S.useConsumable(item.Uid);
       if (!r.ok) return toast(r.message);
       flash(r.message, 'var(--green)');
       router.rebuild();
-    }, 'potion', { gridArea: '1 / 3' });
+    }, 'potion', { gridArea: '1 / 1' });
   }
 
   /** 방향 칸: 색으로만 상태를 보인다 (금색 새 방 · 파랑 탐험함 · 초록 귀환 · 빨강 보스 · 어두움 막힘). */
@@ -459,3 +460,6 @@ export class DungeonScreen extends Screen {
     router.rebuild(); // 층 진입 제목이 뜬다
   }
 }
+
+/** 층 보상 배율 안내: 처음이면 '첫 클리어 보상 ×1.5', 반복이면 '보상 ×0.8'. */
+const clearRewardText = (clears: number): string => (clears === 0 ? `첫 클리어 보상 ×${floorClearMult(0)}` : `반복 클리어 · 보상 ×${Math.round(floorClearMult(clears) * 100) / 100}`);

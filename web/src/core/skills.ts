@@ -70,7 +70,7 @@ const BY_ID = new Map(ALL_SKILLS.map((s) => [s.Id, s]));
 
 export const skillDef = (id: string | null | undefined): SkillDef | null => (id ? BY_ID.get(id) ?? null : null);
 
-export const startingSkill = (job: Job): string => ({ Warrior: 'w_bash', Archer: 'a_aim', Rogue: 'r_ambush', Mage: 'm_fireball' })[job];
+export const startingSkill = (job: Job): string => ({ Warrior: 'w_bash', Archer: 'a_scatter', Rogue: 'r_ambush', Mage: 'm_fireball' })[job];
 
 export function skillsForJob(job: Job, tiers: readonly SkillTier[] = TIERS): SkillDef[] {
   return ALL_SKILLS.filter((s) => (s.JobRestriction < 0 || s.JobRestriction === ord(JOBS, job)) && tiers.includes(s.Tier));

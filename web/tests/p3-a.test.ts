@@ -116,10 +116,15 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     expect(hits).toBe(2); // 섬광 화살 2회 각각 판정
   });
 
-  it('궁수 (v3.7): 속사는 기본 공격을 2회 맞히고, 매의 눈은 기본 공격 피해를 올린다', () => {
+  it('궁수 (v3.16): 속사는 기본 공격을 2회 맞히되 한 발당 90%', () => {
     const { b } = setup12('Archer', 'a_double', 1);
+    const before = b.getChoices().find((x) => x.kind === 'Attack')!.damageNote;
     b.execute(choice12(b, 'a_double'));
-    b.execute(b.getChoices().find((x) => x.kind === 'Attack')!);
+    const atk = b.getChoices().find((x) => x.kind === 'Attack')!;
+    const one = (n: string) => Number(/피해 약 (\d+)/.exec(n)![1]);
+    expect(atk.damageNote).toContain('× 2회');
+    expect(one(atk.damageNote) / one(before)).toBeCloseTo(0.9, 1);
+    b.execute(atk);
     const hits = b.lastEvents.filter((ev) => ev.actor === -1 && (ev.kind === 'Damage' || ev.kind === 'Miss')).length;
     expect(hits).toBe(2);
   });
@@ -320,7 +325,7 @@ const TABLE: [string, SkillTier, number, number][] = [
   ['w_whirl', 'High', 6, -0.08], ['w_roar', 'High', 7, -0.04],
   ['w_earth', 'Top', 8, -0.12], ['w_strike', 'Top', 8, -0.12],
   // v3.7 궁수: 기본 공격 강화(자신) + 광역, 재사용 보통
-  ['a_aim', 'Low', 4, 0], ['a_double', 'Low', 5, 0], ['a_scatter', 'Low', 3, -0.08],
+  ['a_aim', 'Low', 4, 0], ['a_double', 'Low', 5, 0], ['a_scatter', 'Low', 2, -0.08],
   ['a_wind', 'Mid', 5, 0], ['a_flash', 'Mid', 4, -0.04], ['a_weak', 'Mid', 4, -0.04],
   ['a_rain', 'High', 4, -0.08], ['a_pierce', 'High', 4, -0.04],
   ['a_storm', 'Top', 7, 0], ['a_volley', 'Top', 6, -0.12],

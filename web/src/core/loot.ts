@@ -1,4 +1,4 @@
-import { B, enemyGold, overLevelMult, rewardLevel, roundEven } from './balance';
+import { B, enemyGold, floorClearMult, overLevelMult, rewardLevel, roundEven } from './balance';
 import type { Battle } from './battle';
 import type { Character } from './character';
 import { addExp, dropBonus } from './character';
@@ -127,9 +127,9 @@ export function createEventReward(reward: EventReward, floor: number, c: Charact
 
 /** 보상을 캐릭터에 넣는다. 들어가지 않는 아이템은 Dropped로 옮긴다. */
 export function applyLoot(c: Character, run: DungeonRun | null, report: LootReport): void {
-  // 던전 보상은 내 레벨이 그 층 적정 레벨보다 많이 높으면 줄어든다 (쉬운 층 반복 방지)
+  // 던전 보상은 내 레벨이 그 층 적정 레벨보다 많이 높으면 줄고, 그 층을 클리어한 횟수에 따라 늘거나 준다 (처음 ×1.5, 반복할수록 감소)
   if (run) {
-    const mult = overLevelMult(c.Level, run.Floor);
+    const mult = overLevelMult(c.Level, run.Floor) * floorClearMult(c.FloorClears[run.Floor] ?? 0);
     if (report.Gold > 0) report.Gold = roundEven(report.Gold * mult);
     if (report.Exp > 0) report.Exp = roundEven(report.Exp * mult);
   }

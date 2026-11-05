@@ -1,3 +1,4 @@
+import { B } from './balance';
 import type { StatusInstance } from './status';
 import type { StatusType } from './enums';
 
@@ -13,7 +14,7 @@ export function describeStatus(s: string, value: number): string {
     case 'Cruel': return `치명타 피해량 +${value}%`;
     case 'Riposte': return '다음 공격 한 번을 막고 반격';
     case 'Hawk': return `기본 공격 피해 +${value}%`;
-    case 'Rapid': return `기본 공격 ${value + 1}회 타격`;
+    case 'Rapid': return `기본 공격 ${value + 1}회 타격 (한 발당 ${Math.round(B.RapidHitMult * 100)}%)`;
     case 'Piercing': return `기본 공격이 방어 ${value}% 더 무시`;
     case 'Poison': return `턴마다 최대 HP ${value}% 피해`;
     case 'Bleed': return `행동할 때마다 공격력 ${value}% 피해`;

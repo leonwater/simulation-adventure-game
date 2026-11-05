@@ -9,15 +9,20 @@ import { modal } from './overlay';
  * extra: 설명 아래에 덧붙일 줄 (진행 중 퀘스트 재료 안내 등).
  */
 export function sellCountDialog(item: ItemInstance, onSell: (count: number) => void, extra: (HTMLElement | null)[] = []): void {
+  const unit = sellPrice(item);
+  countDialog(item, '판매 개수', (n) => `판매 · ${(unit * n).toLocaleString('en-US')}G`, onSell, extra);
+}
+
+/** 개수 고르기 팝업 (여러 개면 -/+/최대): 판매·창고 맡기기/찾기 공통. okLabel: 고른 개수에 맞춘 확인 버튼 글자. */
+export function countDialog(item: ItemInstance, countLabel: string, okLabel: (n: number) => string, onOk: (count: number) => void, extra: (HTMLElement | null)[] = []): void {
   const m = modal(displayName(item));
   if (item.Kind === 'Equipment') m.body.append(h('div', { style: { fontSize: '13px' } }, gradeTag(item), ' ', gearText(item)));
   m.body.append(h('div', null, statLine(item)));
   for (const e of extra) if (e) m.body.append(e);
-  const unit = sellPrice(item);
   let n = 1;
   const sellBtn = button('', () => {
     m.close();
-    onSell(n);
+    onOk(n);
   }, 'primary');
   const countEl = h('div', { style: { minWidth: '56px', textAlign: 'center', fontWeight: '700', fontSize: '18px' } });
   const minus = button('-', () => set(n - 1), 'ghost', 'sm');
@@ -28,14 +33,14 @@ export function sellCountDialog(item: ItemInstance, onSell: (count: number) => v
   function set(v: number): void {
     n = Math.max(1, Math.min(item.Count, v));
     countEl.textContent = `${n} / ${item.Count}`;
-    sellBtn.textContent = `판매 · ${(unit * n).toLocaleString('en-US')}G`;
+    sellBtn.textContent = okLabel(n);
     minus.disabled = n <= 1;
     plus.disabled = n >= item.Count;
     max.disabled = n >= item.Count;
   }
   if (item.Count > 1) {
-    m.body.append(row(h('span', { class: 'sub grow' }, '판매 개수'), minus, countEl, plus, max));
+    m.body.append(row(h('span', { class: 'sub grow' }, countLabel), minus, countEl, plus, max));
     set(1);
-  } else sellBtn.textContent = `판매 · ${unit.toLocaleString('en-US')}G`;
+  } else sellBtn.textContent = okLabel(1);
   m.body.append(sellBtn);
 }

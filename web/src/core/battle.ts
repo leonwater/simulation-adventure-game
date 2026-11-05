@@ -494,9 +494,10 @@ export class Battle {
 
   // ── 기본 공격 (마법사는 에너지 볼) ──────────────────────
 
-  /** 기본 공격 배율: 궁수는 매의 눈만큼 커지고, 마법사 에너지 볼은 무기 공격력·등급에 비례. */
+  /** 기본 공격 배율: 궁수는 매의 눈만큼 커지고 속사 중에는 한 발당 90%, 마법사 에너지 볼은 무기 공격력·등급에 비례. */
   private basicMult(): number {
-    if (this.character.Job !== 'Mage') return jobData(this.character.Job).basicAttackMultiplier * (1 + this.player.statuses.value('Hawk') / 100);
+    // 속사(여러 번 타격) 중에는 한 발당 RapidHitMult (v3.16: 속사 2회 × 90%)
+    if (this.character.Job !== 'Mage') return jobData(this.character.Job).basicAttackMultiplier * (1 + this.player.statuses.value('Hawk') / 100) * (this.player.statuses.has('Rapid') ? B.RapidHitMult : 1);
     // 에너지 볼 = 공격력 × (기본 + 무기 등급당 보너스) + 무기 공격력 × 배율 → 무기 공격력·등급이 높을수록 세다
     const w = equipped(this.character, 'Weapon');
     const atk = Math.max(1, this.player.attack);

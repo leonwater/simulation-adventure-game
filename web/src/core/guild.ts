@@ -222,22 +222,28 @@ export function turnInQuest(g: GuildState, c: Character, questId: string): { ok:
 
 export const storageFee = (c: Character): number => 10 + c.HighestFloorCleared * 5;
 
-export function deposit(c: Character, uid: string): { ok: boolean; error: string | null } {
+/** 가방 → 창고. count: 여러 개짜리 물품을 나눠 맡길 개수 (기본 전부). 수수료는 맡길 때마다. */
+export function deposit(c: Character, uid: string, count = Infinity): { ok: boolean; error: string | null } {
   const item = findItem(c.Inventory, uid);
   if (!item) return { ok: false, error: '가방에 없는 아이템입니다' };
-  if (!canAdd(c.Storage, item)) return { ok: false, error: '창고가 가득 찼습니다' };
+  const n = Math.min(count, item.Count);
+  if (n <= 0) return { ok: false, error: '맡길 개수를 고르세요' };
+  if (!canAdd(c.Storage, { ...item, Count: n })) return { ok: false, error: '창고가 가득 찼습니다' };
   const fee = storageFee(c);
   if (c.Gold < fee) return { ok: false, error: `수수료 ${fee}G가 부족합니다` };
   c.Gold -= fee;
-  addItem(c.Storage, takeItem(c.Inventory, uid));
+  addItem(c.Storage, takeItem(c.Inventory, uid, n));
   return { ok: true, error: null };
 }
 
-export function withdraw(c: Character, uid: string): { ok: boolean; error: string | null } {
+/** 창고 → 가방 (무료). count: 나눠 찾을 개수 (기본 전부). */
+export function withdraw(c: Character, uid: string, count = Infinity): { ok: boolean; error: string | null } {
   const item = findItem(c.Storage, uid);
   if (!item) return { ok: false, error: '창고에 없는 아이템입니다' };
-  if (!canAdd(c.Inventory, item)) return { ok: false, error: '가방이 가득 찼습니다' };
-  addItem(c.Inventory, takeItem(c.Storage, uid));
+  const n = Math.min(count, item.Count);
+  if (n <= 0) return { ok: false, error: '찾을 개수를 고르세요' };
+  if (!canAdd(c.Inventory, { ...item, Count: n })) return { ok: false, error: '가방이 가득 찼습니다' };
+  addItem(c.Inventory, takeItem(c.Storage, uid, n));
   return { ok: true, error: null };
 }
 

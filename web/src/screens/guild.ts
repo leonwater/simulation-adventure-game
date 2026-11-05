@@ -18,6 +18,7 @@ import paperIron from '../assets/ui/paper_iron.png';
 import paperBronze from '../assets/ui/paper_bronze.png';
 import paperSilver from '../assets/ui/paper_silver.png';
 import paperGold from '../assets/ui/paper_gold.png';
+import { countDialog } from '../ui/sellcount';
 import { button, divider, h, icon, row, sub, tabs } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
@@ -215,13 +216,20 @@ export class GuildScreen extends Screen {
       seg,
       // 쓸 수 있는 칸: 창고 · 가방 남은 칸 (출고 화면은 창고 빈칸도 그대로 보인다)
       row(slotsLeft('창고', c.Storage), slotsLeft('가방', c.Inventory)),
-      itemGrid(from, c, (item) => confirmBox(displayName(item), statLine(item), verb, () => {
-        const r = this.withdrawMode ? withdraw(c, item.Uid) : deposit(c, item.Uid);
-        if (!r.ok) return toast(r.error ?? '');
-        S.save();
-        toast(`${displayName(item)}${this.withdrawMode ? ' 찾음' : ` 맡김 · 수수료 ${fee}G`}`);
-        router.rebuild();
-      }, '닫기'), { showEmpty: this.withdrawMode }),
+      itemGrid(from, c, (item) => {
+        const name = displayName(item), many = item.Count > 1;
+        const act = (n: number): void => {
+          const r = this.withdrawMode ? withdraw(c, item.Uid, n) : deposit(c, item.Uid, n);
+          if (!r.ok) return toast(r.error ?? '');
+          S.save();
+          const what = many ? `${name} ×${n}` : name;
+          toast(`${what}${this.withdrawMode ? ' 찾음' : ` 맡김 · 수수료 ${fee}G`}`);
+          router.rebuild();
+        };
+        // 여러 개짜리는 개수를 골라 나눠 맡기기·찾기
+        if (many) countDialog(item, this.withdrawMode ? '찾을 개수' : '맡길 개수', (n) => (this.withdrawMode ? `${n}개 찾기` : `${n}개 맡기기 · ${fee}G`), act);
+        else confirmBox(name, statLine(item), verb, () => act(1), '닫기');
+      }, { showEmpty: this.withdrawMode }),
     ];
   }
 }

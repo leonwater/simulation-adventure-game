@@ -63,6 +63,9 @@ export function floorLevel(f: number): number {
 /** 적정 레벨 + 여유(3)를 넘은 만큼 경험치·골드 보상이 줄어드는 배율 (1레벨마다 -10%, 최저 20%). */
 export const overLevelMult = (level: number, f: number): number =>
   clamp(1 - B.OverLevelPenaltyStep * Math.max(0, level - Math.round(floorLevel(f)) - B.OverLevelGrace), B.OverLevelMinMult, 1);
+/** 층 보상 배율 (그 층에서 얻는 골드·경험치·드롭 확률): 아직 클리어 못 한 층 ×1.5, 클리어한 횟수만큼 ×0.8씩 (1.0 → 0.8 → 0.64 …), 최저 ×0.5. */
+export const floorClearMult = (clears: number): number =>
+  clears <= 0 ? B.FirstClearMult : Math.max(B.RepeatClearMin, Math.pow(B.RepeatClearDecay, clears - 1));
 /** 그 층에서 나오는 스킬서를 고를 기준 레벨: 내 레벨이 높아도 그 층 적정 레벨 + 여유까지만. */
 export const rewardLevel = (level: number, f: number): number => Math.min(level, Math.round(floorLevel(f)) + B.OverLevelGrace);
 export const enemyExp = (f: number): number => roundEven(10 + B.EnemyExpBase * Math.pow(f, B.EnemyExpExponent));

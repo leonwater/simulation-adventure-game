@@ -8,7 +8,7 @@ import { skillDef, startingSkill } from '../core/skills';
 import type { Child } from './kit';
 import { button, h, icon, phrases, row } from './kit';
 import { modal } from './overlay';
-import { spriteUrl } from './sprites';
+import { jobSprite } from './sprites';
 import { statIcon } from './statrow';
 import { rankIcon } from './theme';
 
@@ -55,7 +55,7 @@ export function jobInfo(job: Job, rank?: Rank): HTMLElement {
   const table = h('div', { class: 'perk-table' }, ...RANKS.map((r, i) => h('div', { class: `perk-cell${r === rank ? ' on' : ''}` },
     icon(rankIcon(r), 20), h('span', { class: 'nw' }, perkValue(job, i)))));
   return h('div', { class: 'col', style: { gap: '10px' } },
-    row(h('img', { class: 'job-sprite', src: spriteUrl(job.toLowerCase()) ?? '', alt: '' }),
+    row(jobSprite(job),
       h('div', { class: 'col grow', style: { gap: '6px' } }, h('b', { style: { fontSize: '18px' } }, j.name), difficultyTag(job))),
     h('div', { class: 'job-facts' },
       ...fact('주요 능력치', stat('Vitality'), ' · ', stat(j.attackStat)),

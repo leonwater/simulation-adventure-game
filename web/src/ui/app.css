@@ -225,6 +225,7 @@ input.text::placeholder { color: var(--placeholder); }
 .job-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .job-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; min-height: 150px; text-align: center; }
 .job-sprite { width: 60px; height: auto; image-rendering: pixelated; }
+.job-pic { height: 60px; display: flex; align-items: flex-end; justify-content: center; flex-shrink: 0; }
 .job-pro { font-size: 12px; color: var(--green); line-height: 1.3; white-space: nowrap; }
 .job-con { font-size: 12px; color: var(--orange); line-height: 1.3; white-space: nowrap; }
 .unit-foot { left: 2px; right: 2px; bottom: -5px; height: 10px; border-radius: 50%; }
