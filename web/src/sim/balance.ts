@@ -54,7 +54,7 @@ export function simulate(diff: Difficulty, runs: number, seeds: number, jobs: re
       let now = Date.UTC(2026, 9, 1, 9, 0, 0);
       const s = new GameSession(new MemorySaveStore(), () => new Date(now), 1000 * seed + JOBS.indexOf(job) + 7);
       s.newGame('봇', job, diff);
-      s.setTutorial('Done');
+      s.skipTutorial(); // 실제 게임처럼 튜토리얼(0층) 클리어 보상을 받고 시작 (튜토리얼을 하든 건너뛰든 같다, v3.15)
       const reached = new Set<number>();
       for (let run = 1; run <= runs && s.hasGame; run++) {
         (strong ? prepareStrong : prepareInTown)(s);
