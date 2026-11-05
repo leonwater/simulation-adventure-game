@@ -98,3 +98,39 @@ jobs:
           gh release create android-latest adventurer-next.apk --prerelease --target "${{ github.sha }}" \
             --title "최신 APK #${{ github.run_number }}" \
             --notes "Capacitor로 감싼 안드로이드 앱 (테스트용, 디버그 서명)"
+
+  # 빌드마다 깃허브 정리 (CLAUDE.md 7번). 세션의 깃허브 연결은 삭제·태그를 막아 여기서 한다.
+  cleanup:
+    name: 깃허브 정리
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 브랜치·릴리스·태그 정리
+        run: |
+          git fetch -q origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
+          # Unity 기준 태그는 늘 남긴다
+          git rev-parse -q --verify refs/tags/unity-v2.4 >/dev/null || gh api -X POST repos/$REPO/git/refs -f ref=refs/tags/unity-v2.4 -f sha=141ef7ff34ed29f0f17eae85d9b4050915a0efa2 >/dev/null
+          week=$(date -d '7 days ago' +%s)
+          for b in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin); do
+            if [ "$b" = main ] || [ "$b" = HEAD ]; then continue; fi
+            if git merge-base --is-ancestor "origin/$b" origin/main; then
+              echo "합친 브랜치 삭제: $b"
+            elif [ "$(git log -1 --format=%ct "origin/$b")" -lt "$week" ]; then
+              # 안 합친 브랜치는 7일 넘게 멈춰 있을 때만 archive/<이름> 태그로 보관하고 지운다
+              echo "안 합친 브랜치 보관 후 삭제: archive/$b"
+              git rev-parse -q --verify "refs/tags/archive/$b" >/dev/null || gh api -X POST repos/$REPO/git/refs -f ref="refs/tags/archive/$b" -f sha="$(git rev-parse "origin/$b")" >/dev/null
+            else
+              echo "::notice::안 합친 최근 브랜치는 남김: $b"; continue
+            fi
+            gh api -X DELETE "repos/$REPO/git/refs/heads/$b"
+          done
+          # 빌드가 더는 만들지 않는 예전 릴리스(+태그) 삭제
+          for r in $(gh api "repos/$REPO/releases" --paginate -q '.[].tag_name'); do
+            case "$r" in web-latest|android-latest|unity-web|unity-android) ;; *) echo "예전 릴리스 삭제: $r"; gh release delete "$r" -R "$REPO" --yes --cleanup-tag ;; esac
+          done
