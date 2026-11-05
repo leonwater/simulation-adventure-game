@@ -327,7 +327,7 @@ describe('보스 특성 (BossTests)', () => {
       expect(traitsFor(t.UniqueBossId).length).toBeGreaterThanOrEqual(2);
     }
     expect(createBoss(7, 'Normal', 3)[0].kit).not.toBeNull();
-    expect(createTutorialBoss('Normal')[0].kit).toBeNull();
+    expect(createTutorialBoss()[0].kit).toBeNull();
   });
 
   it('수치는 층이 깊을수록 커진다', () => {

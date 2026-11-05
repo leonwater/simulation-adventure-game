@@ -1,6 +1,6 @@
 // 실제 마우스 클릭으로 새 게임 → 튜토리얼 → 던전 → 전투 → 귀환을 끝까지 돌린다. 가려져 눌리지 않는 UI·멈춤·콘솔 오류를 잡는다.
 // 실행: npm run e2e   (먼저 npm run build)
-import { start } from './_browser.mjs';
+import { register, start } from './_browser.mjs';
 import fs from 'node:fs';
 const { browser, end } = await start(4180, 100000);
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -15,8 +15,6 @@ const log = (s) => console.log('·', s);
 const fail = async (msg) => { if (failing) return; failing = true; await shot('fail').catch(() => {}); console.error('실패:', msg); if (errors.length) console.error(errors.join('\n')); await end(1); };
 let failing = false;
 const T = { timeout: 2500 };
-const click = async (sel, what) => { try { await page.locator(sel).first().click(T); } catch (e) { await fail(`${what ?? sel} 클릭 불가: ${String(e).split('\n')[0]}`); } await page.waitForTimeout(200); };
-const clickText = async (t, exact = true) => { try { await page.getByText(t, { exact }).first().click(T); } catch (e) { await fail(`'${t}' 클릭 불가: ${String(e).split('\n')[0]}`); } await page.waitForTimeout(250); };
 const has = (sel) => page.locator(sel).count().then((n) => n > 0);
 const state = () => page.evaluate(() => { const S = window.__S; return S.hasGame ? { tut: S.data.Tutorial, dun: S.inDungeon, bat: !!S.battle, floor: S.run?.Floor ?? 0 } : { tut: 'none' }; });
 
@@ -24,13 +22,9 @@ await page.goto('http://localhost:4180/?debug');
 await page.evaluate(() => localStorage.clear());
 await page.reload();
 await page.waitForTimeout(400);
-await clickText('시작하기'); log('시작하기');
-await clickText('건너뛰기'); log('프롤로그 건너뛰기');
-await page.fill('input.text', '테스터');
-await clickText('다음'); log('이름');
-await clickText('전사', false); await clickText('다음'); log('직업');
-await clickText('다음'); log('난이도');
-await clickText('등록하기'); log('등록');
+const JOB = process.env.JOB ?? '전사';
+await register(page, '테스터', JOB).catch((e) => fail(`등록 실패: ${String(e).split('\n')[0]}`));
+log(`등록 (${JOB})`);
 await page.waitForTimeout(600);
 
 // 튜토리얼과 첫 던전을 코치 마크 지시대로만 진행한다
@@ -66,7 +60,9 @@ for (let i = 0; i < 500; i++) {
   }
   if (st.bat) {
     if (await has('.card[role=button]')) { await page.locator('.card[role=button]').first().click(T).catch(() => {}); continue; }
-    if (await has('.bchoice')) { await page.locator('.bchoice').first().click(T).catch(() => {}); await page.waitForTimeout(700); continue; }
+    // 누를 수 있는 선택지만 (마법사 에너지 볼은 한 턴 걸러 재사용 대기라 흐리게 보인다)
+    const ready = page.locator('.bchoice:not([style*="opacity: 0.5"])');
+    if (await ready.count()) { await ready.first().click(T).catch(() => {}); await page.waitForTimeout(700); continue; }
   }
   if (st.dun) {
     if (await has('.dock button.choice')) { await page.locator('.dock button.choice').first().click(T).catch(() => {}); continue; }

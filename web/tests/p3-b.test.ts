@@ -62,13 +62,14 @@ describe('V16Tests (튜토리얼 귀환·퀘스트·초반 보정·방 알림)',
     expect(() => s.descend()).toThrow();
     expect(s.canReturn).toBe(true);
 
-    // 튜토리얼을 다시 보는 중(일반 층)이어도 마찬가지
+    // 튜토리얼을 다시 봐도 0층 튜토리얼 던전 (v3.15)
     s.returnToTown();
     s.c.HighestFloorCleared = 4;
     s.restartTutorial();
     s.selectFloor(2);
     s.enterDungeon();
-    expect(s.run!.IsTutorial).toBe(false);
+    expect(s.run!.IsTutorial).toBe(true);
+    expect(s.run!.Floor).toBe(0);
     expect(s.inTutorialRun).toBe(true);
     s.run!.BossDefeated = true;
     expect(s.canDescend).toBe(false);
@@ -149,8 +150,8 @@ describe('V16Tests (튜토리얼 귀환·퀘스트·초반 보정·방 알림)',
     expect(enemyHp(8)).toBeCloseTo(enemyHp(8, 0), 9); // 8층부터는 보정 없음
     expect(easy.maxHp).toBe(roundEven(enemyHp(1, 0) * 0.75)); // 쉬움은 보정 없음
     expect(normal.maxHp).toBe(roundEven(enemyHp(1) * 1.0));
-    const tutorial = createTutorialGroup(false, 'Normal')[0];
-    expect(Math.abs(tutorial.maxHp - roundEven(enemyHp(1, 0)))).toBeLessThanOrEqual(1); // 튜토리얼 적은 보정 없이
+    const tutorial = createTutorialGroup(false)[0];
+    expect(Math.abs(tutorial.maxHp - easy.maxHp)).toBeLessThanOrEqual(1); // 튜토리얼 적은 어느 난이도든 쉬움 능력치 (v3.15)
   });
 
   it('RoomNotice_TreasureRestBattleAndEvent', () => {

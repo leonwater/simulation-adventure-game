@@ -30,8 +30,8 @@ export const coach = {
   info(anchor: string | null, title: string, html: string, onNext: (() => void) | null, onSkip: (() => void) | null = null): void {
     show(anchor, title, html, false, onNext, onSkip);
   },
-  action(anchor: string | null, html: string, onSkip: (() => void) | null = null): void {
-    show(anchor, '직접 해 보기', html, true, null, onSkip);
+  action(anchor: string | null, title: string, html: string, onSkip: (() => void) | null = null): void {
+    show(anchor, title, html, true, null, onSkip);
   },
 };
 

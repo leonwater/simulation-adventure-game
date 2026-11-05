@@ -347,7 +347,6 @@ export class BattleScreen extends Screen {
       const cut = label.indexOf(' · ');
       if (cut > 0) label = label.slice(0, cut);
     }
-    if (ch.kind === 'Attack') label = '공격';
     // 예상 피해를 바로 보여 준다 (스킬은 효과 요약도 함께)
     const subText: string | null = ch.damageNote || null;
     const st = this.kindStyle(ch);
@@ -357,15 +356,14 @@ export class BattleScreen extends Screen {
       right ? h('div', { class: 'col', style: { alignItems: 'flex-end', gap: '0' } },
         perHit ? h('span', { style: { fontSize: '11px', color: 'var(--sub)' } }, '타격당') : null,
         h('span', { style: { fontSize: pct ? '15px' : '14px', fontWeight: '700', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right', whiteSpace: 'nowrap' } }, right)) : null); // 재사용 대기 'N턴'은 한 줄로 크게
-    longPress(el, () => {
-      if (!tutorial.running) this.showDetail(ch); // 튜토리얼 중에는 안내한 행동만
-    }, () => this.pick(ch));
+    longPress(el, () => this.showDetail(ch), () => this.pick(ch));
     return el;
   }
 
   private showDetail(ch: BattleChoice): void {
     const text = ch.detail || ch.note;
-    const m = modal(ch.label);
+    const m = modal(ch.label.split(' · ')[0]); // 제목은 스킬(행동) 이름만, 대상 이름은 빼고
+    (m.body.parentElement as HTMLElement).style.zIndex = '80'; // 튜토리얼 말풍선(70) 위에 띄워 닫을 수 있게
     const def = ch.kind === 'Skill' ? skillDef(ch.skillId) : null;
     if (def) m.body.append(areaDiagram(def));
     m.body.append(h('div', { class: 'body', style: { whiteSpace: 'pre-line', lineHeight: '1.4', fontSize: '14px' } }, text));

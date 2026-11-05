@@ -5,6 +5,7 @@ import { S } from '../ui/game';
 import { assetUrl, button, col, h, row, sub } from '../ui/kit';
 import { confirmBox, modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
+import { spriteUrl } from '../ui/sprites';
 import { openSettings } from '../ui/settings-panel';
 import { settings } from '../ui/settings';
 import { goToCurrent } from './index';
@@ -55,12 +56,13 @@ export class TitleScreen extends Screen {
       h('div', { class: 'row', style: { padding: '4px 0', alignItems: 'flex-start' } },
         h('div', { class: 'col grow', style: { gap: '4px' } }, sub(k1), h('b', null, v1)),
         h('div', { class: 'col grow', style: { gap: '4px' } }, sub(k2), h('b', null, v2)));
-    const floor = data.Run ? `${data.Run.Floor}층 탐험 중` : `${c.HighestFloorCleared}층 돌파`;
+    const floor = data.Run ? (data.Run.IsTutorial ? '튜토리얼 중' : `${data.Run.Floor}층 탐험 중`) : c.HighestFloorCleared > 0 ? `${c.HighestFloorCleared}층 돌파` : '1층 도전 전';
     const sec = data.PlaySeconds;
     const saved = data.SavedAtTicks > 0 ? new Date(data.SavedAtTicks / 10000 - 62135596800000).toLocaleString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }) : '-';
     m.body.append(
-      h('div', { class: 'card', style: { gap: '14px', padding: '16px 18px', background: 'var(--bg)' } },
-        h('b', { style: { fontSize: '20px' } }, c.Name),
+      h('div', { class: 'card', style: { gap: '14px', padding: '16px 18px', background: 'var(--bg)', position: 'relative' } },
+        h('img', { class: 'job-sprite', src: spriteUrl(c.Job.toLowerCase()) ?? '', alt: '', style: { position: 'absolute', top: '10px', right: '14px', width: '56px' } }),
+        h('b', { style: { fontSize: '20px', paddingRight: '64px' } }, c.Name),
         jobLine(c.Job, `${jobData(c.Job).name} · Lv.${c.Level}`, 13),
         h('div', { class: 'divider' }),
         pair('등급', `${c.Rank} 등급`, '난이도', Names.difficulty(data.Difficulty)),

@@ -99,7 +99,7 @@ jobs:
             --title "최신 APK #${{ github.run_number }}" \
             --notes "Capacitor로 감싼 안드로이드 앱 (테스트용, 디버그 서명)"
 
-  # 빌드마다 깃허브 정리 (CLAUDE.md 7번). 세션의 깃허브 연결은 삭제·태그를 막아 여기서 한다.
+  # 빌드마다 깃허브 정리 (CLAUDE.md 8번). 세션의 깃허브 연결은 삭제·태그를 막아 여기서 한다.
   cleanup:
     name: 깃허브 정리
     needs: build

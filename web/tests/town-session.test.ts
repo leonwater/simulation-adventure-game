@@ -271,7 +271,7 @@ describe('저장·진행 (SessionTests)', () => {
     expect(s3.run!.CurrentRoomId).toBe(id);
   });
 
-  it('튜토리얼: 고정 1층 → 귀환 후 단계', () => {
+  it('튜토리얼: 고정 0층 → 귀환 후 단계', () => {
     const store = new MemorySaveStore();
     const s = session(store);
     s.newGame('에단', 'Archer', 'Normal');
@@ -285,7 +285,7 @@ describe('저장·진행 (SessionTests)', () => {
     let guard = 0;
     while (s.battle && !s.battle.isOver && guard++ < 50) s.executeBattle(pick(s.battle));
     expect(s.battle!.outcome).toBe('Victory');
-    expect(s.c.Level).toBeGreaterThanOrEqual(2);
+    expect(s.c.Level, '0층은 경험치 없음 (v3.15)').toBe(1);
     s.closeBattle();
     expect(s.move(2)).toBe('Return');
     expect(s.canReturn, '튜토리얼은 보스를 잡아야 귀환 (v3.10)').toBe(false);
@@ -301,7 +301,7 @@ describe('저장·진행 (SessionTests)', () => {
     s.restartTutorial();
     expect(s.data!.Tutorial).toBe('TownGuide');
     s.enterDungeon();
-    expect(s.run!.IsTutorial).toBe(false);
+    expect(s.run!.IsTutorial).toBe(true);
     expect(s.data!.Tutorial).toBe('FirstDungeon');
   });
 
@@ -442,7 +442,8 @@ describe('Unity 저장 호환', () => {
     const again = JSON.parse(store.read()!);
     expect(again.Character.Job).toBe('Warrior');
     expect(again.Run.Map.Pattern).toMatch(/Branch|Loop|Grid/);
-    expect(Object.keys(again).sort()).toEqual(Object.keys(JSON.parse(readFileSync(new URL('./fixtures/unity-save.json', import.meta.url), 'utf8'))).sort());
+    // 웹에서 늘어난 필드(v3.15 TutorialReward)만 더해진다
+    expect(Object.keys(again).filter((k) => k !== 'TutorialReward').sort()).toEqual(Object.keys(JSON.parse(readFileSync(new URL('./fixtures/unity-save.json', import.meta.url), 'utf8'))).sort());
   });
 });
 

@@ -117,7 +117,9 @@ export class Battle {
   dropMultiplier = 1;
   /** 보스전이어도 도주할 수 있다 (시련의 문). */
   fleeAllowed = false;
-  /** 스킬(·마법사 에너지 볼) 재사용 대기. 같은 던전 안에서는 다음 전투로 이어진다 (cooldownState). */
+  /** 내 공격이 언제나 명중한다 (튜토리얼 0층). */
+  sureHit = false;
+  /** 스킬(·마법사 에너지 볼) 재사용 대기. 스킬은 같은 던전 안에서 다음 전투로 이어진다 (cooldownState). */
   private readonly cooldowns = new Map<string, number>();
   private acting: Combatant | null = null;
 
@@ -168,9 +170,9 @@ export class Battle {
   cooldown(id: string): number {
     return this.cooldowns.get(id) ?? 0;
   }
-  /** 남은 재사용 대기 (던전 진행에 저장해 다음 전투로 넘긴다). */
+  /** 남은 스킬 재사용 대기 (던전 진행에 저장해 다음 전투로 넘긴다). 에너지 볼은 기본 공격이라 전투가 끝나면 풀린다. */
   cooldownState(): Record<string, number> {
-    return Object.fromEntries([...this.cooldowns].filter(([, v]) => v > 0));
+    return Object.fromEntries([...this.cooldowns].filter(([k, v]) => v > 0 && k !== ENERGY_BALL));
   }
   indexOf(c: Combatant): number {
     return c.isPlayer ? -1 : this.enemies.indexOf(c);
@@ -202,6 +204,7 @@ export class Battle {
 
   /** 공격 성공률 = 기본 + (주 공격 능력치 - 적 요구치) × 1% + 버프 + 스킬 보정. */
   hitChance(target: Combatant, skillBonus = 0): number {
+    if (this.sureHit) return 1;
     const stat = totalStat(this.character, jobData(this.character.Job).attackStat);
     return clamp(B.BaseHit + (stat - target.requirement) * B.HitPerStatPoint + this.statusBonus(false) + skillBonus, B.MinHit, B.MaxHit);
   }
@@ -229,6 +232,7 @@ export class Battle {
     if (s.has('Blind')) parts.push(`실명 ${pct(-s.value('Blind') / 100)}`);
     if (s.has('Fear')) parts.push(`공포 ${pct(-s.value('Fear') / 100)}`);
     if (Math.abs(skillBonus) > 1e-9) parts.push(`${basic ? '기본 공격 보정' : '스킬 보정'} ${pct(skillBonus)}`);
+    if (this.sureHit) return '튜토리얼 동안은 언제나 명중 = 100%';
     return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)`;
   }
 

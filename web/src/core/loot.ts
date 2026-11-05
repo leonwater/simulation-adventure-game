@@ -38,7 +38,7 @@ export function mergeStacks(items: ItemInstance[]): ItemInstance[] {
   return out;
 }
 
-const withCount = (i: ItemInstance): string => (i.Count > 1 ? `${displayName(i)} ×${i.Count}` : displayName(i));
+export const withCount = (i: ItemInstance): string => (i.Count > 1 ? `${displayName(i)} ×${i.Count}` : displayName(i));
 const num = (n: number): string => n.toLocaleString('en-US');
 
 export function itemNames(items: ItemInstance[], max = 99): string {

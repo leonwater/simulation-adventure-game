@@ -1,8 +1,8 @@
-import { B } from '../core/balance';
+import type { LootReport } from '../core/loot';
+import { lootLines, roomNotice } from '../core/loot';
 import type { TutorialStage } from '../core/save';
-import { jobData, PERKS } from '../core/jobs';
 import { josa } from '../core/names';
-import { skillDef, startingSkill } from '../core/skills';
+import { goToCurrent } from '../screens';
 import { coach } from './coach';
 import { S } from './game';
 import { button, h, row } from './kit';
@@ -13,8 +13,8 @@ import { settings } from './settings';
 /**
  * 직접 해 보며 배우는 튜토리얼. 화면의 한 곳을 밝게 남기고(코치 마크) 말풍선으로 설명한다. 말풍선은 화면마다 한두 개, 짧게.
  * - 마을: 상점 → 길드 → 대장간 → 수련장을 한 번씩 들어가 한 줄 설명을 보고 돌아온다. 마지막에 던전 입장.
- * - 첫 1층: 미니맵 → 길 고르기 → 전투(선택지 → 공격) → 레벨 업 → 보스를 잡으면 귀환 (아래층으로는 못 감).
- * - 귀환 후: 정산 → (첫 던전 보스를 잡았을 때만) 길드 창고 → 끝.
+ * - 0층 던전: 미니맵 → 길 고르기 → 전투(선택지 → 전투 방식 → 공격) → 보스를 잡으면 귀환 (아래층으로는 못 감). 내 공격은 100% 명중.
+ * - 귀환 후: 정산 → 길드 창고 → 끝. 건너뛰면 클리어 보상을 팝업으로 알려 준다.
  * 본 설명은 TipsShown에 남아 다시 켜도 이어서 진행한다. 이 기기에서 튜토리얼을 처음 끝까지 하는 동안에는 건너뛰기가 없고,
  * 한 번 마친 뒤로는 화면 오른쪽 위 "건너뛰기"로 끝낼 수 있다. 튜토리얼 중에는 안내한 곳과 건너뛰기만 눌리고,
  * 첫 던전에서는 안내하지 않은 가방·도주·타이틀로 가기를 잠근다.
@@ -39,7 +39,6 @@ export const tutorial = {
   onDungeon,
   onBattle,
   onBossIntent,
-  onLevelUp,
   onResult,
 };
 
@@ -74,11 +73,11 @@ function run(steps: Step[], done: (() => void) | null): void {
   done?.();
 }
 
-/** 가리킨 곳을 플레이어가 직접 누르게 한다. */
-function doIt(anchor: string, text: string): void {
+/** 가리킨 곳을 플레이어가 직접 누르게 한다. title: 말풍선 위 노란 주제. */
+function doIt(anchor: string, title: string, text: string): void {
   // 열린 팝업이 가리킨 곳을 덮으면 누를 수 없으므로 먼저 닫는다
   router.layer.querySelectorAll('.dim').forEach((e) => e.remove());
-  coach.action(anchor, text, skipButton());
+  coach.action(anchor, title, text, skipButton());
 }
 
 let skipDim: HTMLElement | null = null;
@@ -98,9 +97,19 @@ function skip(): void {
     row(button('계속 보기', close, 'ghost', 'grow'), button('건너뛰기', () => {
       close();
       coach.clear();
-      S.setTutorial('Done');
-      router.rebuild();
+      const reward = S.skipTutorial();
+      goToCurrent();
+      if (reward) showReward(reward);
     }, 'primary', 'grow')));
+}
+
+/** 건너뛰어도 클리어한 사람과 같은 보상을 받았다고 알린다. */
+function showReward(reward: LootReport): void {
+  const m = modal('튜토리얼 보상');
+  m.body.append(
+    h('div', { class: 'body' }, '튜토리얼을 건너뛰어 클리어 보상을 받았습니다.'),
+    h('div', { class: 'card', style: { gap: '6px', padding: '12px 14px' } }, ...lootLines(roomNotice('', reward)).map((l) => h('b', null, l))),
+    button('확인', m.close, 'primary'));
 }
 
 // ── 마을 ──
@@ -113,16 +122,12 @@ function onTown(): void {
     run([info('town.intro', null, '라브 마을', `${H('라브 마을')}이에요. 시설을 하나씩 짧게 둘러볼게요.`)], () => {
       for (let i = 0; i < FACILITIES.length; i++) {
         if (S.tipShown(`${FACILITIES[i]}.done`)) continue;
-        doIt(`town.${FACILITIES[i]}`, `${H(josa(FACILITY_NAMES[i], '을/를'))} 눌러 들어가 보세요.`);
+        doIt(`town.${FACILITIES[i]}`, FACILITY_NAMES[i], `${H(josa(FACILITY_NAMES[i], '을/를'))} 눌러 들어가 보세요.`);
         return;
       }
-      doIt('town.dungeon', `${H("'던전 입장'")}을 눌러 첫 모험을 떠나 보세요.`);
+      doIt('town.dungeon', '던전 입장', `${H("'던전 입장'")}을 눌러 ${H('0층')} 튜토리얼 던전으로 떠나 보세요.`);
     });
-  } else if (stage() === 'AfterReturn') {
-    // 창고 안내는 첫 던전 보스를 잡고 돌아왔을 때만. 쓰러졌거나 보스 전에 돌아왔으면 바로 끝낸다.
-    if (S.c.HighestFloorCleared >= 1) doIt('town.guild', `${H('길드')}에 들러 창고를 확인해 봐요.`);
-    else run([info('tut.end', null, '튜토리얼 끝', '이제 자유롭게 모험해 보세요! 퀘스트를 받고 장비를 키워 1층 보스부터 도전해요.')], finish);
-  }
+  } else if (stage() === 'AfterReturn') doIt('town.guild', '길드 창고', `${H('길드')}에 들러 창고를 확인해 봐요.`);
 }
 
 /** 시설 화면: 각 부분 설명 → 마을로 돌아가기. */
@@ -136,7 +141,7 @@ function onFacility(facility: string): void {
   };
   run([steps[facility]], () => {
     S.markTip(`${facility}.done`);
-    doIt('topbar.back', `${H("'‹ 마을'")}을 눌러 마을로 돌아가세요.`);
+    doIt('topbar.back', '마을로', `${H("'‹ 마을'")}을 눌러 마을로 돌아가세요.`);
   });
 }
 
@@ -144,7 +149,7 @@ function onFacility(facility: string): void {
 function onGuild(tab: number): void {
   if (stage() === 'TownGuide') return onFacility('guild');
   if (stage() !== 'AfterReturn') return;
-  if (tab !== 2) return doIt('tab.2', `${H("'창고'")} 탭을 눌러 보세요.`);
+  if (tab !== 2) return doIt('tab.2', '길드 창고', `${H("'창고'")} 탭을 눌러 보세요.`);
   run([
     info('storage.1', 'guild.storage', '길드 창고', `맡긴 아이템은 던전에서 쓰러져도 ${good('잃지 않아요')}. 맡길 때만 ${H('수수료')}가 들어요.`),
     info('storage.2', null, '튜토리얼 끝', `이제 혼자서도 충분해요! 장비를 키워 ${H('던전 최하층')}에 도전해 보세요.`),
@@ -158,51 +163,38 @@ function onDungeon(): void {
   const run0 = S.run;
   // 튜토리얼 보스를 잡으면 아래층으로 가지 않고 마을로 돌아간다
   if (run0 && run0.BossDefeated && document.querySelector('[data-anchor="dungeon.home"]')) {
-    return doIt('dungeon.home', `보스를 쓰러뜨렸어요! 첫 모험은 여기까지예요. ${H("'마을로 귀환한다'")}를 눌러 돌아가세요.`);
+    return doIt('dungeon.home', '귀환', `튜토리얼 클리어! ${H("'마을로 귀환한다'")}를 눌러 돌아가세요.`);
   }
-  run([info('tut.job', null, `${jobData(S.c.Job).name} 안내`, jobGuide()), info('dun.map', 'dungeon.map', '미니맵', `${H('금색')}이 지금 위치예요. 미니맵을 누르면 전체 지도가 열리고, 탐험을 마친 방으로 ${H('순간이동')}할 수 있어요.`)], () => {
+  run([info('dun.map', 'dungeon.map', '미니맵', `${H('금색')}이 지금 위치예요. 누르면 전체 지도가 열려요.`)], () => {
     if (run0 && run0.Map.Rooms.some((r) => r.Type === 'Return' && r.Visited)) {
-      run([info('dun.return', 'dungeon.return', '귀환', `${H('귀환 마법진')}을 찾았어요! 다음 모험부터는 여기서 ${good("'귀환'")} 버튼으로 언제든 돌아갈 수 있어요. 첫 모험은 ${H('보스를 쓰러뜨려야')} 끝나요.`)], null);
+      run([info('dun.return', 'dungeon.return', '귀환', `${H('귀환 마법진')}을 찾으면 언제든 마을로 돌아갈 수 있어요. 튜토리얼은 ${H('보스를 잡아야')} 끝나요.`)], null);
       return;
     }
     if (!S.tipShown('dun.go') && document.querySelector('[data-anchor="dungeon.choice0"]')) {
       S.markTip('dun.go');
-      doIt('dungeon.choice0', `아래 ${H('방향키')}로 갈 길을 골라 보세요. ${H('금색')}이 새 방이에요.`);
+      doIt('dungeon.choice0', '길 고르기', `${H('방향키')}로 갈 길을 골라요. ${H('금색')}이 새 방이에요.`);
     }
   });
 }
 
-/** 첫 던전에 들어가면: 고른 직업 소개 (기본 공격 · 고유 능력치 · 시작 스킬). */
-function jobGuide(): string {
-  const c = S.c;
-  const perk = PERKS[c.Job];
-  const start = skillDef(startingSkill(c.Job));
-  const basic = c.Job === 'Mage' ? `기본 공격 자리는 ${H('에너지 볼')}(재사용 ${B.EnergyBallCooldown}턴)` : c.Job === 'Archer' ? `${H('기본 공격')}이 주력` : `${H('기본 공격')}은 재사용 없이 매 턴`;
-  return `${H(jobData(c.Job).name)}: ${basic}이에요. 고유 능력치 ${H(perk.name)}(${perk.about})는 ${H('모험가 등급')}이 오를수록 커져요. 시작 스킬 ${H(start?.Name ?? '')}: ${start?.Effect ?? ''}.`;
-}
-
-/** 직업별 전투 안내 (v3.7 규칙). */
-function jobTip(): string {
-  const cd = `스킬 ${H('재사용 대기')}는 전투가 끝나도 ${H('같은 던전 안에서 이어지고')}, 마을에 돌아오면 풀려요.`;
-  switch (S.c.Job) {
-    case 'Warrior': return `전사는 맞을 때 ${H('반격')} 확률만큼 피해를 절반으로 막고 바로 되받아쳐요. ${cd}`;
-    case 'Archer': return `궁수는 ${H('기본 공격')}이 주력이에요. ${H('관통')}으로 적 방어를 일부 무시하고, 스킬로 기본 공격을 강화하거나 여러 적을 쏴요. ${cd}`;
-    case 'Rogue': return `도적은 ${H('스킬 치명타')}가 주력이에요. ${H('급소')}로 치명타 확률과 피해가 조금씩 올라요. ${cd}`;
-    default: return `마법사의 기본 공격 자리는 ${H('에너지 볼')}(재사용 ${B.EnergyBallCooldown}턴)이에요. ${good('에너지 볼과 스킬을 번갈아 쓰고')}, 쓸 공격이 하나도 없으면 ${bad('마력 폭주')}로 억지로 쏘고 잠시 약해져요. ${cd}`;
-  }
+/** 전투 방식: 턴제 · 스킬 쿨타임 (마법사만 에너지 볼·마력 폭주). */
+function battleTip(): string {
+  const mage = S.c.Job === 'Mage' ? `<br>마법사: 기본 공격 ${H('에너지 볼')}도 스킬처럼 쿨타임, 쓸 공격이 없으면 ${bad('마력 폭주')}.` : '';
+  return `${H('턴제')}: 나와 적이 한 턴씩.<br>스킬: ${H('쿨타임')}이 있어요.${mage}`;
 }
 
 function onBattle(): void {
-  // 튜토리얼을 마친 예전 모험가에게도 v3.7 직업 변경을 한 번 알려 준다
+  // 튜토리얼을 마친 예전 모험가에게도 전투 방식을 한 번 알려 준다
   if (stage() !== 'FirstDungeon') {
-    if (S.hasGame && !S.tipShown('tip.v37') && document.querySelector('[data-anchor="battle.choices"]')) coach.info('battle.choices', '직업 전투 방식', jobTip(), () => S.markTip('tip.v37'));
+    if (S.hasGame && !S.tipShown('tip.v37') && document.querySelector('[data-anchor="battle.choices"]')) coach.info('battle.choices', '전투 방식', battleTip(), () => S.markTip('tip.v37'));
     return;
   }
-  run([info('bat.2', 'battle.choices', '전투', `오른쪽 숫자는 지금 대상에게 ${H('맞을 확률')}, 아래 줄은 ${H('예상 피해')}예요. 적을 누르면 대상이 바뀌고, 선택지를 ${H('길게 누르면')} 자세한 계산을 볼 수 있어요.`),
-    info('tip.v37', 'battle.choices', '직업 전투 방식', jobTip())], () => {
+  run([info('bat.2', 'battle.choices', '전투', `%는 ${H('맞힐 확률')}, 아래 줄은 ${H('예상 피해')}예요. 튜토리얼 동안은 ${good('100% 명중')}해요. ${H('길게 누르면')} 자세히 볼 수 있어요.`),
+    info('tip.v37', 'battle.choices', '전투 방식', battleTip())], () => {
     if (S.tipShown('bat.3') || !document.querySelector('[data-anchor="battle.choice0"]')) return;
     S.markTip('bat.3');
-    doIt('battle.choice0', `${H('공격')}을 골라 보세요!`);
+    const name = S.c.Job === 'Mage' ? '에너지 볼' : '공격';
+    doIt('battle.choice0', name, `${H(josa(name, '을/를'))} 골라 보세요!`);
   });
 }
 
@@ -212,14 +204,9 @@ function onBossIntent(): void {
   coach.info('battle.intent', '보스의 예고', `보스 이름 자리에 ${bad("주황색 '!'")}가 뜨면 다음 턴에 할 큰 행동이에요. ${H('강타 준비')}면 회복해 두고, ${H('회복 주문')}이면 그 전에 몰아쳐 쓰러뜨리세요.`, () => S.markTip('tip.intent'));
 }
 
-function onLevelUp(): void {
-  if (stage() !== 'FirstDungeon') return;
-  run([info('levelup', 'levelup.auto', '레벨 업', `${H('능력치 포인트')}를 받았어요. ${H("'자동 배분'")}을 누르면 직업에 맞게 나눠 줘요.`)], null);
-}
-
 // ── 귀환 후 ──
 
 function onResult(): void {
   if (stage() !== 'AfterReturn') return;
-  run([info('res.1', 'result.panel', '정산', `마을에 돌아오면 ${good('HP가 모두 회복')}돼요. 쓰러지면 ${bad('골드 일부와 가방 속 아이템을 잃어요')}.`)], () => doIt('result.next', '마을로 돌아가세요.'));
+  run([info('res.1', 'result.panel', '정산', `마을에 돌아오면 ${good('HP가 모두 회복')}돼요. 쓰러지면 ${bad('골드 일부와 가방 속 아이템을 잃어요')}.`)], () => doIt('result.next', '마을로', '마을로 돌아가세요.'));
 }

@@ -77,7 +77,7 @@ export class DungeonScreen extends Screen {
       return b;
     };
     const page = h('div', { class: 'page', style: { background: th.bg } },
-      dungeonHeader(`${run.Floor}층 · ${theme.Name}`, c, () => openPauseMenu()),
+      dungeonHeader(`${run.Floor}층 · ${run.IsTutorial ? '튜토리얼' : theme.Name}`, c, () => openPauseMenu()),
       h('div', { class: 'scroll', style: { gap: '12px' } },
         ...(run.Effects.length > 0 ? this.effectTags(run) : []),
         this.miniMap(run),
@@ -90,7 +90,7 @@ export class DungeonScreen extends Screen {
         ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
         ibtn('character', '정보', () => showCharacterInfo()),
         ibtn('quest', '퀘스트', () => showQuests()),
-        ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast(S.inTutorialRun ? '첫 모험은 보스를 쓰러뜨려야 돌아갈 수 있어요.' : '아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
+        ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast(S.inTutorialRun ? '튜토리얼은 보스를 쓰러뜨려야 돌아갈 수 있어요.' : '아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
       run.FloorIntroPending ? this.floorIntro(run) : null,
       dungeon.currentRoom(run).Type === 'Boss' && run.BossDefeated && !exploringAfterBoss.has(run) ? this.bossChoice(run) : null);
     if (!run.FloorIntroPending) queueMicrotask(() => this.afterIntro());
@@ -110,7 +110,7 @@ export class DungeonScreen extends Screen {
     S.save();
     const el = h('div', { class: 'intro' },
       h('div', { class: 'display', style: { fontSize: '44px', color: 'var(--gold)' } }, `${run.Floor}층`),
-      h('div', { style: { fontSize: '16px', color: dungeonTheme(themeIndex(run.Floor)).accent } }, themeFor(run.Floor).Name + (run.IsTutorial ? ' · 연습' : '')));
+      h('div', { style: { fontSize: '16px', color: dungeonTheme(themeIndex(run.Floor)).accent } }, run.IsTutorial ? '튜토리얼' : themeFor(run.Floor).Name));
     window.setTimeout(() => {
       el.remove();
       this.afterIntro();
@@ -131,17 +131,16 @@ export class DungeonScreen extends Screen {
   private levelUpAllocation(draft: AllocationDraft): void {
     const c = S.c;
     const m = modal(`레벨 업! Lv.${c.Level}`, false);
-    window.setTimeout(() => tutorial.onLevelUp(), 0);
     // 창을 닫았다 다시 열지 않고 내용만 바꾼다 (+/- 누를 때 깜빡이지 않게)
     const fill = (): void => {
       m.body.replaceChildren(m.body.firstChild!);
       const stats = jobData(c.Job).allocatable;
       m.body.append(h('div', null, '포인트 ', colored(String(draft.remaining), 'var(--gold)')),
         ...stats.map((st, i) => statRow(draft, st, i < stats.length - 1, fill)));
-      const auto = anchored(button('자동 배분', () => {
+      const auto = button('자동 배분', () => {
         draft.auto();
         fill();
-      }, '', 'grow'), 'levelup.auto');
+      }, '', 'grow');
       auto.disabled = draft.remaining <= 0;
       const ok = button('확정', () => {
         const before = maxHp(c);
@@ -431,7 +430,7 @@ export class DungeonScreen extends Screen {
   private bossChoice(run: DungeonRun): HTMLElement {
     const last = run.Floor >= B.MaxFloor;
     const card = h('div', { class: 'card', style: { width: '100%', gap: '10px', padding: '18px 16px', background: 'var(--dialog)', borderColor: 'var(--gold)' } },
-      h('b', { class: 'gold center display', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : `${run.Floor}층 보스 처치`),
+      h('b', { class: 'gold center display', style: { fontSize: '20px', textAlign: 'center', marginBottom: '10px' } }, last ? `${run.Floor}층 보스 처치 · 던전 정복!` : run.IsTutorial ? '튜토리얼 클리어' : `${run.Floor}층 보스 처치`),
       // 맨 위: 이 층에 남은 방을 더 둘러본다 (보스 방에서 나가면 같은 층을 이어서 탐험)
       this.bigButton('explore', '이 층 탐험', '남은 방을 더 둘러보기', () => {
         exploringAfterBoss.add(run);
@@ -445,7 +444,7 @@ export class DungeonScreen extends Screen {
   private confirmReturn(): void {
     const run = S.run!;
     const msg = run.BossDefeated
-      ? run.Floor >= B.MaxFloor ? '던전을 정복했습니다. 마을로 돌아갑니다.' : `마을로 돌아갑니다. ${run.Floor + 1}층이 열려 있습니다.`
+      ? run.Floor >= B.MaxFloor ? '던전을 정복했습니다. 마을로 돌아갑니다.' : `마을로 돌아갑니다. ${run.Floor + 1}층에 도전할 수 있습니다.`
       : '귀환 마법진으로 마을에 돌아갑니다. 이번 층 진행은 초기화되지만 얻은 골드·경험치·아이템은 유지됩니다.';
     confirmBox('마을로 귀환', msg, '귀환', () => this.returnNow());
   }

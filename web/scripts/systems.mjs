@@ -1,6 +1,6 @@
 // 마을 시스템을 화면에서 직접 눌러 상태가 바뀌는지 확인한다: 상점 구매·판매, 길드 수락·보고·창고, 대장간 강화, 수련, 가방 사용·착용, 저장 후 이어하기.
 // 실행: npm run build && node scripts/systems.mjs
-import { start } from './_browser.mjs';
+import { register, start } from './_browser.mjs';
 import fs from 'node:fs';
 const { browser, end } = await start(4200, 100000);
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
@@ -20,9 +20,7 @@ const shot = (n) => page.screenshot({ path: `shots/sys-${n}.png` });
 await page.goto('http://localhost:4200/?debug');
 await page.evaluate(() => localStorage.clear());
 await page.reload();
-await tap('시작하기'); await tap('건너뛰기');
-await page.fill('input.text', '점검');
-for (const t of ['다음', '전사', '다음', '다음', '등록하기']) { await page.getByText(t, { exact: t === '다음' || t === '등록하기' }).first().click(); await page.waitForTimeout(150); }
+await register(page, '점검');
 await S(() => { const s = window.__S; s.setTutorial('Done'); s.c.Gold = 50000; s.c.Level = 20; s.c.HighestFloorCleared = 4; window.__go(); });
 await page.waitForTimeout(300);
 

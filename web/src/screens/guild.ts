@@ -96,7 +96,7 @@ export class GuildScreen extends Screen {
     const rw = questReward(q, c);
     const sprite = q.Kind === 'Collect' ? null : spriteUrl(q.SpeciesId);
     const pic = q.Kind === 'Collect' ? artImg(q.MaterialId) : sprite ? h('img', { class: 'qpic-unit', src: sprite, alt: '' })
-      : h('span', { class: 'qboss' }, icon('room_boss', 40, 'var(--qboss)')); // 보스 의뢰: 붉은 기운 속 큰 해골
+      : h('span', { class: 'qboss' }, icon('room_boss', 30, 'var(--qboss)')); // 보스 의뢰: 붉은 기운 속 큰 해골
     return h('div', { class: `qnote ${tier}${active ? ' active' : ''}`, role: 'button', style: { borderImageSource: `url(${PAPER[tier]})` }, on: { click: () => this.detail(q, active) } },
       active ? h('span', { class: `qstamp${done ? ' done' : ''}` }, done ? '완료' : '진행 중') : null,
       h('div', { class: 'qhead' }, icon(rankIcon(q.Rank), 22), h('b', { class: 'qtitle' }, q.Title)),

@@ -1,12 +1,12 @@
 // 무작위 클릭 점검: 새 게임(튜토리얼 끝, 골드 많이)에서 눈에 보이는 눌 수 있는 것을 무작위로 눌러 오류·멈춤·눌러도 반응 없는 화면을 찾는다.
 // 실행: npm run build && node scripts/monkey.mjs [횟수=1500] [시드=1]
-import { start } from './_browser.mjs';
+import { register, start } from './_browser.mjs';
 import fs from 'node:fs';
 const N = parseInt(process.argv[2] ?? '1500', 10);
 const SEED = parseInt(process.argv[3] ?? '1', 10);
 let seed = SEED;
 const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-const { browser, end } = await start(4180 + SEED, 110000);
+const { browser, end } = await start(4180 + SEED, 30000 + N * 300); // 누르는 횟수에 맞춰 (한 번에 0.1~0.3초)
 const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
 page.setDefaultTimeout(1500);
 await page.addInitScript(() => { Error.stackTraceLimit = 40; });
@@ -20,10 +20,7 @@ await page.evaluate(() => localStorage.clear());
 await page.reload();
 await page.waitForTimeout(300);
 const SKIP = /타이틀|삭제|초기화|처음으로|^튜토리얼|저장하고/;
-await page.getByText('시작하기', { exact: true }).first().click();
-await page.getByText('건너뛰기', { exact: true }).first().click();
-await page.fill('input.text', '원숭이');
-for (const t of ['다음', '전사', '다음', '다음', '등록하기']) { await page.getByText(t, { exact: t === '다음' || t === '등록하기' }).first().click(); await page.waitForTimeout(150); }
+await register(page, '원숭이');
 await page.evaluate(() => { const S = window.__S; S.setTutorial('Done'); S.c.Gold = 80000; window.__go(); });
 if (SEED >= 20) await page.evaluate((f) => { const S = window.__S; S.c.HighestFloorCleared = f - 1; S.c.Level = Math.min(60, f * 4); S.select ? 0 : 0; S.selectFloor(f); window.__go(); }, 2 + (SEED % 28));
 await page.waitForTimeout(400);

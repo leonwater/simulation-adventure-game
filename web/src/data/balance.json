@@ -153,6 +153,7 @@
   "StatCap": 99,
   "FixedStatValue": 5,
   "StartGold": 200,
+  "TutorialRewardGold": 100,
   "HighPotionFirstFloor": 10,
   "BaseHp": 50,
   "ResistPerSpirit": 0.01,

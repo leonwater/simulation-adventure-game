@@ -1,4 +1,4 @@
-import { B, difficultyMultiplier, earlyBoostScale, enemyAttack, enemyDefense, enemyExp, enemyGold, enemyHp, expToNext, lateRamp, midRamp, roundEven } from './balance';
+import { B, difficultyMultiplier, earlyBoostScale, enemyAttack, enemyDefense, enemyExp, enemyGold, enemyHp, lateRamp, midRamp, roundEven } from './balance';
 import { equipBossTraits } from './bosskit';
 import { Combatant } from './combatant';
 import type { MonsterSpecies } from './monsters';
@@ -156,20 +156,16 @@ function tutorial(e: Combatant, diff: string, hp: number, attack = 1): Combatant
   return e;
 }
 
-/** 튜토리얼 전투: 첫 전투는 슬라임 1마리(레벨업할 만큼 경험치), 두 번째는 고블린 2마리. */
-export function createTutorialGroup(first: boolean, diff: string): Combatant[] {
-  const list: Combatant[] = [];
-  if (first) {
-    const slime = tutorial(createEnemy(plain('slime'), 1, diff, 0), diff, 1);
-    slime.expReward = Math.max(slime.expReward, expToNext(1));
-    list.push(slime);
-  } else {
-    list.push(tutorial(createEnemy(plain('goblin'), 1, diff, 0), diff, 1));
-    list.push(tutorial(createEnemy(plain('goblin'), 1, diff, 0), diff, 1));
-  }
+// 튜토리얼(0층)은 어느 난이도든 '쉬움' 능력치: 명중 100%와 함께 모든 직업이 질 수 없게 (v3.15 시뮬레이션: 가장 약한 궁수도 HP 절반 넘게 남음)
+const TUTORIAL_DIFF = 'Easy';
+
+/** 튜토리얼 전투: 첫 전투는 슬라임 1마리, 두 번째는 고블린 2마리. */
+export function createTutorialGroup(first: boolean): Combatant[] {
+  const one = (id: string): Combatant => tutorial(createEnemy(plain(id), 1, TUTORIAL_DIFF, 0), TUTORIAL_DIFF, 1);
+  const list = first ? [one('slime')] : [one('goblin'), one('goblin')];
   nameDuplicates(list);
   return list;
 }
 
 /** 튜토리얼 약한 보스 (고블린 우두머리, HP 절반, 특성 없음). */
-export const createTutorialBoss = (diff: string): Combatant[] => [tutorial(createEnemy(sp('goblin'), 1, diff, 2), diff, 0.5, 0.8)];
+export const createTutorialBoss = (): Combatant[] => [tutorial(createEnemy(sp('goblin'), 1, TUTORIAL_DIFF, 2), TUTORIAL_DIFF, 0.5, 0.8)];

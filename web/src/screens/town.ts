@@ -22,6 +22,7 @@ export class TownScreen extends Screen {
       anchored(h('button', { class: 'card-btn fac', on: { click: () => navigate(to) } }, icon(iconName, 48), h('b', { style: { fontSize: '16px' } }, title), alert ? h('span', { class: 'dot', style: { top: '10px', right: '12px', width: '12px', height: '12px' } }) : null), `town.${to}`);
     const floor = d.SelectedFloor;
     const max = maxChallengeFloor(c);
+    const tut = d.Tutorial === 'TownGuide' || d.Tutorial === 'FirstDungeon'; // 튜토리얼 중에는 0층 튜토리얼 던전으로만 간다
     return h('div', { class: 'page' },
       townHeader(c),
       // 한 화면에 맞춤: 일러스트가 남는 높이만큼만 차지한다 (작은 폰에서는 줄어든다)
@@ -36,7 +37,7 @@ export class TownScreen extends Screen {
           facility('shop', '상점', alerts.shop, 'shop'),
           facility('blacksmith', '대장간', false, 'blacksmith'),
           facility('training', '수련장', false, 'training')),
-        max > 1
+        max > 1 && !tut
           ? row(
             this.step('‹', floor > 1, -1),
             h('b', { class: 'grow center' }, `도전 층 ${floor} / ${max}`),
@@ -44,7 +45,7 @@ export class TownScreen extends Screen {
           : null,
         anchored(h('button', { class: 'primary', style: { minHeight: '64px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px' }, on: { click: () => this.enterDungeon() } },
           h('b', { style: { fontSize: '17px' } }, '던전 입장'),
-          h('span', { style: { fontSize: '12px' } }, `${floor}층 도전 · ${themeFor(floor).Name}`)), 'town.dungeon')),
+          h('span', { style: { fontSize: '12px' } }, tut ? '0층 · 튜토리얼' : `${floor}층 도전 · ${themeFor(floor).Name}`)), 'town.dungeon')),
       bottomNav(0, (i) => navigate(['town', 'character', 'inventory', 'skills'][i] as never)));
   }
 

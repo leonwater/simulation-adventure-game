@@ -43,6 +43,8 @@ export interface SaveData {
   GuildNewFloor: number;
   /** 스킬 화면에서 확인한 스킬 (새 스킬 알림 점용). */
   SeenSkills: string[] | null;
+  /** 튜토리얼(0층) 클리어 보상을 받았는지 (클리어·건너뛰기 중 처음 한 번만). */
+  TutorialReward: boolean;
 }
 
 export const SAVE_VERSION = 7;
@@ -51,7 +53,7 @@ export function newSaveData(difficulty: Difficulty, character: Character, tutori
   return {
     Version: SAVE_VERSION, Difficulty: difficulty, Character: character, Shop: newShopState(), Guild: newGuildState(), Run: null,
     GameCleared: false, SelectedFloor: 1, SavedAtTicks: 0, PlaySeconds: 0, Tutorial: tutorial, TipsShown: [], ShopSeenTicks: 0,
-    GuildNewFloor: 0, SeenSkills: null,
+    GuildNewFloor: 0, SeenSkills: null, TutorialReward: false,
   };
 }
 
@@ -235,6 +237,8 @@ export function repair(d: SaveData): void {
   if (d.Run && (!d.Run.Map || d.Run.Map.Rooms.length === 0 || !d.Run.Map.Rooms[d.Run.CurrentRoomId])) d.Run = null;
   if (d.Run === undefined) d.Run = null;
   if (d.Run && !d.Run.Cooldowns) d.Run.Cooldowns = {}; // v3.7: 재사용 대기가 던전 안에서 이어짐
+  // v3.15: 튜토리얼 보상 — 예전 저장은 튜토리얼 중인 모험가만 아직 받을 수 있다
+  if (d.TutorialReward === undefined) d.TutorialReward = d.Tutorial !== 'TownGuide' && d.Tutorial !== 'FirstDungeon';
   d.SelectedFloor = clamp(d.SelectedFloor ?? 1, 1, maxChallengeFloor(c));
   d.Version = SAVE_VERSION;
 }

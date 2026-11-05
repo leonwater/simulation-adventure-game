@@ -16,9 +16,9 @@ import { applyEffectsToBattle, afterBattleEffects, hasEffect } from './explore';
 import { generateTutorialFloor } from './generator';
 import { onBossKilled, refreshBoard } from './guild';
 import type { ItemInstance } from './items';
-import { consumableDef, findItem, takeItem } from './items';
+import { consumableDef, createConsumable, createGear, findItem, takeItem } from './items';
 import type { LootReport, RoomNotice } from './loot';
-import { collectRewards, roomNotice } from './loot';
+import { applyLoot, collectRewards, newLootReport, roomNotice, withCount } from './loot';
 import { Rng } from './rng';
 import type { SaveData, SaveStore, TutorialStage } from './save';
 import { loadGame, newSaveData, saveGame } from './save';
@@ -217,18 +217,13 @@ export class GameSession {
     this.clearTransient();
     this.lastReturn = null;
     this.lastDeath = null;
-    const tutorial = (d.Tutorial === 'TownGuide' || d.Tutorial === 'FirstDungeon') && d.Character.HighestFloorCleared === 0 && d.SelectedFloor === 1;
-    if (tutorial) {
-      const map = generateTutorialFloor(this.rng);
+    // 튜토리얼 던전은 0층 (설정에서 다시 볼 때도). 보상은 클리어 보상뿐이고 돌파 층·퀘스트에 들어가지 않는다
+    if (d.Tutorial === 'TownGuide' || d.Tutorial === 'FirstDungeon') {
       d.Character.CurrentHp = maxHp(d.Character);
-      d.Run = dungeon.newRun(1, map);
+      d.Run = dungeon.newRun(0, generateTutorialFloor(this.rng));
       d.Run.IsTutorial = true;
       d.Tutorial = 'FirstDungeon';
-    } else {
-      d.Run = dungeon.startRun(d.Character, d.SelectedFloor, this.rng);
-      // 튜토리얼을 다시 보는 경우(이미 층을 돌파함)에는 일반 층에서 던전 안내를 이어 간다
-      if (d.Tutorial === 'TownGuide') d.Tutorial = 'FirstDungeon';
-    }
+    } else d.Run = dungeon.startRun(d.Character, d.SelectedFloor, this.rng);
     this.save();
   }
 
@@ -286,7 +281,7 @@ export class GameSession {
     const boss = room.Type === 'Boss';
     if (run.IsTutorial) {
       const first = !run.Map.Rooms.some((r) => r.Type === 'Battle' && r.Cleared && r.Id !== room.Id);
-      this.startBattle(boss ? createTutorialBoss(this.difficulty) : createTutorialGroup(first, this.difficulty), boss);
+      this.startBattle(boss ? createTutorialBoss() : createTutorialGroup(first), boss);
       return;
     }
     const extra = hasEffect(run.Effects, 'Drum') ? 1 : 0;
@@ -308,6 +303,7 @@ export class GameSession {
       cooldowns: run.Cooldowns,
       setup: (b) => {
         b.fleeAllowed = fleeAllowed;
+        b.sureHit = run.IsTutorial;
         b.difficulty = this.difficulty;
         applyEffectsToBattle(run.Effects, b);
       },
@@ -332,6 +328,14 @@ export class GameSession {
     if (b.outcome !== 'Defeat') afterBattleEffects(run.Effects, battleRoom);
     switch (b.outcome) {
       case 'Victory':
+        if (run.IsTutorial) {
+          // 0층: 전투 보상 없음, 보스를 잡으면 클리어 보상만
+          dungeon.clearCurrent(run);
+          if (b.isBoss) run.BossDefeated = true;
+          this.lastLoot = (b.isBoss ? this.grantTutorialReward() : null) ?? newLootReport();
+          this.notice = roomNotice(b.isBoss ? '튜토리얼 클리어!' : '전투 승리', this.lastLoot);
+          break;
+        }
         this.lastLoot = collectRewards(b, d.Guild, run);
         dungeon.clearCurrent(run);
         this.notice = roomNotice(b.isBoss ? '보스 처치!' : '전투 승리', this.lastLoot);
@@ -493,9 +497,37 @@ export class GameSession {
     }
   }
 
-  /** 튜토리얼 던전(첫 1층 또는 튜토리얼을 다시 보는 중)인지. 보스를 잡아도 아래층으로 내려갈 수 없고 귀환해야 한다. */
+  /** 튜토리얼 던전(0층)인지. 보스를 잡아도 아래층으로 내려갈 수 없고 귀환해야 한다. */
   get inTutorialRun(): boolean {
-    return this.inDungeon && (this.run!.IsTutorial || this.data!.Tutorial === 'FirstDungeon');
+    return this.inDungeon && this.run!.IsTutorial;
+  }
+
+  /** 튜토리얼 클리어 보상 (고급 갑옷 · 회복 물약 1 · 골드): 클리어·건너뛰기 중 처음 한 번만. 이미 받았으면 null. */
+  private grantTutorialReward(): LootReport | null {
+    const d = this.data!;
+    if (d.TutorialReward) return null;
+    d.TutorialReward = true;
+    const r: LootReport = { ...newLootReport(), Gold: B.TutorialRewardGold, Items: [createGear('Armor', 'Uncommon', 1, d.Character.Job, 'Vitality'), createConsumable('potion', 1)] };
+    applyLoot(d.Character, null, r);
+    if (d.Run) {
+      d.Run.GoldEarned += r.Gold;
+      d.Run.Loot.push(...r.Items.map(withCount));
+    }
+    return r;
+  }
+
+  /** 튜토리얼 건너뛰기: 클리어한 사람과 같은 보상을 주고(처음 한 번), 0층 안이면 바로 마을로 돌아간다. 준 보상(없으면 null). */
+  skipTutorial(): LootReport | null {
+    const d = this.data!;
+    const reward = this.grantTutorialReward();
+    if (this.inTutorialRun) {
+      d.Run = null;
+      this.clearTransient();
+      this.enterTown(false);
+    }
+    d.Tutorial = 'Done';
+    this.save();
+    return reward;
   }
   get canDescend(): boolean {
     return this.inDungeon && !this.battle && !this.inTutorialRun && dungeon.canGoDeeper(this.run!);

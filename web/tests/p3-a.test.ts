@@ -72,8 +72,9 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     expect(attack().label.startsWith('마력 폭주')).toBe(true);
     b.execute(attack());
     expect(b.player.statuses.has('Overload')).toBe(true);
-    // 재사용 대기는 다음 전투로 넘길 수 있다
-    expect(b.cooldownState()[ENERGY_BALL]).toBeGreaterThan(0);
+    // 스킬 재사용 대기만 다음 전투로 넘긴다 (v3.15: 에너지 볼은 전투가 끝나면 풀림 — 마지막 적을 에너지 볼로 잡으면 다음 전투 첫 턴에 못 쓰던 문제)
+    expect(b.cooldownState()[ENERGY_BALL]).toBeUndefined();
+    expect(b.cooldownState()['m_meteor']).toBeGreaterThan(0);
   });
 
   it('마법사 (v3.9): 화염구·마력 화살(재사용 2턴)을 함께 끼면 에너지 볼과 번갈아 써서 마력 폭주를 끝까지 피할 수 있다', () => {
