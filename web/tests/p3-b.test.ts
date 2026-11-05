@@ -293,7 +293,7 @@ describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 �
     const plain = sellPrice(item);
     item.Enhance = 5;
     const spent = goldSpent(item);
-    expect(spent).toBe(Math.round(30 * 15 * 2.0 * 1.7)); // 30 × (1+2+3+4+5) × (1 + Lv.10 ÷ 10) × 희귀 1.7
+    expect(spent).toBe(Math.round(30 * 15 * 2.0 * 2.5)); // 30 × (1+2+3+4+5) × (1 + Lv.10 ÷ 10) × 희귀 2.5 (v3.17)
     expect(Math.abs(sellPrice(item) - (plain + spent / 2))).toBeLessThanOrEqual(1); // 강화에 든 골드의 절반을 더 받는다
   });
 
@@ -481,7 +481,7 @@ describe('V19Tests (기본 공격 명중·스킬 등급·강화 +15·보스 체�
     const high = createGear('Weapon', 'Legendary', 50, 'Warrior', 'Luck');
     low.Enhance = high.Enhance = 5;
     expect(goldCost(low)).toBe(30 * 6 * 2); // 30 × +6 × (1 + 10 ÷ 10) × 일반 1.0
-    expect(goldCost(high)).toBe(30 * 6 * 6 * 3); // 30 × +6 × (1 + 50 ÷ 10) × 전설 3.0
+    expect(goldCost(high)).toBe(30 * 6 * 6 * 6); // 30 × +6 × (1 + 50 ÷ 10) × 전설 6.0 (v3.17)
   });
 
   it('Shop_RefusesKnownSkillBooks', () => {

@@ -338,7 +338,7 @@ export function rollDropGrade(rng: Rng, floor: number, bossLevel: number): ItemG
 
 // ── 대장간 비용 ──────────────────────────────────────────
 
-/** 목표 단계 target으로 올리는 골드 = 30 × 목표 단계 × (1 + 착용 레벨 ÷ 10) × 등급 배율. */
+/** 목표 단계 target으로 올리는 골드 = 30 × 목표 단계 × (1 + 착용 레벨 ÷ 10) × 등급 배율 (일반 1 · 고급 1.5 · 희귀 2.5 · 영웅 4 · 전설 6, v3.17). */
 const costFor = (item: ItemInstance, target: number): number =>
   roundEven(B.EnhanceGoldBase * target * (1 + item.LevelReq / 10) * B.EnhanceGradeCost[ord(GRADES, item.Grade)]);
 export const goldCost = (item: ItemInstance): number => costFor(item, item.Enhance + 1);
