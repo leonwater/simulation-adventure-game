@@ -160,6 +160,8 @@ function onGuild(tab: number): void {
 
 function onDungeon(): void {
   if (stage() !== 'FirstDungeon') return;
+  // 보상 장비 착용 창 같은 팝업이 떠 있으면 기다린다 (닫으면 화면을 다시 그려 그때 안내한다. 안내가 팝업을 지우면 착용 창을 못 봄)
+  if (router.layer.querySelector('.dim')) return;
   const run0 = S.run;
   // 튜토리얼 보스를 잡으면 아래층으로 가지 않고 마을로 돌아간다
   if (run0 && run0.BossDefeated && document.querySelector('[data-anchor="dungeon.home"]')) {
