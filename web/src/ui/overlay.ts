@@ -23,6 +23,8 @@ export function modal(title: string | null, closable = true): ModalHandle {
     if (closable) close();
     return true;
   });
+  // 튜토리얼 말풍선(z 70)이 떠 있을 때 연 팝업(길게 누른 상세 등)은 그 위에 띄워 닫을 수 있게
+  if (router.layer.querySelector('.coach')) dim.style.zIndex = '80';
   router.layer.append(dim);
   return { body, close };
 }

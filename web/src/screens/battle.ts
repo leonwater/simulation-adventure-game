@@ -363,7 +363,6 @@ export class BattleScreen extends Screen {
   private showDetail(ch: BattleChoice): void {
     const text = ch.detail || ch.note;
     const m = modal(ch.label.split(' · ')[0]); // 제목은 스킬(행동) 이름만, 대상 이름은 빼고
-    (m.body.parentElement as HTMLElement).style.zIndex = '80'; // 튜토리얼 말풍선(70) 위에 띄워 닫을 수 있게
     const def = ch.kind === 'Skill' ? skillDef(ch.skillId) : null;
     if (def) m.body.append(areaDiagram(def));
     m.body.append(h('div', { class: 'body', style: { whiteSpace: 'pre-line', lineHeight: '1.4', fontSize: '14px' } }, text));
