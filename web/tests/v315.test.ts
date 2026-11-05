@@ -133,3 +133,28 @@ describe('v3.16 창고 나눠 맡기기', () => {
     expect(c.Storage.Items.find((i) => i.TemplateId === 'potion')!.Count).toBe(1);
   });
 });
+
+describe('v3.17', () => {
+  it('수련 비용은 스킬 등급에 따라 하급 1 · 중급 2 · 상급 4 · 최상급 8배', async () => {
+    const { learnSkill, getSkillState, trainingCost } = await import('../src/core/equipment');
+    const c = createCharacter('a', 'Warrior');
+    c.Level = 40; c.Rank = 'SS';
+    for (const id of ['w_bash', 'w_shield', 'w_whirl', 'w_earth']) learnSkill(c, id);
+    expect(['w_bash', 'w_shield', 'w_whirl', 'w_earth'].map((id) => trainingCost(getSkillState(c, id)!))).toEqual([200, 400, 800, 1600]);
+  });
+
+  it('플레이 시간: 저장할 때마다 흐른 시간을 더하고(한 번에 최대 5분), 이어하기 뒤에도 이어서 센다', () => {
+    let t = Date.UTC(2026, 0, 1);
+    const store = new MemorySaveStore();
+    const s = new GameSession(store, () => new Date(t), 1);
+    s.newGame('a', 'Warrior', 'Normal');
+    t += 90_000; s.save();
+    expect(Math.round(s.data!.PlaySeconds)).toBe(90);
+    t += 3_600_000; s.save(); // 한 시간 꺼 둠 → 5분만
+    expect(Math.round(s.data!.PlaySeconds)).toBe(390);
+    const s2 = new GameSession(store, () => new Date(t), 2);
+    s2.continueGame();
+    t += 60_000; s2.save();
+    expect(Math.round(s2.data!.PlaySeconds)).toBe(450);
+  });
+});
