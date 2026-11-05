@@ -115,7 +115,9 @@ jobs:
         run: |
           git fetch -q origin '+refs/heads/*:refs/remotes/origin/*' '+refs/tags/*:refs/tags/*'
           # Unity 기준 태그는 늘 남긴다
-          git rev-parse -q --verify refs/tags/unity-v2.4 >/dev/null || gh api -X POST repos/$REPO/git/refs -f ref=refs/tags/unity-v2.4 -f sha=141ef7ff34ed29f0f17eae85d9b4050915a0efa2 >/dev/null
+          # 기본 토큰은 워크플로 파일이 다른 커밋에 태그를 못 붙일 수 있어(403) 실패해도 경고만 남긴다
+          tag() { git rev-parse -q --verify "refs/tags/$1" >/dev/null || gh api -X POST repos/$REPO/git/refs -f ref="refs/tags/$1" -f sha="$2" >/dev/null || { echo "::warning::태그 $1 만들기 실패"; return 1; }; }
+          tag unity-v2.4 141ef7ff34ed29f0f17eae85d9b4050915a0efa2 || true
           week=$(date -d '7 days ago' +%s)
           for b in $(git for-each-ref --format='%(refname:lstrip=3)' refs/remotes/origin); do
             if [ "$b" = main ] || [ "$b" = HEAD ]; then continue; fi
@@ -124,7 +126,7 @@ jobs:
             elif [ "$(git log -1 --format=%ct "origin/$b")" -lt "$week" ]; then
               # 안 합친 브랜치는 7일 넘게 멈춰 있을 때만 archive/<이름> 태그로 보관하고 지운다
               echo "안 합친 브랜치 보관 후 삭제: archive/$b"
-              git rev-parse -q --verify "refs/tags/archive/$b" >/dev/null || gh api -X POST repos/$REPO/git/refs -f ref="refs/tags/archive/$b" -f sha="$(git rev-parse "origin/$b")" >/dev/null
+              tag "archive/$b" "$(git rev-parse "origin/$b")" || continue
             else
               echo "::notice::안 합친 최근 브랜치는 남김: $b"; continue
             fi
