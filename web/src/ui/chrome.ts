@@ -53,17 +53,18 @@ export function bottomNav(active: number, go: (index: number) => void): HTMLElem
 }
 
 /** 일러스트 + 아래쪽 대사 상자. */
-// 그림마다 인물 얼굴 높이(그림 높이 대비)와 그림 비율(가로/세로). 칸 높이가 바뀌어도 router.fitIllust가 얼굴을 대사 상자 위에 맞춘다
-const FRAME: Record<string, { face: number; ratio: number }> = {
+// 칸 높이는 모든 시설·등록 화면이 200px (app.css). 그림마다 인물 얼굴 높이(그림 높이 대비)·그림 비율(가로/세로)·확대를 적어 두면
+// router.fitIllust가 얼굴을 대사 상자 위에 맞춘다
+const FRAME: Record<string, { face: number; ratio: number; zoom?: number }> = {
   guild_receptionist: { face: 0.46, ratio: 4 / 3 },
   training: { face: 0.49, ratio: 4 / 3 },
-  shop: { face: 0.45, ratio: 2 },
+  shop: { face: 0.52, ratio: 2, zoom: 1.5 }, // 2:1 그림은 200px 칸에서 위아래로 옮길 여유가 없어 1.5배 확대해 얼굴을 대사 상자 위로
   blacksmith: { face: 0.19, ratio: 1.5 },
 };
 
 export function npcIllustration(name: string, npcName: string, line: string): HTMLElement {
   const f = FRAME[name];
-  return h('div', { class: 'illust npc', 'data-face': f?.face, 'data-ratio': f?.ratio, style: { backgroundImage: `url(${assetUrl(`illustrations/${name}.webp`)})` } },
+  return h('div', { class: 'illust npc', 'data-face': f?.face, 'data-ratio': f?.ratio, 'data-zoom': f?.zoom, style: { backgroundImage: `url(${assetUrl(`illustrations/${name}.webp`)})` } },
     h('div', { class: 'shade' }),
     line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
 }

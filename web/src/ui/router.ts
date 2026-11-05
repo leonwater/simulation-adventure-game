@@ -75,22 +75,15 @@ export function applyTextScale(): void {
   document.documentElement.style.setProperty('--text-scale', String(settings.textScale));
 }
 
-/**
- * 시설 일러스트(.illust.npc, 기준 2:1)는 아래 목록이 넘치는 만큼 줄어든다 (최소 112px) — 화면이 스크롤 없이 한눈에 보이게.
- * 그래도 넘치면(아주 낮은 화면) 목록만 스크롤된다.
- */
+/** 시설·등록 일러스트(.illust.npc, 200px): 그림의 인물 얼굴이 대사 상자 위 빈 곳 가운데에 오게 그림 위치를 맞춘다 (그림은 cover로 깔리므로 넘치는 만큼만 위아래로 옮길 수 있다). */
 function fitIllust(): void {
   const ill = view?.querySelector<HTMLElement>('.illust.npc');
-  if (!ill) return;
-  ill.style.height = '';
-  const list = ill.parentElement?.querySelector<HTMLElement>(':scope > .scroll');
-  const over = list ? list.scrollHeight - list.clientHeight : 0;
-  if (over > 0) ill.style.height = `${Math.max(112, ill.offsetHeight - over)}px`;
-  // 얼굴을 대사 상자 위 빈 곳 가운데에 둔다 (그림은 cover로 깔리므로 넘치는 만큼만 위아래로 옮길 수 있다)
-  const face = Number(ill.dataset.face), ratio = Number(ill.dataset.ratio);
-  if (!face || !ratio) return;
-  const W = ill.clientWidth, H = ill.clientHeight, imgH = Math.max(H, W / ratio);
-  const top = ill.querySelector<HTMLElement>('.dialogue')?.offsetTop ?? H;
+  const face = Number(ill?.dataset.face), ratio = Number(ill?.dataset.ratio);
+  if (!ill || !face || !ratio) return;
+  const W = ill.clientWidth, H = ill.clientHeight, zoom = Number(ill.dataset.zoom) || 1, imgH = Math.max(H, W / ratio) * zoom;
+  if (zoom !== 1) ill.style.backgroundSize = `${Math.round(imgH * ratio)}px ${Math.round(imgH)}px`;
+  // 대사 상자 위로 이름표가 16px쯤 솟아 있다
+  const top = (ill.querySelector<HTMLElement>('.dialogue')?.offsetTop ?? H) - 16;
   const y = Math.min(0, Math.max(H - imgH, Math.max(14, top / 2) - face * imgH));
   ill.style.backgroundPosition = `center ${Math.round(y)}px`;
 }

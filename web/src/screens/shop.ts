@@ -51,7 +51,7 @@ export class ShopScreen extends Screen {
         this.selected = null;
         router.rebuild();
       }),
-      h('div', { class: 'scroll', style: { gap: '8px' } }, ...(this.tab === 0 ? this.buyTab() : this.sellTab())),
+      h('div', { class: 'scroll', style: { gap: '14px' } }, ...(this.tab === 0 ? this.buyTab() : this.sellTab())),
       this.tab === 0 ? this.rerollBar() : null,
       this.selected ? this.sellBar() : null);
   }
