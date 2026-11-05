@@ -253,7 +253,7 @@ export class DungeonScreen extends Screen {
   private tipCard(run: DungeonRun): HTMLElement {
     if (this.tipRoom !== run.CurrentRoomId || !this.tip) {
       this.tipRoom = run.CurrentRoomId;
-      this.tip = randomTip();
+      this.tip = randomTip(S.c.Job === 'Mage');
     }
     return h('div', { class: 'card', style: { gap: '4px', padding: '10px 14px', minHeight: '76px', justifyContent: 'center' } }, h('b', { class: 'gold', style: { fontSize: '15px' } }, 'TIP!'), h('div', { class: 'body' }, this.tip));
   }

@@ -18,4 +18,8 @@ export const TIPS = [
   '궁수의 기본 공격은 적 방어력을 일부 무시해서 단단한 적에게도 꾸준히 들어가요.',
 ];
 
-export const randomTip = (): string => TIPS[Math.floor(Math.random() * TIPS.length)];
+/** 던전 팁 하나 (마법사 팁은 마법사에게만). */
+export function randomTip(mage: boolean): string {
+  const list = mage ? TIPS : TIPS.filter((t) => !t.startsWith('마법사'));
+  return list[Math.floor(Math.random() * list.length)];
+}

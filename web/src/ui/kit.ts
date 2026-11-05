@@ -71,6 +71,8 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
     if (!fired) onTap();
   });
   el.addEventListener('contextmenu', (e) => e.preventDefault());
+  // 튜토리얼 말풍선 덮개 위에서 길게 누르면 덮개가 아래 요소로 'longpress'를 넘겨 준다 (coach.ts)
+  el.addEventListener('longpress', () => onLong());
 }
 
 /** 여러 마디를 ' · '로 잇되, 마디 안에서는 줄을 바꾸지 않는다 ('빠른 / 재사용'처럼 갈리지 않게). */

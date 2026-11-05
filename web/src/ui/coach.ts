@@ -1,4 +1,4 @@
-import { h } from './kit';
+import { h, longPress } from './kit';
 import { router } from './router';
 
 let current: HTMLElement | null = null;
@@ -64,9 +64,15 @@ function build(holder: HTMLElement, anchor: string | null, title: string, html: 
     onNext?.();
   };
   const dim = 'rgba(0,0,0,.68)';
+  // 덮개를 길게 누르면 그 아래 요소의 길게 누르기(상세 보기)를 대신 연다 — '길게 누르면 자세히' 안내 중에도 볼 수 있게. 짧게 누르면 click
+  let at = { x: 0, y: 0 };
+  const passLong = (): void => {
+    document.elementsFromPoint(at.x, at.y).find((el) => !holder.contains(el))?.dispatchEvent(new Event('longpress', { bubbles: true }));
+  };
   const box = (l: number, t: number, w: number, hgt: number, color: string, click: (() => void) | null): HTMLElement => {
     const el = h('div', { style: { position: 'absolute', left: `${l}px`, top: `${t}px`, width: `${Math.max(0, w)}px`, height: `${Math.max(0, hgt)}px`, background: color, pointerEvents: 'auto' } });
-    if (click) el.addEventListener('click', click);
+    el.addEventListener('pointerdown', (e) => (at = { x: e.clientX, y: e.clientY }));
+    longPress(el, passLong, () => click?.());
     return el;
   };
   let hole: { l: number; t: number; r: number; b: number } | null = null;

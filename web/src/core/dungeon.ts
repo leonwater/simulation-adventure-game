@@ -35,7 +35,7 @@ export interface DungeonRun {
   Effects: ExploreEffect[];
   /** 시련의 문에서 고른 보스 층 (전투 중에만, 아니면 0). */
   TrialFloor: number;
-  /** 스킬·에너지 볼 재사용 대기 (전투가 끝나도 같은 던전 안에서는 이어지고, 마을로 돌아가면 사라진다). */
+  /** 스킬 재사용 대기 (전투가 끝나도 같은 던전 안에서는 이어지고, 마을로 돌아가면 사라진다). 에너지 볼은 전투가 끝나면 풀려 여기 남지 않는다. */
   Cooldowns: Record<string, number>;
   /** 가방이 가득 차 못 가진 물품: 던전 화면에서 가방 물품과 바꿀지 묻는다 (v3.10, 예전 저장엔 없음). */
   PendingDrops?: ItemInstance[];
