@@ -42,12 +42,11 @@ describe('v3.15 튜토리얼 0층', () => {
     }
   });
 
-  it('0층은 클리어 보상만 주고 전투 경험치·골드·돌파 층·퀘스트에 들어가지 않는다 (보상으로 레벨 2, v3.16)', () => {
+  it('0층은 클리어 보상만 주고 경험치·전투 골드·돌파 층·퀘스트에 들어가지 않는다', () => {
     const { s, gold, items } = playTutorial('Warrior', 'Normal', 3);
     expect(s.run!.Floor).toBe(0);
     expect(s.c.Exp).toBe(0);
-    expect(s.c.Level).toBe(2);
-    expect(s.c.UnspentPoints).toBeGreaterThan(0);
+    expect(s.c.Level).toBe(1);
     expect(s.c.HighestFloorCleared).toBe(0);
     expect(s.c.Gold).toBe(gold + B.TutorialRewardGold);
     expect(s.c.Inventory.Items.length).toBe(items + 1); // 갑옷 + (물약은 기존 묶음에 합쳐짐)

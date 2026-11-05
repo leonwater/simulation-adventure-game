@@ -165,7 +165,7 @@ function onDungeon(): void {
   const run0 = S.run;
   // 튜토리얼 보스를 잡으면 아래층으로 가지 않고 마을로 돌아간다
   if (run0 && run0.BossDefeated && document.querySelector('[data-anchor="dungeon.home"]')) {
-    return doIt('dungeon.home', '귀환', `튜토리얼 클리어! ${H("'마을 귀환'")}을 눌러 돌아가세요.`);
+    return doIt('dungeon.home', '귀환', `튜토리얼 클리어! ${H("'마을로 귀환한다'")}를 눌러 돌아가세요.`);
   }
   run([info('dun.map', 'dungeon.map', '미니맵', `${H('금색')}이 지금 위치예요. 누르면 전체 지도가 열려요.`)], () => {
     if (run0 && run0.Map.Rooms.some((r) => r.Type === 'Return' && r.Visited)) {
