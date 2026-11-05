@@ -80,8 +80,8 @@ span.ic { background-color: currentColor; -webkit-mask: var(--src) center / cont
 .illust { position: relative; overflow: hidden; background: var(--illust-bg) center / cover no-repeat; flex-shrink: 0; image-rendering: pixelated; }
 .illust > *, .title-bg { image-rendering: pixelated; } /* v3.6 일러스트는 픽셀화한 작은 그림(200px)을 키워 보인다 */
 .illust.round { border-radius: 12px; overflow: hidden; }
-/* 시설·등록 일러스트 (길드·상점·대장간·수련장·등록): 모두 세로 200px. 얼굴 위치는 chrome.ts FRAME + router.fitIllust */
-.illust.npc { width: 100%; height: 200px; }
+/* 시설·등록 일러스트 (길드·상점·대장간·수련장·등록): 모두 세로 220px. 화면 폭에 따른 얼굴 위치는 chrome.ts FRAME + router.fitIllust */
+.illust.npc { width: 100%; height: 220px; }
 .illust .shade { position: absolute; left: 0; right: 0; bottom: 0; height: 45%; background: linear-gradient(to top, var(--shade), transparent); }
 .dialogue { position: absolute; left: 12px; right: 12px; bottom: 12px; background: var(--dialogue-bg); border: 1px solid var(--btn-border); border-radius: 12px; padding: 12px 14px; line-height: 1.5; font-size: 15px; }
 .dialogue .name { position: absolute; top: -12px; left: 12px; background: var(--accent); color: var(--on-accent); font-weight: 700; font-size: 12px; padding: 2px 10px; border-radius: 8px; }

@@ -75,16 +75,20 @@ export function applyTextScale(): void {
   document.documentElement.style.setProperty('--text-scale', String(settings.textScale));
 }
 
-/** 시설·등록 일러스트(.illust.npc, 200px): 그림의 인물 얼굴이 대사 상자 위 빈 곳 가운데에 오게 그림 위치를 맞춘다 (그림은 cover로 깔리므로 넘치는 만큼만 위아래로 옮길 수 있다). */
+/** 시설·등록 일러스트(.illust.npc, 220px): 그림의 인물 얼굴이 대사 상자 위 빈 곳 가운데에 오게 그림 위치를 맞춘다 (그림은 cover로 깔리므로 넘치는 만큼만 위아래로 옮길 수 있다). */
 function fitIllust(): void {
   const ill = view?.querySelector<HTMLElement>('.illust.npc');
   const face = Number(ill?.dataset.face), ratio = Number(ill?.dataset.ratio);
   if (!ill || !face || !ratio) return;
   const W = ill.clientWidth, H = ill.clientHeight, zoom = Number(ill.dataset.zoom) || 1, imgH = Math.max(H, W / ratio) * zoom;
-  if (zoom !== 1) ill.style.backgroundSize = `${Math.round(imgH * ratio)}px ${Math.round(imgH)}px`;
+  ill.style.backgroundSize = `${Math.round(imgH * ratio)}px ${Math.round(imgH)}px`;
   // 대사 상자 위로 이름표가 16px쯤 솟아 있다
   const top = (ill.querySelector<HTMLElement>('.dialogue')?.offsetTop ?? H) - 16;
   const y = Math.min(0, Math.max(H - imgH, Math.max(14, top / 2) - face * imgH));
-  ill.style.backgroundPosition = `center ${Math.round(y)}px`;
+  // 인물이 왼쪽 끝에 있으면(faceX) 대사 이름표(왼쪽 위)에 겹치지 않게 칸 폭의 30% 안쪽으로 당긴다
+  const imgW = imgH * ratio, faceX = Number(ill.dataset.facex);
+  let x = (W - imgW) / 2;
+  if (faceX && faceX * imgW + x < W * 0.3) x = Math.min(0, W * 0.3 - faceX * imgW);
+  ill.style.backgroundPosition = `${Math.round(x)}px ${Math.round(y)}px`;
 }
 if (typeof window !== 'undefined') window.addEventListener('resize', () => fitIllust());
