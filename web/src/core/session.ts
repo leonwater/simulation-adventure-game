@@ -1,4 +1,4 @@
-import { B, clamp, roundEven } from './balance';
+import { B, clamp, expToNext, roundEven } from './balance';
 import type { BattleChoice } from './battle';
 import { Battle } from './battle';
 import type { Character } from './character';
@@ -502,15 +502,21 @@ export class GameSession {
     return this.inDungeon && this.run!.IsTutorial;
   }
 
-  /** 튜토리얼 클리어 보상 (고급 갑옷 · 회복 물약 1 · 골드): 클리어·건너뛰기 중 처음 한 번만. 이미 받았으면 null. */
+  /** 튜토리얼 클리어 보상 (고급 갑옷 · 회복 물약 1 · 골드 · 레벨 2까지 경험치): 클리어·건너뛰기 중 처음 한 번만. 이미 받았으면 null.
+   * 레벨 2: 밸런스 시뮬레이션에서 초반(3·5층 돌파·첫 도전 사망)이 가장 많이 나아진 안 (v3.16). */
   private grantTutorialReward(): LootReport | null {
     const d = this.data!;
     if (d.TutorialReward) return null;
     d.TutorialReward = true;
-    const r: LootReport = { ...newLootReport(), Gold: B.TutorialRewardGold, Items: [createGear('Armor', 'Uncommon', 1, d.Character.Job, 'Vitality'), createConsumable('potion', 1)] };
-    applyLoot(d.Character, null, r);
+    const c = d.Character;
+    const r: LootReport = {
+      ...newLootReport(), Gold: B.TutorialRewardGold, Exp: c.Level === 1 ? expToNext(1) - c.Exp : 0,
+      Items: [createGear('Armor', 'Uncommon', 1, c.Job, 'Vitality'), createConsumable('potion', 1)],
+    };
+    applyLoot(c, null, r);
     if (d.Run) {
       d.Run.GoldEarned += r.Gold;
+      d.Run.ExpEarned += r.Exp;
       d.Run.Loot.push(...r.Items.map(withCount));
     }
     return r;
