@@ -39,7 +39,7 @@ export class BlacksmithScreen extends Screen {
     const grid = cardGrid;
     return h('div', { class: 'page' },
       townBar('대장간', '마을', () => navigate('town'), c),
-      npcIllustration('blacksmith', '대장장이', this.line, 220),
+      npcIllustration('blacksmith', '대장장이', this.line),
       h('div', { class: 'scroll', style: { gap: '8px' } },
         sel ? this.detail(sel) : null,
         row(h('b', { class: 'grow' }, '장착 장비'), artImg('enhance_stone', 32), h('b', { style: { fontSize: '15px' } }, '강화석 ', colored(`${countOf(c.Inventory, ENHANCE_STONE_ID)}개`, 'var(--blue-light)'))),

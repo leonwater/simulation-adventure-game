@@ -53,16 +53,17 @@ export function bottomNav(active: number, go: (index: number) => void): HTMLElem
 }
 
 /** 일러스트 + 아래쪽 대사 상자. */
-// 인물이 대사 상자(아래쪽 절반)에 가리지 않게 그림마다 보이는 위치·크기를 맞춘다 (y가 클수록 인물이 위로 올라간다)
-const FRAME: Record<string, { pos: string; size?: string }> = {
-  guild_receptionist: { pos: 'center 88%' },
-  training: { pos: 'center 70%' },
-  shop: { pos: 'center 78%', size: 'auto 150%' },
+// 그림마다 인물 얼굴 높이(그림 높이 대비)와 그림 비율(가로/세로). 칸 높이가 바뀌어도 router.fitIllust가 얼굴을 대사 상자 위에 맞춘다
+const FRAME: Record<string, { face: number; ratio: number }> = {
+  guild_receptionist: { face: 0.46, ratio: 4 / 3 },
+  training: { face: 0.49, ratio: 4 / 3 },
+  shop: { face: 0.45, ratio: 2 },
+  blacksmith: { face: 0.19, ratio: 1.5 },
 };
 
-export function npcIllustration(name: string, npcName: string, line: string, height = 290): HTMLElement {
+export function npcIllustration(name: string, npcName: string, line: string): HTMLElement {
   const f = FRAME[name];
-  return h('div', { class: 'illust', style: { height: `${height}px`, backgroundImage: `url(${assetUrl(`illustrations/${name}.webp`)})`, backgroundPosition: f?.pos ?? '', backgroundSize: f?.size ?? '' } },
+  return h('div', { class: 'illust npc', 'data-face': f?.face, 'data-ratio': f?.ratio, style: { backgroundImage: `url(${assetUrl(`illustrations/${name}.webp`)})` } },
     h('div', { class: 'shade' }),
     line ? h('div', { class: 'dialogue' }, h('span', { class: 'name' }, npcName), line) : null);
 }

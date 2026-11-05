@@ -36,7 +36,7 @@ export class TrainingScreen extends Screen {
     });
     return h('div', { class: 'page' },
       townBar('수련장', '마을', () => navigate('town'), c),
-      npcIllustration('training', '수련 교관', this.line, 260),
+      npcIllustration('training', '수련 교관', this.line),
       h('div', { class: 'scroll', 'data-anchor': 'train.list', style: { gap: '0' } }, ...rows));
   }
 

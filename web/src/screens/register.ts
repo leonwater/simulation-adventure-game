@@ -63,7 +63,7 @@ export class RegistrationScreen extends Screen {
     return h('div', { class: 'page' },
       topBar('모험가 길드', this.step === 0 ? '처음으로' : '이전', () => this.prev(), `등록 ${this.step + 1}/4`),
       // 직업 고르기는 네 칸이 한 화면에 들어가게 그림을 낮춘다
-      npcIllustration('guild_receptionist', '길드 접수원', this.line(), this.step === 1 ? 200 : 290),
+      npcIllustration('guild_receptionist', '길드 접수원', this.line()),
       body);
   }
 

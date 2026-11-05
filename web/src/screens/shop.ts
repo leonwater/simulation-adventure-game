@@ -45,13 +45,13 @@ export class ShopScreen extends Screen {
     const c = S.c;
     return h('div', { class: 'page' },
       townBar('상점', '마을', () => navigate('town'), c),
-      npcIllustration('shop', '상점 주인', this.line, 200),
+      npcIllustration('shop', '상점 주인', this.line),
       tabs(['구매', '판매'], this.tab, (i) => {
         this.tab = i;
         this.selected = null;
         router.rebuild();
       }),
-      h('div', { class: 'scroll', style: { gap: '14px' } }, ...(this.tab === 0 ? this.buyTab() : this.sellTab())),
+      h('div', { class: 'scroll', style: { gap: '8px' } }, ...(this.tab === 0 ? this.buyTab() : this.sellTab())),
       this.tab === 0 ? this.rerollBar() : null,
       this.selected ? this.sellBar() : null);
   }

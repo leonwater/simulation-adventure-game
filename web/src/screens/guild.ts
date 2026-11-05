@@ -54,7 +54,7 @@ export class GuildScreen extends Screen {
     const line = this.tab === 2 ? `맡기실 때마다 수수료 ${storageFee(c)}G를 받아요. 찾으실 때는 무료예요. 맡긴 물건은 던전에서 쓰러져도 안전해요.` : this.line;
     return h('div', { class: 'page' },
       townBar('길드', '마을', () => navigate('town'), c),
-      npcIllustration('guild_receptionist', '길드 접수원', line, 200),
+      npcIllustration('guild_receptionist', '길드 접수원', line),
       tabs(['퀘스트', '등급', '창고'], this.tab, (i) => {
         this.tab = i;
         router.rebuild();
