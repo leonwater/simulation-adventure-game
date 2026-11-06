@@ -1,4 +1,4 @@
-import { B, clamp, enemyExp, enemyGold, eventRequirement, roundEven } from './balance';
+import { B, clamp, enemyExp, enemyGold, eventChance, eventRequirement, roundEven } from './balance';
 import type { Character } from './character';
 import { maxHp, totalStat } from './character';
 import { createBoss } from './enemies';
@@ -150,7 +150,7 @@ export function specialHint(def: EventDef, index: number, run: DungeonRun | null
 export function successChance(choice: EventChoice, c: Character, floor: number): number {
   const stat = checkStat(choice, c);
   if (stat == null) return choice.FixedChance;
-  return clamp(B.EventBase + (totalStat(c, stat) - eventRequirement(floor)) * B.EventPerStatPoint + totalStat(c, 'Luck') * B.EventBonusPerLuck, B.EventMin, B.EventMax);
+  return eventChance(totalStat(c, stat), eventRequirement(floor), totalStat(c, 'Luck'));
 }
 
 /** 길게 눌렀을 때 보여 줄 성공률 계산 내역. */
