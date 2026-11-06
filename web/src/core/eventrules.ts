@@ -187,7 +187,7 @@ export function choiceHint(choice: EventChoice, c: Character, floor: number): st
   if (choice.GoldPerFloor > 0) {
     let h = choice.Hint ?? '';
     h = h.replace(`층 × ${choice.GoldPerFloor}G · `, '').replace(`층 × ${choice.GoldPerFloor}G`, '').replace(/^[ ·]+|[ ·]+$/g, '');
-    return `${num(choice.GoldPerFloor * floor)}G${choice.Hint ? ` · ${h}` : ''}`;
+    return `${num(choice.GoldPerFloor * floor)}G${h ? ` · ${h}` : ''}`;
   }
   const stat = checkStat(choice, c);
   if (choice.CheckAttackStat && stat != null) return `${Names.stat(stat)} 판정`;
