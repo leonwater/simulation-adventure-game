@@ -76,6 +76,7 @@ export class GameSession {
 
   newGame(name: string, job: Job, difficulty: Difficulty): void {
     this.data = newSaveData(difficulty, createCharacter(name, job), 'TownGuide');
+    this.playMark = this.now.getTime();
     this.data.SeenSkills = this.data.Character.Skills.Learned.map((s) => s.SkillId);
     this.clearTransient();
     this.enterTown();
@@ -152,6 +153,7 @@ export class GameSession {
     const loaded = loadGame(this.store);
     if (!loaded) return false;
     this.data = loaded;
+    this.playMark = this.now.getTime();
     this.clearTransient();
     if (!this.data.Run) {
       this.enterTown(false);
@@ -170,9 +172,16 @@ export class GameSession {
     return true;
   }
 
-  /** 저장할 때마다 승급 조건을 확인해 채웠으면 바로 승급한다 (자동 승급). */
+  /** 플레이 시간을 잴 기준 시각 (새 게임·이어하기·저장할 때마다 다시 잼). */
+  private playMark = 0;
+
+  /** 저장할 때마다 승급 조건을 확인해 채웠으면 바로 승급하고, 지난 저장 뒤 흐른 시간을 플레이 시간에 더한다. */
   save(): void {
     if (!this.data) return;
+    const now = this.now.getTime();
+    // shortcut: 저장 사이 5분이 넘게 흐르면(앱을 꺼 두거나 오래 멈춤) 5분만 센다, 정확히 재려면 화면 숨김 이벤트로 시계를 멈춰야 함
+    if (this.playMark > 0) this.data.PlaySeconds = (this.data.PlaySeconds ?? 0) + Math.min(B.PlayTimeMaxGapSec, Math.max(0, (now - this.playMark) / 1000));
+    this.playMark = now;
     while (tryPromote(this.c)) this.promotions.push(this.c.Rank);
     saveGame(this.store, this.data, this.now);
   }

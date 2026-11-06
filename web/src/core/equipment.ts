@@ -225,11 +225,12 @@ export function moveEquippedSkill(c: Character, from: number, to: number): boole
 /** 수련 최대 단계: 전투 스킬 5, 비전투 스킬(효과만 거는 스킬) 2. */
 export const maxSkillLevel = (def: SkillDef | null): number => (def && isUtility(def) ? B.UtilityMaxSkillLevel : B.MaxSkillLevel);
 
-/** 수련 비용 = 다음 단계 × 200G (비전투 스킬은 × 600G). 최대 단계면 0. */
+/** 수련 비용 = 다음 단계 × 200G (비전투 스킬은 × 600G) × 스킬 등급 배율 (하급 1 · 중급 2 · 상급 4 · 최상급 8, v3.17). 최대 단계면 0. */
 export function trainingCost(s: SkillState): number {
   const def = skillDef(s.SkillId);
   if (s.Level >= maxSkillLevel(def)) return 0;
-  return (def && isUtility(def) ? B.UtilityTrainingGoldPerLevel : B.TrainingGoldPerLevel) * (s.Level + 1);
+  const tier = def ? (B.TrainingTierMult[def.Tier] ?? 1) : 1;
+  return (def && isUtility(def) ? B.UtilityTrainingGoldPerLevel : B.TrainingGoldPerLevel) * (s.Level + 1) * tier;
 }
 
 /** 수련 효과: 전투 스킬은 단계마다 위력, 비전투 스킬은 1단계 지속 +1턴 · 2단계 재사용 -1턴. */

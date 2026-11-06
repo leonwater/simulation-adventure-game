@@ -56,7 +56,7 @@ export function enhanceSteps(e: number): number {
   return sum;
 }
 
-/** 강화가 반영된 수치. 강화 1단계마다 기본 수치 × 등급별 2~4% × 단계 가중치 (무기·방어구 최소 +1, 장신구 2단계마다 최소 +1). */
+/** 강화가 반영된 수치. 강화 1단계마다 기본 수치 × 등급별 5~9% × 단계 가중치 (무기·방어구 최소 +1, 장신구 2단계마다 최소 +1). */
 export function valueAt(i: ItemInstance, enhance: number): number {
   const bonus = roundEven(i.BaseValue * B.EnhanceValuePerLevel[ord(GRADES, i.Grade)] * enhanceSteps(enhance));
   const min = isAccessory(i) ? Math.floor((enhance + 1) / 2) : enhance;
@@ -64,7 +64,7 @@ export function valueAt(i: ItemInstance, enhance: number): number {
 }
 export const itemValue = (i: ItemInstance): number => valueAt(i, i.Enhance);
 
-/** 판매가 = 구매가의 50% + 강화에 든 골드의 50%. */
+/** 판매가 = 구매가의 30% + 강화에 든 골드의 50%. */
 export const sellPrice = (i: ItemInstance): number =>
   Math.max(1, roundEven(i.Price * B.SellRatio + goldSpent(i) * B.EnhanceSellRefund));
 
@@ -338,7 +338,7 @@ export function rollDropGrade(rng: Rng, floor: number, bossLevel: number): ItemG
 
 // ── 대장간 비용 ──────────────────────────────────────────
 
-/** 목표 단계 target으로 올리는 골드 = 30 × 목표 단계 × (1 + 착용 레벨 ÷ 10) × 등급 배율. */
+/** 목표 단계 target으로 올리는 골드 = 30 × 목표 단계 × (1 + 착용 레벨 ÷ 10) × 등급 배율 (일반 1 · 고급 1.5 · 희귀 2.5 · 영웅 4 · 전설 6, v3.17). */
 const costFor = (item: ItemInstance, target: number): number =>
   roundEven(B.EnhanceGoldBase * target * (1 + item.LevelReq / 10) * B.EnhanceGradeCost[ord(GRADES, item.Grade)]);
 export const goldCost = (item: ItemInstance): number => costFor(item, item.Enhance + 1);
