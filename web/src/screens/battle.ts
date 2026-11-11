@@ -11,7 +11,7 @@ import { itemNames, mergeStacks } from '../core/loot';
 import { ALL_SKILLS, skillDef } from '../core/skills';
 import { STATUSES } from '../core/enums';
 import type { StatusType } from '../core/enums';
-import { fxCounter, fxDefeat, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, fxTierOf, setFxAlways, setFxSpeed, swingsSword } from '../ui/fx';
+import { fxCounter, fxDefeat, fxOverloadAura, fxDodge, fxEnemyCast, fxHeal, fxHit, fxSkill, fxStatus, fxStyleFor, fxSwing, fxTick, fxTierOf, setFxAlways, setFxSpeed, swingsSword } from '../ui/fx';
 import type { FxStyle, Spot } from '../ui/fx';
 import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
@@ -66,6 +66,9 @@ function enemyCenters(n: number): [number, number][] {
  * 적을 눌러 대상 선택, 2~3줄 기록, 아래 선택지(성공 확률, 길게 누르면 계산 내역).
  * 행동 결과는 Battle.lastEvents를 차례로 재생한다 (돌진·흔들림·번쩍임·떠오르는 피해 숫자 + 이펙트 ui/fx.ts).
  */
+/** 마법사 폭주 표시 (core/battle.ts basicChoices의 damageNote 앞부분과 같아야 한다). */
+const OVERLOAD = '마력 폭주';
+
 export class BattleScreen extends Screen {
   private b: Battle | null = null;
   private target = -1;
@@ -221,6 +224,8 @@ export class BattleScreen extends Screen {
     const foot = (color: string): HTMLElement => h('div', { class: 'unit-foot', style: { background: color } });
     root.append(foot(footColor || 'var(--foot-shadow)'));
     if (enemy && index === this.target && alive && !b.isOver) root.append(Object.assign(foot('var(--gold)'), { className: 'unit-foot blink' }));
+    // 마력 폭주 중이면 그림 뒤에 붉은 오라 (상태 아이콘만으로는 잘 안 보여서)
+    if (!enemy && alive && c.statuses.has('Overload')) fxOverloadAura(root, size);
     const img = h('img', { src: sprite, alt: '', class: 'unit-sprite' }) as HTMLImageElement;
     img.onload = () => { img.style.width = `${img.naturalWidth * spriteScale(size)}px`; };
     root.append(img);
@@ -356,7 +361,7 @@ export class BattleScreen extends Screen {
     const st = this.kindStyle(ch);
     const el = h('div', { role: 'button', class: 'bchoice', style: { background: st.fill, border: `1px solid ${st.border}`, minHeight: subText ? '60px' : '52px', cursor: 'pointer', opacity: ch.enabled ? '1' : '.5' } },
       h('i', { class: 'kbar', style: { background: st.bar } }),
-      h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name', style: skillColor ? { color: skillColor } : {} }, label), subText ? h('span', { class: 'dmg' }, subText) : null),
+      h('div', { class: 'col grow', style: { gap: '1px' } }, h('span', { class: 'tag', style: { color: st.bar } }, st.tag), h('span', { class: 'name', style: skillColor ? { color: skillColor } : {} }, label), subText ? h('span', { class: 'dmg' }, ...(subText.startsWith(OVERLOAD) ? [colored(OVERLOAD, 'var(--red-light)'), subText.slice(OVERLOAD.length)] : [subText])) : null),
       right ? h('div', { class: 'col', style: { alignItems: 'flex-end', gap: '0' } },
         perHit ? h('span', { style: { fontSize: '11px', color: 'var(--sub)' } }, '타격당') : null,
         h('span', { style: { fontSize: pct ? '15px' : '14px', fontWeight: '700', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right', whiteSpace: 'nowrap' } }, right)) : null); // 재사용 대기 'N턴'은 한 줄로 크게
