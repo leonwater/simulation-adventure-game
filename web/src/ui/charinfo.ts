@@ -11,10 +11,11 @@ import { gold, Names } from '../core/names';
 import type { StatusInstance } from '../core/status';
 import { isDebuff } from '../core/status';
 import type { Battle } from '../core/battle';
+import { openAllocation } from './allocate';
 import { jobLine } from './chrome';
 import { S } from './game';
 import { colored } from './items';
-import { divider, h, icon, progress, row, sub } from './kit';
+import { button, divider, h, icon, progress, row, sub } from './kit';
 import { modal } from './overlay';
 import { statIcon } from './statrow';
 import { rankIcon } from './theme';
@@ -58,7 +59,12 @@ export function showCharacterInfo(battle: Battle | null = null): void {
     h('div', { style: { fontSize: '13px' } }, `HP ${hp}/${max}`),
     progress(hp / Math.max(1, max), 'var(--red)'),
     h('div', { class: 'row sub', style: { gap: '8px' } }, '경험치', h('div', { class: 'grow' }, progress(expProgress(c), 'var(--blue)'))),
-    h('div', { class: 'sub' }, `골드 ${gold(c.Gold)}`, c.UnspentPoints > 0 ? colored(` · 포인트 ${c.UnspentPoints}`, 'var(--gold)') : null),
+    h('div', { class: 'sub' }, `골드 ${gold(c.Gold)}`, c.UnspentPoints > 0 && battle ? colored(` · 포인트 ${c.UnspentPoints}`, 'var(--gold)') : null),
+    // 던전에서 레벨 업 배분을 넘겼어도 여기서 다시 배분한다 (전투 중에는 안 됨)
+    ...(c.UnspentPoints > 0 && !battle ? [button(`능력치 포인트 ${c.UnspentPoints} · 배분`, () => {
+      m.close();
+      openAllocation('능력치 배분');
+    }, 'outline')] : []),
     ...section('전투 능력치'),
     pair([statIcon(jobData(c.Job).attackStat), '공격력', String(me?.attack ?? attack(c))], ['status_fortify', '방어력', String(defense(c))]),
     pair([statIcon('Agility'), '회피', percent(evasion(c))], [PERKS[c.Job].icon, PERKS[c.Job].name, percent(jobPerk(c))]),

@@ -4,3 +4,4 @@
 .fx-clone { image-rendering: pixelated; }
 .fx-flash { inset: 0; background: currentColor; z-index: 3; }
 .fx-icon { width: 24px; height: 24px; image-rendering: pixelated; z-index: 6; }
+.fx.fx-aura { z-index: 0; } /* 마력 폭주 발밑 마법진: 유닛 그림 뒤 */

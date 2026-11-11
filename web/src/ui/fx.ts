@@ -60,6 +60,7 @@ interface SpOpt {
   /** 프레임을 계속 돈다 (투사체·빛줄기). */ loop?: boolean;
   /** 돌림(도) · 좌우 뒤집기 · 위아래로 납작하게(바닥 고리). */ rot?: number; flip?: boolean; squash?: number;
   /** 기준점: 가운데(c) 또는 아래 가운데(b, 땅에서 솟는 것). */ anchor?: 'c' | 'b';
+  /** 지우지 않고 남긴다 (상태가 이어지는 동안 보이는 오라). */ keep?: boolean;
 }
 /**
  * 그림을 (x, y)에 놓고 프레임을 재생한다. 남는 시간이 지나면 지운다.
@@ -89,8 +90,26 @@ function sp(stage: HTMLElement, name: string, x: number, y: number, o: SpOpt = {
     // 마지막 프레임에서 멈춰 남는 시간(life)까지 보인다
     else el.animate([{ backgroundPosition: from }, { backgroundPosition: `${-(ax + (n - 1) * w) * PX}px ${-ay * PX}px` }], { duration: ((n - 1) * fms) / speed, delay: delay / speed, easing: `steps(${n - 1})`, fill: 'forwards' });
   }
-  later(delay + (o.life ?? n * fms), () => box.remove());
+  if (!o.keep) later(delay + (o.life ?? n * fms), () => box.remove());
   return box;
+}
+/**
+ * 마력 폭주 동안 마법사에게 계속 붙어 있는 디버프 표시 (v3.19): 발밑 붉은 마법진(펼쳐진 뒤 장면만 반복) + 몸에서 솟는 붉은 별.
+ * unit = 유닛 틀(좌표 0~size, 발끝 = size). 화면을 다시 그리면 함께 지워진다.
+ */
+export function fxOverloadAura(unit: HTMLElement, size: number): void {
+  const circle = sp(unit, 'circleg_red', size / 2, size, { scale: 2, keep: true });
+  circle.classList.add('fx-aura');
+  const [ax, ay, w, , n, fms] = A.circleg_red;
+  const from = 2; // 0~1은 펼쳐지는 장면
+  circle.firstElementChild!.animate([{ backgroundPosition: `${-(ax + from * w) * PX}px ${-ay * PX}px` }, { backgroundPosition: `${-(ax + n * w) * PX}px ${-ay * PX}px` }],
+    { duration: ((n - from) * fms * 2) / speed, iterations: calm() ? 1 : Infinity, easing: `steps(${n - from})`, fill: 'forwards' });
+  if (calm()) return;
+  for (let i = 0; i < 3; i++) {
+    const star = sp(unit, 'star_red', size * (0.3 + i * 0.2), size * 0.75, { keep: true, loop: true });
+    star.animate([{ transform: 'translate(0,0)', opacity: 0 }, { opacity: 1, offset: 0.3 }, { transform: `translate(${(i - 1) * 4}px,${-size * 0.8}px)`, opacity: 0 }],
+      { duration: 1300 / speed, delay: (i * 430) / speed, iterations: Infinity, easing: 'ease-out', fill: 'backwards' });
+  }
 }
 /** 놓인 그림을 움직인다 (지우기는 sp가 맡는다). 처음 transform을 덮으니 돌림 등은 프레임에 함께 적는다. */
 function move(el: HTMLElement, frames: Keyframe[], ms: number, delay = 0, easing = 'linear'): void {
