@@ -40,6 +40,8 @@ export interface Character {
   BagsBought: number;
   /** 층별 보스 클리어 횟수 (층 보상 배율 floorClearMult, v3.16). */
   FloorClears: Record<number, number>;
+  /** 행동별(기본 공격 'basic' · 스킬 Id) 연속 빗나간 횟수: 명중하면 0 (v3.18, 빗나갈수록 다음 명중 확률이 오름). */
+  HitMisses?: Record<string, number>;
 }
 
 // ── 등급 ─────────────────────────────────────────────────

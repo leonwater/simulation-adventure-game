@@ -1,4 +1,4 @@
-import { B, clamp, roundEven } from './balance';
+import { B, clamp, pityChance, roundEven } from './balance';
 import { BossKit, createMinion, splitChild } from './bosskit';
 import type { Character } from './character';
 import { attack, defense, equipped, evasion, jobPerk, resist, maxHp, skillDamageBonus, totalStat, weaponAttack } from './character';
@@ -233,7 +233,7 @@ export class Battle {
     if (s.has('Fear')) parts.push(`공포 ${pct(-s.value('Fear') / 100)}`);
     if (Math.abs(skillBonus) > 1e-9) parts.push(`${basic ? '기본 공격 보정' : '스킬 보정'} ${pct(skillBonus)}`);
     if (this.sureHit) return '튜토리얼 동안은 언제나 명중 = 100%';
-    return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)`;
+    return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)\n같은 행동이 빗나가면 다음 판정 확률이 +${r100(B.HitPityStep)}%p씩 오르고, 맞히면 처음으로 돌아간다. 오래 하면 이 값만큼 맞힌다.`;
   }
 
   private fleeBreakdown(): string {
@@ -615,7 +615,7 @@ export class Battle {
       this.event('Act', -1, affected.length > 0 ? this.indexOf(affected[0]) : -1, { text: def.Name });
       for (const t of affected) {
         if (!t.alive) continue;
-        if (!this.rng.chance(this.hitChance(t, def.SuccessBonus))) {
+        if (!this.rollHit(def.Id, this.hitChance(t, def.SuccessBonus))) {
           this.add(`${t.name}에게 ${def.Name} — 빗나갔다.`);
           this.event('Miss', -1, this.indexOf(t), { hpAfter: t.hp });
           continue;
@@ -634,6 +634,15 @@ export class Battle {
     }
   }
 
+  /** 플레이어 명중 판정 (표시 확률 p). 같은 행동을 빗나갈수록 다음 확률이 오르고 명중하면 처음으로 — 평균은 p와 같다. */
+  private rollHit(key: string, p: number): boolean {
+    const m = (this.character.HitMisses ??= {});
+    const hit = this.rng.chance(pityChance(p, m[key] ?? 0));
+    if (hit) delete m[key];
+    else m[key] = (m[key] ?? 0) + 1;
+    return hit;
+  }
+
   /** 플레이어의 타격. 타격마다 명중을 따로 판정하고, 치명타는 스킬에서만 난다. */
   private playerHits(target: Combatant, mult: number, hits: number, successBonus: number, skill: SkillDef | null, basic = false): void {
     if (!target.alive) return;
@@ -641,7 +650,7 @@ export class Battle {
     let landed = 0, total = 0, blocked = 0;
     let anyCrit = false;
     for (let h = 0; h < hits && target.alive; h++) {
-      if (!this.rng.chance(this.hitChance(target, successBonus))) {
+      if (!this.rollHit(skill?.Id ?? 'basic', this.hitChance(target, successBonus))) {
         this.event('Miss', -1, ti, { hpAfter: target.hp });
         continue;
       }

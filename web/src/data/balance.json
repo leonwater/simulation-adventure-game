@@ -258,6 +258,7 @@
   "BasicAttackBonus": 0.12,
   "MinHit": 0.62,
   "MaxHit": 0.92,
+  "HitPityStep": 0.1,
   "MinSuccess": 0.05,
   "MaxSuccess": 0.95,
   "EnemyBaseHit": 0.9,
