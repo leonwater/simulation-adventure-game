@@ -12,7 +12,39 @@ export const B = data as Record<string, any> & {
 
 export const clamp = (v: number, min: number, max: number): number => (v < min ? min : v > max ? max : v);
 
-/** 공격 성공률 = 81% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 62~92%. */
+/** 첫 확률 p0, 빗나갈 때마다 +step일 때 오래 했을 때의 명중률 (= 1 / 명중까지 걸리는 시도 수 기대값). */
+function pityMean(p0: number, step: number): number {
+  let tries = 0;
+  let left = 1;
+  for (let n = 0; left > 1e-9; n++) {
+    tries += left;
+    left *= 1 - Math.min(1, p0 + n * step);
+  }
+  return 1 / tries;
+}
+const pityCache = new Map<number, number>();
+/** 평균 명중률이 표시 확률 p와 같아지는 첫 확률 (step = 빗나갈 때마다 오르는 값). */
+export function pityBase(p: number, step = B.HitPityStep): number {
+  if (step <= 0 || p <= 0 || p >= 1) return p;
+  const key = Math.round(p * 1e4) * 1e3 + Math.round(step * 1e3);
+  let v = pityCache.get(key);
+  if (v === undefined) {
+    let lo = 0, hi = p;
+    for (let i = 0; i < 40; i++) {
+      const m = (lo + hi) / 2;
+      if (pityMean(m, step) < p) lo = m;
+      else hi = m;
+    }
+    v = (lo + hi) / 2;
+    pityCache.set(key, v);
+  }
+  return v;
+}
+/** 실제 명중 판정 확률: 같은 행동을 연달아 misses번 빗나갔을 때 = 첫 확률 + misses × 단계 (최대 100%). 표시는 p 그대로. */
+export const pityChance = (p: number, misses: number, step = B.HitPityStep): number =>
+  step <= 0 ? p : Math.min(1, pityBase(p, step) + misses * step);
+
+/** 스킬 성공률 = 78% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 60~90% (v3.18). 기본 공격은 85~90% (battle.ts). */
 export const hitChance = (stat: number, requirement: number, bonus = 0): number =>
   clamp(B.BaseHit + (stat - requirement) * B.HitPerStatPoint + bonus, B.MinHit, B.MaxHit);
 

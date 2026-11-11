@@ -1,4 +1,4 @@
-import { B, clamp, roundEven } from './balance';
+import { B, clamp, pityChance, roundEven } from './balance';
 import { BossKit, createMinion, splitChild } from './bosskit';
 import type { Character } from './character';
 import { attack, defense, equipped, evasion, jobPerk, resist, maxHp, skillDamageBonus, totalStat, weaponAttack } from './character';
@@ -202,11 +202,11 @@ export class Battle {
     return bonus;
   }
 
-  /** 공격 성공률 = 기본 + (주 공격 능력치 - 적 요구치) × 1% + 버프 + 스킬 보정. */
-  hitChance(target: Combatant, skillBonus = 0): number {
+  /** 공격 성공률 = 기본 + (주 공격 능력치 - 적 요구치) × 1% + 버프 + 스킬 보정. 스킬 60~90%, 기본 공격 85~90% (v3.18). */
+  hitChance(target: Combatant, skillBonus = 0, basic = false): number {
     if (this.sureHit) return 1;
     const stat = totalStat(this.character, jobData(this.character.Job).attackStat);
-    return clamp(B.BaseHit + (stat - target.requirement) * B.HitPerStatPoint + this.statusBonus(false) + skillBonus, B.MinHit, B.MaxHit);
+    return clamp(B.BaseHit + (stat - target.requirement) * B.HitPerStatPoint + this.statusBonus(false) + skillBonus, basic ? B.BasicMinHit : B.MinHit, B.MaxHit);
   }
 
   /** 도주 = 67% + 회피 + 날렵함 + 집중 - 실명 (공포는 영향 없음), 최대 87%. 보스전은 불가. */
@@ -233,7 +233,7 @@ export class Battle {
     if (s.has('Fear')) parts.push(`공포 ${pct(-s.value('Fear') / 100)}`);
     if (Math.abs(skillBonus) > 1e-9) parts.push(`${basic ? '기본 공격 보정' : '스킬 보정'} ${pct(skillBonus)}`);
     if (this.sureHit) return '튜토리얼 동안은 언제나 명중 = 100%';
-    return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)`;
+    return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus, basic))}% (${r100(basic ? B.BasicMinHit : B.MinHit)}~${r100(B.MaxHit)}%)\n같은 행동을 이 확률로 빗나가면 다음 판정이 +${r100(B.HitPityStep)}%p씩 오르고, 맞히면 처음으로 돌아간다. 오래 하면 이 값만큼 맞힌다.`;
   }
 
   private fleeBreakdown(): string {
@@ -525,7 +525,7 @@ export class Battle {
       : stuck ? `마력 폭주 — 쓸 수 있는 공격이 없어 에너지 볼을 억지로 쏜다. 이후 ${B.OverloadTurns}턴 동안 주는 피해 -${B.OverloadValue}% · 받는 피해 +${B.OverloadValue}%`
         : `에너지 볼 — 무기 공격력·등급에 비례하는 단일 공격, 재사용 ${B.EnergyBallCooldown}턴`;
     return alive.map((e) => choice({
-      kind: 'Attack', label: `${name} · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus),
+      kind: 'Attack', label: `${name} · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus, true),
       enabled: !mage || stuck || cd <= 0, note: mage && !stuck && cd > 0 ? `${cd}턴` : '',
       damageNote: `피해 약 ${damage(this.player, e, mult, false, true)}${hits > 1 ? ` × ${hits}회` : ''}${guardNote(e)}`,
       detail: `${what}\n\n${this.damageFormula(mult, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, B.BasicAttackBonus, true)}`,
@@ -615,7 +615,7 @@ export class Battle {
       this.event('Act', -1, affected.length > 0 ? this.indexOf(affected[0]) : -1, { text: def.Name });
       for (const t of affected) {
         if (!t.alive) continue;
-        if (!this.rng.chance(this.hitChance(t, def.SuccessBonus))) {
+        if (!this.rollHit(def.Id, this.hitChance(t, def.SuccessBonus))) {
           this.add(`${t.name}에게 ${def.Name} — 빗나갔다.`);
           this.event('Miss', -1, this.indexOf(t), { hpAfter: t.hp });
           continue;
@@ -634,6 +634,19 @@ export class Battle {
     }
   }
 
+  /**
+   * 플레이어 명중 판정 (표시 확률 p). 같은 행동을 같은 표시 확률로 빗나갈수록 다음 확률이 오르고 명중하면 처음으로 — 평균은 p와 같다.
+   * 표시 확률까지 열쇠에 넣는 까닭: 행동만으로 세면 확률이 바뀔 때(다른 적·실명) 낮은 확률 쪽이 표시보다 2~3%p 덜 맞았다 (v3.18 시뮬레이션).
+   */
+  private rollHit(action: string, p: number): boolean {
+    const key = `${action}:${Math.round(p * 100)}`;
+    const m = (this.character.HitMisses ??= {});
+    const hit = this.rng.chance(pityChance(p, m[key] ?? 0));
+    if (hit) delete m[key];
+    else m[key] = (m[key] ?? 0) + 1;
+    return hit;
+  }
+
   /** 플레이어의 타격. 타격마다 명중을 따로 판정하고, 치명타는 스킬에서만 난다. */
   private playerHits(target: Combatant, mult: number, hits: number, successBonus: number, skill: SkillDef | null, basic = false): void {
     if (!target.alive) return;
@@ -641,7 +654,7 @@ export class Battle {
     let landed = 0, total = 0, blocked = 0;
     let anyCrit = false;
     for (let h = 0; h < hits && target.alive; h++) {
-      if (!this.rng.chance(this.hitChance(target, successBonus))) {
+      if (!this.rollHit(skill?.Id ?? 'basic', this.hitChance(target, successBonus, basic))) {
         this.event('Miss', -1, ti, { hpAfter: target.hp });
         continue;
       }

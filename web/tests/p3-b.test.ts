@@ -236,8 +236,8 @@ describe('V17Tests (능력치 최대값)', () => {
 
 describe('V18Tests (성공률·도적·장비·드롭·상인·승급·이동 순서·복구)', () => {
   it('SuccessRates_RaisedBySevenPoints', () => {
-    expect(B.BaseHit).toBeCloseTo(0.81, 9);
-    expect(B.MaxHit).toBeCloseTo(0.92, 9);
+    expect(B.BaseHit).toBeCloseTo(0.78, 9);
+    expect(B.MaxHit).toBeCloseTo(0.9, 9);
     expect(B.BaseFlee).toBeCloseTo(0.67, 9);
     expect(B.MaxFlee).toBeCloseTo(0.87, 9);
     expect(B.StatCap).toBe(99);
