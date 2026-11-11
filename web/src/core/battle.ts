@@ -233,7 +233,7 @@ export class Battle {
     if (s.has('Fear')) parts.push(`공포 ${pct(-s.value('Fear') / 100)}`);
     if (Math.abs(skillBonus) > 1e-9) parts.push(`${basic ? '기본 공격 보정' : '스킬 보정'} ${pct(skillBonus)}`);
     if (this.sureHit) return '튜토리얼 동안은 언제나 명중 = 100%';
-    return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)\n같은 행동이 빗나가면 다음 판정 확률이 +${r100(B.HitPityStep)}%p씩 오르고, 맞히면 처음으로 돌아간다. 오래 하면 이 값만큼 맞힌다.`;
+    return `${parts.join(' · ')} = ${r100(this.hitChance(target, skillBonus))}% (${r100(B.MinHit)}~${r100(B.MaxHit)}%)\n같은 행동을 이 확률로 빗나가면 다음 판정이 +${r100(B.HitPityStep)}%p씩 오르고, 맞히면 처음으로 돌아간다. 오래 하면 이 값만큼 맞힌다.`;
   }
 
   private fleeBreakdown(): string {
@@ -634,8 +634,12 @@ export class Battle {
     }
   }
 
-  /** 플레이어 명중 판정 (표시 확률 p). 같은 행동을 빗나갈수록 다음 확률이 오르고 명중하면 처음으로 — 평균은 p와 같다. */
-  private rollHit(key: string, p: number): boolean {
+  /**
+   * 플레이어 명중 판정 (표시 확률 p). 같은 행동을 같은 표시 확률로 빗나갈수록 다음 확률이 오르고 명중하면 처음으로 — 평균은 p와 같다.
+   * 표시 확률까지 열쇠에 넣는 까닭: 행동만으로 세면 확률이 바뀔 때(다른 적·실명) 낮은 확률 쪽이 표시보다 2~3%p 덜 맞았다 (v3.18 시뮬레이션).
+   */
+  private rollHit(action: string, p: number): boolean {
+    const key = `${action}:${Math.round(p * 100)}`;
     const m = (this.character.HitMisses ??= {});
     const hit = this.rng.chance(pityChance(p, m[key] ?? 0));
     if (hit) delete m[key];
