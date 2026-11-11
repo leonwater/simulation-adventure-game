@@ -12,15 +12,15 @@ import { buildHero } from '../src/sim/gear';
 const grade = (f: number): ItemGrade => (f >= 20 ? 'Epic' : f >= 12 ? 'Rare' : 'Uncommon');
 
 describe('v3.0', () => {
-  it('기본 공격은 적정 스펙에서 보스 외 몬스터에게 90% 이상 (최대 92%)', () => {
+  it('기본 공격은 적정 스펙에서 보스 외 몬스터에게 85~90% (v3.18)', () => {
     for (const job of JOBS) {
       for (const f of [1, 2, 3, 5, 8, 10, 12, 15, 20, 25, 30]) {
         const c = buildHero({ job, floor: f, grade: grade(f), weapon: Math.floor(f / 3), armor: Math.floor(f / 5), levelBy: 1.7, trainLevel: 0 });
         for (const id of themeFor(f).SpeciesIds) {
           for (const role of [0, 1]) {
             const e = createEnemy(monster(id)!, f, 'Normal', role);
-            const hit = new Battle(c, f, [e], false, new Rng(1)).hitChance(e, B.BasicAttackBonus);
-            expect(hit, `${job} ${f}층 ${id} 기본 공격 명중`).toBeGreaterThanOrEqual(0.895);
+            const hit = new Battle(c, f, [e], false, new Rng(1)).hitChance(e, B.BasicAttackBonus, true);
+            expect(hit, `${job} ${f}층 ${id} 기본 공격 명중`).toBeGreaterThanOrEqual(0.855);
             expect(hit).toBeLessThanOrEqual(B.MaxHit + 1e-9);
           }
         }

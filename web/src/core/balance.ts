@@ -44,7 +44,7 @@ export function pityBase(p: number, step = B.HitPityStep): number {
 export const pityChance = (p: number, misses: number, step = B.HitPityStep): number =>
   step <= 0 ? p : Math.min(1, pityBase(p, step) + misses * step);
 
-/** 공격 성공률 = 81% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 62~92%. */
+/** 스킬 성공률 = 78% + (주 공격 능력치 − 적 요구치) × 1% + 보정, 60~90% (v3.18). 기본 공격은 85~90% (battle.ts). */
 export const hitChance = (stat: number, requirement: number, bonus = 0): number =>
   clamp(B.BaseHit + (stat - requirement) * B.HitPerStatPoint + bonus, B.MinHit, B.MaxHit);
 

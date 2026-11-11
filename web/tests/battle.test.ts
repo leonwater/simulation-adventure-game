@@ -230,7 +230,7 @@ describe('전투 진행', () => {
     expect(b.hitChance(e)).toBeCloseTo(clampHit(raw - 0.1), 9);
     expect(b.fleeChance()).toBeCloseTo(flee, 9);
     const attack = b.getChoices()[0];
-    expect(attack.detail).toContain('기본 81%');
+    expect(attack.detail).toContain('기본 78%');
     expect(attack.detail).toContain('피해 계산');
     expect(attack.damageNote).toBe(`피해 약 ${damage(b.player, e, 1, false)}`);
     const bash = b.getChoices().find((x) => x.skillId === 'w_bash')!;
