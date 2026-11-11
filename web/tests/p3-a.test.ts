@@ -69,7 +69,8 @@ describe('스킬·전투 규칙 v1.2 (SkillV12Tests)', () => {
     b.execute(attack());
     // 에너지 볼·운석 모두 재사용 대기 → 마력 폭주
     expect(attack().enabled).toBe(true);
-    expect(attack().label.startsWith('마력 폭주')).toBe(true);
+    expect(attack().label.startsWith('에너지 볼')).toBe(true); // v3.19: 이름은 그대로, 폭주는 아래 글씨로
+    expect(attack().damageNote.startsWith('마력 폭주')).toBe(true);
     b.execute(attack());
     expect(b.player.statuses.has('Overload')).toBe(true);
     // 스킬 재사용 대기만 다음 전투로 넘긴다 (v3.15: 에너지 볼은 전투가 끝나면 풀림 — 마지막 적을 에너지 볼로 잡으면 다음 전투 첫 턴에 못 쓰던 문제)

@@ -392,7 +392,8 @@ export class BattleScreen extends Screen {
         if (!ch.enabled) return;
         m.close();
         this.execute(ch);
-      } } }, h('b', { class: 'grow', style: { textAlign: 'left' } }, ch.label), h('span', { class: 'sub' }, ch.note));
+      } } }, h('div', { class: 'col grow', style: { gap: '2px', alignItems: 'flex-start', textAlign: 'left' } }, h('b', null, ch.label), h('span', { class: 'sub', style: { fontSize: '12px' } }, ch.note)));
+      // 이름과 효과를 한 줄에 두면 좁은 화면에서 '고급 회복 물약'이 접혀 두 줄로 나눈다
       m.body.append(bt);
     }
   }

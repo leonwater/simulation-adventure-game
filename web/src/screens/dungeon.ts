@@ -1,28 +1,26 @@
 import { anchored } from '../ui/coach';
 import { tutorial } from '../ui/tutorial';
 import { B, floorClearMult } from '../core/balance';
-import { AllocationDraft, maxHp } from '../core/character';
 import * as dungeon from '../core/dungeon';
 import type { DungeonRun, MovePad, PadSlot } from '../core/dungeon';
 import type { ExploreEffectType } from '../core/explore';
 import { effectDescribe, effectName, effectRemaining } from '../core/explore';
 import type { Room } from '../core/map';
 import { displayType, getRoom } from '../core/map';
-import { jobData } from '../core/jobs';
 import { themeFor, themeIndex } from '../core/monsters';
 import { Names } from '../core/names';
 import { dungeonHeader } from '../ui/chrome';
+import { openAllocation } from '../ui/allocate';
 import { showCharacterInfo, showQuests } from '../ui/charinfo';
 import { S } from '../ui/game';
 import { offerBetterGear } from '../ui/gearoffer';
 import { colored } from '../ui/items';
-import { button, h, icon, row, sub } from '../ui/kit';
+import { dot, h, icon, sub } from '../ui/kit';
 import { confirmBox, flash, modal, toast } from '../ui/overlay';
 import { openPauseMenu } from '../ui/pause';
 import { potionButton } from '../ui/potion';
 import { randomTip } from '../ui/tips';
 import { Screen, router } from '../ui/router';
-import { statRow } from '../ui/statrow';
 import { dungeonTheme } from '../ui/theme';
 import { lootLines } from '../core/loot';
 import type { RoomNotice } from '../core/loot';
@@ -71,9 +69,9 @@ export class DungeonScreen extends Screen {
     const dock = h('div', { class: 'dock' });
     this.choices(dock, run);
     const canReturn = S.canReturn;
-    const ibtn = (name: string, label: string, onClick: () => void, style: 'normal' | 'return' | 'locked' = 'normal'): HTMLElement => {
+    const ibtn = (name: string, label: string, onClick: () => void, style: 'normal' | 'return' | 'locked' = 'normal', alert = false): HTMLElement => {
       const b = h('button', { class: 'ibtn', 'data-anchor': name === 'return' ? 'dungeon.return' : undefined, style: style === 'return' ? { background: 'var(--return-bg)', borderColor: 'var(--return-border)' } : style === 'locked' ? { background: '#221A1B', borderColor: '#4E3838', color: 'var(--locked-ink)' } : {}, on: { click: onClick } },
-        icon(name, 26, style === 'locked' ? 'var(--locked-ink)' : undefined), label);
+        icon(name, 26, style === 'locked' ? 'var(--locked-ink)' : undefined), label, alert ? dot() : null);
       return b;
     };
     const page = h('div', { class: 'page', style: { background: th.bg } },
@@ -88,7 +86,7 @@ export class DungeonScreen extends Screen {
       dock,
       h('div', { class: 'bottombar' },
         ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
-        ibtn('character', '정보', () => showCharacterInfo()),
+        ibtn('character', '정보', () => showCharacterInfo(), 'normal', c.UnspentPoints > 0),
         ibtn('quest', '퀘스트', () => showQuests()),
         ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast(S.inTutorialRun ? '튜토리얼은 보스를 쓰러뜨려야 돌아갈 수 있어요.' : '아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
       run.FloorIntroPending ? this.floorIntro(run) : null,
@@ -123,44 +121,8 @@ export class DungeonScreen extends Screen {
     if (!S.run) return;
     if (this.levelUp) {
       this.levelUp = false;
-      if (S.c.UnspentPoints > 0) this.levelUpAllocation(new AllocationDraft(S.c));
+      if (S.c.UnspentPoints > 0) openAllocation(`레벨 업! Lv.${S.c.Level}`);
     } else tutorial.onDungeon();
-  }
-
-  // ── 레벨 업 배분: 자동 배분 · 확정 · 나중에 ──
-
-  private levelUpAllocation(draft: AllocationDraft): void {
-    const c = S.c;
-    const m = modal(`레벨 업! Lv.${c.Level}`, false);
-    // 창을 닫았다 다시 열지 않고 내용만 바꾼다 (+/- 누를 때 깜빡이지 않게)
-    const fill = (): void => {
-      m.body.replaceChildren(m.body.firstChild!);
-      const stats = jobData(c.Job).allocatable;
-      m.body.append(h('div', null, '포인트 ', colored(String(draft.remaining), 'var(--gold)')),
-        ...stats.map((st, i) => statRow(draft, st, i < stats.length - 1, fill)));
-      const auto = button('자동 배분', () => {
-        draft.auto();
-        fill();
-      }, '', 'grow');
-      auto.disabled = draft.remaining <= 0;
-      const ok = button('확정', () => {
-        const before = maxHp(c);
-        draft.commit();
-        c.CurrentHp = Math.min(maxHp(c), c.CurrentHp + Math.max(0, maxHp(c) - before));
-        S.save();
-        m.close();
-        router.rebuild();
-      }, 'primary', 'grow');
-      ok.disabled = !draft.hasChanges;
-      const later = button('나중에', () => {
-        m.close();
-        toast('포인트는 마을 캐릭터 화면에서도 배분할 수 있습니다');
-      }, 'ghost', 'grow');
-      // 좁은 화면에서도 버튼 글자가 한 줄로 (360px에서 '자동 배분'이 접혔다)
-      for (const b of [later, auto, ok]) Object.assign(b.style, { whiteSpace: 'nowrap', paddingInline: '6px' });
-      m.body.append(row(later, auto, ok));
-    };
-    fill();
   }
 
   // ── 아래 고정 칸 ──

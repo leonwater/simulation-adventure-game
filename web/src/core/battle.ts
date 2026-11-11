@@ -519,7 +519,8 @@ export class Battle {
     const mult = this.basicMult();
     const hits = this.basicHits();
     const cd = mage ? this.cooldown(ENERGY_BALL) : 0;
-    const name = !mage ? '공격' : stuck ? '마력 폭주' : '에너지 볼';
+    // 폭주 중에도 버튼 이름은 '에너지 볼' 그대로 (v3.19), 폭주는 아래 작은 글씨·상세 설명으로 알린다
+    const name = mage ? '에너지 볼' : '공격';
     const pierce = Math.min(0.9, this.player.basicPierce + this.player.statuses.value('Piercing') / 100);
     const what = !mage ? `기본 공격 — 피해 ${r100(mult)}%${hits > 1 ? ` × ${hits}회` : ''}${pierce > 0 ? ` · 방어 ${r100(pierce)}% 무시` : ''}, 치명타 없음`
       : stuck ? `마력 폭주 — 쓸 수 있는 공격이 없어 에너지 볼을 억지로 쏜다. 이후 ${B.OverloadTurns}턴 동안 주는 피해 -${B.OverloadValue}% · 받는 피해 +${B.OverloadValue}%`
@@ -527,7 +528,7 @@ export class Battle {
     return alive.map((e) => choice({
       kind: 'Attack', label: `${name} · ${e.name}`, target: this.enemies.indexOf(e), chance: this.hitChance(e, B.BasicAttackBonus, true),
       enabled: !mage || stuck || cd <= 0, note: mage && !stuck && cd > 0 ? `${cd}턴` : '',
-      damageNote: `피해 약 ${damage(this.player, e, mult, false, true)}${hits > 1 ? ` × ${hits}회` : ''}${guardNote(e)}`,
+      damageNote: `${stuck ? '마력 폭주 · ' : ''}피해 약 ${damage(this.player, e, mult, false, true)}${hits > 1 ? ` × ${hits}회` : ''}${guardNote(e)}`,
       detail: `${what}\n\n${this.damageFormula(mult, e, false)}\n\n성공 확률\n${this.hitBreakdown(e, B.BasicAttackBonus, true)}`,
     }));
   }
