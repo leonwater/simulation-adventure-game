@@ -17,7 +17,8 @@ import { showCharacterInfo, showEnemyInfo, statusIcon } from '../ui/charinfo';
 import { pauseButton } from '../ui/chrome';
 import { S } from '../ui/game';
 import { colored } from '../ui/items';
-import { assetUrl, button, h, icon, longPress, sub } from '../ui/kit';
+import { assetUrl, button, desktop, h, hoverTip, icon, longPress, sub } from '../ui/kit';
+import { hotkey } from '../ui/keys';
 import { modal, toast } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { dungeonTheme, tierColor } from '../ui/theme';
@@ -273,6 +274,16 @@ export class BattleScreen extends Screen {
     showEnemyInfo(b.enemies[index], index === this.target, () => this.selectTarget(index));
   }
 
+  /** PC ← →: 살아 있는 적 사이로 대상을 바꾼다. */
+  onKey(key: string): boolean {
+    if ((key !== 'ArrowLeft' && key !== 'ArrowRight') || !this.b || this.target < 0) return false;
+    const alive = this.b.enemies.map((e, i) => (e.alive ? i : -1)).filter((i) => i >= 0);
+    const at = alive.indexOf(this.target);
+    if (alive.length < 2) return false;
+    this.selectTarget(alive[(at + (key === 'ArrowRight' ? 1 : alive.length - 1)) % alive.length]);
+    return true;
+  }
+
   private selectTarget(index: number): void {
     if (this.playing || this.finished || this.leaving || index === this.target) return;
     this.target = index;
@@ -302,9 +313,9 @@ export class BattleScreen extends Screen {
     const targetName = this.target >= 0 ? b.enemies[this.target].name : '';
     parent.append(h('div', { class: 'row' },
       this.target >= 0
-        ? h('div', { class: 'sub grow' }, h('span', { class: 'nw' }, '대상 ', colored(targetName, 'var(--gold)')), ' · ', h('span', { class: 'nw' }, '적을 눌러 바꾸기'))
+        ? h('div', { class: 'sub grow' }, h('span', { class: 'nw' }, '대상 ', colored(targetName, 'var(--gold)')), ' · ', h('span', { class: 'nw' }, desktop ? '←→로 바꾸기' : '적을 눌러 바꾸기'))
         : h('div', { class: 'sub grow' }, '모든 선택은 1턴을 사용합니다'),
-      sub('길게 누르면 상세')));
+      sub(desktop ? '숫자 키로 선택 · 올리면 상세' : '길게 누르면 상세')));
     const list = h('div', { class: 'col', 'data-anchor': 'battle.choices', style: { gap: '6px', overflowY: 'auto', flex: '1', minHeight: '0', paddingTop: '2px' } });
     const bottom: HTMLElement[] = [];
     for (const ch of b.getChoices()) {
@@ -315,6 +326,8 @@ export class BattleScreen extends Screen {
       if (ch.kind === 'Item' || ch.kind === 'Flee') bottom.push(el);
       else list.append(el);
     }
+    // PC 숫자 키: 보이는 순서대로 1~9 (아이템·도주 포함)
+    [...list.querySelectorAll<HTMLElement>('.bchoice'), ...bottom].slice(0, 9).forEach((e, i) => hotkey(e, String(i + 1)));
     if (bottom.length > 0) list.append(h('div', { class: 'row', style: { gap: '6px', alignItems: 'stretch' } }, ...bottom.map((e) => Object.assign(e, { style: `${e.getAttribute('style')};flex:1 1 0;min-width:0` }))));
     if (this.playing) list.style.pointerEvents = 'none';
     parent.append(list);
@@ -322,12 +335,12 @@ export class BattleScreen extends Screen {
 
   /** 전투 로그 오른쪽 끝 물약 버튼: 마시면 한 턴을 쓴다. */
   private potionIcon(): HTMLElement {
-    return potionButton((item) => {
+    return hotkey(potionButton((item) => {
       const ch = this.b!.getItemChoices().find((x) => x.itemUid === item.Uid);
       if (!ch || !ch.enabled) return void toast('지금은 마실 수 없습니다');
       if (this.playing || this.finished || this.leaving) return;
       this.execute(ch); // 물약을 이미 골랐으니 아이템 사용 창을 다시 띄우지 않는다
-    }, 'battle-potion', {}, () => this.b!.player.hp >= this.b!.player.maxHp);
+    }, 'battle-potion', {}, () => this.b!.player.hp >= this.b!.player.maxHp), 'p');
   }
 
   private kindStyle(ch: BattleChoice): { tag: string; bar: string; fill: string; border: string } {
@@ -365,6 +378,7 @@ export class BattleScreen extends Screen {
       right ? h('div', { class: 'col', style: { alignItems: 'flex-end', gap: '0' } },
         perHit ? h('span', { style: { fontSize: '11px', color: 'var(--sub)' } }, '타격당') : null,
         h('span', { style: { fontSize: pct ? '15px' : '14px', fontWeight: '700', color: pct ? 'var(--gold)' : 'var(--sub)', textAlign: 'right', whiteSpace: 'nowrap' } }, right)) : null); // 재사용 대기 'N턴'은 한 줄로 크게
+    hoverTip(el, () => ch.detail);
     longPress(el, () => this.showDetail(ch), () => this.pick(ch));
     return el;
   }

@@ -338,3 +338,10 @@ button:focus:not(:focus-visible) { outline: none; }
   @starting-style { .modal { transform: none; } .toast { transform: translate(-50%, -50%); } }
 }
 @keyframes floatfade { from { opacity: 1; } to { opacity: 0; } }
+/* PC 단축키 표시 (v3.20, ui/keys.ts hotkey: 마우스·키보드 기기에서만 붙는다) */
+.kbd { position: absolute; left: 5px; top: 3px; font-family: inherit; font-size: 10px; font-weight: 700; line-height: 1; color: var(--sub); opacity: .85; pointer-events: none; }
+.bchoice > .kbd, .choice > .kbd { left: auto; right: 7px; }
+.battle-potion, .pad .potion { position: relative; }
+.kbd-inline { min-width: 92px; padding: 2px 6px; border: 1px solid var(--btn-border); border-radius: 4px; font-family: inherit; font-size: 12px; font-weight: 700; line-height: 1.4; color: var(--gold); text-align: center; }
+/* PC 마우스를 올리면 뜨는 설명 (ui/kit.ts hoverTip) */
+.hovertip { position: fixed; z-index: 200; max-width: min(340px, 92vw); padding: 8px 12px; background: var(--toast-bg); border: 1px solid var(--btn-border); border-radius: 8px; font-size: 12px; line-height: 1.45; white-space: pre-line; color: var(--text); pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,.4); }

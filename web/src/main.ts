@@ -1,3 +1,4 @@
+import { installKeys } from './ui/keys';
 import { router } from './ui/router';
 import * as screens from './screens';
 import { goTitle, goToCurrent } from './screens';
@@ -26,9 +27,7 @@ router.onRender = (): void => {
   showPromotions();
   showPendingDrops();
 };
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') router.back();
-});
+installKeys();
 goTitle();
 
 // 화면 확인용: 주소 끝에 ?debug 를 붙이면 콘솔에서 게임 상태(__S)를 만질 수 있다.

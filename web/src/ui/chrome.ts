@@ -5,6 +5,7 @@ import { jobData } from '../core/jobs';
 import { goldCompact } from '../core/names';
 import { alerts } from './alerts';
 import { assetUrl, button, h, icon, progress, row } from './kit';
+import { hotkey } from './keys';
 import { openSettings } from './settings-panel';
 import { jobIcon, rankIcon } from './theme';
 
@@ -44,12 +45,14 @@ export function townHeader(c: Character): HTMLElement {
 
 const NAV = ['nav_town', 'nav_character', 'nav_bag', 'nav_skill'];
 const NAV_LABEL = ['마을', '캐릭터', '가방', '스킬'];
+/** PC 단축키 (마을은 Esc로 돌아간다). */
+const NAV_KEY = ['h', 'c', 'i', 'k'];
 
 /** 마을 계열 하단 메뉴. 0 마을 · 1 캐릭터 · 2 가방 · 3 스킬 */
 export function bottomNav(active: number, go: (index: number) => void): HTMLElement {
   return h('div', { class: 'nav' }, ...NAV.map((name, i) =>
-    h('button', { class: i === active ? 'on' : '', 'aria-label': NAV_LABEL[i], 'aria-current': i === active ? 'page' : undefined, on: { click: () => go(i) } },
-      icon(name, 28, i === active ? 'var(--gold)' : 'var(--sub)'), i !== active && alerts.nav(i) ? h('span', { class: 'dot' }) : null)));
+    hotkey(h('button', { class: i === active ? 'on' : '', 'aria-label': NAV_LABEL[i], 'aria-current': i === active ? 'page' : undefined, on: { click: () => go(i) } },
+      icon(name, 28, i === active ? 'var(--gold)' : 'var(--sub)'), i !== active && alerts.nav(i) ? h('span', { class: 'dot' }) : null), NAV_KEY[i])));
 }
 
 /** 일러스트 + 아래쪽 대사 상자. */
