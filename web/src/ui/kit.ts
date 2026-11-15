@@ -91,6 +91,10 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
     timer = window.setTimeout(() => {
       fired = true;
       onLong();
+      // 손을 떼며 오는 클릭 한 번만 막는다: 클릭이 이 버튼에 오든(상세 창이 떠서) 다른 곳에 가든, 뗀 직후 푼다
+      const release = (): void => void window.setTimeout(() => { fired = false; });
+      window.addEventListener('pointerup', release, { once: true, capture: true });
+      window.addEventListener('pointercancel', release, { once: true, capture: true });
     }, ms);
   });
   const cancel = (): void => window.clearTimeout(timer);
@@ -98,14 +102,12 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
   el.addEventListener('pointerleave', cancel);
   el.addEventListener('pointercancel', cancel);
   el.addEventListener('click', () => {
-    // 길게 누른 뒤 손을 떼며 오는 클릭 한 번만 막고 푼다 (안 풀면 숫자 키로 보낸 클릭까지 막혔다)
     if (!fired) onTap();
-    fired = false;
   });
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();
-    // PC: 오른쪽 클릭 = 길게 누르기 (터치 기기는 길게 누르면 contextmenu도 와서 두 번 열리지 않게 PC만)
-    if (desktop) {
+    // PC: 오른쪽 클릭 = 길게 누르기. 터치로 길게 눌러 이미 열었으면(터치 되는 노트북) 다시 열지 않는다
+    if (desktop && !fired) {
       window.clearTimeout(timer);
       onLong();
     }
