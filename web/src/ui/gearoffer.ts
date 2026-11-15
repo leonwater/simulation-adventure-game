@@ -24,6 +24,8 @@ export function isBetter(c: Character, item: ItemInstance | null): boolean {
 
 /** 지금 장비보다 좋은 장비를 사거나 얻으면 바로 착용할지 묻는다. 같은 장비는 한 번만 묻고, 여럿이면 차례로 묻는다. */
 export function offerBetterGear(items: (ItemInstance | null)[], after?: () => void): void {
+  // 묻는 중에 '착용'으로 화면을 다시 그리면 afterShow가 또 부른다 → 두 번째 대기열을 열지 않는다 (같은 창이 겹쳐 떴다)
+  if (open) return;
   const c = S.c;
   const queue = items.filter((i): i is ItemInstance => !!i && !asked.has(i.Uid) && isBetter(c, i));
   if (queue.length === 0) return; // 물을 것이 없으면 after(화면 다시 그리기)를 부르지 않는다: 부르면 afterShow가 다시 물으러 와 끝없이 돈다

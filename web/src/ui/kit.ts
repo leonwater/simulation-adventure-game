@@ -85,7 +85,8 @@ export function hoverTip(el: HTMLElement, text: () => string): void {
 export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void, ms = 450): void {
   let timer = 0;
   let fired = false;
-  el.addEventListener('pointerdown', () => {
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return; // 오른쪽 버튼은 contextmenu가 맡는다
     fired = false;
     timer = window.setTimeout(() => {
       fired = true;
@@ -97,14 +98,15 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
   el.addEventListener('pointerleave', cancel);
   el.addEventListener('pointercancel', cancel);
   el.addEventListener('click', () => {
+    // 길게 누른 뒤 손을 떼며 오는 클릭 한 번만 막고 푼다 (안 풀면 숫자 키로 보낸 클릭까지 막혔다)
     if (!fired) onTap();
+    fired = false;
   });
   el.addEventListener('contextmenu', (e) => {
     e.preventDefault();
     // PC: 오른쪽 클릭 = 길게 누르기 (터치 기기는 길게 누르면 contextmenu도 와서 두 번 열리지 않게 PC만)
-    if (desktop && !fired) {
+    if (desktop) {
       window.clearTimeout(timer);
-      fired = true;
       onLong();
     }
   });
