@@ -10,6 +10,9 @@ import { modal, toast } from './overlay';
 import { router } from './router';
 
 const asked = new Set<string>();
+let open = false;
+/** 장비 착용 창을 차례로 묻는 중인지 (끝나면 다른 창을 연다: 레벨 업 배분이 위에 겹치지 않게, v3.20). */
+export const gearOfferOpen = (): boolean => open;
 
 /** 착용할 수 있고(직업·레벨), 빈 칸이거나 한 줄 판정이 +인 장비. */
 export function isBetter(c: Character, item: ItemInstance | null): boolean {
@@ -24,6 +27,7 @@ export function offerBetterGear(items: (ItemInstance | null)[], after?: () => vo
   const c = S.c;
   const queue = items.filter((i): i is ItemInstance => !!i && !asked.has(i.Uid) && isBetter(c, i));
   if (queue.length === 0) return; // 물을 것이 없으면 after(화면 다시 그리기)를 부르지 않는다: 부르면 afterShow가 다시 물으러 와 끝없이 돈다
+  open = true;
   next(queue, after);
 }
 
@@ -32,6 +36,7 @@ function next(queue: ItemInstance[], after?: () => void): void {
   while (queue.length > 0 && !isBetter(c, queue[0])) queue.shift();
   const item = queue.shift();
   if (!item) {
+    open = false;
     after?.();
     return;
   }

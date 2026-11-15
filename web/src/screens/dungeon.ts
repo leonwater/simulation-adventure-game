@@ -13,7 +13,7 @@ import { dungeonHeader } from '../ui/chrome';
 import { openAllocation } from '../ui/allocate';
 import { showCharacterInfo, showQuests } from '../ui/charinfo';
 import { S } from '../ui/game';
-import { offerBetterGear } from '../ui/gearoffer';
+import { gearOfferOpen, offerBetterGear } from '../ui/gearoffer';
 import { colored } from '../ui/items';
 import { dot, h, icon, sub } from '../ui/kit';
 import { confirmBox, flash, modal, toast } from '../ui/overlay';
@@ -120,6 +120,7 @@ export class DungeonScreen extends Screen {
   private afterIntro(): void {
     if (!S.run) return;
     if (this.levelUp) {
+      if (gearOfferOpen()) return; // 장비 착용 창이 먼저: 다 묻고 화면을 다시 그릴 때 배분 창을 연다
       this.levelUp = false;
       if (S.c.UnspentPoints > 0) openAllocation(`레벨 업! Lv.${S.c.Level}`);
     } else tutorial.onDungeon();
