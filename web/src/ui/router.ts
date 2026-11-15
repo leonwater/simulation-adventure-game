@@ -9,6 +9,10 @@ export abstract class Screen {
   }
   /** 화면이 그려진 직후 (튜토리얼 안내 등). */
   afterShow(): void {}
+  /** 화면만의 키 (버튼에 매이지 않는 것: 전투 대상 바꾸기 등). 처리했으면 true. */
+  onKey(_key: string): boolean {
+    return false;
+  }
 }
 
 let view: HTMLElement;
@@ -46,6 +50,7 @@ export const router = {
   rebuild(): void {
     if (!current) return;
     layer.querySelectorAll('.coach').forEach((e) => e.remove());
+    document.querySelectorAll('.hovertip').forEach((e) => e.remove());
     const scrolls = [...view.querySelectorAll<HTMLElement>('.scroll')].map((e) => e.scrollTop);
     applyTextScale();
     view.replaceChildren(current.build());
@@ -57,6 +62,10 @@ export const router = {
     router.onRender?.();
   },
   /** 뒤로 가기: 열린 팝업을 먼저 닫고, 없으면 화면에 맡긴다. */
+  /** 지금 화면에 키를 넘긴다 (ui/keys.ts). */
+  key(k: string): boolean {
+    return current?.onKey(k) ?? false;
+  },
   back(): boolean {
     const top = closers[closers.length - 1];
     if (top) return top();

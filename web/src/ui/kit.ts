@@ -53,6 +53,35 @@ export function tabs(labels: string[], active: number, onChange: (i: number) => 
 }
 
 /** 짧게 누르면 onTap, 오래 누르면 onLong. */
+/** 마우스·키보드로 하는 기기 (PC 웹, v3.20). 휴대폰·태블릿 터치는 false라 화면·조작이 그대로다. */
+export const desktop = typeof matchMedia === 'function' && matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+/** PC에서 마우스를 올리면 잠깐 뒤 설명 말풍선 (길게 누르기의 짧은 대신). 화면을 다시 그리면 router가 지운다. */
+export function hoverTip(el: HTMLElement, text: () => string): void {
+  if (!desktop) return;
+  let timer = 0;
+  let tip: HTMLElement | null = null;
+  const hide = (): void => {
+    window.clearTimeout(timer);
+    tip?.remove();
+    tip = null;
+  };
+  el.addEventListener('mouseenter', () => {
+    timer = window.setTimeout(() => {
+      const t = text();
+      if (!t || !el.isConnected) return;
+      tip = h('div', { class: 'hovertip', role: 'tooltip' }, t);
+      document.body.append(tip);
+      const r = el.getBoundingClientRect(), w = tip.offsetWidth, hh = tip.offsetHeight;
+      const left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+      const top = r.top - hh - 8 >= 8 ? r.top - hh - 8 : Math.min(window.innerHeight - hh - 8, r.bottom + 8);
+      Object.assign(tip.style, { left: `${left}px`, top: `${top}px` });
+    }, 350);
+  });
+  el.addEventListener('mouseleave', hide);
+  el.addEventListener('pointerdown', hide);
+}
+
 export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void, ms = 450): void {
   let timer = 0;
   let fired = false;
@@ -70,7 +99,15 @@ export function longPress(el: HTMLElement, onLong: () => void, onTap: () => void
   el.addEventListener('click', () => {
     if (!fired) onTap();
   });
-  el.addEventListener('contextmenu', (e) => e.preventDefault());
+  el.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    // PC: 오른쪽 클릭 = 길게 누르기 (터치 기기는 길게 누르면 contextmenu도 와서 두 번 열리지 않게 PC만)
+    if (desktop && !fired) {
+      window.clearTimeout(timer);
+      fired = true;
+      onLong();
+    }
+  });
   // 튜토리얼 말풍선 덮개 위에서 길게 누르면 덮개가 아래 요소로 'longpress'를 넘겨 준다 (coach.ts)
   el.addEventListener('longpress', () => onLong());
 }

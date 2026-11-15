@@ -5,7 +5,8 @@ import type { EventChoice } from '../core/events';
 import type { EventResult } from '../core/eventrules';
 import { describeLoot, lootIsEmpty } from '../core/loot';
 import { S } from '../ui/game';
-import { button, h, longPress } from '../ui/kit';
+import { button, h, hoverTip, longPress } from '../ui/kit';
+import { hotkey } from '../ui/keys';
 import { modal } from '../ui/overlay';
 import { Screen, router } from '../ui/router';
 import { goDungeon, goResult, goToCurrent } from './index';
@@ -47,6 +48,7 @@ export class EventScreen extends Screen {
       // 보물 더미·피의 우물: 같은 이벤트에서 다시 고른다
       if (!this.result.Continues || S.pendingEvent !== ev) return this.wrap(floor, inner);
     }
+    let key = 0; // 숫자 키는 보이는 순서대로 (숨은 선택지 건너뜀)
     for (const i of visibleChoices(ev, c, run)) {
       const ch = ev.Choices[i];
       const unavailable = run ? unavailableReason(ev, i, run, c) : null;
@@ -63,6 +65,8 @@ export class EventScreen extends Screen {
       },
       h('div', { class: 'col grow', style: { gap: '2px', alignItems: 'flex-start' } }, h('span', { class: 't', style: { color: pass ? 'var(--text)' : 'var(--action-text)' } }, label), hint ? h('span', { class: 's', style: { color: pass ? 'var(--sub)' : 'var(--action-sub)' } }, hint) : null),
       h('span', { style: { fontSize: always ? '13px' : '14px', fontWeight: always ? '400' : '700', color: always ? (pass ? 'var(--sub)' : 'var(--action-sub)') : 'var(--gold)' } }, right));
+      hotkey(b, String(++key));
+      hoverTip(b, () => (special ?? breakdown(ch, c, floor)) + (unavailable ? `\n\n${unavailable}` : ''));
       longPress(b, () => {
         const m = modal(label);
         m.body.append(h('div', { class: 'body', style: { whiteSpace: 'pre-line', lineHeight: '1.4' } }, (special ?? breakdown(ch, c, floor)) + (unavailable ? `\n\n${unavailable}` : '')));

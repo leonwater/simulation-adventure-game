@@ -5,7 +5,7 @@ import { josa } from '../core/names';
 import { goToCurrent } from '../screens';
 import { coach } from './coach';
 import { S } from './game';
-import { button, h, row } from './kit';
+import { button, desktop, h, row } from './kit';
 import { modal, toast } from './overlay';
 import { router } from './router';
 import { settings } from './settings';
@@ -191,7 +191,7 @@ function onBattle(): void {
     if (S.hasGame && !S.tipShown('tip.v37') && document.querySelector('[data-anchor="battle.choices"]')) coach.info('battle.choices', '전투 방식', battleTip(), () => S.markTip('tip.v37'));
     return;
   }
-  run([info('bat.2', 'battle.choices', '전투', `%는 ${H('맞힐 확률')}이에요(튜토리얼은 ${good('100%')}). 선택지를 ${H('길게 누르면')} 자세히 볼 수 있어요.`),
+  run([info('bat.2', 'battle.choices', '전투', `%는 ${H('맞힐 확률')}이에요(튜토리얼은 ${good('100%')}). 선택지를 ${H(desktop ? '마우스로 가리키면' : '길게 누르면')} 자세히 볼 수 있어요.`),
     info('tip.v37', 'battle.choices', '전투 방식', battleTip())], () => {
     if (S.tipShown('bat.3') || !document.querySelector('[data-anchor="battle.choice0"]')) return;
     S.markTip('bat.3');

@@ -16,6 +16,7 @@ import { S } from '../ui/game';
 import { gearOfferOpen, offerBetterGear } from '../ui/gearoffer';
 import { colored } from '../ui/items';
 import { dot, h, icon, sub } from '../ui/kit';
+import { hotkey } from '../ui/keys';
 import { confirmBox, flash, modal, toast } from '../ui/overlay';
 import { openPauseMenu } from '../ui/pause';
 import { potionButton } from '../ui/potion';
@@ -85,10 +86,10 @@ export class DungeonScreen extends Screen {
           : this.tipCard(run)),
       dock,
       h('div', { class: 'bottombar' },
-        ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }),
-        ibtn('character', '정보', () => showCharacterInfo(), 'normal', c.UnspentPoints > 0),
-        ibtn('quest', '퀘스트', () => showQuests()),
-        ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast(S.inTutorialRun ? '튜토리얼은 보스를 쓰러뜨려야 돌아갈 수 있어요.' : '아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked')),
+        hotkey(ibtn('bag', '가방', () => { if (!tutorial.blocks('가방')) router.show(new InventoryScreen(true)); }), 'i'),
+        hotkey(ibtn('character', '정보', () => showCharacterInfo(), 'normal', c.UnspentPoints > 0), 'c'),
+        hotkey(ibtn('quest', '퀘스트', () => showQuests()), 'q'),
+        hotkey(ibtn('return', '귀환', canReturn ? () => this.confirmReturn() : () => toast(S.inTutorialRun ? '튜토리얼은 보스를 쓰러뜨려야 돌아갈 수 있어요.' : '아직 귀환 방을 찾지 못했습니다. 귀환 방이나 보스를 찾아보세요.'), canReturn ? 'return' : 'locked'), 'r')),
       run.FloorIntroPending ? this.floorIntro(run) : null,
       dungeon.currentRoom(run).Type === 'Boss' && run.BossDefeated && !exploringAfterBoss.has(run) ? this.bossChoice(run) : null);
     if (!run.FloorIntroPending) queueMicrotask(() => this.afterIntro());
@@ -168,12 +169,12 @@ export class DungeonScreen extends Screen {
 
   /** 방향키 왼쪽 위 빈칸(위 방향키 왼쪽): 물약 버튼 (종류가 여러 개면 고르는 팝업). */
   private potionButton(): HTMLElement {
-    return potionButton((item) => {
+    return hotkey(potionButton((item) => {
       const r = S.useConsumable(item.Uid);
       if (!r.ok) return toast(r.message);
       flash(r.message, 'var(--green)');
       router.rebuild();
-    }, 'potion', { gridArea: '1 / 1' });
+    }, 'potion', { gridArea: '1 / 1' }), 'p');
   }
 
   /** 방향 칸: 색으로만 상태를 보인다 (금색 새 방 · 파랑 탐험함 · 초록 귀환 · 빨강 보스 · 어두움 막힘). */
@@ -201,7 +202,7 @@ export class DungeonScreen extends Screen {
     const kids = [h('span', { class: 't', style: { color: text } }, title), glow ? h('i', { class: 'glow' }) : null];
     const style = { gridArea: area, background: fill, border: `2px solid ${border}` };
     if (room && open) {
-      const btn = h('button', { style, on: { click: () => this.move(room.Id) } }, ...kids);
+      const btn = hotkey(h('button', { style, on: { click: () => this.move(room.Id) } }, ...kids), `Arrow${slot.Dir}`, false);
       if (glow) btn.dataset.anchor = 'dungeon.choice0';
       return btn;
     }
@@ -272,11 +273,11 @@ export class DungeonScreen extends Screen {
     const hgt = (scr?.clientHeight ?? 844) < 760 ? 150 : MAP_H;
     const map = h('div', { class: 'minimap', style: { width: `${w}px`, height: `${hgt}px` } });
     this.drawMap(map, w, hgt, run, null);
-    return h('div', { role: 'button', 'data-anchor': 'dungeon.map', style: { background: 'var(--well)', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
+    return hotkey(h('div', { role: 'button', 'data-anchor': 'dungeon.map', style: { background: 'var(--well)', border: `1px solid ${th.line}99`, borderRadius: '12px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer' }, on: { click: () => this.fullMap() } },
       map,
       h('div', { class: 'row', style: { gap: '12px', fontSize: '12px', height: '32px' } },
         colored('■ 클리어', 'var(--return-sub)'), colored('■ 현재 위치', 'var(--gold)'), colored('□ 갈 수 있음', 'var(--gold)'), h('span', { class: 'spacer' }),
-        h('span', { class: canTeleport ? 'blink' : '', style: { width: '28px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${canTeleport ? 'var(--gold)' : 'var(--btn-border)'}`, borderRadius: '8px', background: '#1A170F' } }, icon('map', 20))));
+        h('span', { class: canTeleport ? 'blink' : '', style: { width: '28px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${canTeleport ? 'var(--gold)' : 'var(--btn-border)'}`, borderRadius: '8px', background: '#1A170F' } }, icon('map', 20)))), 'm', false);
   }
 
   /** 전체 지도: 크게 보고, 탐험을 마친 방을 눌러 순간이동. */
